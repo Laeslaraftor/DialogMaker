@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="DialogMaker.Core/DialogMaker.Core.csproj" />
+  <Project Path="DialogMaker/DialogMaker.csproj" />
+</Solution>
