@@ -2,6 +2,8 @@
 {
     public enum DialogResourceType
     {
-        Audio
+        Audio,
+        Video,
+        Image
     }
 }
