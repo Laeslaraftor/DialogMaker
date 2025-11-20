@@ -2,7 +2,7 @@
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectReplicaSavedState
+    public class DialogProjectReplicaSavedState : JsonData
     {
         [JsonProperty("id")]
         public string Id { get; set; } = string.Empty;

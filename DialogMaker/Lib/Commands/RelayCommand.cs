@@ -1,0 +1,36 @@
+﻿using System.Windows.Input;
+
+namespace DialogMaker.Lib
+{
+    public class RelayCommand : ICommand
+    {
+        public RelayCommand(Action<object?> execute)
+        {
+            _executeMethod = execute;
+        }
+        public RelayCommand(Action<object?> execute, Func<object?, bool> canExecute) 
+            : this(execute)
+        {
+            _canExecuteMethod = canExecute;
+        }
+
+        public event EventHandler? CanExecuteChanged;
+
+        private readonly Func<object?, bool>? _canExecuteMethod;
+        private readonly Action<object?> _executeMethod;
+
+        public bool CanExecute(object? parameter)
+        {
+            if (_canExecuteMethod == null)
+            {
+                return true;
+            }
+
+            return _canExecuteMethod(parameter);
+        }
+        public void Execute(object? parameter)
+        {
+            _executeMethod(parameter);
+        }
+    }
+}

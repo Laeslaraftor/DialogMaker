@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core
+﻿using System.IO;
+
+namespace DialogMaker.Core
 {
     public static class FileExtensions
     {
@@ -17,6 +19,20 @@
         {
             string lastPart = GetLastPathPart(filePath);
             return lastPart.Split('.')[^1];
+        }
+        public static string GetFileDirectory(this string filePath)
+        {
+            return filePath.Replace(filePath.GetFileName(false), string.Empty);
+        }
+        public static bool CreateDirectory(string directoryPath)
+        {
+            if (!Directory.Exists(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+                return true;
+            }
+
+            return false;
         }
 
         private static string GetLastPathPart(string path)

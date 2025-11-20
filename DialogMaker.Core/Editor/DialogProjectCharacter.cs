@@ -1,13 +1,20 @@
-﻿namespace DialogMaker.Core
+﻿using System;
+
+namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectCharacter : ObservableObject
+    public class DialogProjectCharacter : ObservableObject, ISavable
     {
-        public DialogProjectCharacter(string id)
+        public DialogProjectCharacter()
         {
-            Id = id;
+            Id = Guid.NewGuid();
+        }
+        public DialogProjectCharacter(DialogProjectCharacterSavedState savedState)
+        {
+            Id = Guid.Parse(savedState.Id);
+            Name = savedState.Name;
         }
 
-        public string Id { get; }
+        public Guid Id { get; }
         public string Name
         {
             get => _name;
@@ -22,5 +29,16 @@
         }
 
         private string _name = string.Empty;
+
+        public DialogProjectCharacterSavedState Save()
+        {
+            return new()
+            {
+                Id = Id.ToString(),
+                Name = Name
+            };
+        }
+
+        ISavedState ISavable.Save() => Save();
     }
 }

@@ -4,17 +4,64 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:lib="clr-namespace:DialogMaker.Lib.Elements"
+        xmlns:models="clr-namespace:DialogMaker.ViewModels"
         xmlns:local="clr-namespace:DialogMaker"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <lib:DiagramView>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="0.4*"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Menu Grid.ColumnSpan="2">
+            <MenuItem Header="Файл">
+                <MenuItem Header="Создать"
+                          Command="{Binding CreateProjectCommand}"/>
+                <MenuItem Header="Открыть"
+                          Command="{Binding OpenProjectCommand}"/>
+                <Separator/>
+                <MenuItem Header="Закрыть"
+                          Command="{Binding CloseProjectCommand}"/>
+            </MenuItem>
+        </Menu>
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <StackPanel Orientation="Vertical">
+                <Button Content="Создать набор"
+                        Command="{Binding CreatePackCommand}"
+                        IsEnabled="{Binding CanCreatePack}"/>
+            </StackPanel>
+            <TreeView Grid.Row="1" 
+                      ItemsSource="{Binding DialogPacks}">
+                <TreeView.ItemTemplate>
+                    <HierarchicalDataTemplate>
+                        <Grid>
+                            <Grid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Удалить"
+                                              Command="{Binding Remove}"/>
+                                </ContextMenu>
+                            </Grid.ContextMenu>
+                            <TextBlock Text="{Binding Name}"/>
+                        </Grid>
+                    </HierarchicalDataTemplate>
+                </TreeView.ItemTemplate>
+            </TreeView>
+        </Grid>
+        <!--<lib:DiagramView>
             <lib:DiagramView.Children>
                 <Border Width="150" Height="150" Background="Black"
         CornerRadius="8"/>
                 <Border Width="150" Height="150" Background="DarkBlue"
         CornerRadius="8"/>
             </lib:DiagramView.Children>
-        </lib:DiagramView>
+        </lib:DiagramView>-->
     </Grid>
 </Window>

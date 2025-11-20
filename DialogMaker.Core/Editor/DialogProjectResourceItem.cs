@@ -1,22 +1,39 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 
-namespace DialogMaker.Core
+namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectResourceItem : ObservableObject
+    public class DialogProjectResourceItem : ObservableObject, ISavable
     {
         public DialogProjectResourceItem(string filePath)
+            : this(GetResourceType(filePath), filePath)
         {
-            var type = GetResourceType(filePath);
-
+        }
+        public DialogProjectResourceItem(DialogResourceType? type, string filePath)
+        {
             if (type == null)
             {
-                throw new ArgumentException($"Неподдерживаемый формат файла \"{filePath}\"", nameof(filePath));
+                ThrowNotSupportedException($"Неподдерживаемый формат файла \"{filePath}\"");
             }
 
             Id = Guid.NewGuid();
             FilePath = filePath;
+            Type = type.GetValueOrDefault();
             _name = filePath.GetFileName();
+        }
+        public DialogProjectResourceItem(DialogProjectResources resources, DialogProjectResourceItemSavedState savedState)
+        {
+            Id = Guid.Parse(savedState.Id);
+            FilePath = Path.Combine(resources.Folder, savedState.FileName);
+
+            if (!File.Exists(FilePath))
+            {
+                throw new ArgumentException($"Файл {FilePath} ресурса {savedState.Name} не найден.");
+            }
+         
+            Type = savedState.ResourceType;
+            _name = savedState.Name;
         }
 
         public Guid Id { get; }
@@ -36,6 +53,21 @@ namespace DialogMaker.Core
         }
 
         private string _name;
+
+        #region Управление
+
+        public ISavedState Save()
+        {
+            return new DialogProjectResourceItemSavedState
+            {
+                Id = Id.ToString(),
+                FileName = FilePath.GetFileName(false),
+                Name = Name,
+                ResourceType = Type
+            };
+        }
+
+        #endregion
 
         #region Статика
 
@@ -61,6 +93,10 @@ namespace DialogMaker.Core
             }
 
             return null;
+        }
+        public static void ThrowNotSupportedException(string filePath)
+        {
+            throw new NotSupportedException($"Неподдерживаемый формат файла \"{filePath}\"");
         }
 
         #endregion

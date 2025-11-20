@@ -3,11 +3,15 @@ using System;
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectSavedState
+    public class DialogProjectSavedState : JsonData
     {
+        [JsonProperty("id")]
+        public string Id { get; set; } = string.Empty;
         [JsonProperty("name")]
         public string Name { get; set; } = string.Empty;
         [JsonProperty("packs")]
         public string[] Packs { get; set; } = Array.Empty<string>();
+        [JsonProperty("languages")]
+        public DialogProjectLanguage[] Languages { get; set; } = Array.Empty<DialogProjectLanguage>();
     }
 }

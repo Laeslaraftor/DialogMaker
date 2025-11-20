@@ -17,4 +17,8 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\DialogMaker.Core\DialogMaker.Core.csproj" />
+  </ItemGroup>
+
 </Project>
