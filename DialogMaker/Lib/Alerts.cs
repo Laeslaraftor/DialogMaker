@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Lib.Elements;
+using System.Text;
 using System.Windows;
 
 namespace DialogMaker.Lib
@@ -29,7 +30,11 @@ namespace DialogMaker.Lib
         }
         public static void Show(Exception error)
         {
-            MessageBox.Show(error.Message, error.GetType().Name);
+            StringBuilder builder = new();
+            builder.AppendLine(error.Message);
+            builder.AppendLine(error.StackTrace);
+
+            MessageBox.Show(builder.ToString(), error.GetType().Name);
         }
 
         private static Window CreateDialogWindow(string title = "")

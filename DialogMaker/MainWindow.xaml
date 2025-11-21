@@ -7,17 +7,19 @@
         xmlns:models="clr-namespace:DialogMaker.ViewModels"
         xmlns:local="clr-namespace:DialogMaker"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="450" Width="1000"
+        MinWidth="1000" MinHeight="400">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="0.4*"/>
+            <ColumnDefinition MinWidth="200" MaxWidth="400" Width="0.4*"/>
             <ColumnDefinition/>
+            <ColumnDefinition MinWidth="300" MaxWidth="500" Width="0.4*"/>
         </Grid.ColumnDefinitions>
-        <Menu Grid.ColumnSpan="2">
+        <Menu Grid.ColumnSpan="3">
             <MenuItem Header="Файл">
                 <MenuItem Header="Создать"
                           Command="{Binding CreateProjectCommand}"/>
@@ -41,20 +43,41 @@
             <TreeView Grid.Row="1" 
                       ItemsSource="{Binding DialogPacks}">
                 <TreeView.ItemTemplate>
-                    <HierarchicalDataTemplate>
-                        <Grid>
-                            <Grid.ContextMenu>
-                                <ContextMenu>
-                                    <MenuItem Header="Удалить"
-                                              Command="{Binding Remove}"/>
-                                </ContextMenu>
-                            </Grid.ContextMenu>
-                            <TextBlock Text="{Binding Name}"/>
-                        </Grid>
+                    <HierarchicalDataTemplate ItemsSource="{Binding Children}">
+                        <lib:ProjectItemView ContextMenu="{Binding ContextMenu}"
+                                             Icon="{Binding Icon}"
+                                             ItemName="{Binding Name, Mode=TwoWay}"/>
                     </HierarchicalDataTemplate>
                 </TreeView.ItemTemplate>
             </TreeView>
         </Grid>
+        <TabControl Grid.Row="1" Grid.Column="2">
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Глобальные ресурсы" />
+                    </StackPanel>
+                </TabItem.Header>
+                <Grid>
+                    <TextBlock Margin="12" Text="World" />
+                </Grid>
+            </TabItem>
+            <TabItem IsSelected="True">
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Языки" />
+                    </StackPanel>
+                </TabItem.Header>
+                <DataGrid ItemsSource="{Binding Languages}" 
+                          CanUserAddRows="True" CanUserDeleteRows="True"
+                          AutoGenerateColumns="False">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Идентификатор" Binding="{Binding Id}"/>
+                        <DataGridTextColumn Header="Название" Binding="{Binding Name}"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </TabItem>
+        </TabControl>
         <!--<lib:DiagramView>
             <lib:DiagramView.Children>
                 <Border Width="150" Height="150" Background="Black"

@@ -1,6 +1,7 @@
 ﻿using Acly;
 using DialogMaker.Core;
 using DialogMaker.Core.Editor;
+using DialogMaker.Editor.Menus;
 using DialogMaker.Lib;
 using DialogMaker.ViewModels;
 using System.ComponentModel;
@@ -15,15 +16,19 @@ namespace DialogMaker.Editor
             _project = project;
             _structure = [];
             Structure = new(_structure);
-            project.PropertyChanged += OnProjectPropertyChanged;
-
             CreatePackCommand = new RelayCommand(ExecuteCreatePack);
-            RemovePackCommand = new RelayCommand(ExecuteRemovePack, CanExecuteRemovePack);
-            CreateDialogCommand = new RelayCommand(ExecuteCreateDialog, CanExecuteCreateDialog);
-            RemoveDialogCommand = new RelayCommand(ExecuteRemoveDialog, CanExecuteRemoveDialog);
+
+            project.PropertyChanged += OnProjectPropertyChanged;
+            project.PacksChanged += OnProjectPacksChanged;
+
+            foreach (var pack in project.Packs)
+            {
+                pack.DialogsChanged += OnPackDialogsChanged;
+            }
 
             UpdateStructure();
         }
+
         ~ProjectController()
         {
             Dispose();
@@ -48,9 +53,6 @@ namespace DialogMaker.Editor
             set => _project.Name = value;
         }
         public ICommand CreatePackCommand { get; }
-        public ICommand RemovePackCommand { get; }
-        public ICommand CreateDialogCommand { get; }
-        public ICommand RemoveDialogCommand { get; }
 
         private readonly DialogProject _project;
         private readonly ObservableList<ProjectItem> _structure;
@@ -79,7 +81,13 @@ namespace DialogMaker.Editor
 
             IsDisposed = true;
 
-            _project.PropertyChanged += OnProjectPropertyChanged;
+            _project.PropertyChanged -= OnProjectPropertyChanged;
+            _project.PacksChanged -= OnProjectPacksChanged;
+
+            foreach (var pack in _project.Packs)
+            {
+                pack.DialogsChanged -= OnPackDialogsChanged;
+            }
         }
         public void UpdateStructure()
         {
@@ -87,18 +95,22 @@ namespace DialogMaker.Editor
 
             foreach (var pack in _project.Packs)
             {
+                DialogPackContextMenu menu = new(pack);
                 ProjectItem packItem = new()
                 {
                     Name = pack.Name,
-                    Value = pack
+                    Value = pack,
+                    ContextMenu = menu
                 };
 
                 foreach (var dialog in pack.Dialogs)
                 {
                     packItem.Children.Add(new()
                     {
+                        Icon = Icons.Message,
                         Name = dialog.Name,
-                        Value = dialog
+                        Value = dialog,
+                        ContextMenu = new DialogContextMenu(dialog)
                     });
                 }
 
@@ -125,64 +137,6 @@ namespace DialogMaker.Editor
             Save();
         }
 
-        private bool CanExecuteRemovePack(object? parameter)
-        {
-            return parameter is DialogProjectPack;
-        }
-        private void ExecuteRemovePack(object? parameter)
-        {
-            if (parameter is not DialogProjectPack pack)
-            {
-                return;
-            }
-
-            _project.RemovePack(pack);
-
-            UpdateStructure();
-            Save();
-        }
-
-        private bool CanExecuteCreateDialog(object? parameter)
-        {
-            return parameter is DialogProjectPack;
-        }
-        private void ExecuteCreateDialog(object? parameter)
-        {
-            if (parameter is not DialogProjectPack pack)
-            {
-                return;
-            }
-
-            string? name = Alerts.RequestText("Введите название диалога");
-
-            if (name == null)
-            {
-                return;
-            }
-
-            Try(() => pack.CreateDialog(name, name));
-
-            UpdateStructure();
-            Save();
-        }
-
-        private bool CanExecuteRemoveDialog(object? parameter)
-        {
-            return parameter is DialogProjectDialog;
-        }
-        private void ExecuteRemoveDialog(object? parameter)
-        {
-            if (parameter is not DialogProjectDialog dialog)
-            {
-                return;
-            }
-
-            dialog.Pack.RemoveDialog(dialog);
-
-            UpdateStructure();
-            Save();
-        }
-
         #endregion
 
         #region События
@@ -191,6 +145,26 @@ namespace DialogMaker.Editor
         {
             Save();
             InvokePropertyChanged(e.PropertyName != null ? e.PropertyName : string.Empty);
+        }
+
+        private void OnProjectPacksChanged(object? sender, ItemActionEventArgs<DialogProjectPack> e)
+        {
+            if (e.Action == ItemAction.Add)
+            {
+                e.Item.DialogsChanged += OnPackDialogsChanged;
+            }
+            else
+            {
+                e.Item.DialogsChanged -= OnPackDialogsChanged;
+            }
+
+            UpdateStructure();
+            Save();
+        }
+        private void OnPackDialogsChanged(object? sender, ItemActionEventArgs<DialogProjectDialog> e)
+        {
+            UpdateStructure();
+            Save();
         }
 
         #endregion

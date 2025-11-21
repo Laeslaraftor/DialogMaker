@@ -25,6 +25,7 @@ namespace DialogMaker.Core.Editor
             : this(project, savedState.Id)
         {
             Name = savedState.Name;
+            string dialogsPath = Path.Combine(Folder, DialogProjectDialog.DialogsFolder);
 
             foreach (var resource in savedState.Resources)
             {
@@ -38,7 +39,22 @@ namespace DialogMaker.Core.Editor
                     Debug.WriteLine(error);
                 }
             }
+            foreach (var dialog in savedState.Dialogs)
+            {
+                try
+                {
+                    string filePath = Path.Combine(dialogsPath, $"{dialog}.{JsonData.FileExtension}");
+                    var projectDialog = DialogProjectDialog.Open(this, filePath);
+                    _dialogs.Add(projectDialog);
+                }
+                catch (Exception error)
+                {
+                    Debug.WriteLine(error);
+                }
+            }
         }
+
+        public event EventHandler<ItemActionEventArgs<DialogProjectDialog>>? DialogsChanged;
 
         public DialogProject Project { get; }
         public string Folder { get; }
@@ -80,7 +96,7 @@ namespace DialogMaker.Core.Editor
                 Id = Id,
                 Name = Name,
                 Dialogs = _dialogs.Select(d => d.Id).ToArray(),
-                Resources = _dialogs.Select(r => r.Id).ToArray()
+                Resources = _resources.Select(r => r.Id).ToArray()
             };
 
             string filePath = Path.Combine(Folder, FileName);
@@ -115,11 +131,19 @@ namespace DialogMaker.Core.Editor
 
             _dialogs.Add(dialog);
 
+            DialogsChanged?.Invoke(this, new(ItemAction.Add, dialog));
+
             return dialog;
         }
         public bool RemoveDialog(DialogProjectDialog dialog)
         {
-            return _dialogs.Remove(dialog);
+            if (_dialogs.Remove(dialog))
+            {
+                DialogsChanged?.Invoke(this, new(ItemAction.Remove, dialog));
+                return true;
+            }
+
+            return false;
         }
 
         public DialogProjectResources CreateResources(string id, DialogProjectLanguage language)

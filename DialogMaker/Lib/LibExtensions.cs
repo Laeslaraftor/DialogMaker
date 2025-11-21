@@ -8,5 +8,19 @@ namespace DialogMaker
         {
             Alerts.Show(error);
         }
+        public static bool Try(Action method)
+        {
+            try
+            {
+                method();
+            }
+            catch (Exception error)
+            {
+                error.Alert();
+                return false;
+            }
+
+            return true;
+        }
     }
 }

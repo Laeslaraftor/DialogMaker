@@ -40,6 +40,8 @@ namespace DialogMaker.Core.Editor
             }
         }
 
+        public event EventHandler<ItemActionEventArgs<DialogProjectPack>>? PacksChanged;
+
         public string ProjectPath { get; }
         public string Id { get; }
         public string Name
@@ -58,7 +60,7 @@ namespace DialogMaker.Core.Editor
         public ReferenceReadOnlyList<DialogProjectLanguage> Languages { get; }
 
         private readonly ObservableList<DialogProjectPack> _packs;
-        private readonly ObservableList<DialogProjectLanguage> _languages;
+        public readonly ObservableList<DialogProjectLanguage> _languages;
         private string _name = string.Empty;
 
         #region Управление
@@ -111,11 +113,19 @@ namespace DialogMaker.Core.Editor
 
             _packs.Add(pack);
 
+            PacksChanged?.Invoke(this, new(ItemAction.Add, pack));
+
             return pack;
         }
         public bool RemovePack(DialogProjectPack pack)
         {
-            return _packs.Remove(pack);
+            if (_packs.Remove(pack))
+            {
+                PacksChanged?.Invoke(this, new(ItemAction.Remove, pack));
+                return true;
+            }
+
+            return false;
         }
 
 

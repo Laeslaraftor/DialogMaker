@@ -8,8 +8,13 @@ namespace DialogMaker.Core
 
         #region События
 
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+        }
+
         protected void InvokePropertyChanged(string propertyName)
         {
+            OnPropertyChanged(propertyName);
             PropertyChanged?.Invoke(this, new(propertyName));
         }
 

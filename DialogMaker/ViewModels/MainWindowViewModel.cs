@@ -1,5 +1,6 @@
 ﻿using Acly;
 using DialogMaker.Core;
+using DialogMaker.Core.Editor;
 using DialogMaker.Editor;
 using System.Windows.Input;
 
@@ -7,97 +8,101 @@ namespace DialogMaker.ViewModels
 {
     public class MainWindowViewModel : ObservableObject
     {
-        public ReferenceReadOnlyList<ProjectItem>? DialogPacks
+        public ObservableList<DialogProjectLanguage>? Languages
         {
-            get => _dialogPacks;
+            get => field;
             set
             {
-                if (_dialogPacks != value)
+                if (field != value)
                 {
-                    _dialogPacks = value;
+                    field = value;
+                    InvokePropertyChanged(nameof(Languages));
+                }
+            }
+        }
+        public ReferenceReadOnlyList<ProjectItem>? DialogPacks
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
                     InvokePropertyChanged(nameof(DialogPacks));
                 }
             }
         }
         public ICommand? CreateProjectCommand
         {
-            get => _createProjectCommand;
+            get => field;
             set
             {
-                if (_createProjectCommand != value)
+                if (field != value)
                 {
-                    _createProjectCommand = value;
+                    field = value;
                     InvokePropertyChanged(nameof(CreateProjectCommand));
                 }
             }
         }
         public ICommand? OpenProjectCommand
         {
-            get => _openProjectCommand;
+            get => field;
             set
             {
-                if (_openProjectCommand != value)
+                if (field != value)
                 {
-                    _openProjectCommand = value;
+                    field = value;
                     InvokePropertyChanged(nameof(OpenProjectCommand));
                 }
             }
         }
         public ICommand? CloseProjectCommand
         {
-            get => _closeProjectCommand;
+            get => field;
             set
             {
-                if (_closeProjectCommand != value)
+                if (field != value)
                 {
-                    _closeProjectCommand = value;
+                    field = value;
                     InvokePropertyChanged(nameof(CloseProjectCommand));
                 }
             }
         }
         public bool CanCreatePack
         {
-            get => _canCreatePack;
+            get => field;
             set
             {
-                if (_canCreatePack != value)
+                if (field != value)
                 {
-                    _canCreatePack = value;
+                    field = value;
                     InvokePropertyChanged(nameof(CanCreatePack));
                 }
             }
         }
         public ICommand? CreatePackCommand
         {
-            get => _createPackCommand;
+            get => field;
             set
             {
-                if (_createPackCommand != value)
+                if (field != value)
                 {
-                    _createPackCommand = value;
+                    field = value;
                     InvokePropertyChanged(nameof(CreatePackCommand));
                 }
             }
         }
         public ProjectController? Project
         {
-            get => _project;
+            get => field;
             set
             {
-                if (_project != value)
+                if (field != value)
                 {
-                    _project = value;
+                    field = value;
                     InvokePropertyChanged(nameof(Project));
                 }
             }
         }
-
-        private ReferenceReadOnlyList<ProjectItem>? _dialogPacks;
-        private ICommand? _createProjectCommand;
-        private ICommand? _openProjectCommand;
-        private ICommand? _closeProjectCommand;
-        private bool _canCreatePack;
-        private ICommand? _createPackCommand;
-        private ProjectController? _project;
     }
 }

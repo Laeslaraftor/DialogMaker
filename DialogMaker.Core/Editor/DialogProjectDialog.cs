@@ -76,6 +76,7 @@ namespace DialogMaker.Core.Editor
                 Characters = _characters.Select(c => c.Save()).ToArray()
             };
 
+            FileExtensions.CreateDirectory(Folder);
             string filePath = Path.Combine(Folder, $"{Id}.{JsonData.FileExtension}");
 
             savedState.Save(filePath);
@@ -124,9 +125,10 @@ namespace DialogMaker.Core.Editor
 
         public const string DialogsFolder = "Dialogs";
 
-        public static DialogProjectDialog Open(string dialogFilePath)
+        public static DialogProjectDialog Open(DialogProjectPack pack, string dialogFilePath)
         {
-            return SavedState.Restore<DialogProjectDialog, DialogProjectDialogSavedState>(dialogFilePath);
+            var savedState = SavedState.Restore<DialogProjectDialogSavedState>(dialogFilePath);
+            return new(pack, savedState);
         }
 
         #endregion

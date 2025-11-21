@@ -2,6 +2,7 @@
 using DialogMaker.Editor;
 using DialogMaker.Lib;
 using DialogMaker.ViewModels;
+using System.ComponentModel;
 using System.Windows;
 
 namespace DialogMaker
@@ -38,6 +39,14 @@ namespace DialogMaker
             _model.CanCreatePack = controller != null;
             _model.CreatePackCommand = controller?.CreatePackCommand;
             _model.DialogPacks = controller?.Structure;
+
+            project?._languages?.Add(new()
+            {
+                Id = "ru",
+                Name = "Русский"
+            });
+
+            _model.Languages = project?._languages;
         }
 
         #endregion

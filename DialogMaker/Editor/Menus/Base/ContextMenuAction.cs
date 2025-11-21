@@ -1,0 +1,77 @@
+﻿using DialogMaker.Lib;
+using System.Windows.Controls;
+using System.Windows.Input;
+
+namespace DialogMaker.Editor.Menus
+{
+    public class ContextMenuAction : IContextMenuModifier, ICommand
+    {
+        public ContextMenuAction(string name, Action<object?> execute, string? icon = null)
+            : this(name, execute, null, icon)
+        {
+        }
+        public ContextMenuAction(string name, Func<object?, bool>? canExecute, Action<object?> execute, string? icon = null)
+            : this(name, execute, canExecute, icon)
+        {
+        }
+        public ContextMenuAction(string name, Action<object?> execute, Func<object?, bool>? canExecute, string? icon = null)
+        {
+            Icon = icon;
+            Name = name;
+            Execute = execute;
+            CanExecute = canExecute;
+        }
+
+        public event EventHandler? CanExecuteChanged;
+
+        public string? Icon { get; }
+        public string Name { get; }
+        public Action<object?> Execute { get; }
+        public Func<object?, bool>? CanExecute { get; }
+
+        #region Управление
+
+        public void Modify(ItemCollection menu)
+        {
+            MenuItem item = new()
+            {
+                Header = Name,
+                Command = this,
+            };
+
+            if (Icon != null)
+            {
+                var font = Icons.Font;
+
+                if (font != null)
+                {
+                    TextBlock iconBlock = new()
+                    {
+                        Text = Icon,
+                        FontFamily = font,
+                        FontSize = 14
+                    };
+                    item.Icon = iconBlock;
+                }
+            }
+
+            menu.Add(item);
+        }
+
+        bool ICommand.CanExecute(object? parameter)
+        {
+            if (CanExecute == null)
+            {
+                return true;
+            }
+
+            return CanExecute(parameter);
+        }
+        void ICommand.Execute(object? parameter)
+        {
+            Execute(parameter);
+        }
+
+        #endregion
+    }
+}
