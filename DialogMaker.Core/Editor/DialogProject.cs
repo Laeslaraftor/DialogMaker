@@ -12,10 +12,10 @@ namespace DialogMaker.Core.Editor
         {
             Id = id;
             ProjectPath = projectPath;
+            Languages = new(() => new(this));
+
             _packs = new();
-            _languages = new();
             Packs = new(_packs);
-            Languages = new(_languages);
         }
         public DialogProject(string projectPath, DialogProjectSavedState savedState) 
             : this(projectPath, savedState.Id)
@@ -36,7 +36,7 @@ namespace DialogMaker.Core.Editor
 
             foreach (var language in savedState.Languages)
             {
-                _languages.Add(language);
+                Languages.Add(new(this, language));
             }
         }
 
@@ -57,10 +57,9 @@ namespace DialogMaker.Core.Editor
             }
         }
         public ReferenceReadOnlyList<DialogProjectPack> Packs { get; }
-        public ReferenceReadOnlyList<DialogProjectLanguage> Languages { get; }
+        public EditableCollection<DialogProjectLanguage> Languages { get; }
 
         private readonly ObservableList<DialogProjectPack> _packs;
-        public readonly ObservableList<DialogProjectLanguage> _languages;
         private string _name = string.Empty;
 
         #region Управление
@@ -77,7 +76,7 @@ namespace DialogMaker.Core.Editor
                 Id = Id,
                 Name = Name,
                 Packs = _packs.Select(p => p.Id).ToArray(),
-                Languages = _languages.ToArray(),
+                Languages = Languages.Select(l => (DialogProjectLanguageSavedState)l.Save()).ToArray(),
             };
 
             string filePath = Path.Combine(ProjectPath, $"{Id}.{FileExtension}");
@@ -91,7 +90,11 @@ namespace DialogMaker.Core.Editor
         }
         public bool TryGetLanguage(string id, [NotNullWhen(true)] out DialogProjectLanguage? result)
         {
-            return _languages.TryGetValue(l => l.Id == id, out result);
+            return Languages.TryGetValue(l => l.Id == id, out result);
+        }
+        public bool TryGetLanguage(Guid id, [NotNullWhen(true)] out DialogProjectLanguage? result)
+        {
+            return Languages.TryGetValue(l => l.ProjectId == id, out result);
         }
 
         public DialogProjectPack CreatePack(string id, string name)
@@ -129,26 +132,16 @@ namespace DialogMaker.Core.Editor
         }
 
 
-        public DialogProjectLanguage CreateLanguage(string id, string name)
+        public DialogProjectLanguage CreateLanguage(string name)
         {
-            if (TryGetLanguage(id, out _))
+            DialogProjectLanguage language = new(this)
             {
-                throw new ArgumentException($"Язык с идентификатором {id} уже существует.", nameof(id));
-            }
-
-            DialogProjectLanguage language = new()
-            {
-                Id = id,
                 Name = name
             };
 
-            _languages.Add(language);
+            Languages.Add(language);
 
             return language;
-        }
-        public bool RemoveLanguage(DialogProjectLanguage language)
-        {
-            return _languages.Remove(language);
         }
 
         #endregion

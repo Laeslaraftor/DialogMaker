@@ -12,6 +12,6 @@ namespace DialogMaker.Core.Editor
         [JsonProperty("packs")]
         public string[] Packs { get; set; } = Array.Empty<string>();
         [JsonProperty("languages")]
-        public DialogProjectLanguage[] Languages { get; set; } = Array.Empty<DialogProjectLanguage>();
+        public DialogProjectLanguageSavedState[] Languages { get; set; } = Array.Empty<DialogProjectLanguageSavedState>();
     }
 }

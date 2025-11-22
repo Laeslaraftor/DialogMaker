@@ -2,13 +2,14 @@
 using DialogMaker.Core;
 using DialogMaker.Core.Editor;
 using DialogMaker.Editor;
+using System.Collections;
 using System.Windows.Input;
 
 namespace DialogMaker.ViewModels
 {
     public class MainWindowViewModel : ObservableObject
     {
-        public ObservableList<DialogProjectLanguage>? Languages
+        public IEnumerable? Languages
         {
             get => field;
             set

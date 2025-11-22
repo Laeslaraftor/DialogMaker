@@ -68,9 +68,9 @@
                         <TextBlock Text="Языки" />
                     </StackPanel>
                 </TabItem.Header>
-                <DataGrid ItemsSource="{Binding Languages}" 
+                <DataGrid x:Name="_langs" ItemsSource="{Binding Languages}" 
                           CanUserAddRows="True" CanUserDeleteRows="True"
-                          AutoGenerateColumns="False">
+                          AutoGenerateColumns="False" CanUserReorderColumns="True">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Идентификатор" Binding="{Binding Id}"/>
                         <DataGridTextColumn Header="Название" Binding="{Binding Name}"/>

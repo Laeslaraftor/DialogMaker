@@ -4,6 +4,7 @@ using DialogMaker.Lib;
 using DialogMaker.ViewModels;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Data;
 
 namespace DialogMaker
 {
@@ -40,13 +41,16 @@ namespace DialogMaker
             _model.CreatePackCommand = controller?.CreatePackCommand;
             _model.DialogPacks = controller?.Structure;
 
-            project?._languages?.Add(new()
+            if (project != null)
             {
-                Id = "ru",
-                Name = "Русский"
-            });
+                controller?.Languages.Add(new(project)
+                {
+                    Id = "ru",
+                    Name = "Русский"
+                });
+            }
 
-            _model.Languages = project?._languages;
+            _model.Languages = controller?.Languages;
         }
 
         #endregion

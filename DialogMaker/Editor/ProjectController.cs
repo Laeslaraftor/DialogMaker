@@ -15,7 +15,9 @@ namespace DialogMaker.Editor
         {
             _project = project;
             _structure = [];
+            _languages = new(project.Languages);
             Structure = new(_structure);
+            Languages = (IList<DialogProjectLanguage>)_languages.SecondCollection;
             CreatePackCommand = new RelayCommand(ExecuteCreatePack);
 
             project.PropertyChanged += OnProjectPropertyChanged;
@@ -47,6 +49,7 @@ namespace DialogMaker.Editor
             }
         }
         public ReferenceReadOnlyList<ProjectItem> Structure { get; }
+        public IList<DialogProjectLanguage> Languages { get; }
         public string Name
         {
             get => _project.Name;
@@ -54,6 +57,7 @@ namespace DialogMaker.Editor
         }
         public ICommand CreatePackCommand { get; }
 
+        private readonly CollectionSynchronizer2<DialogProjectLanguage> _languages;
         private readonly DialogProject _project;
         private readonly ObservableList<ProjectItem> _structure;
         private bool _isDisposed;
