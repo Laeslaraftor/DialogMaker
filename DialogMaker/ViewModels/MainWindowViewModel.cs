@@ -1,8 +1,9 @@
 ﻿using Acly;
 using DialogMaker.Core;
-using DialogMaker.Core.Editor;
 using DialogMaker.Editor;
 using System.Collections;
+using System.ComponentModel;
+using System.Windows;
 using System.Windows.Input;
 
 namespace DialogMaker.ViewModels
@@ -101,9 +102,62 @@ namespace DialogMaker.ViewModels
                 if (field != value)
                 {
                     field = value;
+
+                    if (field != null)
+                    {
+                        field.PropertyChanged -= OnProjectPropertyChanged;
+                    }
+                    if (value != null)
+                    {
+                        value.PropertyChanged += OnProjectPropertyChanged;
+                        UpdateProject(value);
+                    }
+
                     InvokePropertyChanged(nameof(Project));
                 }
             }
         }
+        public Visibility DefaultLanguageVisibility
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    InvokePropertyChanged(nameof(DefaultLanguageVisibility));
+                }
+            }
+        }
+
+        #region Управление
+
+        private void UpdateProject(ProjectController controller)
+        {
+            Visibility visibility = Visibility.Collapsed;
+
+            if (controller.IsDefaultLanguageSetted)
+            {
+                visibility = Visibility.Visible;
+            }
+
+            DefaultLanguageVisibility = visibility;
+        }
+
+        #endregion
+
+        #region События
+
+        private void OnProjectPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (sender is not ProjectController controller || e.PropertyName != "IsDefaultLanguageSetted")
+            {
+                return;
+            }
+
+            UpdateProject(controller);
+        }
+
+        #endregion
     }
 }

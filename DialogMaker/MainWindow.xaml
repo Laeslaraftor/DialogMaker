@@ -68,14 +68,64 @@
                         <TextBlock Text="Языки" />
                     </StackPanel>
                 </TabItem.Header>
-                <DataGrid x:Name="_langs" ItemsSource="{Binding Languages}" 
-                          CanUserAddRows="True" CanUserDeleteRows="True"
-                          AutoGenerateColumns="False" CanUserReorderColumns="True">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Идентификатор" Binding="{Binding Id}"/>
-                        <DataGridTextColumn Header="Название" Binding="{Binding Name}"/>
-                    </DataGrid.Columns>
-                </DataGrid>
+                <Grid Margin="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Visibility="{Binding DefaultLanguageVisibility}">
+                        <TextBlock Text="Язык по умолчанию"
+                                   FontSize="22" FontWeight="Medium"
+                                   Margin="4,8"/>
+                        <Border Background="{DynamicResource AccentFillColorDefaultBrush}"
+                                Padding="16,0" CornerRadius="4">
+                            <lib:LanguageView Margin="0,6,0,10"
+                                              Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
+                                              LanguageId="{Binding Project.DefaultLanguage.Id}"
+                                              LanguageName="{Binding Project.DefaultLanguage.Name}"
+                                              ContextMenu="{Binding Project.DefaultLanguage.ContextMenu}"
+                                              IdEditCommand="{Binding Project.DefaultLanguage.EditIdCommand}"
+                                              IdEditCommandParameter="{Binding Project.DefaultLanguage}"
+                                              NameEditCommand="{Binding Project.DefaultLanguage.EditNameCommand}"
+                                              NameEditCommandParameter="{Binding Project.DefaultLanguage}"/>
+                        </Border>
+                    </StackPanel>
+                    <Grid Grid.Row="1" Margin="0,6,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Все языки"
+                                       FontSize="22" FontWeight="Medium"
+                                       Margin="4,6"/>
+                            <Button Grid.Column="1"
+                                    FontFamily="{StaticResource SymbolThemeFontFamily}" 
+                                    Content="&#xE710;" HorizontalAlignment="Right"
+                                    Command="{Binding Project.CreateLanguageCommand}"
+                                    ToolTip="Добавить язык"/>
+                        </Grid>
+                        <ListView Grid.Row="1" 
+                                  ItemsSource="{Binding Languages}">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <lib:LanguageView Margin="0,6,0,10"
+                                                      LanguageId="{Binding Id}"
+                                                      LanguageName="{Binding Name}"
+                                                      ContextMenu="{Binding ContextMenu}"
+                                                      IdEditCommand="{Binding EditIdCommand}"
+                                                      IdEditCommandParameter="{Binding}"
+                                                      NameEditCommand="{Binding EditNameCommand}"
+                                                      NameEditCommandParameter="{Binding}"/>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </Grid>
+                </Grid>
             </TabItem>
         </TabControl>
         <!--<lib:DiagramView>

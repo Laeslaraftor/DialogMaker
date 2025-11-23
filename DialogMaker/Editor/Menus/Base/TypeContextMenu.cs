@@ -14,7 +14,7 @@
 
         #region Управление
 
-        protected bool CanExecute(object? parameter)
+        protected virtual bool CanExecute(object? parameter)
         {
             return Resolve(parameter, p => { });
         }

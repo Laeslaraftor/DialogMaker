@@ -2,9 +2,7 @@
 using DialogMaker.Editor;
 using DialogMaker.Lib;
 using DialogMaker.ViewModels;
-using System.ComponentModel;
 using System.Windows;
-using System.Windows.Data;
 
 namespace DialogMaker
 {
@@ -23,7 +21,10 @@ namespace DialogMaker
 
         public ProjectController? CurrentProject { get; private set; }
 
-        private readonly MainWindowViewModel _model = new();
+        private readonly MainWindowViewModel _model = new()
+        {
+            DefaultLanguageVisibility = Visibility.Collapsed
+        };
 
         #region Управление
 
@@ -40,17 +41,12 @@ namespace DialogMaker
             _model.CanCreatePack = controller != null;
             _model.CreatePackCommand = controller?.CreatePackCommand;
             _model.DialogPacks = controller?.Structure;
-
-            if (project != null)
-            {
-                controller?.Languages.Add(new(project)
-                {
-                    Id = "ru",
-                    Name = "Русский"
-                });
-            }
-
             _model.Languages = controller?.Languages;
+
+            if (project == null)
+            {
+                _model.DefaultLanguageVisibility = Visibility.Collapsed;
+            }
         }
 
         #endregion

@@ -1,5 +1,6 @@
 ﻿using Acly;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace DialogMaker.Core.Editor
         {
             Id = id;
             ProjectPath = projectPath;
-            Languages = new(() => new(this));
+            Languages = new EditableCollection<DialogProjectLanguage>();
 
             _packs = new();
             Packs = new(_packs);
@@ -38,6 +39,13 @@ namespace DialogMaker.Core.Editor
             {
                 Languages.Add(new(this, language));
             }
+
+            if (savedState.DefaultLanguage != null && 
+                Guid.TryParse(savedState.DefaultLanguage, out var defaultLanguageId) &&
+                TryGetLanguage(defaultLanguageId, out var defaultLanguage))
+            {
+                _defaultLanguage = defaultLanguage;
+            }
         }
 
         public event EventHandler<ItemActionEventArgs<DialogProjectPack>>? PacksChanged;
@@ -56,11 +64,29 @@ namespace DialogMaker.Core.Editor
                 }
             }
         }
+        public DialogProjectLanguage? DefaultLanguage
+        {
+            get => _defaultLanguage;
+            set
+            {
+                if (_defaultLanguage != value)
+                {
+                    if (value != null && value.Project != this)
+                    {
+                        throw new ArgumentException($"Невозможно задать язык по умолчанию, так как его владельцем является другой проект.", nameof(value));
+                    }
+
+                    _defaultLanguage = value;
+                    InvokePropertyChanged(nameof(DefaultLanguage));
+                }
+            }
+        }
         public ReferenceReadOnlyList<DialogProjectPack> Packs { get; }
-        public EditableCollection<DialogProjectLanguage> Languages { get; }
+        public ObservableList<DialogProjectLanguage> Languages { get; }
 
         private readonly ObservableList<DialogProjectPack> _packs;
         private string _name = string.Empty;
+        private DialogProjectLanguage? _defaultLanguage;
 
         #region Управление
 
@@ -75,6 +101,7 @@ namespace DialogMaker.Core.Editor
             {
                 Id = Id,
                 Name = Name,
+                DefaultLanguage = _defaultLanguage?.ProjectId.ToString(),
                 Packs = _packs.Select(p => p.Id).ToArray(),
                 Languages = Languages.Select(l => (DialogProjectLanguageSavedState)l.Save()).ToArray(),
             };
@@ -131,17 +158,25 @@ namespace DialogMaker.Core.Editor
             return false;
         }
 
-
-        public DialogProjectLanguage CreateLanguage(string name)
+        public DialogProjectLanguage CreateLanguage()
+        {
+            return CreateLanguage("Идентификатор языка", "Название языка");
+        }
+        public DialogProjectLanguage CreateLanguage(string id, string name)
         {
             DialogProjectLanguage language = new(this)
             {
+                Id = id,
                 Name = name
             };
 
             Languages.Add(language);
 
             return language;
+        }
+        public bool RemoveLanguage(DialogProjectLanguage language)
+        {
+            return Languages.Remove(language);
         }
 
         #endregion

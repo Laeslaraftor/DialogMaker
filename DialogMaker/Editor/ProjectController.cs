@@ -4,8 +4,10 @@ using DialogMaker.Core.Editor;
 using DialogMaker.Editor.Menus;
 using DialogMaker.Lib;
 using DialogMaker.ViewModels;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Input;
+using System.Collections.Specialized;
 
 namespace DialogMaker.Editor
 {
@@ -13,15 +15,18 @@ namespace DialogMaker.Editor
     {
         public ProjectController(DialogProject project)
         {
-            _project = project;
+            Project = project;
             _structure = [];
-            _languages = new(project.Languages);
             Structure = new(_structure);
-            Languages = (IList<DialogProjectLanguage>)_languages.SecondCollection;
             CreatePackCommand = new RelayCommand(ExecuteCreatePack);
+            CreateLanguageCommand = new RelayCommand(p => project.CreateLanguage());
+
+            _languageConverter = new(this);
+            _languages = new(project.Languages, Languages, _languageConverter);
 
             project.PropertyChanged += OnProjectPropertyChanged;
             project.PacksChanged += OnProjectPacksChanged;
+            Languages.CollectionChanged += OnLanguagesCollectionChanged;
 
             foreach (var pack in project.Packs)
             {
@@ -29,6 +34,7 @@ namespace DialogMaker.Editor
             }
 
             UpdateStructure();
+            UpdateDefaultLanguage();
         }
 
         ~ProjectController()
@@ -48,17 +54,50 @@ namespace DialogMaker.Editor
                 }
             }
         }
+        public DialogProject Project { get; }
         public ReferenceReadOnlyList<ProjectItem> Structure { get; }
-        public IList<DialogProjectLanguage> Languages { get; }
+        public ObservableCollection<ProjectLanguage> Languages { get; } = [];
         public string Name
         {
-            get => _project.Name;
-            set => _project.Name = value;
+            get => Project.Name;
+            set => Project.Name = value;
+        }
+        public ProjectLanguage? DefaultLanguage
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    IsDefaultLanguageSetted = value != null;
+
+                    if (Project.DefaultLanguage != value?.Language)
+                    {
+                        Project.DefaultLanguage = value?.Language;
+                    }
+
+                    InvokePropertyChanged(nameof(DefaultLanguage));
+                }
+            }
+        }
+        public bool IsDefaultLanguageSetted
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    InvokePropertyChanged(nameof(IsDefaultLanguageSetted));
+                }
+            }
         }
         public ICommand CreatePackCommand { get; }
+        public ICommand CreateLanguageCommand { get; }
 
-        private readonly CollectionSynchronizer2<DialogProjectLanguage> _languages;
-        private readonly DialogProject _project;
+        private readonly ProjectLanguageConverter _languageConverter;
+        private readonly CollectionSynchronizer<DialogProjectLanguage, ProjectLanguage> _languages;
         private readonly ObservableList<ProjectItem> _structure;
         private bool _isDisposed;
 
@@ -68,7 +107,7 @@ namespace DialogMaker.Editor
         {
             try
             {
-                _project.Save();
+                Project.Save();
             }
             catch (Exception error)
             {
@@ -85,19 +124,25 @@ namespace DialogMaker.Editor
 
             IsDisposed = true;
 
-            _project.PropertyChanged -= OnProjectPropertyChanged;
-            _project.PacksChanged -= OnProjectPacksChanged;
+            Project.PropertyChanged -= OnProjectPropertyChanged;
+            Project.PacksChanged -= OnProjectPacksChanged;
+            Languages.CollectionChanged -= OnLanguagesCollectionChanged;
 
-            foreach (var pack in _project.Packs)
+            foreach (var pack in Project.Packs)
             {
                 pack.DialogsChanged -= OnPackDialogsChanged;
             }
+
+            _languages.Dispose();
+            _languageConverter.Dispose();
+
+            GC.SuppressFinalize(this);
         }
         public void UpdateStructure()
         {
             _structure.Clear();
 
-            foreach (var pack in _project.Packs)
+            foreach (var pack in Project.Packs)
             {
                 DialogPackContextMenu menu = new(pack);
                 ProjectItem packItem = new()
@@ -122,6 +167,20 @@ namespace DialogMaker.Editor
             }
         }
 
+        private void UpdateDefaultLanguage()
+        {
+            foreach (var language in Languages)
+            {
+                if (Project.DefaultLanguage == language.Language)
+                {
+                    DefaultLanguage = language;
+                    return;
+                }
+            }
+
+            DefaultLanguage = null;
+        }
+
         #endregion
 
         #region Команды
@@ -135,7 +194,7 @@ namespace DialogMaker.Editor
                 return;
             }
 
-            Try(() => _project.CreatePack(name, name));
+            Try(() => Project.CreatePack(name, name));
 
             UpdateStructure();
             Save();
@@ -149,6 +208,11 @@ namespace DialogMaker.Editor
         {
             Save();
             InvokePropertyChanged(e.PropertyName != null ? e.PropertyName : string.Empty);
+
+            if (e.PropertyName == nameof(DefaultLanguage))
+            {
+                UpdateDefaultLanguage();
+            }
         }
 
         private void OnProjectPacksChanged(object? sender, ItemActionEventArgs<DialogProjectPack> e)
@@ -168,6 +232,10 @@ namespace DialogMaker.Editor
         private void OnPackDialogsChanged(object? sender, ItemActionEventArgs<DialogProjectDialog> e)
         {
             UpdateStructure();
+            Save();
+        }
+        private void OnLanguagesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
             Save();
         }
 

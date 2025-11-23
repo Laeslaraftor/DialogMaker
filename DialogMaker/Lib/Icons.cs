@@ -25,7 +25,7 @@ namespace DialogMaker.Lib
         public const string Paste = "\uE77F";
         public const string Edit = "\uE70F";
         public const string Create = "\uECC8";
-
+        public const string Language = "\uF2B7";
         public static FontFamily? Font
         {
             get
