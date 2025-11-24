@@ -7,38 +7,18 @@ using System.Linq;
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectPack : ObservableObject
+    public class DialogProjectPack : ObservableObject, IProjectResourcesOwner
     {
         public DialogProjectPack(DialogProject project, string id)
+            : this(project, id, true)
         {
-            Project = project;
-            Id = id;
-            Folder = Path.Combine(project.ProjectPath, id);
-            _resources = new();
-            _dialogs = new();
-            Resources = new(_resources);
-            Dialogs = new(_dialogs);
-
-            FileExtensions.CreateDirectory(Folder);
         }
         private DialogProjectPack(DialogProject project, DialogProjectPackSavedState savedState)
-            : this(project, savedState.Id)
+            : this(project, savedState.Id, false)
         {
             Name = savedState.Name;
             string dialogsPath = Path.Combine(Folder, DialogProjectDialog.DialogsFolder);
 
-            foreach (var resource in savedState.Resources)
-            {
-                try
-                {
-                    var projectResource = DialogProjectResources.Open(this, resource);
-                    _resources.Add(projectResource);
-                }
-                catch (Exception error)
-                {
-                    Debug.WriteLine(error);
-                }
-            }
             foreach (var dialog in savedState.Dialogs)
             {
                 try
@@ -52,6 +32,25 @@ namespace DialogMaker.Core.Editor
                     Debug.WriteLine(error);
                 }
             }
+        }
+        private DialogProjectPack(DialogProject project, string id, bool createResources)
+        {
+            Project = project;
+            Id = id;
+            Folder = Path.Combine(project.ProjectPath, id);
+            _dialogs = new();
+            Dialogs = new(_dialogs);
+
+            if (createResources)
+            {
+                Resources = new(this);
+            }
+            else
+            {
+                Resources = DialogProjectResources.OpenOrCreate(this);
+            }
+
+            FileExtensions.CreateDirectory(Folder);
         }
 
         public event EventHandler<ItemActionEventArgs<DialogProjectDialog>>? DialogsChanged;
@@ -72,20 +71,17 @@ namespace DialogMaker.Core.Editor
             }
         }
         public ReferenceReadOnlyList<DialogProjectDialog> Dialogs { get; }
-        public ReferenceReadOnlyList<DialogProjectResources> Resources { get; }
+        public DialogProjectResources Resources { get; }
 
         private readonly ObservableList<DialogProjectDialog> _dialogs;
-        private readonly ObservableList<DialogProjectResources> _resources;
         private string _name = string.Empty;
 
         #region Управление
 
         public void Save()
         {
-            foreach (var resource in Resources)
-            {
-                resource.Save();
-            }
+            Resources.Save();
+
             foreach (var dialog in _dialogs)
             {
                 dialog.Save(); 
@@ -95,8 +91,7 @@ namespace DialogMaker.Core.Editor
             {
                 Id = Id,
                 Name = Name,
-                Dialogs = _dialogs.Select(d => d.Id).ToArray(),
-                Resources = _resources.Select(r => r.Id).ToArray()
+                Dialogs = _dialogs.Select(d => d.Id).ToArray()
             };
 
             string filePath = Path.Combine(Folder, FileName);
@@ -107,14 +102,6 @@ namespace DialogMaker.Core.Editor
         public bool TryGetDialog(string id, [NotNullWhen(true)] out DialogProjectDialog? result)
         {
             return _dialogs.TryGetValue(d => d.Id == id, out result);
-        }
-        public bool TryGetResources(DialogProjectLanguage language, [NotNullWhen(true)] out DialogProjectResources? result)
-        {
-            return _resources.TryGetValue(r => r.Language == language, out result);
-        }
-        public bool TryGetResources(string id, [NotNullWhen(true)] out DialogProjectResources? result)
-        {
-            return _resources.TryGetValue(r => r.Id == id, out result);
         }
 
         public DialogProjectDialog CreateDialog(string id, string name)
@@ -144,37 +131,6 @@ namespace DialogMaker.Core.Editor
             }
 
             return false;
-        }
-
-        public DialogProjectResources CreateResources(string id, DialogProjectLanguage language)
-        {
-            if (TryGetResources(language, out _))
-            {
-                throw new ArgumentException($"Невозможно создать ресурсы для языка {language}, так как ресурсы для этого языка уже существуют", nameof(language));
-            }
-            if (TryGetResources(id, out _))
-            {
-                throw new ArgumentException($"Невозможно создать ресурсы с идентификатором {id}, так как ресурсы с таким идентификатором уже существуют", nameof(language));
-            }
-
-
-            DialogProjectResources resources = new(this, id)
-            {
-                Language = language
-            };
-
-            if (!Directory.Exists(resources.Folder))
-            {
-                Directory.CreateDirectory(resources.Folder);
-            }
-
-            _resources.Add(resources);
-
-            return resources;
-        }
-        public bool RemoveResource(DialogProjectResources resources)
-        {
-            return _resources.Remove(resources);
         }
 
         #endregion

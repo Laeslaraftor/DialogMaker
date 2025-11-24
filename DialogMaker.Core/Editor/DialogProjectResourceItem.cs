@@ -6,39 +6,64 @@ namespace DialogMaker.Core.Editor
 {
     public class DialogProjectResourceItem : ObservableObject, ISavable
     {
-        public DialogProjectResourceItem(string filePath)
-            : this(GetResourceType(filePath), filePath)
+        public DialogProjectResourceItem(DialogProjectResources resources, string filePath)
+            : this(resources, GetResourceType(filePath), filePath)
         {
         }
-        public DialogProjectResourceItem(DialogResourceType? type, string filePath)
+        public DialogProjectResourceItem(DialogProjectResources resources, DialogResourceType? type, string filePath)
+            : this(resources, Guid.NewGuid(), type, filePath)
         {
+        }
+        public DialogProjectResourceItem(DialogProjectResources resources, DialogProjectResourceItemSavedState savedState)
+            : this(resources, Guid.Parse(savedState.ProjectId), savedState.ResourceType, Path.Combine(resources.Folder, savedState.FileName))
+        {
+            _id = savedState.Id;
+        }
+        public DialogProjectResourceItem(DialogProjectResources resources, Guid id, DialogResourceType? type, string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                throw new ArgumentException($"Файл \"{filePath}\" не найден", nameof(filePath));
+            }
             if (type == null)
             {
-                ThrowNotSupportedException($"Неподдерживаемый формат файла \"{filePath}\"");
+                ThrowNotSupportedException(filePath);
             }
 
-            Id = Guid.NewGuid();
+            filePath = filePath.Replace("/", @"\");
+            string fileName = filePath.GetFileName(false);
+            string expectedPath = Path.Combine(resources.Folder, fileName);
+
+            if (fileName != expectedPath)
+            {
+                throw new ArgumentException($"Неверный путь к файлу", nameof(filePath));
+            }
+
+            Resources = resources;
+            ProjectId = id;
             FilePath = filePath;
+            FileName = fileName;
             Type = type.GetValueOrDefault();
             _name = filePath.GetFileName();
         }
-        public DialogProjectResourceItem(DialogProjectResources resources, DialogProjectResourceItemSavedState savedState)
-        {
-            Id = Guid.Parse(savedState.Id);
-            FilePath = Path.Combine(resources.Folder, savedState.FileName);
 
-            if (!File.Exists(FilePath))
-            {
-                throw new ArgumentException($"Файл {FilePath} ресурса {savedState.Name} не найден.");
-            }
-         
-            Type = savedState.ResourceType;
-            _name = savedState.Name;
-        }
-
-        public Guid Id { get; }
+        public DialogProjectResources Resources { get; }
+        public Guid ProjectId { get; }
         public string FilePath { get; }
+        public string FileName { get; }
         public DialogResourceType Type { get; }
+        public string Id
+        {
+            get => _id;
+            set
+            {
+                if (_id != value)
+                {
+                    _id = value;
+                    InvokePropertyChanged(nameof(Id));
+                }
+            }
+        }
         public string Name
         {
             get => _name;
@@ -52,6 +77,7 @@ namespace DialogMaker.Core.Editor
             }
         }
 
+        private string _id = string.Empty;
         private string _name;
 
         #region Управление
@@ -60,11 +86,17 @@ namespace DialogMaker.Core.Editor
         {
             return new DialogProjectResourceItemSavedState
             {
-                Id = Id.ToString(),
-                FileName = FilePath.GetFileName(false),
-                Name = Name,
+                ProjectId = ProjectId.ToString(),
+                Id = Id?.Trim() ?? string.Empty,
+                FileName = FileName,
+                Name = Name?.Trim() ?? string.Empty,
                 ResourceType = Type
             };
+        }
+
+        public override string ToString()
+        {
+            return $"[Ресурс {Id}:{Type}] {Name}";
         }
 
         #endregion

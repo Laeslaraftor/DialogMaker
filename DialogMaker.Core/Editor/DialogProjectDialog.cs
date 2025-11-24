@@ -7,20 +7,14 @@ using System.Linq;
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectDialog : ObservableObject
+    public class DialogProjectDialog : ObservableObject, IProjectResourcesOwner
     {
         public DialogProjectDialog(DialogProjectPack pack, string id)
+            : this(pack, id, true)
         {
-            Pack = pack;
-            Id = id;
-            Folder = Path.Combine(pack.Folder, DialogsFolder);
-            _nodes = new();
-            _characters = new();
-            Nodes = new(_nodes);
-            Characters = new(_characters);
         }
         public DialogProjectDialog(DialogProjectPack pack, DialogProjectDialogSavedState savedState)
-            : this(pack, savedState.Id)
+            : this(pack, savedState.Id, false)
         {
             Name = savedState.Name;
 
@@ -41,7 +35,27 @@ namespace DialogMaker.Core.Editor
                 }
             }
         }
+        private DialogProjectDialog(DialogProjectPack pack, string id, bool createResources)
+        {
+            Pack = pack;
+            Id = id;
+            Folder = Path.Combine(pack.Folder, DialogsFolder);
+            _nodes = new();
+            _characters = new();
+            Nodes = new(_nodes);
+            Characters = new(_characters);
 
+            if (createResources)
+            {
+                Resources = new(this);
+            }
+            else
+            {
+                Resources = DialogProjectResources.OpenOrCreate(this);
+            }
+        }
+
+        public DialogProject Project => Pack.Project;
         public DialogProjectPack Pack { get; }
         public string Folder { get; }
         public string Id { get; }
@@ -59,6 +73,7 @@ namespace DialogMaker.Core.Editor
         }
         public ReferenceReadOnlyList<DialogProjectDialogNode> Nodes { get; }
         public ReferenceReadOnlyList<DialogProjectCharacter> Characters { get; }
+        public DialogProjectResources Resources { get; }
 
         private readonly ObservableList<DialogProjectDialogNode> _nodes;
         private readonly ObservableList<DialogProjectCharacter> _characters;
@@ -68,6 +83,8 @@ namespace DialogMaker.Core.Editor
 
         public void Save()
         {
+            Resources.Save();
+
             DialogProjectDialogSavedState savedState = new()
             {
                 Id = Id,

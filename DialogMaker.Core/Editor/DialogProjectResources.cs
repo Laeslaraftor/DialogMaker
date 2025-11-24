@@ -4,34 +4,26 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 
 namespace DialogMaker.Core.Editor
 {
     public class DialogProjectResources : ObservableObject
     {
-        public DialogProjectResources(DialogProjectPack pack, string id)
+        public DialogProjectResources(IProjectResourcesOwner owner)
         {
-            Id = id;
-            Pack = pack;
-            MainFolder = Path.Combine(pack.Folder, ResourcesFolder);
-            Folder = Path.Combine(MainFolder, id);
+            Owner = owner;
+            Folder = Path.Combine(owner.Folder, ResourcesFolder);
+            Replicas = new();
 
-            _replicas = new();
             _items = new();
-
-            Replicas = new(_replicas);
             Items = new(_items);
 
             FileExtensions.CreateDirectory(Folder);
         }
-        public DialogProjectResources(DialogProjectPack pack, DialogProjectResourcesSavedState savedState)
-            : this(pack, savedState.Id)
+        public DialogProjectResources(IProjectResourcesOwner owner, DialogProjectResourcesSavedState savedState)
+            : this(owner)
         {
-            if (pack.Project.TryGetLanguage(savedState.Language, out var language))
-            {
-                Language = language;
-            }
-
             foreach (var item in savedState.Items)
             {
                 try
@@ -47,7 +39,7 @@ namespace DialogMaker.Core.Editor
             {
                 try
                 {
-                    _replicas.Add(new(this, replica));
+                    Replicas.Add(new(this, replica));
                 }
                 catch (Exception error)
                 {
@@ -56,39 +48,12 @@ namespace DialogMaker.Core.Editor
             }
         }
 
-        public DialogProjectPack Pack { get; }
-        public string Id { get; }
-        public string MainFolder { get; }
+        public IProjectResourcesOwner Owner { get; }
         public string Folder { get; }
-        public DialogProjectLanguage? Language
-        {
-            get => _language;
-            set
-            {
-                if (_language != value)
-                {
-                    if (value != null)
-                    {
-                        foreach (var resources in Pack.Resources)
-                        {
-                            if (resources.Language == value)
-                            {
-                                throw new ArgumentException("Невозможно задать язык, так как ресурсы с таким языком уже существуют", nameof(value));
-                            }
-                        }
-                    }
-
-                    _language = value;
-                    InvokePropertyChanged(nameof(Language));
-                }
-            }
-        }
-        public ReferenceReadOnlyList<DialogProjectReplica> Replicas { get; }
+        public EditableCollection<DialogProjectReplica> Replicas { get; }
         public ReferenceReadOnlyList<DialogProjectResourceItem> Items { get; }
 
-        private readonly ObservableList<DialogProjectReplica> _replicas;
         private readonly ObservableList<DialogProjectResourceItem> _items;
-        private DialogProjectLanguage? _language;
 
         #region Управление
 
@@ -99,32 +64,24 @@ namespace DialogMaker.Core.Editor
                 Directory.CreateDirectory(Folder);
             }
 
-            List<DialogProjectReplicaSavedState> replicas = new(_replicas.Count);
-            List<DialogProjectResourceItemSavedState> items = new(_items.Count);
-
-            SavedState.Save(replicas, _replicas);
-            SavedState.Save(items, _items);
-
             DialogProjectResourcesSavedState savedState = new()
             {
-                Id = Id,
-                Language = Language != null ? Language.Id : string.Empty,
-                Replicas = replicas.ToArray(),
-                Items = items.ToArray()
+                Replicas = Replicas.Select(r => (DialogProjectReplicaSavedState)r.Save()).ToArray(),
+                Items = Items.Select(i => (DialogProjectResourceItemSavedState)i.Save()).ToArray()
             };
 
-            string filePath = Path.Combine(MainFolder, $"{Id}.{JsonData.FileExtension}");
+            string filePath = Path.Combine(Folder, ResourcesFileName);
 
             savedState.Save(filePath);
         }
 
         public bool TryGetReplica(Guid id, [NotNullWhen(true)] out DialogProjectReplica? result)
         {
-            return _replicas.TryGetValue(r => r.Id == id, out result);
+            return Replicas.TryGetValue(r => r.ProjectId == id, out result);
         }
         public bool TryGetItem(Guid id, [NotNullWhen(true)] out DialogProjectResourceItem? result)
         {
-            return _items.TryGetValue(i => i.Id == id, out result);
+            return _items.TryGetValue(i => i.ProjectId == id, out result);
         }
 
         public DialogProjectResourceItem AddItem(string filePath, bool overwrite = false)
@@ -145,7 +102,7 @@ namespace DialogMaker.Core.Editor
 
             File.Copy(filePath, newFilePath, true);
 
-            DialogProjectResourceItem item = new(type, newFilePath);
+            DialogProjectResourceItem item = new(this, type, newFilePath);
 
             return item;
         }
@@ -157,13 +114,13 @@ namespace DialogMaker.Core.Editor
         public DialogProjectReplica CreateReplica()
         {
             DialogProjectReplica replica = new(this);
-            _replicas.Add(replica);
+            Replicas.Add(replica);
 
             return replica;
         }
         public bool RemoveReplica(DialogProjectReplica replica)
         {
-            return _replicas.Remove(replica);
+            return Replicas.Remove(replica);
         }
 
         #endregion
@@ -171,13 +128,27 @@ namespace DialogMaker.Core.Editor
         #region Статика
 
         public const string ResourcesFolder = "Resources";
+        public const string ResourcesFileName = $"Resources.{JsonData.FileExtension}";
 
-        public static DialogProjectResources Open(DialogProjectPack pack, string resourcesId)
+        public static DialogProjectResources Open(IProjectResourcesOwner owner)
         {
-            string filePath = Path.Combine(pack.Folder, ResourcesFolder, $"{resourcesId}.{JsonData.FileExtension}");
+            string filePath = Path.Combine(owner.Folder, ResourcesFolder, ResourcesFileName);
             var savedState = SavedState.Restore<DialogProjectResourcesSavedState>(filePath);
 
-            return new(pack, savedState);
+            return new(owner, savedState);
+        }
+        public static DialogProjectResources OpenOrCreate(IProjectResourcesOwner owner)
+        {
+            try
+            {
+                return Open(owner);
+            }
+            catch (Exception error)
+            {
+                Debug.WriteLine(error);
+            }
+
+            return new(owner);
         }
 
         #endregion

@@ -1,25 +1,19 @@
 ﻿using Acly;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProject : ObservableObject
+    public class DialogProject : ObservableObject, IProjectResourcesOwner, IDisposable
     {
         public DialogProject(string projectPath, string id)
+            : this(projectPath, id, true)
         {
-            Id = id;
-            ProjectPath = projectPath;
-            Languages = new EditableCollection<DialogProjectLanguage>();
-
-            _packs = new();
-            Packs = new(_packs);
         }
         public DialogProject(string projectPath, DialogProjectSavedState savedState) 
-            : this(projectPath, savedState.Id)
+            : this(projectPath, savedState.Id, false)
         {
             foreach (var pack in savedState.Packs)
             {
@@ -46,6 +40,30 @@ namespace DialogMaker.Core.Editor
             {
                 _defaultLanguage = defaultLanguage;
             }
+        }
+        private DialogProject(string projectPath, string id, bool createResources)
+        {
+            Id = id;
+            ProjectPath = projectPath;
+
+            if (createResources)
+            {
+                Resources = new(this);
+            }
+            else
+            {
+                Resources = DialogProjectResources.OpenOrCreate(this);
+            }
+
+            _packs = new();
+            _languages = new();
+            Packs = new(_packs);
+
+            _languages.ItemChanged += OnLanguagesItemChanged;
+        }
+        ~DialogProject()
+        {
+            Dispose();
         }
 
         public event EventHandler<ItemActionEventArgs<DialogProjectPack>>? PacksChanged;
@@ -82,9 +100,14 @@ namespace DialogMaker.Core.Editor
             }
         }
         public ReferenceReadOnlyList<DialogProjectPack> Packs { get; }
-        public ObservableList<DialogProjectLanguage> Languages { get; }
+        public ObservableList<DialogProjectLanguage> Languages => _languages;
+        public DialogProjectResources Resources { get; }
+
+        DialogProject IProjectResourcesOwner.Project => this;
+        string IProjectResourcesOwner.Folder => ProjectPath;
 
         private readonly ObservableList<DialogProjectPack> _packs;
+        private readonly EditableCollection<DialogProjectLanguage> _languages;
         private string _name = string.Empty;
         private DialogProjectLanguage? _defaultLanguage;
 
@@ -92,6 +115,8 @@ namespace DialogMaker.Core.Editor
 
         public void Save()
         {
+            Resources.Save();
+
             foreach (var pack in _packs)
             {
                 pack.Save();
@@ -177,6 +202,24 @@ namespace DialogMaker.Core.Editor
         public bool RemoveLanguage(DialogProjectLanguage language)
         {
             return Languages.Remove(language);
+        }
+
+        public void Dispose()
+        {
+            _languages.ItemChanged -= OnLanguagesItemChanged;
+            GC.SuppressFinalize(this);
+        }
+
+        #endregion
+
+        #region События
+
+        private void OnLanguagesItemChanged(object sender, CollectionItemEventArgs<DialogProjectLanguage> e)
+        {
+            if (e.Action == CollectionItemAction.Remove && e.Item == DefaultLanguage)
+            {
+                DefaultLanguage = null;
+            }
         }
 
         #endregion

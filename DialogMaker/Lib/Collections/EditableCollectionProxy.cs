@@ -123,7 +123,7 @@ namespace DialogMaker.Lib
         }
         void IEditableCollectionView.Remove(object item)
         {
-            _list.Remove(item);
+            ((IEditableCollectionView)_list).Remove(item);
         }
 
         #endregion

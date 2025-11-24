@@ -1,104 +1,156 @@
-﻿using System;
+﻿using Acly;
+using System;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectReplica : ObservableObject, ISavable
+    public class DialogProjectReplica : ObservableObject, ISavable, IDisposable
     {
         public DialogProjectReplica(DialogProjectResources resources)
+            : this(resources, Guid.NewGuid())
         {
-            Resources = resources;
-            Id = Guid.NewGuid();
         }
         public DialogProjectReplica(DialogProjectResources resources, DialogProjectReplicaSavedState savedState)
+            : this(resources, Guid.Parse(savedState.ProjectId))
         {
             Resources = resources;
-            Id = Guid.Parse(savedState.Id);
-            Text = savedState.Text;
+            ProjectId = Guid.Parse(savedState.ProjectId);
+            _id = savedState.Id;
             
-            if (savedState.VoiceId != null && 
-                Guid.TryParse(savedState.VoiceId, out var voiceId) &&
-                Resources.TryGetItem(voiceId, out var voice))
+            if (savedState.Variants != null)
             {
-                Voice = voice;
+                foreach (var variantSavedState in savedState.Variants)
+                {
+                    try
+                    {
+                        Variants.Add(new(this, variantSavedState));
+                    }
+                    catch (Exception error)
+                    {
+                        Debug.WriteLine(error);
+                    } 
+                }
             }
         }
+        private DialogProjectReplica(DialogProjectResources resources, Guid projectId)
+        {
+            Resources = resources;
+            ProjectId = projectId;
+            Variants = new();
+            Variants.ItemChanged += OnVariantsItemChanged;
+        }
+        ~DialogProjectReplica()
+        {
+            Dispose();
+        }
 
-        public Guid Id { get; }
+        public Guid ProjectId { get; }
+        public string Id
+        {
+            get => _id;
+            set
+            {
+                if (_id != value)
+                {
+                    _id = value;
+                    InvokePropertyChanged(nameof(Id));
+                }
+            }
+        }
         public DialogProjectResources Resources { get; }
-        public string Text
-        {
-            get => _text;
-            set
-            {
-                if (_text != value)
-                {
-                    _text = value;
-                    InvokePropertyChanged(nameof(Text));
-                }
-            }
-        }
-        public Guid? VoiceId
-        {
-            get => _voice?.Id;
-            set
-            {
-                if (_voiceId != value)
-                {
-                    if (value != null && _voice != null && _voice.Id != value)
-                    {
-                        if (Resources.TryGetItem(value.Value, out var item))
-                        {
-                            _voiceId = value;
-                            Voice = item;
-                        }
-                        else
-                        {
-                            throw new ArgumentException($"Ресурс с идентификатором {value} не найден", nameof(value));
-                        }
-                    }
-                    else
-                    {
-                        _voiceId = value;
-                    }
+        public EditableCollection<DialogProjectReplicaVariant> Variants { get; }
 
-                    InvokePropertyChanged(nameof(VoiceId));
-                }
-            }
-        }
-        public DialogProjectResourceItem? Voice
-        {
-            get => _voice;
-            set
-            {
-                if (_voice != value)
-                {
-                    _voice = value;
-                    var id = value?.Id;
-
-                    if (_voiceId != id)
-                    {
-                        VoiceId = id;
-                    }
-
-                    InvokePropertyChanged(nameof(Voice));
-                }
-            }
-        }
-
-        private string _text = string.Empty;
-        private Guid? _voiceId;
-        public DialogProjectResourceItem? _voice;
+        private string _id = string.Empty;
 
         #region Управление
+
+        public bool TryGetVariant(DialogProjectLanguage language, [NotNullWhen(true)] out DialogProjectReplicaVariant? result)
+        {
+            return Variants.TryGetValue(l => l.Language == language, out result);
+        }
+
+        public DialogProjectReplicaVariant CreateVariant()
+        {
+            DialogProjectReplicaVariant result = new(this);
+            Variants.Add(result);
+
+            return result;
+        }
+        public bool Remove(DialogProjectReplicaVariant variant)
+        {
+            return Variants.Remove(variant);
+        }
 
         public ISavedState Save()
         {
             return new DialogProjectReplicaSavedState
             {
-                Id = Id.ToString(),
-                Text = Text,
-                VoiceId = _voiceId?.ToString()
+                ProjectId = ProjectId.ToString(),
+                Id = Id?.ToString() ?? string.Empty,
+                Variants = Variants.Select(v => (DialogProjectReplicaVariantSavedState)v.Save()).ToArray()
             };
+        }
+
+        public void Dispose()
+        {
+            Variants.ItemChanged -= OnVariantsItemChanged;
+            GC.SuppressFinalize(this);
+        }
+
+        public override string ToString()
+        {
+            string result = $"[{Id}]";
+
+            if (Variants.Count == 0)
+            {
+                return result;
+            }
+            if (Resources.Owner.Project.DefaultLanguage != null &&
+                TryGetVariant(Resources.Owner.Project.DefaultLanguage, out var variant))
+            {
+                return result + $" {variant.Text}";
+            }
+
+            return result + $" {Variants[0].Text}";
+        }
+
+        #endregion
+
+        #region События
+
+        private void OnVariantsItemChanged(object sender, CollectionItemEventArgs<DialogProjectReplicaVariant> e)
+        {
+            if (e.Action == CollectionItemAction.Add)
+            {
+                e.Item.PropertyChanged -= OnVariantPropertyChanged;
+                e.Item.PropertyChanged += OnVariantPropertyChanged;
+            }
+            else if (e.Action == CollectionItemAction.Remove)
+            {
+                e.Item.PropertyChanged -= OnVariantPropertyChanged;
+            }
+        }
+
+        private void OnVariantPropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (sender is not DialogProjectReplicaVariant variant || 
+                e.PropertyName != "Language" || 
+                variant.Language == null)
+            {
+                return;
+            }
+
+            foreach (var otherVariant in Variants)
+            {
+                if (otherVariant != variant && 
+                    otherVariant.Language == variant.Language)
+                {
+                    throw new ArgumentException("Невозможно задать язык, так как вариант для этого языка уже существует", "Language");
+                }
+            }
         }
 
         #endregion
