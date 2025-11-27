@@ -17,7 +17,7 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition MinWidth="200" MaxWidth="400" Width="0.4*"/>
             <ColumnDefinition/>
-            <ColumnDefinition MinWidth="300" MaxWidth="500" Width="0.4*"/>
+            <ColumnDefinition MinWidth="400" MaxWidth="500" Width="0.4*"/>
         </Grid.ColumnDefinitions>
         <Menu Grid.ColumnSpan="3">
             <MenuItem Header="Файл">
@@ -25,6 +25,8 @@
                           Command="{Binding CreateProjectCommand}"/>
                 <MenuItem Header="Открыть"
                           Command="{Binding OpenProjectCommand}"/>
+                <MenuItem Header="Сохранить"
+                          Command="{Binding Project.SaveCommand}"/>
                 <Separator/>
                 <MenuItem Header="Закрыть"
                           Command="{Binding CloseProjectCommand}"/>
@@ -58,9 +60,38 @@
                         <TextBlock Text="Глобальные ресурсы" />
                     </StackPanel>
                 </TabItem.Header>
-                <Grid>
-                    <TextBlock Margin="12" Text="World" />
-                </Grid>
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <Grid Margin="6,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Строки" FontSize="28"
+                                       FontWeight="Medium" Margin="0,8"/>
+                            <Button Content="Создать" Grid.Column="1"
+                                    Command="{Binding GlobalResources.CreateStringCommand}"/>
+                        </Grid>
+                        <ListView Grid.Row="1"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                  HorizontalContentAlignment="Stretch"
+                                  ItemsSource="{Binding GlobalResources.Strings}">
+                            <ListView.Template>
+                                <ControlTemplate>
+                                    <ItemsPresenter></ItemsPresenter>
+                                </ControlTemplate>
+                            </ListView.Template>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <lib:ReplicaView ProjectString="{Binding}"
+                                                     IsMinimized="{Binding IsMinimized}"
+                                                     ContextMenu="{Binding ContextMenu}"/>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </ScrollViewer>
             </TabItem>
             <TabItem IsSelected="True">
                 <TabItem.Header>

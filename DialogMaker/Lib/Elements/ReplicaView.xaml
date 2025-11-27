@@ -1,0 +1,64 @@
+﻿<UserControl x:Class="DialogMaker.Lib.Elements.ReplicaView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:DialogMaker.Lib.Elements"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid Margin="0,4">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="6"/>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Button FontFamily="{StaticResource SymbolThemeFontFamily}" 
+                Content="&#xE70D;" VerticalAlignment="Top"
+                Padding="6" Click="OnMinimizeButtonClicked"
+                RenderTransformOrigin="0.5,0.5">
+            <Button.RenderTransform>
+                <RotateTransform x:Name="_minimizeButtonRotation"/>
+            </Button.RenderTransform>
+        </Button>
+        <Border x:Name="_heightBorder"
+                Grid.Row="1" Grid.RowSpan="2" 
+                Width="2" Background="Gray" CornerRadius="2"
+                HorizontalAlignment="Center" Margin="0,6"/>
+        <local:EditableTextBlock x:Name="_idBlock" Grid.Column="2"
+                                 VerticalAlignment="Center" Text="{Binding Id}"
+                                 FontSize="16"/>
+        <Button x:Name="_addVariantButton"
+                FontFamily="{StaticResource SymbolThemeFontFamily}" 
+                Content="&#xE710;" VerticalAlignment="Top"
+                HorizontalAlignment="Right" Grid.Column="3"
+                Padding="6" ToolTip="Добавить вариант"/>
+        <TextBlock x:Name="_preview" Grid.Row="1" Grid.Column="2" 
+                   TextWrapping="Wrap" FontSize="18" FontWeight="Medium"
+                   Text="{Binding Text}" Margin="0,0,0,4"/>
+        <ListView x:Name="_variantsList" Margin="0,4,0,0"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                  HorizontalContentAlignment="Stretch"
+                  Grid.Column="2" Grid.Row="2" Grid.ColumnSpan="2">
+            <ListView.Template>
+                <ControlTemplate>
+                    <ItemsPresenter></ItemsPresenter>
+                </ControlTemplate>
+            </ListView.Template>
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <local:ReplicaVariantView Text="{Binding Text, Mode=TwoWay}"
+                                              ItemsSource="{Binding String.Project.Languages}"
+                                              SelectedIndex="{Binding LanguageIndex, Mode=TwoWay}"
+                                              Background="Transparent"
+                                              ContextMenu="{Binding ContextMenu}"/>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</UserControl>

@@ -1,5 +1,6 @@
 ﻿using Acly;
 using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -24,8 +25,9 @@ namespace DialogMaker.Core.Editor
                     var projectPack = DialogProjectPack.Open(this, packFolder);
                     _packs.Add(projectPack);
                 }
-                catch
+                catch (Exception error)
                 {
+                    Debug.WriteLine(error);
                 }
             }
 
@@ -40,8 +42,12 @@ namespace DialogMaker.Core.Editor
             {
                 _defaultLanguage = defaultLanguage;
             }
+
+            Resources = DialogProjectResources.OpenOrCreate(this);
         }
+#pragma warning disable CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.
         private DialogProject(string projectPath, string id, bool createResources)
+#pragma warning restore CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.
         {
             Id = id;
             ProjectPath = projectPath;
@@ -50,16 +56,12 @@ namespace DialogMaker.Core.Editor
             {
                 Resources = new(this);
             }
-            else
-            {
-                Resources = DialogProjectResources.OpenOrCreate(this);
-            }
 
             _packs = new();
-            _languages = new();
+            Languages = new();
             Packs = new(_packs);
 
-            _languages.ItemChanged += OnLanguagesItemChanged;
+            Languages.ItemChanged += OnLanguagesItemChanged;
         }
         ~DialogProject()
         {
@@ -100,14 +102,13 @@ namespace DialogMaker.Core.Editor
             }
         }
         public ReferenceReadOnlyList<DialogProjectPack> Packs { get; }
-        public ObservableList<DialogProjectLanguage> Languages => _languages;
+        public EditableCollection<DialogProjectLanguage> Languages { get; }
         public DialogProjectResources Resources { get; }
 
         DialogProject IProjectResourcesOwner.Project => this;
         string IProjectResourcesOwner.Folder => ProjectPath;
 
         private readonly ObservableList<DialogProjectPack> _packs;
-        private readonly EditableCollection<DialogProjectLanguage> _languages;
         private string _name = string.Empty;
         private DialogProjectLanguage? _defaultLanguage;
 
@@ -206,7 +207,7 @@ namespace DialogMaker.Core.Editor
 
         public void Dispose()
         {
-            _languages.ItemChanged -= OnLanguagesItemChanged;
+            Languages.ItemChanged -= OnLanguagesItemChanged;
             GC.SuppressFinalize(this);
         }
 

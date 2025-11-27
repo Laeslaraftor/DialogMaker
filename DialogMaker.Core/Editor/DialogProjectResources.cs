@@ -14,7 +14,7 @@ namespace DialogMaker.Core.Editor
         {
             Owner = owner;
             Folder = Path.Combine(owner.Folder, ResourcesFolder);
-            Replicas = new();
+            Strings = new();
 
             _items = new();
             Items = new(_items);
@@ -35,11 +35,11 @@ namespace DialogMaker.Core.Editor
                     Debug.WriteLine(error);
                 }
             }
-            foreach (var replica in savedState.Replicas)
+            foreach (var replica in savedState.Strings)
             {
                 try
                 {
-                    Replicas.Add(new(this, replica));
+                    Strings.Add(new(this, replica));
                 }
                 catch (Exception error)
                 {
@@ -50,7 +50,7 @@ namespace DialogMaker.Core.Editor
 
         public IProjectResourcesOwner Owner { get; }
         public string Folder { get; }
-        public EditableCollection<DialogProjectReplica> Replicas { get; }
+        public EditableCollection<DialogProjectString> Strings { get; }
         public ReferenceReadOnlyList<DialogProjectResourceItem> Items { get; }
 
         private readonly ObservableList<DialogProjectResourceItem> _items;
@@ -66,7 +66,7 @@ namespace DialogMaker.Core.Editor
 
             DialogProjectResourcesSavedState savedState = new()
             {
-                Replicas = Replicas.Select(r => (DialogProjectReplicaSavedState)r.Save()).ToArray(),
+                Strings = Strings.Select(r => (DialogProjectStringSavedState)r.Save()).ToArray(),
                 Items = Items.Select(i => (DialogProjectResourceItemSavedState)i.Save()).ToArray()
             };
 
@@ -75,9 +75,9 @@ namespace DialogMaker.Core.Editor
             savedState.Save(filePath);
         }
 
-        public bool TryGetReplica(Guid id, [NotNullWhen(true)] out DialogProjectReplica? result)
+        public bool TryGetString(Guid id, [NotNullWhen(true)] out DialogProjectString? result)
         {
-            return Replicas.TryGetValue(r => r.ProjectId == id, out result);
+            return Strings.TryGetValue(r => r.ProjectId == id, out result);
         }
         public bool TryGetItem(Guid id, [NotNullWhen(true)] out DialogProjectResourceItem? result)
         {
@@ -111,16 +111,16 @@ namespace DialogMaker.Core.Editor
             return _items.Remove(item); 
         }
 
-        public DialogProjectReplica CreateReplica()
+        public DialogProjectString CreateString()
         {
-            DialogProjectReplica replica = new(this);
-            Replicas.Add(replica);
+            DialogProjectString replica = new(this);
+            Strings.Add(replica);
 
             return replica;
         }
-        public bool RemoveReplica(DialogProjectReplica replica)
+        public bool RemoveString(DialogProjectString replica)
         {
-            return Replicas.Remove(replica);
+            return Strings.Remove(replica);
         }
 
         #endregion

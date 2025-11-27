@@ -2,13 +2,13 @@
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectReplicaVariant : ObservableObject, ISavable
+    public class DialogProjectStringVariant : ObservableObject, ISavable
     {
-        public DialogProjectReplicaVariant(DialogProjectReplica replica)
+        public DialogProjectStringVariant(DialogProjectString replica)
         {
-            Replica = replica;
+            String = replica;
         }
-        public DialogProjectReplicaVariant(DialogProjectReplica replica, DialogProjectReplicaVariantSavedState savedState)
+        public DialogProjectStringVariant(DialogProjectString replica, DialogProjectStringVariantSavedState savedState)
             : this(replica)
         {
             Text = savedState.Text;
@@ -21,7 +21,7 @@ namespace DialogMaker.Core.Editor
             }
         }
 
-        public DialogProjectReplica Replica { get; }
+        public DialogProjectString String { get; }
         public DialogProjectLanguage? Language
         {
             get => _language;
@@ -67,7 +67,7 @@ namespace DialogMaker.Core.Editor
 
         public ISavedState Save()
         {
-            return new DialogProjectReplicaVariantSavedState()
+            return new DialogProjectStringVariantSavedState()
             {
                 LanguageId = Language?.ProjectId.ToString(),
                 Text = Text?.Trim() ?? string.Empty,

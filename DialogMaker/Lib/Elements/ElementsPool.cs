@@ -6,6 +6,10 @@
             : this(() => Activator.CreateInstance<T>())
         {
         }
+        ~ElementsPool()
+        {
+            Dispose();
+        }
 
         private readonly Queue<T> _freeElements = new();
         private readonly List<T> _usedElements = [];

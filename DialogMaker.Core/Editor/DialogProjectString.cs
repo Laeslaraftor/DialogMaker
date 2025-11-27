@@ -7,13 +7,13 @@ using System.Linq;
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectReplica : ObservableObject, ISavable, IDisposable
+    public class DialogProjectString : ObservableObject, ISavable, IDisposable
     {
-        public DialogProjectReplica(DialogProjectResources resources)
+        public DialogProjectString(DialogProjectResources resources)
             : this(resources, Guid.NewGuid())
         {
         }
-        public DialogProjectReplica(DialogProjectResources resources, DialogProjectReplicaSavedState savedState)
+        public DialogProjectString(DialogProjectResources resources, DialogProjectStringSavedState savedState)
             : this(resources, Guid.Parse(savedState.ProjectId))
         {
             Resources = resources;
@@ -35,14 +35,14 @@ namespace DialogMaker.Core.Editor
                 }
             }
         }
-        private DialogProjectReplica(DialogProjectResources resources, Guid projectId)
+        private DialogProjectString(DialogProjectResources resources, Guid projectId)
         {
             Resources = resources;
             ProjectId = projectId;
             Variants = new();
             Variants.ItemChanged += OnVariantsItemChanged;
         }
-        ~DialogProjectReplica()
+        ~DialogProjectString()
         {
             Dispose();
         }
@@ -53,6 +53,13 @@ namespace DialogMaker.Core.Editor
             get => _id;
             set
             {
+                value = value.Trim();
+
+                if (string.IsNullOrEmpty(value))
+                {
+                    value = DefaultId;
+                }
+
                 if (_id != value)
                 {
                     _id = value;
@@ -61,36 +68,36 @@ namespace DialogMaker.Core.Editor
             }
         }
         public DialogProjectResources Resources { get; }
-        public EditableCollection<DialogProjectReplicaVariant> Variants { get; }
+        public EditableCollection<DialogProjectStringVariant> Variants { get; }
 
-        private string _id = string.Empty;
+        private string _id = DefaultId;
 
         #region Управление
 
-        public bool TryGetVariant(DialogProjectLanguage language, [NotNullWhen(true)] out DialogProjectReplicaVariant? result)
+        public bool TryGetVariant(DialogProjectLanguage language, [NotNullWhen(true)] out DialogProjectStringVariant? result)
         {
             return Variants.TryGetValue(l => l.Language == language, out result);
         }
 
-        public DialogProjectReplicaVariant CreateVariant()
+        public DialogProjectStringVariant CreateVariant()
         {
-            DialogProjectReplicaVariant result = new(this);
+            DialogProjectStringVariant result = new(this);
             Variants.Add(result);
 
             return result;
         }
-        public bool Remove(DialogProjectReplicaVariant variant)
+        public bool Remove(DialogProjectStringVariant variant)
         {
             return Variants.Remove(variant);
         }
 
         public ISavedState Save()
         {
-            return new DialogProjectReplicaSavedState
+            return new DialogProjectStringSavedState
             {
                 ProjectId = ProjectId.ToString(),
                 Id = Id?.ToString() ?? string.Empty,
-                Variants = Variants.Select(v => (DialogProjectReplicaVariantSavedState)v.Save()).ToArray()
+                Variants = Variants.Select(v => (DialogProjectStringVariantSavedState)v.Save()).ToArray()
             };
         }
 
@@ -121,7 +128,7 @@ namespace DialogMaker.Core.Editor
 
         #region События
 
-        private void OnVariantsItemChanged(object sender, CollectionItemEventArgs<DialogProjectReplicaVariant> e)
+        private void OnVariantsItemChanged(object sender, CollectionItemEventArgs<DialogProjectStringVariant> e)
         {
             if (e.Action == CollectionItemAction.Add)
             {
@@ -136,7 +143,7 @@ namespace DialogMaker.Core.Editor
 
         private void OnVariantPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (sender is not DialogProjectReplicaVariant variant || 
+            if (sender is not DialogProjectStringVariant variant || 
                 e.PropertyName != "Language" || 
                 variant.Language == null)
             {
@@ -152,6 +159,12 @@ namespace DialogMaker.Core.Editor
                 }
             }
         }
+
+        #endregion
+
+        #region Константы
+
+        public const string DefaultId = "Идентификатор строки";
 
         #endregion
     }

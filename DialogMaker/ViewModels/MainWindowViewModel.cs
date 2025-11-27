@@ -129,6 +129,18 @@ namespace DialogMaker.ViewModels
                 }
             }
         }
+        public ProjectResources? GlobalResources
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    InvokePropertyChanged(nameof(GlobalResources));
+                }
+            }
+        }
 
         #region Управление
 

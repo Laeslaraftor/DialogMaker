@@ -1,0 +1,21 @@
+﻿<UserControl x:Class="DialogMaker.Lib.Elements.ReplicaVariantView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:DialogMaker.Lib.Elements"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid Margin="0,10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" MinWidth="100"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <ComboBox x:Name="_comboBox" VerticalAlignment="Top"
+                  SelectionChanged="OnComboBoxSelectionChanged" 
+                  DisplayMemberPath="Name" ContextMenu="{Binding Source=Self, Path=Parent.ContextMenu}"/>
+        <TextBox x:Name="_textBox" Grid.Column="1" Margin="10,0,0,0"
+                 VerticalAlignment="Top" TextWrapping="Wrap"
+                 AcceptsReturn="True" TextChanged="OnTextBoxTextChanged"/>
+    </Grid>
+</UserControl>

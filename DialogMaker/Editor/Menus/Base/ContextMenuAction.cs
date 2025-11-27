@@ -10,6 +10,10 @@ namespace DialogMaker.Editor.Menus
             : this(name, execute, null, icon)
         {
         }
+        public ContextMenuAction(string name, ICommand command, string? icon = null)
+            : this(name, command.CanExecute, command.Execute, icon)
+        {
+        }
         public ContextMenuAction(string name, Func<object?, bool>? canExecute, Action<object?> execute, string? icon = null)
             : this(name, execute, canExecute, icon)
         {
@@ -25,9 +29,26 @@ namespace DialogMaker.Editor.Menus
         public event EventHandler? CanExecuteChanged;
 
         public string? Icon { get; }
-        public string Name { get; }
+        public string Name
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+
+                    foreach (var item in _items)
+                    {
+                        item.Header = value;
+                    }
+                }
+            }
+        }
         public Action<object?> Execute { get; }
         public Func<object?, bool>? CanExecute { get; }
+
+        private readonly List<MenuItem> _items = [];
 
         #region Управление
 
@@ -56,6 +77,7 @@ namespace DialogMaker.Editor.Menus
             }
 
             menu.Add(item);
+            _items.Add(item);
         }
 
         bool ICommand.CanExecute(object? parameter)

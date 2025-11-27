@@ -2,7 +2,7 @@
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectReplicaVariantSavedState : JsonData
+    public class DialogProjectStringVariantSavedState : JsonData
     {
         [JsonProperty("language")]
         public string? LanguageId { get; set; }

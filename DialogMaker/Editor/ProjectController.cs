@@ -20,13 +20,22 @@ namespace DialogMaker.Editor
             Structure = new(_structure);
             CreatePackCommand = new RelayCommand(ExecuteCreatePack);
             CreateLanguageCommand = new RelayCommand(p => project.CreateLanguage());
+            SaveCommand = new RelayCommand(ExecuteSave);
+            StringConverter = new(this);
+            Languages = [];
 
             _languageConverter = new(this);
+            _languageNameConverter = new(this);
             _languages = new(project.Languages, Languages, _languageConverter);
+            _languagesName = new(Languages, new ObservableList<string>(), _languageNameConverter);
+            LanguagesName = new((ObservableList<string>)_languagesName.SecondCollection);
 
             project.PropertyChanged += OnProjectPropertyChanged;
             project.PacksChanged += OnProjectPacksChanged;
+            project.Languages.ItemChanged += OnProjectLanguagesItemChanged;
             Languages.CollectionChanged += OnLanguagesCollectionChanged;
+
+            Resources = new(this, project.Resources);
 
             foreach (var pack in project.Packs)
             {
@@ -36,7 +45,6 @@ namespace DialogMaker.Editor
             UpdateStructure();
             UpdateDefaultLanguage();
         }
-
         ~ProjectController()
         {
             Dispose();
@@ -56,7 +64,9 @@ namespace DialogMaker.Editor
         }
         public DialogProject Project { get; }
         public ReferenceReadOnlyList<ProjectItem> Structure { get; }
-        public ObservableCollection<ProjectLanguage> Languages { get; } = [];
+        public ObservableCollection<ProjectLanguage> Languages { get; }
+        public ReferenceReadOnlyList<string> LanguagesName { get; }
+        public ProjectResources Resources { get; }
         public string Name
         {
             get => Project.Name;
@@ -93,11 +103,15 @@ namespace DialogMaker.Editor
                 }
             }
         }
+        public ProjectStringConverter StringConverter { get; }
         public ICommand CreatePackCommand { get; }
         public ICommand CreateLanguageCommand { get; }
+        public ICommand SaveCommand { get; }
 
         private readonly ProjectLanguageConverter _languageConverter;
+        private readonly ProjectLanguageNameConverter _languageNameConverter;
         private readonly CollectionSynchronizer<DialogProjectLanguage, ProjectLanguage> _languages;
+        private readonly CollectionSynchronizer<ProjectLanguage, string> _languagesName;
         private readonly ObservableList<ProjectItem> _structure;
         private bool _isDisposed;
 
@@ -127,13 +141,16 @@ namespace DialogMaker.Editor
             Project.PropertyChanged -= OnProjectPropertyChanged;
             Project.PacksChanged -= OnProjectPacksChanged;
             Languages.CollectionChanged -= OnLanguagesCollectionChanged;
+            Project.Languages.ItemChanged -= OnProjectLanguagesItemChanged;
 
             foreach (var pack in Project.Packs)
             {
                 pack.DialogsChanged -= OnPackDialogsChanged;
             }
 
+            Resources.Dispose();
             _languages.Dispose();
+            _languagesName.Dispose();
             _languageConverter.Dispose();
 
             GC.SuppressFinalize(this);
@@ -200,6 +217,11 @@ namespace DialogMaker.Editor
             Save();
         }
 
+        private void ExecuteSave(object? parameter)
+        {
+            Save();
+        }
+
         #endregion
 
         #region События
@@ -215,6 +237,18 @@ namespace DialogMaker.Editor
             }
         }
 
+        private void OnProjectLanguagesItemChanged(object? sender, CollectionItemEventArgs<DialogProjectLanguage> e)
+        {
+            if (e.Action == CollectionItemAction.Add)
+            {
+                e.Item.PropertyChanged -= OnLanguagePropertyChanged;
+                e.Item.PropertyChanged += OnLanguagePropertyChanged;
+            }
+            else if (e.Action == CollectionItemAction.Remove)
+            {
+                e.Item.PropertyChanged -= OnLanguagePropertyChanged;
+            }
+        }
         private void OnProjectPacksChanged(object? sender, ItemActionEventArgs<DialogProjectPack> e)
         {
             if (e.Action == ItemAction.Add)
@@ -237,6 +271,17 @@ namespace DialogMaker.Editor
         private void OnLanguagesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             Save();
+        }
+        private void OnLanguagePropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            try
+            {
+                _languagesName.SyncFirstToSecond();
+            }
+            catch (Exception error)
+            {
+                error.Alert();
+            }
         }
 
         #endregion
