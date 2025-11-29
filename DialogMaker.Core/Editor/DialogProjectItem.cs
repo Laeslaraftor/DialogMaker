@@ -4,22 +4,23 @@ using System.Linq;
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectResourceItem : ObservableObject, ISavable
+    public class DialogProjectItem : DialogProjectResourceObject, ISavable
     {
-        public DialogProjectResourceItem(DialogProjectResources resources, string filePath)
+        public DialogProjectItem(DialogProjectResources resources, string filePath)
             : this(resources, GetResourceType(filePath), filePath)
         {
         }
-        public DialogProjectResourceItem(DialogProjectResources resources, DialogResourceType? type, string filePath)
+        public DialogProjectItem(DialogProjectResources resources, DialogResourceType? type, string filePath)
             : this(resources, Guid.NewGuid(), type, filePath)
         {
         }
-        public DialogProjectResourceItem(DialogProjectResources resources, DialogProjectResourceItemSavedState savedState)
+        public DialogProjectItem(DialogProjectResources resources, DialogProjectResourceItemSavedState savedState)
             : this(resources, Guid.Parse(savedState.ProjectId), savedState.ResourceType, Path.Combine(resources.Folder, savedState.FileName))
         {
-            _id = savedState.Id;
+            Id = savedState.Id;
         }
-        public DialogProjectResourceItem(DialogProjectResources resources, Guid id, DialogResourceType? type, string filePath)
+        private DialogProjectItem(DialogProjectResources resources, Guid id, DialogResourceType? type, string filePath)
+            : base(resources, id)
         {
             if (!File.Exists(filePath))
             {
@@ -39,31 +40,15 @@ namespace DialogMaker.Core.Editor
                 throw new ArgumentException($"Неверный путь к файлу", nameof(filePath));
             }
 
-            Resources = resources;
-            ProjectId = id;
             FilePath = filePath;
             FileName = fileName;
             Type = type.GetValueOrDefault();
             _name = filePath.GetFileName();
         }
 
-        public DialogProjectResources Resources { get; }
-        public Guid ProjectId { get; }
         public string FilePath { get; }
         public string FileName { get; }
         public DialogResourceType Type { get; }
-        public string Id
-        {
-            get => _id;
-            set
-            {
-                if (_id != value)
-                {
-                    _id = value;
-                    InvokePropertyChanged(nameof(Id));
-                }
-            }
-        }
         public string Name
         {
             get => _name;
@@ -77,17 +62,14 @@ namespace DialogMaker.Core.Editor
             }
         }
 
-        private string _id = string.Empty;
         private string _name;
 
         #region Управление
 
-        public ISavedState Save()
+        protected override DialogProjectResourceObjectSavedState CreateSavedState()
         {
             return new DialogProjectResourceItemSavedState
             {
-                ProjectId = ProjectId.ToString(),
-                Id = Id?.Trim() ?? string.Empty,
                 FileName = FileName,
                 Name = Name?.Trim() ?? string.Empty,
                 ResourceType = Type

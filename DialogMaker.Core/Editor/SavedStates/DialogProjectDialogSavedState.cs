@@ -11,7 +11,5 @@ namespace DialogMaker.Core.Editor
         public string Name { get; set; } = string.Empty;
         [JsonProperty("nodes")]
         public DialogProjectDialogNodeSavedState[] Nodes { get; set; } = Array.Empty<DialogProjectDialogNodeSavedState>();
-        [JsonProperty("characters")]
-        public DialogProjectCharacterSavedState[] Characters { get; set; } = Array.Empty<DialogProjectCharacterSavedState>();
     }
 }

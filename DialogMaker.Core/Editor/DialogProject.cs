@@ -105,8 +105,10 @@ namespace DialogMaker.Core.Editor
         public EditableCollection<DialogProjectLanguage> Languages { get; }
         public DialogProjectResources Resources { get; }
 
+        IProjectResourcesOwner? IProjectResourcesOwner.Parent => null;
         DialogProject IProjectResourcesOwner.Project => this;
         string IProjectResourcesOwner.Folder => ProjectPath;
+
 
         private readonly ObservableList<DialogProjectPack> _packs;
         private string _name = string.Empty;
@@ -148,6 +150,10 @@ namespace DialogMaker.Core.Editor
         public bool TryGetLanguage(Guid id, [NotNullWhen(true)] out DialogProjectLanguage? result)
         {
             return Languages.TryGetValue(l => l.ProjectId == id, out result);
+        }
+        bool IProjectResourcesOwner.TryGetChild(string id, [NotNullWhen(true)] out IProjectResourcesOwner? result)
+        {
+            return _packs.TryGetValue(p => p.Id == id, out result);
         }
 
         public DialogProjectPack CreatePack(string id, string name)
@@ -209,6 +215,11 @@ namespace DialogMaker.Core.Editor
         {
             Languages.ItemChanged -= OnLanguagesItemChanged;
             GC.SuppressFinalize(this);
+        }
+
+        public override string ToString()
+        {
+            return $"[{Id}] {Name}";
         }
 
         #endregion

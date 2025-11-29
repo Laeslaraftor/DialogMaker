@@ -1,0 +1,11 @@
+﻿using Newtonsoft.Json;
+using System;
+
+namespace DialogMaker.Core.Editor
+{
+    public class DialogProjectReferenceSavedState : JsonData
+    {
+        [JsonProperty("path")]
+        public string? ItemPath { get; set; }
+    }
+}

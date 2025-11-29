@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectString : ObservableObject, ISavable, IDisposable
+    public class DialogProjectString : DialogProjectResourceObject
     {
         public DialogProjectString(DialogProjectResources resources)
             : this(resources, Guid.NewGuid())
@@ -16,10 +16,6 @@ namespace DialogMaker.Core.Editor
         public DialogProjectString(DialogProjectResources resources, DialogProjectStringSavedState savedState)
             : this(resources, Guid.Parse(savedState.ProjectId))
         {
-            Resources = resources;
-            ProjectId = Guid.Parse(savedState.ProjectId);
-            _id = savedState.Id;
-            
             if (savedState.Variants != null)
             {
                 foreach (var variantSavedState in savedState.Variants)
@@ -35,42 +31,22 @@ namespace DialogMaker.Core.Editor
                 }
             }
         }
-        private DialogProjectString(DialogProjectResources resources, Guid projectId)
+        private DialogProjectString(DialogProjectResources resources, Guid projectId, string? id = null)
+            : base(resources, projectId)
         {
-            Resources = resources;
-            ProjectId = projectId;
             Variants = new();
+
+            id = id?.Trim();
+
+            if (!string.IsNullOrEmpty(id))
+            {
+                Id = id;
+            }
+
             Variants.ItemChanged += OnVariantsItemChanged;
         }
-        ~DialogProjectString()
-        {
-            Dispose();
-        }
 
-        public Guid ProjectId { get; }
-        public string Id
-        {
-            get => _id;
-            set
-            {
-                value = value.Trim();
-
-                if (string.IsNullOrEmpty(value))
-                {
-                    value = DefaultId;
-                }
-
-                if (_id != value)
-                {
-                    _id = value;
-                    InvokePropertyChanged(nameof(Id));
-                }
-            }
-        }
-        public DialogProjectResources Resources { get; }
         public EditableCollection<DialogProjectStringVariant> Variants { get; }
-
-        private string _id = DefaultId;
 
         #region Управление
 
@@ -91,20 +67,18 @@ namespace DialogMaker.Core.Editor
             return Variants.Remove(variant);
         }
 
-        public ISavedState Save()
+        protected override DialogProjectResourceObjectSavedState CreateSavedState()
         {
             return new DialogProjectStringSavedState
             {
-                ProjectId = ProjectId.ToString(),
-                Id = Id?.ToString() ?? string.Empty,
                 Variants = Variants.Select(v => (DialogProjectStringVariantSavedState)v.Save()).ToArray()
             };
         }
 
-        public void Dispose()
+        protected override void Dispose(bool isDisposing)
         {
+            base.Dispose(isDisposing);
             Variants.ItemChanged -= OnVariantsItemChanged;
-            GC.SuppressFinalize(this);
         }
 
         public override string ToString()
@@ -159,12 +133,6 @@ namespace DialogMaker.Core.Editor
                 }
             }
         }
-
-        #endregion
-
-        #region Константы
-
-        public const string DefaultId = "Идентификатор строки";
 
         #endregion
     }

@@ -46,7 +46,7 @@ namespace DialogMaker.Core.Editor
                 }
             }
         }
-        public DialogProjectResourceItem? Voice
+        public DialogProjectItem? Voice
         {
             get => _voice;
             set
@@ -61,7 +61,7 @@ namespace DialogMaker.Core.Editor
 
         private DialogProjectLanguage? _language;
         private string _text = string.Empty;
-        public DialogProjectResourceItem? _voice;
+        public DialogProjectItem? _voice;
 
         #region Управление
 

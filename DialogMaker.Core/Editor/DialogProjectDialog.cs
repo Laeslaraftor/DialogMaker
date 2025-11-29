@@ -18,10 +18,6 @@ namespace DialogMaker.Core.Editor
         {
             Name = savedState.Name;
 
-            foreach (var character in savedState.Characters)
-            {
-                _characters.Add(new(character));
-            }
             foreach (var node in savedState.Nodes)
             {
                 try
@@ -41,9 +37,7 @@ namespace DialogMaker.Core.Editor
             Id = id;
             Folder = Path.Combine(pack.Folder, DialogsFolder);
             _nodes = new();
-            _characters = new();
             Nodes = new(_nodes);
-            Characters = new(_characters);
 
             if (createResources)
             {
@@ -72,11 +66,11 @@ namespace DialogMaker.Core.Editor
             }
         }
         public ReferenceReadOnlyList<DialogProjectDialogNode> Nodes { get; }
-        public ReferenceReadOnlyList<DialogProjectCharacter> Characters { get; }
         public DialogProjectResources Resources { get; }
 
+        IProjectResourcesOwner? IProjectResourcesOwner.Parent => Pack;
+
         private readonly ObservableList<DialogProjectDialogNode> _nodes;
-        private readonly ObservableList<DialogProjectCharacter> _characters;
         private string _name = string.Empty;
 
         #region Управление
@@ -89,8 +83,7 @@ namespace DialogMaker.Core.Editor
             {
                 Id = Id,
                 Name = Name,
-                Nodes = _nodes.Select(n => n.Save()).ToArray(),
-                Characters = _characters.Select(c => c.Save()).ToArray()
+                Nodes = _nodes.Select(n => n.Save()).ToArray()
             };
 
             FileExtensions.CreateDirectory(Folder);
@@ -103,9 +96,10 @@ namespace DialogMaker.Core.Editor
         {
             return _nodes.TryGetValue(n => n.Id == id, out result);
         }
-        public bool TryGetCharacter(Guid id, [NotNullWhen(true)] out DialogProjectCharacter? result)
+        bool IProjectResourcesOwner.TryGetChild(string id, [NotNullWhen(true)] out IProjectResourcesOwner? result)
         {
-            return _characters.TryGetValue(c => c.Id == id, out result);
+            result = null;
+            return false;
         }
 
         public DialogProjectDialogNode CreateNode(DialogNodeType type)
@@ -120,20 +114,9 @@ namespace DialogMaker.Core.Editor
             return _nodes.Remove(node);
         }
 
-        public DialogProjectCharacter CreateNode(string name)
+        public override string ToString()
         {
-            DialogProjectCharacter character = new()
-            {
-                Name = name,
-            };
-
-            _characters.Add(character);
-
-            return character;
-        }
-        public bool RemoveCharacter(DialogProjectCharacter character)
-        {
-            return _characters.Remove(character);
+            return $"[{Id}] {Name}";
         }
 
         #endregion

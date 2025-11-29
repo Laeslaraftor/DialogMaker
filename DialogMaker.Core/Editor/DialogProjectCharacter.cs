@@ -1,21 +1,21 @@
-﻿using System;
-
-namespace DialogMaker.Core.Editor
+﻿namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectCharacter : ObservableObject, ISavable
+    public class DialogProjectCharacter : DialogProjectResourceObject
     {
-        public DialogProjectCharacter()
+        public DialogProjectCharacter(DialogProjectResources resources) 
+            : base(resources)
         {
-            Id = Guid.NewGuid();
         }
-        public DialogProjectCharacter(DialogProjectCharacterSavedState savedState)
+        public DialogProjectCharacter(DialogProjectResources resources, DialogProjectCharacterSavedState savedState)
+            : base(resources, savedState)
         {
-            Id = Guid.Parse(savedState.Id);
-            Name = savedState.Name;
+            if (savedState.Name != null)
+            {
+                _name = DialogProjectReference<DialogProjectString>.Restore(resources.Owner.Project, savedState.Name);
+            }
         }
 
-        public Guid Id { get; }
-        public string Name
+        public DialogProjectReference<DialogProjectString>? Name
         {
             get => _name;
             set
@@ -28,17 +28,18 @@ namespace DialogMaker.Core.Editor
             }
         }
 
-        private string _name = string.Empty;
+        private DialogProjectReference<DialogProjectString>? _name;
 
-        public DialogProjectCharacterSavedState Save()
+        #region Управление
+
+        protected override DialogProjectResourceObjectSavedState CreateSavedState()
         {
-            return new()
+            return new DialogProjectCharacterSavedState()
             {
-                Id = Id.ToString(),
-                Name = Name
+                Name = Name?.Save()
             };
         }
 
-        ISavedState ISavable.Save() => Save();
+        #endregion
     }
 }

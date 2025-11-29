@@ -73,6 +73,8 @@ namespace DialogMaker.Core.Editor
         public ReferenceReadOnlyList<DialogProjectDialog> Dialogs { get; }
         public DialogProjectResources Resources { get; }
 
+        IProjectResourcesOwner? IProjectResourcesOwner.Parent => Project;
+
         private readonly ObservableList<DialogProjectDialog> _dialogs;
         private string _name = string.Empty;
 
@@ -100,6 +102,10 @@ namespace DialogMaker.Core.Editor
         }
 
         public bool TryGetDialog(string id, [NotNullWhen(true)] out DialogProjectDialog? result)
+        {
+            return _dialogs.TryGetValue(d => d.Id == id, out result);
+        }
+        bool IProjectResourcesOwner.TryGetChild(string id, [NotNullWhen(true)] out IProjectResourcesOwner? result)
         {
             return _dialogs.TryGetValue(d => d.Id == id, out result);
         }
@@ -131,6 +137,11 @@ namespace DialogMaker.Core.Editor
             }
 
             return false;
+        }
+
+        public override string ToString()
+        {
+            return $"[{Id}] {Name}";
         }
 
         #endregion

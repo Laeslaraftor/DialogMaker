@@ -1,6 +1,5 @@
 ﻿using Acly;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -15,6 +14,7 @@ namespace DialogMaker.Core.Editor
             Owner = owner;
             Folder = Path.Combine(owner.Folder, ResourcesFolder);
             Strings = new();
+            Characters = new();
 
             _items = new();
             Items = new(_items);
@@ -51,9 +51,10 @@ namespace DialogMaker.Core.Editor
         public IProjectResourcesOwner Owner { get; }
         public string Folder { get; }
         public EditableCollection<DialogProjectString> Strings { get; }
-        public ReferenceReadOnlyList<DialogProjectResourceItem> Items { get; }
+        public ReferenceReadOnlyList<DialogProjectItem> Items { get; }
+        public EditableCollection<DialogProjectCharacter> Characters { get; }
 
-        private readonly ObservableList<DialogProjectResourceItem> _items;
+        private readonly ObservableList<DialogProjectItem> _items;
 
         #region Управление
 
@@ -79,18 +80,52 @@ namespace DialogMaker.Core.Editor
         {
             return Strings.TryGetValue(r => r.ProjectId == id, out result);
         }
-        public bool TryGetItem(Guid id, [NotNullWhen(true)] out DialogProjectResourceItem? result)
+        public bool TryGetItem(Guid id, [NotNullWhen(true)] out DialogProjectItem? result)
         {
             return _items.TryGetValue(i => i.ProjectId == id, out result);
         }
-
-        public DialogProjectResourceItem AddItem(string filePath, bool overwrite = false)
+        public bool TryGetCharacter(Guid id, [NotNullWhen(true)] out DialogProjectCharacter? result)
         {
-            var type = DialogProjectResourceItem.GetResourceType(filePath);
+            return Characters.TryGetValue(i => i.ProjectId == id, out result);
+        }
+        public bool TryGetObject<T>(Guid id, [NotNullWhen(true)] out T? result)
+            where T : DialogProjectResourceObject
+        {
+            var requestedType = typeof(T);
+            result = null;
+
+            if (requestedType == typeof(DialogProjectString))
+            {
+                if (TryGetString(id, out var str))
+                {
+                    result = (T)Convert.ChangeType(str, requestedType);
+                }
+            }
+            else if (requestedType == typeof(DialogProjectItem))
+            {
+                if (TryGetItem(id, out var item))
+                {
+                    result = (T)Convert.ChangeType(item, requestedType);
+                }
+            }
+            else if (requestedType == typeof(DialogProjectCharacter))
+            {
+                if (TryGetCharacter(id, out var character))
+                {
+                    result = (T)Convert.ChangeType(character, requestedType);
+                }
+            }
+
+            return result != null;
+        }
+
+        public DialogProjectItem AddItem(string filePath, bool overwrite = false)
+        {
+            var type = DialogProjectItem.GetResourceType(filePath);
 
             if (type == null)
             {
-                DialogProjectResourceItem.ThrowNotSupportedException(filePath);
+                DialogProjectItem.ThrowNotSupportedException(filePath);
             }
 
             string newFilePath = Path.Combine(Folder, filePath.GetFileName(false));
@@ -102,13 +137,13 @@ namespace DialogMaker.Core.Editor
 
             File.Copy(filePath, newFilePath, true);
 
-            DialogProjectResourceItem item = new(this, type, newFilePath);
+            DialogProjectItem item = new(this, type, newFilePath);
 
             return item;
         }
-        public bool RemoveItem(DialogProjectResourceItem item)
+        public bool RemoveItem(DialogProjectItem item)
         {
-            return _items.Remove(item); 
+            return _items.Remove(item);
         }
 
         public DialogProjectString CreateString()

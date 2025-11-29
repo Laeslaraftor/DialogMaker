@@ -2,12 +2,8 @@
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectResourceItemSavedState : JsonData
+    public class DialogProjectResourceItemSavedState : DialogProjectResourceObjectSavedState
     {
-        [JsonProperty("projectId")]
-        public string ProjectId { get; set; } = string.Empty;
-        [JsonProperty("id")]
-        public string Id { get; set; } = string.Empty;
         [JsonProperty("fileName")]
         public string FileName { get; set; } = string.Empty;
         [JsonProperty("name")]
