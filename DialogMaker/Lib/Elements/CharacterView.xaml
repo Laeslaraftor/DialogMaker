@@ -11,6 +11,12 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <local:EditableTextBlock/>
+        <local:EditableTextBlock x:Name="_idBlock" Text="{Binding Id}"
+                                 FontSize="16" Margin="0,8,0,4"/>
+        <local:ReferenceView x:Name="_nameReference" Grid.Row="1"
+                             Placeholder="Имя персонажа" Margin="0,4,0,8"
+                             ToolTip="Имя персонажа"
+                             RequestedResourceType="String"
+                             ItemChanged="OnNameReferenceItemChanged"/>
     </Grid>
 </UserControl>

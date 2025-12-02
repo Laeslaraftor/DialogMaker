@@ -41,24 +41,29 @@
         <TextBlock x:Name="_preview" Grid.Row="1" Grid.Column="2" 
                    TextWrapping="Wrap" FontSize="18" FontWeight="Medium"
                    Text="{Binding Text}" Margin="0,0,0,4"/>
-        <ListView x:Name="_variantsList" Margin="0,4,0,0"
-                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                  HorizontalContentAlignment="Stretch"
-                  Grid.Column="2" Grid.Row="2" Grid.ColumnSpan="2">
-            <ListView.Template>
-                <ControlTemplate>
-                    <ItemsPresenter></ItemsPresenter>
-                </ControlTemplate>
-            </ListView.Template>
-            <ListView.ItemTemplate>
-                <DataTemplate>
-                    <local:ReplicaVariantView Text="{Binding Text, Mode=TwoWay}"
-                                              ItemsSource="{Binding String.Project.Languages}"
-                                              SelectedIndex="{Binding LanguageIndex, Mode=TwoWay}"
-                                              Background="Transparent"
-                                              ContextMenu="{Binding ContextMenu}"/>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
+        <StackPanel x:Name="_extraContainer" Margin="0,4,0,0"
+                    Grid.Column="2" Grid.Row="2" Grid.ColumnSpan="2">
+            <ListView x:Name="_variantsList"
+                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                      HorizontalContentAlignment="Stretch">
+                <ListView.Template>
+                    <ControlTemplate>
+                        <ItemsPresenter></ItemsPresenter>
+                    </ControlTemplate>
+                </ListView.Template>
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <local:ReplicaVariantView Text="{Binding Text, Mode=TwoWay}"
+                                                  ItemsSource="{Binding String.Project.Languages}"
+                                                  SelectedIndex="{Binding LanguageIndex, Mode=TwoWay}"
+                                                  Background="Transparent"
+                                                  ContextMenu="{Binding ContextMenu}"/>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+            <local:ReferenceView Placeholder="Озвучка"
+                                 RequestedResourceType="File"
+                                 ToolTip="Озвучка" Margin="0,0,0,6"/>
+        </StackPanel>
     </Grid>
 </UserControl>

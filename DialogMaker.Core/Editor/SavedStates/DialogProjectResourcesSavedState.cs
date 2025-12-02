@@ -9,5 +9,7 @@ namespace DialogMaker.Core.Editor
         public DialogProjectStringSavedState[] Strings { get; set; } = Array.Empty<DialogProjectStringSavedState>();
         [JsonProperty("items")]
         public DialogProjectResourceItemSavedState[] Items { get; set; } = Array.Empty<DialogProjectResourceItemSavedState>();
+        [JsonProperty("characters")]
+        public DialogProjectCharacterSavedState[] Characters { get; set; } = Array.Empty<DialogProjectCharacterSavedState>();
     }
 }

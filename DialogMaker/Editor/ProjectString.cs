@@ -18,7 +18,6 @@ namespace DialogMaker.Editor
             Variants = new((ObservableList<ProjectStringVariant>)_variants.SecondCollection);
             AddVariantCommand = new(ExecuteAdd, CanAdd);
 
-            Original.PropertyChanged += OnOriginalPropertyChanged;
             Project.PropertyChanged += OnProjectPropertyChanged;
             Variants.CollectionChanged += OnVariantsCollectionChanged;
         }
@@ -57,11 +56,6 @@ namespace DialogMaker.Editor
             }
         }
         public RelayCommand AddVariantCommand { get; }
-        public string Id
-        {
-            get => Original.Id;
-            set => Original.Id = value;
-        }
         public bool IsMinimized
         {
             get => _isMinimized;
@@ -90,7 +84,6 @@ namespace DialogMaker.Editor
         {
             base.Dispose(isDisposing);
 
-            Original.PropertyChanged -= OnOriginalPropertyChanged;
             Project.PropertyChanged -= OnProjectPropertyChanged;
             Variants.CollectionChanged -= OnVariantsCollectionChanged;
 
@@ -121,12 +114,6 @@ namespace DialogMaker.Editor
 
         #region События
 
-        private void OnOriginalPropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-#nullable disable
-            InvokePropertyChanged(e.PropertyName);
-#nullable enable
-        }
         private void OnProjectPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == "DefaultLanguage")

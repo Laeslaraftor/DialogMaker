@@ -12,6 +12,8 @@ namespace DialogMaker.Lib.Elements
             InitializeComponent();
         }
 
+        public event EventHandler<ValueChangedEventArgs<ProjectResourceItem?>>? ItemChanged;
+
         public string Placeholder
         {
             get => (string)GetValue(PlaceholderProperty);
@@ -66,10 +68,13 @@ namespace DialogMaker.Lib.Elements
                 }
 
                 LastPreview = newItem.GetPreview();
-                return;
+            }
+            else
+            {
+                LastPreview = null;
             }
 
-            LastPreview = null;
+            ItemChanged?.Invoke(this, new(oldItem, newItem));
         }
 
         private static void OnPlaceholderChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

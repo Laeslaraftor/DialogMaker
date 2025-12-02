@@ -41,7 +41,7 @@ namespace DialogMaker.Lib.Elements
             _minimizeButtonRotation.Angle = rotation;
             _preview.Visibility = _heightBorder.Visibility;
             _heightBorder.Visibility = elementsVisibility;
-            _variantsList.Visibility = elementsVisibility;
+            _extraContainer.Visibility = elementsVisibility;
         }
 
         #endregion

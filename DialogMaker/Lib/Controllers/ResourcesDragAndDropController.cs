@@ -319,7 +319,7 @@ namespace DialogMaker.Lib.Controllers
 
             EndView = await GetReferenceView(e);
         }
-        private void OnWindowPreviewMouseUp(object sender, MouseButtonEventArgs e)
+        private async void OnWindowPreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed ||
                 CurrentItem == null)
@@ -339,11 +339,14 @@ namespace DialogMaker.Lib.Controllers
                 EndView.Item = CurrentItem;
             }
 
-            CurrentItem = null;
             IsVisible = false;
             EndView = null;
 
             HideAllToolTips();
+
+            await Task.Delay(_animationsDuration);
+
+            CurrentItem = null;
         }
 
         private async void OnWeightAnimationTick(ValueAnimation animation, float value)
@@ -358,15 +361,16 @@ namespace DialogMaker.Lib.Controllers
 
         #region Статика
 
+        private static readonly TimeSpan _animationsDuration = TimeSpan.FromSeconds(0.1);
         private static readonly CubicEase _easing = new()
         {
             EasingMode = EasingMode.EaseOut
         };
-        private static readonly DoubleAnimation _scaleUpAnimation = new(0, 1, TimeSpan.FromSeconds(0.1), FillBehavior.HoldEnd)
+        private static readonly DoubleAnimation _scaleUpAnimation = new(0, 1, _animationsDuration, FillBehavior.HoldEnd)
         {
             EasingFunction = _easing
         };
-        private static readonly DoubleAnimation _scaleDownAnimation = new(1, 0, TimeSpan.FromSeconds(0.1), FillBehavior.HoldEnd)
+        private static readonly DoubleAnimation _scaleDownAnimation = new(1, 0, _animationsDuration, FillBehavior.HoldEnd)
         {
             EasingFunction = _easing
         };

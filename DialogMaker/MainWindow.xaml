@@ -106,14 +106,14 @@
                                     <TextBlock Text="Персонажи" FontSize="28"
                                                FontWeight="Medium" Margin="0,0,0,8"/>
                                     <Button Content="Создать" Grid.Column="1" VerticalAlignment="Center"
-                                            Command="{Binding GlobalResources.CreateStringCommand}"/>
+                                            Command="{Binding GlobalResources.CreateCharacterCommand}"/>
                                 </Grid>
                             </lib:MinimizableView.Header>
                             <lib:MinimizableView.Child>
                                 <ListView Grid.Row="1"
                                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                           HorizontalContentAlignment="Stretch"
-                                          ItemsSource="{Binding GlobalResources.Strings}">
+                                          ItemsSource="{Binding GlobalResources.Characters}">
                                     <ListView.Template>
                                         <ControlTemplate>
                                             <ItemsPresenter/>
@@ -121,15 +121,12 @@
                                     </ListView.Template>
                                     <ListView.ItemTemplate>
                                         <DataTemplate>
-                                            <lib:ReplicaView ProjectString="{Binding}"
-                                     IsMinimized="{Binding IsMinimized}"
-                                     ContextMenu="{Binding ContextMenu}"/>
+                                            <lib:CharacterView Character="{Binding}"/>
                                         </DataTemplate>
                                     </ListView.ItemTemplate>
                                 </ListView>
                             </lib:MinimizableView.Child>
                         </lib:MinimizableView>
-                        <lib:ReferenceView Placeholder="Placeholder" RequestedResourceType="String"/>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

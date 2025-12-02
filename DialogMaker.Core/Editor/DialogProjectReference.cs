@@ -4,7 +4,7 @@ using System.Data;
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectReference<T> : ISavable, IEquatable<DialogProjectReference<T>>
+    public class DialogProjectReference<T> : ISavable
         where T : DialogProjectResourceObject
     {
         public DialogProjectReference()
@@ -94,29 +94,10 @@ namespace DialogMaker.Core.Editor
         {
             return $"{ItemId}:{ResourcesPath}";
         }
-        public override bool Equals(object? obj)
-        {
-            return obj is DialogProjectReference<T> reference &&
-                   Equals(reference);
-        }
-        public bool Equals(DialogProjectReference<T>? other)
-        {
-            return other != null &&
-                   Project == other.Project &&
-                   ItemId == other.ItemId &&
-                   ResourcesPath == other.ResourcesPath;
-        }
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Project, ItemId, ResourcesPath);
-        }
 
         #endregion
 
         #region Операторы
-
-        public static bool operator ==(DialogProjectReference<T>? r1, DialogProjectReference<T>? r2) => r1?.Equals(r2) == true;
-        public static bool operator !=(DialogProjectReference<T>? r1, DialogProjectReference<T>? r2) => !(r1 == r2);
 
         public static implicit operator T(DialogProjectReference<T> reference)
         {

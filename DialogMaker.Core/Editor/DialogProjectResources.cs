@@ -35,11 +35,22 @@ namespace DialogMaker.Core.Editor
                     Debug.WriteLine(error);
                 }
             }
-            foreach (var replica in savedState.Strings)
+            foreach (var str in savedState.Strings)
             {
                 try
                 {
-                    Strings.Add(new(this, replica));
+                    Strings.Add(new(this, str));
+                }
+                catch (Exception error)
+                {
+                    Debug.WriteLine(error);
+                }
+            }
+            foreach (var character in savedState.Characters)
+            {
+                try
+                {
+                    Characters.Add(new(this, character));
                 }
                 catch (Exception error)
                 {
@@ -68,7 +79,8 @@ namespace DialogMaker.Core.Editor
             DialogProjectResourcesSavedState savedState = new()
             {
                 Strings = Strings.Select(r => (DialogProjectStringSavedState)r.Save()).ToArray(),
-                Items = Items.Select(i => (DialogProjectResourceItemSavedState)i.Save()).ToArray()
+                Items = Items.Select(i => (DialogProjectResourceItemSavedState)i.Save()).ToArray(),
+                Characters = Characters.Select(c => (DialogProjectCharacterSavedState)c.Save()).ToArray()
             };
 
             string filePath = Path.Combine(Folder, ResourcesFileName);
@@ -148,14 +160,26 @@ namespace DialogMaker.Core.Editor
 
         public DialogProjectString CreateString()
         {
-            DialogProjectString replica = new(this);
-            Strings.Add(replica);
+            DialogProjectString str = new(this);
+            Strings.Add(str);
 
-            return replica;
+            return str;
         }
-        public bool RemoveString(DialogProjectString replica)
+        public bool RemoveString(DialogProjectString str)
         {
-            return Strings.Remove(replica);
+            return Strings.Remove(str);
+        }
+
+        public DialogProjectCharacter CreateCharacter()
+        {
+            DialogProjectCharacter character = new(this);
+            Characters.Add(character);
+
+            return character;
+        }
+        public bool RemoveCharacter(DialogProjectCharacter character)
+        {
+            return Characters.Remove(character);
         }
 
         #endregion

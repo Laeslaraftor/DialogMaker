@@ -47,6 +47,23 @@ namespace DialogMaker.Core.Editor
         }
 
         public override DialogResourceType ResourceType => DialogResourceType.String;
+        public string Preview
+        {
+            get
+            {
+                if (Variants.Count == 0)
+                {
+                    return string.Empty;
+                }
+                if (Resources.Owner.Project.DefaultLanguage != null &&
+                    TryGetVariant(Resources.Owner.Project.DefaultLanguage, out var variant))
+                {
+                    return variant.Text;
+                }
+
+                return Variants[0].Text;
+            }
+        }
         public EditableCollection<DialogProjectStringVariant> Variants { get; }
 
         #region Управление
@@ -84,19 +101,7 @@ namespace DialogMaker.Core.Editor
 
         public override string ToString()
         {
-            string result = $"[{Id}]";
-
-            if (Variants.Count == 0)
-            {
-                return result;
-            }
-            if (Resources.Owner.Project.DefaultLanguage != null &&
-                TryGetVariant(Resources.Owner.Project.DefaultLanguage, out var variant))
-            {
-                return result + $" {variant.Text}";
-            }
-
-            return result + $" {Variants[0].Text}";
+            return $"[{Id}] {Preview}".TrimEnd();
         }
 
         #endregion
@@ -118,6 +123,11 @@ namespace DialogMaker.Core.Editor
 
         private void OnVariantPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            if (e.PropertyName == "Text")
+            {
+                InvokePropertyChanged(nameof(Preview));
+                return;
+            }
             if (sender is not DialogProjectStringVariant variant || 
                 e.PropertyName != "Language" || 
                 variant.Language == null)

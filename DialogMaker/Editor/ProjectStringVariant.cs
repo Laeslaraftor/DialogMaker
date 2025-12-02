@@ -62,7 +62,15 @@ namespace DialogMaker.Editor
                 if (LanguageIndex != value &&
                     value >= 0 && value < String.Project.Languages.Count)
                 {
-                    Original.Language = String.Project.Languages[value].Language;
+                    try
+                    {
+                        Original.Language = String.Project.Languages[value].Language;
+                    }
+                    catch (Exception error)
+                    {
+                        error.Alert();
+                    }
+
                     InvokePropertyChanged(nameof(LanguageIndex));
                 }
             }

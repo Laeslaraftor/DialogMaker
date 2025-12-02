@@ -33,6 +33,18 @@
 
         #region Управление
 
+        public override string ToString()
+        {
+            string name = "Безымянный персонаж";
+
+            if (Name != null)
+            {
+                name = Name.Resolve().Preview;
+            }
+
+            return $"[{Id}] {name}";
+        }
+
         protected override DialogProjectResourceObjectSavedState CreateSavedState()
         {
             return new DialogProjectCharacterSavedState()
