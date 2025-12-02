@@ -24,6 +24,7 @@ namespace DialogMaker.Core.Editor
         }
 
         public DialogProjectResources Resources { get; }
+        public abstract DialogResourceType ResourceType { get; }
         public Guid ProjectId { get; }
         public string Id
         {

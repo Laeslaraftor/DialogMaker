@@ -63,33 +63,73 @@
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                               VerticalScrollBarVisibility="Auto">
                     <StackPanel>
-                        <Grid Margin="6,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Строки" FontSize="28"
-                                       FontWeight="Medium" Margin="0,8"/>
-                            <Button Content="Создать" Grid.Column="1"
-                                    Command="{Binding GlobalResources.CreateStringCommand}"/>
-                        </Grid>
-                        <ListView Grid.Row="1"
-                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                  HorizontalContentAlignment="Stretch"
-                                  ItemsSource="{Binding GlobalResources.Strings}">
-                            <ListView.Template>
-                                <ControlTemplate>
-                                    <ItemsPresenter></ItemsPresenter>
-                                </ControlTemplate>
-                            </ListView.Template>
-                            <ListView.ItemTemplate>
-                                <DataTemplate>
-                                    <lib:ReplicaView ProjectString="{Binding}"
-                                                     IsMinimized="{Binding IsMinimized}"
-                                                     ContextMenu="{Binding ContextMenu}"/>
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
-                        </ListView>
+                        <lib:MinimizableView Margin="0,8,0,0">
+                            <lib:MinimizableView.Header>
+                                <Grid Margin="6,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Строки" FontSize="28"
+                                               FontWeight="Medium" Margin="0,0,0,8"/>
+                                    <Button Content="Создать" Grid.Column="1" VerticalAlignment="Center"
+                                            Command="{Binding GlobalResources.CreateStringCommand}"/>
+                                </Grid>
+                            </lib:MinimizableView.Header>
+                            <lib:MinimizableView.Child>
+                                <ListView Grid.Row="1"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                          HorizontalContentAlignment="Stretch"
+                                          ItemsSource="{Binding GlobalResources.Strings}">
+                                    <ListView.Template>
+                                        <ControlTemplate>
+                                            <ItemsPresenter/>
+                                        </ControlTemplate>
+                                    </ListView.Template>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <lib:ReplicaView ProjectString="{Binding}"
+                                                             IsMinimized="{Binding IsMinimized}"
+                                                             ContextMenu="{Binding ContextMenu}"/>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </lib:MinimizableView.Child>
+                        </lib:MinimizableView>
+                        <lib:MinimizableView Margin="0,8,0,0">
+                            <lib:MinimizableView.Header>
+                                <Grid Margin="6,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Персонажи" FontSize="28"
+                                               FontWeight="Medium" Margin="0,0,0,8"/>
+                                    <Button Content="Создать" Grid.Column="1" VerticalAlignment="Center"
+                                            Command="{Binding GlobalResources.CreateStringCommand}"/>
+                                </Grid>
+                            </lib:MinimizableView.Header>
+                            <lib:MinimizableView.Child>
+                                <ListView Grid.Row="1"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                          HorizontalContentAlignment="Stretch"
+                                          ItemsSource="{Binding GlobalResources.Strings}">
+                                    <ListView.Template>
+                                        <ControlTemplate>
+                                            <ItemsPresenter/>
+                                        </ControlTemplate>
+                                    </ListView.Template>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <lib:ReplicaView ProjectString="{Binding}"
+                                     IsMinimized="{Binding IsMinimized}"
+                                     ContextMenu="{Binding ContextMenu}"/>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </lib:MinimizableView.Child>
+                        </lib:MinimizableView>
+                        <lib:ReferenceView Placeholder="Placeholder" RequestedResourceType="String"/>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>

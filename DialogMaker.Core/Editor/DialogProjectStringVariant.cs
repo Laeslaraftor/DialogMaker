@@ -46,7 +46,7 @@ namespace DialogMaker.Core.Editor
                 }
             }
         }
-        public DialogProjectItem? Voice
+        public DialogProjectReference<DialogProjectItem>? Voice
         {
             get => _voice;
             set
@@ -61,7 +61,7 @@ namespace DialogMaker.Core.Editor
 
         private DialogProjectLanguage? _language;
         private string _text = string.Empty;
-        public DialogProjectItem? _voice;
+        public DialogProjectReference<DialogProjectItem>? _voice;
 
         #region Управление
 
@@ -71,7 +71,7 @@ namespace DialogMaker.Core.Editor
             {
                 LanguageId = Language?.ProjectId.ToString(),
                 Text = Text?.Trim() ?? string.Empty,
-                VoiceId = Voice?.ProjectId.ToString()
+                VoiceId = Voice?.Save()
             };
         }
 

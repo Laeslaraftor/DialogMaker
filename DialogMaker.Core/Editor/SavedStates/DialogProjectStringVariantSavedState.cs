@@ -9,6 +9,6 @@ namespace DialogMaker.Core.Editor
         [JsonProperty("text")]
         public string Text { get; set; } = string.Empty;
         [JsonProperty("voice")]
-        public string? VoiceId { get; set; }
+        public DialogProjectReferenceSavedState? VoiceId { get; set; }
     }
 }

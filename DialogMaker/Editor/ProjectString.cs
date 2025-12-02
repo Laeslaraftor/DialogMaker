@@ -1,26 +1,22 @@
 ﻿using Acly;
 using DialogMaker.Core;
 using DialogMaker.Core.Editor;
-using DialogMaker.Lib;
-using System.Windows.Input;
-using System.ComponentModel;
-using System.Collections.Specialized;
-using System.Windows.Controls;
 using DialogMaker.Editor.Menus;
+using DialogMaker.Lib;
+using System.Collections.Specialized;
+using System.ComponentModel;
 
 namespace DialogMaker.Editor
 {
-    public class ProjectString : ObservableObject, IDisposable
+    public class ProjectString : ProjectResourceItem<DialogProjectString>, IDisposable
     {
         public ProjectString(ProjectController project, DialogProjectString original)
+            : base(project, original)
         {
-            Project = project;
-            Original = original;
-
             _variantsConverter = new(this);
             _variants = new(original.Variants, new ObservableList<ProjectStringVariant>(), _variantsConverter);
             Variants = new((ObservableList<ProjectStringVariant>)_variants.SecondCollection);
-            AddVariantCommand = new RelayCommand(ExecuteAdd, CanAdd);
+            AddVariantCommand = new(ExecuteAdd, CanAdd);
 
             Original.PropertyChanged += OnOriginalPropertyChanged;
             Project.PropertyChanged += OnProjectPropertyChanged;
@@ -31,8 +27,6 @@ namespace DialogMaker.Editor
             Dispose();
         }
 
-        public ProjectController Project { get; }
-        public DialogProjectString Original { get; }
         public ReferenceReadOnlyList<ProjectStringVariant> Variants { get; }
         public ProjectStringVariant? PreviewVariant
         {
@@ -62,7 +56,7 @@ namespace DialogMaker.Editor
                 return Variants.FirstOrDefault(v => !string.IsNullOrEmpty(v.Text));
             }
         }
-        public ICommand AddVariantCommand { get; }
+        public RelayCommand AddVariantCommand { get; }
         public string Id
         {
             get => Original.Id;
@@ -80,14 +74,6 @@ namespace DialogMaker.Editor
                 }
             }
         }
-        public ContextMenu ContextMenu
-        {
-            get
-            {
-                field ??= new StringContextMenu(this);
-                return field;
-            }
-        }
 
         private readonly ProjectStringVariantConverter _variantsConverter;
         private readonly CollectionSynchronizer<DialogProjectStringVariant, ProjectStringVariant> _variants;
@@ -95,15 +81,20 @@ namespace DialogMaker.Editor
 
         #region Управление
 
-        public void Dispose()
+        public override ItemContextMenu CreateContextMenu()
         {
+            return new StringContextMenu(this);
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+
             Original.PropertyChanged -= OnOriginalPropertyChanged;
             Project.PropertyChanged -= OnProjectPropertyChanged;
             Variants.CollectionChanged -= OnVariantsCollectionChanged;
 
             _variants.Dispose();
-
-            GC.SuppressFinalize(this);
         }
 
         #endregion
@@ -145,6 +136,15 @@ namespace DialogMaker.Editor
         }
         private void OnVariantsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
+            try
+            {
+                AddVariantCommand.InvokeCanExecuteChanged();
+            }
+            catch (Exception error)
+            {
+                error.Alert();
+            }
+
             InvokePropertyChanged(nameof(PreviewVariant));
         }
 

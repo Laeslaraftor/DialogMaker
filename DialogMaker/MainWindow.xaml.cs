@@ -1,6 +1,7 @@
 ﻿using DialogMaker.Core.Editor;
 using DialogMaker.Editor;
 using DialogMaker.Lib;
+using DialogMaker.Lib.Controllers;
 using DialogMaker.ViewModels;
 using System.Windows;
 
@@ -15,8 +16,10 @@ namespace DialogMaker
             _model.CreateProjectCommand = new RelayCommand(ExecuteCreateProject);
             _model.OpenProjectCommand = new RelayCommand(ExecuteOpenProject);
             _model.CloseProjectCommand = new RelayCommand(ExecuteCloseProject);
+            _resourcesDragAndDrop = new(this);
 
             DataContext = _model;
+            Instance = this;
         }
 
         public ProjectController? CurrentProject { get; private set; }
@@ -25,6 +28,7 @@ namespace DialogMaker
         {
             DefaultLanguageVisibility = Visibility.Collapsed
         };
+        private readonly ResourcesDragAndDropController _resourcesDragAndDrop;
 
         #region Управление
 
@@ -76,6 +80,14 @@ namespace DialogMaker
         {
             SetProject(null);
         }
+
+        #endregion
+
+        #region Статика
+
+#nullable disable
+        public static MainWindow Instance { get; private set; }
+#nullable enable
 
         #endregion
     }

@@ -79,6 +79,18 @@ namespace DialogMaker.Editor
                 }
             }
         }
+        public ProjectReference<ProjectResourceFile, DialogProjectItem>? Voice
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    InvokePropertyChanged(nameof(Voice));
+                }
+            }
+        }
         public ICommand RemoveCommand { get; }
         public ContextMenu ContextMenu
         {

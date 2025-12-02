@@ -14,7 +14,7 @@ namespace DialogMaker.Core.Editor
         {
         }
         public DialogProjectString(DialogProjectResources resources, DialogProjectStringSavedState savedState)
-            : this(resources, Guid.Parse(savedState.ProjectId))
+            : this(resources, Guid.Parse(savedState.ProjectId), savedState.Id)
         {
             if (savedState.Variants != null)
             {
@@ -46,6 +46,7 @@ namespace DialogMaker.Core.Editor
             Variants.ItemChanged += OnVariantsItemChanged;
         }
 
+        public override DialogResourceType ResourceType => DialogResourceType.String;
         public EditableCollection<DialogProjectStringVariant> Variants { get; }
 
         #region Управление

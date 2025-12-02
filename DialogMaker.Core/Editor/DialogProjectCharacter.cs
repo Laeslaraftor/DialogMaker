@@ -15,6 +15,7 @@
             }
         }
 
+        public override DialogResourceType ResourceType => DialogResourceType.Character;
         public DialogProjectReference<DialogProjectString>? Name
         {
             get => _name;

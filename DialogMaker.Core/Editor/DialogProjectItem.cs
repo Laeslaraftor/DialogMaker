@@ -10,7 +10,7 @@ namespace DialogMaker.Core.Editor
             : this(resources, GetResourceType(filePath), filePath)
         {
         }
-        public DialogProjectItem(DialogProjectResources resources, DialogResourceType? type, string filePath)
+        public DialogProjectItem(DialogProjectResources resources, DialogFileResourceType? type, string filePath)
             : this(resources, Guid.NewGuid(), type, filePath)
         {
         }
@@ -19,7 +19,7 @@ namespace DialogMaker.Core.Editor
         {
             Id = savedState.Id;
         }
-        private DialogProjectItem(DialogProjectResources resources, Guid id, DialogResourceType? type, string filePath)
+        private DialogProjectItem(DialogProjectResources resources, Guid id, DialogFileResourceType? type, string filePath)
             : base(resources, id)
         {
             if (!File.Exists(filePath))
@@ -46,9 +46,10 @@ namespace DialogMaker.Core.Editor
             _name = filePath.GetFileName();
         }
 
+        public override DialogResourceType ResourceType => DialogResourceType.File;
         public string FilePath { get; }
         public string FileName { get; }
-        public DialogResourceType Type { get; }
+        public DialogFileResourceType Type { get; }
         public string Name
         {
             get => _name;
@@ -89,21 +90,21 @@ namespace DialogMaker.Core.Editor
         private static readonly string[] _videoExtensions = { "mp4" };
         private static readonly string[] _imageExtensions = { "png", "jpg", "jpeg" };
 
-        public static DialogResourceType? GetResourceType(string filePath)
+        public static DialogFileResourceType? GetResourceType(string filePath)
         {
             string extension = filePath.GetFileExtension();
 
             if (_audioExtensions.Contains(extension))
             {
-                return DialogResourceType.Audio;
+                return DialogFileResourceType.Audio;
             }
             else if (_imageExtensions.Contains(extension))
             {
-                return DialogResourceType.Image;
+                return DialogFileResourceType.Image;
             }
             else if (_videoExtensions.Contains(extension))
             {
-                return DialogResourceType.Video;
+                return DialogFileResourceType.Video;
             }
 
             return null;

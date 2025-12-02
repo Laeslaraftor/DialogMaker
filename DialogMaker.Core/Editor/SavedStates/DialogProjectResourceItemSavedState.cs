@@ -9,6 +9,6 @@ namespace DialogMaker.Core.Editor
         [JsonProperty("name")]
         public string Name { get; set; } = string.Empty;
         [JsonProperty("type")]
-        public DialogResourceType ResourceType { get; set; }
+        public DialogFileResourceType ResourceType { get; set; }
     }
 }
