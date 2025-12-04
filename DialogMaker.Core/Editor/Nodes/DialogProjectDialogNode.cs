@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Numerics;
 
-namespace DialogMaker.Core.Editor
+namespace DialogMaker.Core.Editor.Nodes
 {
-    public abstract class DialogProjectDialogNode : ISavable
+    public abstract class DialogProjectDialogNode : ObservableObject, INode, ISavable
     {
         protected DialogProjectDialogNode(DialogProjectDialog dialog)
         {
@@ -13,11 +14,27 @@ namespace DialogMaker.Core.Editor
         {
             Id = Guid.Parse(savedState.Id);
             Dialog = dialog;
+            Position = savedState.Position;
         }
 
         public DialogProjectDialog Dialog { get; }
         public Guid Id { get; }
         public abstract DialogNodeType NodeType { get; }
+        public Vector2 Position
+        {
+            get => _position;
+            set
+            {
+                if (_position != value)
+                {
+                    _position = value;
+                    InvokePropertyChanged(nameof(Position));
+                }
+            }
+        }
+        public IPortDataConverter DataConverter => DialogProjectPortDataConverter.Instance;
+
+        private Vector2 _position;
 
         #region Управление
 
@@ -26,6 +43,7 @@ namespace DialogMaker.Core.Editor
             var savedState = CreateSavedState();
             savedState.Id = Id.ToString();
             savedState.NodeType = NodeType;
+            savedState.Position = Position;
 
             return savedState;
         }

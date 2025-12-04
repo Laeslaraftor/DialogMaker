@@ -11,6 +11,8 @@ namespace DialogMaker.Core
         [Description("Реплика на фоне картинки, видео или залитого цветом экрана")]
         FullScreenReplica,
         [Description("Текст в центре залитого цветом экрана")]
-        FullScreenScreenText
+        FullScreenScreenText,
+        Start,
+        End
     }
 }
