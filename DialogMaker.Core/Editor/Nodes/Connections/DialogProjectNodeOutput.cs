@@ -4,12 +4,12 @@ namespace DialogMaker.Core.Editor.Nodes
 {
     public class DialogProjectNodeOutput : DialogProjectNodePort
     {
-        public DialogProjectNodeOutput(INode node, string portName, DialogNodePortType dataType) 
-            : base(node, portName, dataType)
+        public DialogProjectNodeOutput(INode node, int portId, DialogNodePortType dataType) 
+            : base(node, portId, dataType)
         {
         }
-        public DialogProjectNodeOutput(INode node, string portName, DialogNodeConnectionType connectionType, DialogNodePortType dataType) 
-            : base(node, portName, connectionType, dataType)
+        public DialogProjectNodeOutput(INode node, int portId, DialogNodeConnectionType connectionType, DialogNodePortType dataType) 
+            : base(node, portId, connectionType, dataType)
         {
         }
 
@@ -21,8 +21,9 @@ namespace DialogMaker.Core.Editor.Nodes
                 return _connections;
             }
         }
+        public override int ConnectionsCount => Connections.Count;
 
-        protected override IEditableList ConnectionsList => Connections;
+        protected override IEditableList ConnectionsList => Connections; 
 
         private EditableCollection<DialogProjectNodeInput>? _connections;
 

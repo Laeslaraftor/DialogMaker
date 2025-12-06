@@ -123,6 +123,24 @@ namespace DialogMaker.Editor
             }
         }
 
+        public static ProjectResourceItem Create(ProjectController controller, DialogProjectResourceObject resource)
+        {
+            if (resource is DialogProjectString str)
+            {
+                return new ProjectString(controller, str);
+            }
+            if (resource is DialogProjectCharacter character)
+            {
+                return new ProjectCharacter(controller, character);
+            }
+            if (resource is DialogProjectItem item)
+            {
+                return new ProjectResourceFile(controller, item);
+            }
+
+            throw new ArgumentException($"Неизвестный тип ресурса: {resource.GetType()}", nameof(resource));
+        }
+
         private static bool CanExecute(object? parameter)
         {
             return (parameter is EditCommandEventArgs<string> args &&

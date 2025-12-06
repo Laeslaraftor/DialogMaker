@@ -1,7 +1,7 @@
 ﻿namespace DialogMaker.Core.Editor.Nodes
 {
-    public class DialogProjectNodeInputFloat(INode node, string portName)
-        : DialogProjectNodeInputValue<float>(node, portName, DialogNodePortType.Float)
+    public class DialogProjectNodeInputFloat(INode node, int portId)
+        : DialogProjectNodeInputValue<float>(node, portId, DialogNodePortType.Float)
     {
     }
 }

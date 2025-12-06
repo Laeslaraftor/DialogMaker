@@ -5,12 +5,12 @@ namespace DialogMaker.Core.Editor.Nodes
 {
     public class DialogProjectNodeInput : DialogProjectNodePort, IValuePort
     {
-        public DialogProjectNodeInput(INode node, string portName, DialogNodePortType dataType) 
-            : base(node, portName, dataType)
+        public DialogProjectNodeInput(INode node, int portId, DialogNodePortType dataType) 
+            : base(node, portId, dataType)
         {
         }
-        public DialogProjectNodeInput(INode node, string portName, DialogNodeConnectionType connectionType, DialogNodePortType dataType) 
-            : base(node, portName, connectionType, dataType)
+        public DialogProjectNodeInput(INode node, int portId, DialogNodeConnectionType connectionType, DialogNodePortType dataType) 
+            : base(node, portId, connectionType, dataType)
         {
         }
 
@@ -22,6 +22,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 return _connections;
             }
         }
+        public override int ConnectionsCount => Connections.Count;
         public virtual bool CanPresetValue { get; }
 
         protected override IEditableList ConnectionsList => Connections;

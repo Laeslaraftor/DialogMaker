@@ -1,19 +1,20 @@
 ﻿using Acly;
 using System;
 using System.Collections;
+using System.Drawing;
 using System.IO;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
     public abstract class DialogProjectNodePort : ObservableObject, ISavable, IDisposable
     {
-        protected DialogProjectNodePort(INode node, string portName, DialogNodePortType dataType)
-            : this(node, portName, dataType.ToConnectionType(), dataType)
+        protected DialogProjectNodePort(INode node, int portId, DialogNodePortType dataType)
+            : this(node, portId, dataType.ToConnectionType(), dataType)
         {
         }
-        protected DialogProjectNodePort(INode node, string portName, DialogNodeConnectionType connectionType, DialogNodePortType dataType)
+        protected DialogProjectNodePort(INode node, int portId, DialogNodeConnectionType connectionType, DialogNodePortType dataType)
         {
-            Name = portName;
+            Id = portId;
             Node = node;
             ConnectionType = connectionType;
             DataType = dataType;
@@ -24,10 +25,12 @@ namespace DialogMaker.Core.Editor.Nodes
             Dispose(false);
         }
 
-        public string Name { get; }
+        public int Id { get; }
         public INode Node { get; }
         public DialogNodeConnectionType ConnectionType { get; }
         public DialogNodePortType DataType { get; }
+        public virtual Color Color { get; } = Color.Gray;
+        public abstract int ConnectionsCount { get; }
 
         protected abstract IEditableList ConnectionsList { get; }
 
@@ -86,7 +89,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 {
                     if (connection is DialogProjectNodePort port)
                     {
-                        result.Connections.TryAdd(port.Node.Id.ToString(), port.Name);
+                        result.Connections.TryAdd(port.Node.Id.ToString(), port.Id);
                     }
                 }
             }
@@ -103,7 +106,7 @@ namespace DialogMaker.Core.Editor.Nodes
         public override string ToString()
         {
             string nextNodeName = "?";
-            string currentConnection = $"[{Node.NodeType}] {Name}";
+            string currentConnection = $"[{Node.NodeType}] {Id}";
 
             if (ConnectionsList is IEnumerable enumerable)
             {
@@ -111,7 +114,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 {
                     if (connection is DialogProjectNodePort port)
                     {
-                        nextNodeName = $"[{port.Node.NodeType}] {port.Name}";
+                        nextNodeName = $"[{port.Node.NodeType}] {port.Id}";
                         break;
                     } 
                 }
@@ -147,11 +150,14 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 throw new InvalidDataException($"Невозможно установить связь для {port}");
             }
+
+            InvokePropertyChanged(nameof(ConnectionsCount));
         }
 
         private void OnConnectionsListItemChanged(object sender, CollectionItemEventArgs e)
         {
-            if (e.Item is DialogProjectNodePort port)
+            if (e.Action != CollectionItemAction.Move &&
+                e.Item is DialogProjectNodePort port)
             {
                 OnConnectionChanged(e.Action, port);
             }

@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using WColor = System.Windows.Media.Color;
 
 namespace DialogMaker
 {
@@ -199,5 +200,10 @@ namespace DialogMaker
                 };
             }
         }
+
+        public static WColor ToWindows(this System.Drawing.Color color)
+        {
+            return WColor.FromArgb(color.A, color.R, color.G, color.B);
+        } 
     }
 }

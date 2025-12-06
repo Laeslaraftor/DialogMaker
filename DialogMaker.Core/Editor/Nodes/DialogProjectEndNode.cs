@@ -10,11 +10,12 @@
         }
 
         public override DialogNodeType NodeType => DialogNodeType.Start;
+        [NodeInput("Действие")]
         public DialogProjectNodeInputAction End
         {
             get
             {
-                field ??= new(this, nameof(End));
+                field ??= new(this, 0);
                 return field;
             }
         }

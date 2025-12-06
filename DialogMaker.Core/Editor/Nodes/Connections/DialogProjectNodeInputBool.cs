@@ -1,7 +1,7 @@
 ﻿namespace DialogMaker.Core.Editor.Nodes
 {
-    public class DialogProjectNodeInputBool(INode node, string portName)
-        : DialogProjectNodeInputValue<bool>(node, portName, DialogNodePortType.Bool)
+    public class DialogProjectNodeInputBool(INode node, int portId)
+        : DialogProjectNodeInputValue<bool>(node, portId, DialogNodePortType.Bool)
     {
     }
 }

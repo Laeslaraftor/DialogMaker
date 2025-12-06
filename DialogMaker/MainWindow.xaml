@@ -196,13 +196,46 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        <!--<lib:DiagramView>
+        <lib:DiagramView Grid.Column="1" Grid.Row="1">
             <lib:DiagramView.Children>
-                <Border Width="150" Height="150" Background="Black"
-        CornerRadius="8"/>
-                <Border Width="150" Height="150" Background="DarkBlue"
-        CornerRadius="8"/>
+                <Border Padding="0,0,0,5"
+                        Background="{DynamicResource LayerOnAcrylicFillColorDefaultBrush}"
+                        BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}" 
+                        BorderThickness="1" CornerRadius="8">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.ColumnSpan="3" Margin="12,4"
+                                   Text="Название узла" FontWeight="Medium"/>
+                        <Border VerticalAlignment="Bottom" Grid.ColumnSpan="3"
+                                Background="{DynamicResource SurfaceStrokeColorDefaultBrush}"
+                                Height="1"/>
+                        <StackPanel Grid.Row="1" Margin="4"
+                                    Orientation="Vertical">
+                            <lib:DiagramNodePort HorizontalAlignment="Right"
+                                                Text="Точка входа" Invert="True"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="2"
+                                    Orientation="Vertical" Margin="4">
+                            <lib:DiagramNodePort HorizontalAlignment="Right"
+                                                 Text="Точка входа"/>
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="1" 
+                                    Margin="4" Width="150">
+                            <TextBox/>
+                            <lib:ReferenceView/>
+                            <ComboBox/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
             </lib:DiagramView.Children>
-        </lib:DiagramView>-->
+        </lib:DiagramView>
     </Grid>
 </Window>

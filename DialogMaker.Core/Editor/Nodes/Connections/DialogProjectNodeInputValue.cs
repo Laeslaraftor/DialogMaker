@@ -1,7 +1,7 @@
 ﻿namespace DialogMaker.Core.Editor.Nodes
 {
-    public class DialogProjectNodeInputValue<T>(INode node, string portName, DialogNodePortType dataType)
-        : DialogProjectNodeInput(node, portName, dataType), IValuePort<T>
+    public class DialogProjectNodeInputValue<T>(INode node, int portId, DialogNodePortType dataType)
+        : DialogProjectNodeInput(node, portId, dataType), IValuePort<T>
     {
         public T Value
         {
