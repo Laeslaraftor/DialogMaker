@@ -42,8 +42,8 @@
                         Command="{Binding CreatePackCommand}"
                         IsEnabled="{Binding CanCreatePack}"/>
             </StackPanel>
-            <TreeView Grid.Row="1" 
-                      ItemsSource="{Binding DialogPacks}">
+            <TreeView x:Name="_projectStruct" Grid.Row="1" 
+                      ItemsSource="{Binding Project.Packs}">
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate ItemsSource="{Binding Children}">
                         <lib:ProjectItemView ContextMenu="{Binding ContextMenu}"
@@ -196,9 +196,11 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        <lib:DiagramView Grid.Column="1" Grid.Row="1">
+        <lib:DiagramView Grid.Column="1" Grid.Row="1"
+                         Dialog="{Binding Source={x:Reference Name=_projectStruct}, Path=SelectedItem}">
             <lib:DiagramView.Children>
-                <Border Padding="0,0,0,5"
+                <lib:DiagramNode/>
+                <Border Padding="0,0,0,5" Visibility="Collapsed"
                         Background="{DynamicResource LayerOnAcrylicFillColorDefaultBrush}"
                         BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}" 
                         BorderThickness="1" CornerRadius="8">

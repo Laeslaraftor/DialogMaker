@@ -1,10 +1,9 @@
 ﻿using Acly;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
+    [Name("Вариант ответа")]
     public class DialogProjectChoiceNode : DialogProjectDialogNode
     {
         public DialogProjectChoiceNode(DialogProjectDialog dialog) : base(dialog)

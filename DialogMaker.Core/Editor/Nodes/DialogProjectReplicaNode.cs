@@ -2,6 +2,7 @@
 
 namespace DialogMaker.Core.Editor.Nodes
 {
+    [Name("Реплика")]
     public class DialogProjectReplicaNode : DialogProjectDialogNode
     {
         public DialogProjectReplicaNode(DialogProjectDialog dialog) : base(dialog)

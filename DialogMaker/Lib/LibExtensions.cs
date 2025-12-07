@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Lib;
+using System.Collections;
 using System.Numerics;
 using System.Windows;
 using System.Windows.Input;
@@ -205,5 +206,21 @@ namespace DialogMaker
         {
             return WColor.FromArgb(color.A, color.R, color.G, color.B);
         } 
+        public static int IndexOf(this IEnumerable enumerable, object? item)
+        {
+            int index = 0;
+
+            foreach (var i in enumerable)
+            {
+                if (i?.Equals(item) == true)
+                {
+                    return index; 
+                }
+
+                index++;
+            }
+
+            return -1;
+        }
     }
 }

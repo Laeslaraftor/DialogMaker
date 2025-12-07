@@ -13,6 +13,7 @@ namespace DialogMaker.Editor
         }
         public DialogProjectCharacter ConvertBack(ProjectCharacter Value)
         {
+            Value.Dispose();
             return Value.Original;
         }
     }

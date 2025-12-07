@@ -25,7 +25,7 @@ namespace DialogMaker.Core.Editor
                 {
                     string filePath = Path.Combine(dialogsPath, $"{dialog}.{JsonData.FileExtension}");
                     var projectDialog = DialogProjectDialog.Open(this, filePath);
-                    _dialogs.Add(projectDialog);
+                    Dialogs.Add(projectDialog);
                 }
                 catch (Exception error)
                 {
@@ -38,8 +38,6 @@ namespace DialogMaker.Core.Editor
             Project = project;
             Id = id;
             Folder = Path.Combine(project.ProjectPath, id);
-            _dialogs = new();
-            Dialogs = new(_dialogs);
 
             if (createResources)
             {
@@ -70,12 +68,11 @@ namespace DialogMaker.Core.Editor
                 }
             }
         }
-        public ReferenceReadOnlyList<DialogProjectDialog> Dialogs { get; }
+        public EditableCollection<DialogProjectDialog> Dialogs { get; } = [];
         public DialogProjectResources Resources { get; }
 
         IProjectResourcesOwner? IProjectResourcesOwner.Parent => Project;
 
-        private readonly ObservableList<DialogProjectDialog> _dialogs;
         private string _name = string.Empty;
 
         #region Управление
@@ -84,7 +81,7 @@ namespace DialogMaker.Core.Editor
         {
             Resources.Save();
 
-            foreach (var dialog in _dialogs)
+            foreach (var dialog in Dialogs)
             {
                 dialog.Save(); 
             }
@@ -93,7 +90,7 @@ namespace DialogMaker.Core.Editor
             {
                 Id = Id,
                 Name = Name,
-                Dialogs = _dialogs.Select(d => d.Id).ToArray()
+                Dialogs = Dialogs.Select(d => d.Id).ToArray()
             };
 
             string filePath = Path.Combine(Folder, FileName);
@@ -103,11 +100,11 @@ namespace DialogMaker.Core.Editor
 
         public bool TryGetDialog(string id, [NotNullWhen(true)] out DialogProjectDialog? result)
         {
-            return _dialogs.TryGetValue(d => d.Id == id, out result);
+            return Dialogs.TryGetValue(d => d.Id == id, out result);
         }
         bool IProjectResourcesOwner.TryGetChild(string id, [NotNullWhen(true)] out IProjectResourcesOwner? result)
         {
-            return _dialogs.TryGetValue(d => d.Id == id, out result);
+            return Dialogs.TryGetValue(d => d.Id == id, out result);
         }
 
         public DialogProjectDialog CreateDialog(string id, string name)
@@ -122,7 +119,7 @@ namespace DialogMaker.Core.Editor
                 Name = name
             };
 
-            _dialogs.Add(dialog);
+            Dialogs.Add(dialog);
 
             DialogsChanged?.Invoke(this, new(ItemAction.Add, dialog));
 
@@ -130,7 +127,7 @@ namespace DialogMaker.Core.Editor
         }
         public bool RemoveDialog(DialogProjectDialog dialog)
         {
-            if (_dialogs.Remove(dialog))
+            if (Dialogs.Remove(dialog))
             {
                 DialogsChanged?.Invoke(this, new(ItemAction.Remove, dialog));
                 return true;

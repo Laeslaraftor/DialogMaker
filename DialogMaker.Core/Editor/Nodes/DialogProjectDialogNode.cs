@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Numerics;
 
 namespace DialogMaker.Core.Editor.Nodes
@@ -56,13 +58,48 @@ namespace DialogMaker.Core.Editor.Nodes
 
         #region Статика
 
+        public static ReadOnlyDictionary<DialogNodeType, Type> AvailableNodes
+        {
+            get
+            {
+                if (field == null)
+                {
+                    Dictionary<DialogNodeType, Type> result = [];
+
+                    foreach (var value in Enum.GetValues(typeof(DialogNodeType)))
+                    {
+                        var node = value.GetEnumAttribute<NodeAttribute>();
+
+                        if (node != null)
+                        {
+                            result.Add((DialogNodeType)value, node.NodeType);
+                        }
+                    }
+
+                    field = new(result);
+                } 
+
+                return field;
+            }
+        }
+
         public static DialogProjectDialogNode Create(DialogProjectDialog dialog, DialogNodeType type)
         {
-            throw new NotImplementedException();
+            if (AvailableNodes.TryGetValue(type, out var nodeType))
+            {
+                return (DialogProjectDialogNode)Activator.CreateInstance(nodeType, dialog);
+            }
+
+            throw new ArgumentException($"Узел недоступен: {type}", nameof(type));
         }
         public static DialogProjectDialogNode Restore(DialogProjectDialog dialog, DialogProjectDialogNodeSavedState savedState)
         {
-            throw new NotImplementedException();
+            if (AvailableNodes.TryGetValue(savedState.NodeType, out var nodeType))
+            {
+                return (DialogProjectDialogNode)Activator.CreateInstance(nodeType, dialog, savedState);
+            }
+
+            throw new ArgumentException($"Узел недоступен: {savedState.NodeType}", nameof(savedState));
         }
 
         #endregion

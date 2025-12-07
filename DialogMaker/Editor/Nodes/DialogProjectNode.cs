@@ -8,14 +8,15 @@ namespace DialogMaker.Editor
 {
     public class DialogProjectNode : ObservableObject, IDisposable
     {
-        public DialogProjectNode(ProjectController project, DialogProjectDialogNode node)
+        public DialogProjectNode(ProjectDialog dialog, DialogProjectDialogNode node)
         {
             var nodeType = node.GetType();
 
-            Project = project;
+            Project = dialog.Project;
+            Dialog = dialog;
             Original = node;
             Position = new(node.Position.X, node.Position.Y);
-            Name = nodeType.GetName();
+            _name = nodeType.GetName();
             Description = nodeType.GetDescription();
             Inputs = new(DialogProjectNodePortProxy.GetInputs(node));
             Outputs = new(DialogProjectNodePortProxy.GetOutputs(node));
@@ -29,8 +30,13 @@ namespace DialogMaker.Editor
         }
 
         public ProjectController Project { get; }
+        public ProjectDialog Dialog { get; }
         public DialogProjectDialogNode Original { get; }
-        public string Name { get; }
+        public string Name
+        {
+            get => _name;
+            set { }
+        }
         public string Description { get; }
         public Point Position
         {
@@ -49,6 +55,8 @@ namespace DialogMaker.Editor
         public ReadOnlyCollection<DialogProjectNodePortProxy> Inputs { get; }
         public ReadOnlyCollection<DialogProjectNodePortProxy> Outputs { get; }
         public ReadOnlyCollection<DialogProjectNodeProperty> Properties { get; }
+
+        private string _name;
 
         #region Управление
 

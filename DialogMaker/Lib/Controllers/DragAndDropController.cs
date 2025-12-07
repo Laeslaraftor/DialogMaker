@@ -1,4 +1,6 @@
-﻿using System.ComponentModel;
+﻿using DialogMaker.Editor;
+using DialogMaker.ViewModels;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -64,38 +66,28 @@ namespace DialogMaker.Lib.Controllers
             ElementsContainer.MouseLeave -= OnElementsContainerMouseLeave;
         }
 
-        private async Task<HitTestResult?> HitTest(MouseEventArgs mouse)
+        private async Task<UIElement?> HitTest(MouseEventArgs mouse)
         {
-            Point position = mouse.GetPosition(ElementsContainer);
-            HitTestResult? testResult = null;
+            UIElement? item = null;
 
-            HitTestFilterBehavior Filter(DependencyObject potentialHitTestTarget)
+            await ElementsContainer.Fetch(mouse, target =>
             {
-                DragCheckEventArgs check = new(potentialHitTestTarget, mouse);
+                if (target is not UIElement element)
+                {
+                    return;
+                }
+
+                DragCheckEventArgs check = new(target, mouse);
 
                 DragCheck?.Invoke(this, check);
 
-                if (check.Ignore)
+                if (!check.Ignore)
                 {
-                    return HitTestFilterBehavior.ContinueSkipSelfAndChildren;
+                    item = element;
                 }
+            });
 
-                return HitTestFilterBehavior.Continue;
-            }
-            HitTestResultBehavior Callback(HitTestResult result)
-            {
-                testResult = result;
-                return HitTestResultBehavior.Stop;
-            }
-
-            VisualTreeHelper.HitTest(ElementsContainer, Filter, Callback, new PointHitTestParameters(position));
-
-            while (testResult == null)
-            {
-                await Task.Delay(50);
-            }
-
-            return testResult;
+            return item;
         }
 
         private async void StartDrag(MouseEventArgs mouse)
@@ -106,14 +98,9 @@ namespace DialogMaker.Lib.Controllers
             }
 
             Point position = mouse.GetPosition(ElementsContainer);
-            HitTestResult? hitTestResult = await HitTest(mouse);
+            UIElement? uiElement = await HitTest(mouse);
 
-            if (hitTestResult == null)
-            {
-                return;
-            }
-
-            if (hitTestResult.VisualHit is not UIElement uiElement)
+            if (uiElement == null)
             {
                 return;
             }

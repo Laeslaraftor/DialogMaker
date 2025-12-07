@@ -22,18 +22,6 @@ namespace DialogMaker.ViewModels
                 }
             }
         }
-        public ReferenceReadOnlyList<ProjectItem>? DialogPacks
-        {
-            get => field;
-            set
-            {
-                if (field != value)
-                {
-                    field = value;
-                    InvokePropertyChanged(nameof(DialogPacks));
-                }
-            }
-        }
         public ICommand? CreateProjectCommand
         {
             get => field;

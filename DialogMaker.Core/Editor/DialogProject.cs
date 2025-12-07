@@ -23,7 +23,7 @@ namespace DialogMaker.Core.Editor
                 try
                 {
                     var projectPack = DialogProjectPack.Open(this, packFolder);
-                    _packs.Add(projectPack);
+                    Packs.Add(projectPack);
                 }
                 catch (Exception error)
                 {
@@ -57,9 +57,7 @@ namespace DialogMaker.Core.Editor
                 Resources = new(this);
             }
 
-            _packs = new();
             Languages = new();
-            Packs = new(_packs);
 
             Languages.ItemChanged += OnLanguagesItemChanged;
         }
@@ -101,7 +99,7 @@ namespace DialogMaker.Core.Editor
                 }
             }
         }
-        public ReferenceReadOnlyList<DialogProjectPack> Packs { get; }
+        public EditableCollection<DialogProjectPack> Packs { get; } = [];
         public EditableCollection<DialogProjectLanguage> Languages { get; }
         public DialogProjectResources Resources { get; }
 
@@ -110,7 +108,6 @@ namespace DialogMaker.Core.Editor
         string IProjectResourcesOwner.Folder => ProjectPath;
 
 
-        private readonly ObservableList<DialogProjectPack> _packs;
         private string _name = string.Empty;
         private DialogProjectLanguage? _defaultLanguage;
 
@@ -120,7 +117,7 @@ namespace DialogMaker.Core.Editor
         {
             Resources.Save();
 
-            foreach (var pack in _packs)
+            foreach (var pack in Packs)
             {
                 pack.Save();
             }
@@ -130,7 +127,7 @@ namespace DialogMaker.Core.Editor
                 Id = Id,
                 Name = Name,
                 DefaultLanguage = _defaultLanguage?.ProjectId.ToString(),
-                Packs = _packs.Select(p => p.Id).ToArray(),
+                Packs = Packs.Select(p => p.Id).ToArray(),
                 Languages = Languages.Select(l => (DialogProjectLanguageSavedState)l.Save()).ToArray(),
             };
 
@@ -141,7 +138,7 @@ namespace DialogMaker.Core.Editor
 
         public bool TryGetPack(string id, [NotNullWhen(true)] out DialogProjectPack? result)
         {
-            return _packs.TryGetValue(p => p.Id == id, out result);
+            return Packs.TryGetValue(p => p.Id == id, out result);
         }
         public bool TryGetLanguage(string id, [NotNullWhen(true)] out DialogProjectLanguage? result)
         {
@@ -153,7 +150,7 @@ namespace DialogMaker.Core.Editor
         }
         bool IProjectResourcesOwner.TryGetChild(string id, [NotNullWhen(true)] out IProjectResourcesOwner? result)
         {
-            return _packs.TryGetValue(p => p.Id == id, out result);
+            return Packs.TryGetValue(p => p.Id == id, out result);
         }
 
         public DialogProjectPack CreatePack(string id, string name)
@@ -173,7 +170,7 @@ namespace DialogMaker.Core.Editor
                 Directory.CreateDirectory(pack.Folder);
             }
 
-            _packs.Add(pack);
+            Packs.Add(pack);
 
             PacksChanged?.Invoke(this, new(ItemAction.Add, pack));
 
@@ -181,7 +178,7 @@ namespace DialogMaker.Core.Editor
         }
         public bool RemovePack(DialogProjectPack pack)
         {
-            if (_packs.Remove(pack))
+            if (Packs.Remove(pack))
             {
                 PacksChanged?.Invoke(this, new(ItemAction.Remove, pack));
                 return true;

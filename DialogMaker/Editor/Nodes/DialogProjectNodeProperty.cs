@@ -3,20 +3,25 @@ using System.Reflection;
 using System.ComponentModel;
 using System.Windows;
 using DialogMaker.Core.Editor;
+using DialogMaker.Lib.InputFields;
 
 namespace DialogMaker.Editor
 {
-    public abstract class DialogProjectNodeProperty : ObservableObject, IDisposable
+    public class DialogProjectNodeProperty : ObservableObject, IDisposable
     {
         protected DialogProjectNodeProperty(DialogProjectNode node, PropertyInfo property)
         {
+            InputField = InputField.GetField(property.PropertyType);
             Node = node;
             Property = property;
             Name = property.GetName();
             Description = property.GetDescription();
+            InputField.Placeholder = Name;
+            InputField.Value = Value;
 
             node.Original.PropertyChanged += OnOriginalNodePropertyChanged;
             node.Original.PropertyChanging += OnOriginalNodePropertyChanging;
+            InputField.PropertyChanged += OnInputFieldPropertyChanged;
         }
         ~DialogProjectNodeProperty()
         {
@@ -31,13 +36,12 @@ namespace DialogMaker.Editor
             get => Property.GetValue(Node.Original);
             set => Property.SetValue(Node.Original, value);
         }
+        public FrameworkElement View => InputField.View;
 
         protected PropertyInfo Property { get; }
+        protected InputField InputField { get; } 
 
         #region Управление
-
-        public abstract FrameworkElement GetView();
-        public abstract void FreeView(FrameworkElement element);
 
         public void Dispose()
         {
@@ -48,7 +52,10 @@ namespace DialogMaker.Editor
         protected virtual void Dispose(bool isDisposing)
         {
             Node.Original.PropertyChanged -= OnOriginalNodePropertyChanged;
-            Node.Original.PropertyChanging += OnOriginalNodePropertyChanging;
+            Node.Original.PropertyChanging -= OnOriginalNodePropertyChanging;
+            InputField.PropertyChanged -= OnInputFieldPropertyChanged;
+
+            InputField.Dispose();
         }
 
         #endregion
@@ -62,8 +69,24 @@ namespace DialogMaker.Editor
         protected virtual void OnValueChanged()
         {
             InvokePropertyChanged(nameof(Value));
+
+            var value = Value;
+
+            if (InputField.Value?.Equals(value) != true)
+            {
+                InputField.Value = value;
+            }
         }
 
+        private void OnInputFieldPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            var value = InputField.Value;
+
+            if (Value?.Equals(value) != true)
+            {
+                Value = value;
+            }
+        }
         protected virtual void OnOriginalNodePropertyChanging(object? sender, PropertyChangingEventArgs e)
         {
             if (e.PropertyName == Property.Name)
@@ -86,10 +109,11 @@ namespace DialogMaker.Editor
         private static readonly Dictionary<Type, Type> _allowedTypes = new()
         {
             { typeof(string), typeof(DialogProjectNodeProperty) },
-            { typeof(float), typeof(DialogProjectNodeProperty) },
-            { typeof(int), typeof(DialogProjectNodeProperty) },
+            { typeof(bool), typeof(DialogProjectNodeProperty) },
+            //{ typeof(float), typeof(DialogProjectNodeProperty) },
+            //{ typeof(int), typeof(DialogProjectNodeProperty) },
             { typeof(Enum), typeof(DialogProjectNodeProperty) },
-            { typeof(DialogProjectReference<>), typeof(DialogProjectNodeReferenceProperty) },
+            { typeof(DialogProjectReference<>), typeof(DialogProjectNodeProperty) },
         };
 
         public static List<DialogProjectNodeProperty> GetProperties(DialogProjectNode node)
@@ -108,12 +132,7 @@ namespace DialogMaker.Editor
                     if (property.PropertyType == typeInfo.Key ||
                         property.PropertyType.IsEnum && typeInfo.Key.IsEnum)
                     {
-                        object? instance = Activator.CreateInstance(typeInfo.Value, node, property);
-
-                        if (instance is DialogProjectNodeProperty nodeProperty)
-                        {
-                            result.Add(nodeProperty);
-                        }
+                        result.Add(new(node, property));
                     }
                 }
             }

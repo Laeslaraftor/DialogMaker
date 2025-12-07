@@ -44,7 +44,6 @@ namespace DialogMaker
             _model.Project = controller;
             _model.CanCreatePack = controller != null;
             _model.CreatePackCommand = controller?.CreatePackCommand;
-            _model.DialogPacks = controller?.Structure;
             _model.Languages = controller?.Languages;
             _model.GlobalResources = controller?.Resources;
 

@@ -16,13 +16,12 @@ namespace DialogMaker.Editor
         public ProjectController(DialogProject project)
         {
             Project = project;
-            _structure = [];
-            Structure = new(_structure);
             CreatePackCommand = new RelayCommand(ExecuteCreatePack);
             CreateLanguageCommand = new RelayCommand(p => project.CreateLanguage());
             SaveCommand = new RelayCommand(ExecuteSave);
             StringConverter = new(this);
             Languages = [];
+            Packs = [];
 
             _languageConverter = new(this);
             _languageNameConverter = new(this);
@@ -30,19 +29,15 @@ namespace DialogMaker.Editor
             _languagesName = new(Languages, new ObservableList<string>(), _languageNameConverter);
             LanguagesName = new((ObservableList<string>)_languagesName.SecondCollection);
 
+            _packsConverter = new(this);
+            _packs = new(project.Packs, Packs, _packsConverter);
+
             project.PropertyChanged += OnProjectPropertyChanged;
-            project.PacksChanged += OnProjectPacksChanged;
             project.Languages.ItemChanged += OnProjectLanguagesItemChanged;
             Languages.CollectionChanged += OnLanguagesCollectionChanged;
 
             Resources = new(this, project.Resources);
 
-            foreach (var pack in project.Packs)
-            {
-                pack.DialogsChanged += OnPackDialogsChanged;
-            }
-
-            UpdateStructure();
             UpdateDefaultLanguage();
         }
         ~ProjectController()
@@ -63,8 +58,8 @@ namespace DialogMaker.Editor
             }
         }
         public DialogProject Project { get; }
-        public ReferenceReadOnlyList<ProjectItem> Structure { get; }
         public ObservableCollection<ProjectLanguage> Languages { get; }
+        public ObservableCollection<ProjectPack> Packs { get; }
         public ReferenceReadOnlyList<string> LanguagesName { get; }
         public ProjectResources Resources { get; }
         public string Name
@@ -108,11 +103,12 @@ namespace DialogMaker.Editor
         public ICommand CreateLanguageCommand { get; }
         public ICommand SaveCommand { get; }
 
+        private readonly ProjectPackConverter _packsConverter;
         private readonly ProjectLanguageConverter _languageConverter;
         private readonly ProjectLanguageNameConverter _languageNameConverter;
+        private readonly CollectionSynchronizer<DialogProjectPack, ProjectPack> _packs;
         private readonly CollectionSynchronizer<DialogProjectLanguage, ProjectLanguage> _languages;
         private readonly CollectionSynchronizer<ProjectLanguage, string> _languagesName;
-        private readonly ObservableList<ProjectItem> _structure;
         private bool _isDisposed;
 
         #region Управление
@@ -139,49 +135,16 @@ namespace DialogMaker.Editor
             IsDisposed = true;
 
             Project.PropertyChanged -= OnProjectPropertyChanged;
-            Project.PacksChanged -= OnProjectPacksChanged;
             Languages.CollectionChanged -= OnLanguagesCollectionChanged;
             Project.Languages.ItemChanged -= OnProjectLanguagesItemChanged;
-
-            foreach (var pack in Project.Packs)
-            {
-                pack.DialogsChanged -= OnPackDialogsChanged;
-            }
 
             Resources.Dispose();
             _languages.Dispose();
             _languagesName.Dispose();
             _languageConverter.Dispose();
+            _packs.Dispose();
 
             GC.SuppressFinalize(this);
-        }
-        public void UpdateStructure()
-        {
-            _structure.Clear();
-
-            foreach (var pack in Project.Packs)
-            {
-                DialogPackContextMenu menu = new(pack);
-                ProjectItem packItem = new()
-                {
-                    Name = pack.Name,
-                    Value = pack,
-                    ContextMenu = menu
-                };
-
-                foreach (var dialog in pack.Dialogs)
-                {
-                    packItem.Children.Add(new()
-                    {
-                        Icon = Icons.Message,
-                        Name = dialog.Name,
-                        Value = dialog,
-                        ContextMenu = new DialogContextMenu(dialog)
-                    });
-                }
-
-                _structure.Add(packItem);
-            }
         }
 
         private void UpdateDefaultLanguage()
@@ -212,8 +175,6 @@ namespace DialogMaker.Editor
             }
 
             Try(() => Project.CreatePack(name, name));
-
-            UpdateStructure();
             Save();
         }
 
@@ -248,25 +209,6 @@ namespace DialogMaker.Editor
             {
                 e.Item.PropertyChanged -= OnLanguagePropertyChanged;
             }
-        }
-        private void OnProjectPacksChanged(object? sender, ItemActionEventArgs<DialogProjectPack> e)
-        {
-            if (e.Action == ItemAction.Add)
-            {
-                e.Item.DialogsChanged += OnPackDialogsChanged;
-            }
-            else
-            {
-                e.Item.DialogsChanged -= OnPackDialogsChanged;
-            }
-
-            UpdateStructure();
-            Save();
-        }
-        private void OnPackDialogsChanged(object? sender, ItemActionEventArgs<DialogProjectDialog> e)
-        {
-            UpdateStructure();
-            Save();
         }
         private void OnLanguagesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {

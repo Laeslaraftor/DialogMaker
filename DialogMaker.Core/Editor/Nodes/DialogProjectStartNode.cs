@@ -1,5 +1,6 @@
 ﻿namespace DialogMaker.Core.Editor.Nodes
 {
+    [Name("Точка входа")]
     public class DialogProjectStartNode : DialogProjectDialogNode
     {
         public DialogProjectStartNode(DialogProjectDialog dialog) : base(dialog)

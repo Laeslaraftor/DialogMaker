@@ -1,10 +1,10 @@
 ﻿using Acly;
 using System.Windows;
 using System.Windows.Controls;
-using System.ComponentModel;
 using DialogMaker.Lib.Controllers;
 using DragEventArgs = DialogMaker.Lib.Controllers.DragEventArgs;
 using System.Windows.Media;
+using DialogMaker.Editor;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -14,61 +14,48 @@ namespace DialogMaker.Lib.Elements
         {
             InitializeComponent();
 
-            _connections = [];
             _dragAndDrop = new(this);
-            Connections = new(_connections);
-
             _dragAndDrop.DragUpdated += OnDragAndDropDragUpdated;
+            _dragAndDrop.DragCheck += OnDragAndDropDragCheck;
         }
 
         public UIElementCollection Children => _canvas.Children;
-        public ReferenceReadOnlyList<DiagramViewConnection> Connections { get; }
+        public ProjectDialog? Dialog
+        {
+            get => GetValue(DialogProperty) as ProjectDialog;
+            set => SetValue(DialogProperty, value);
+        }
 
         private readonly DragAndDropController _dragAndDrop;
-        private readonly ObservableList<DiagramViewConnection> _connections;
+        private readonly ElementsPool<DiagramNode> _nodesPool = new();
+        private readonly Dictionary<DialogProjectNode, DiagramNode> _nodes = [];
 
         #region Управление
 
-        public bool AlreadyConnected(UIElement element1, UIElement element2)
+        private void SetDialog(ProjectDialog? oldValue, ProjectDialog? newValue)
         {
-            foreach (var connection in _connections)
+            if (oldValue == newValue)
             {
-                if ((connection.Source == element1 || connection.Source == element2) &&
-                    (connection.Destination == element1 || connection.Destination == element2))
+                return;
+            }
+
+            _canvas.Children.Clear();
+
+            if (oldValue != null)
+            {
+                oldValue.Nodes.ItemChanged -= OnNodesItemChanged;
+            }
+            if (newValue != null)
+            {
+                newValue.Nodes.ItemChanged += OnNodesItemChanged;
+
+                foreach (var node in newValue.Nodes)
                 {
-                    return true;
+                    CreateNode(node);
                 }
             }
 
-            return false;
-        }
-        public DiagramViewConnection AddConnection(UIElement source, UIElement destination)
-        {
-            if (AlreadyConnected(source, destination))
-            {
-                throw new ArgumentException("Связь с этих элементов уже установлена");
-            }
-
-            DiagramViewConnection connection = new(_canvas, source, destination);
-            connection.PropertyChanged += OnConnectionPropertyChanged; 
-
-            return connection;
-        }
-        public bool RemoveConnection(DiagramViewConnection connection)
-        {
-            if (!_connections.Remove(connection))
-            {
-                return false;
-            }
-
-            connection.PropertyChanged -= OnConnectionPropertyChanged;
-
-            if (!connection.IsDisposed)
-            {
-                connection.Dispose();
-            }
-
-            return true;
+            ContextMenu = newValue?.EditorContextMenu;
         }
 
         private void UpdateCanvasSize()
@@ -91,15 +78,39 @@ namespace DialogMaker.Lib.Elements
             _canvas.Height = height;
         }
 
+        private void CreateNode(DialogProjectNode node)
+        {
+            if (!_nodes.TryGetValue(node, out var view))
+            {
+                view = _nodesPool.GetElement();
+                view.Node = node;
+                _canvas.Children.Add(view);
+            }
+        }
+        private void RemoveNode(DialogProjectNode node)
+        {
+            if (_nodes.TryGetValue(node, out var view))
+            {
+                view.Node = null;
+                _nodes.Remove(node);
+                _canvas.Children.Remove(view);
+                _nodesPool.Free(view);
+            }
+        }
+
         #endregion
 
         #region События
 
-        private void OnConnectionPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        private void OnNodesItemChanged(object? sender, CollectionItemEventArgs<DialogProjectNode> e)
         {
-            if (sender is DiagramViewConnection connection && e.PropertyName == "IsDisposed")
+            if (e.Action == CollectionItemAction.Add)
             {
-                RemoveConnection(connection);
+                CreateNode(e.Item);
+            }
+            else if (e.Action == CollectionItemAction.Remove)
+            {
+                RemoveNode(e.Item);
             }
         }
 
@@ -107,6 +118,26 @@ namespace DialogMaker.Lib.Elements
         {
             UpdateCanvasSize();
         }
+        private void OnDragAndDropDragCheck(object? sender, DragCheckEventArgs e)
+        {
+            e.Ignore = e.PotentialDragObject is not DiagramView &&
+                       e.PotentialDragObject is not DiagramNode;
+        }
+
+        private static void OnDialogChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is DiagramView view)
+            {
+                view.SetDialog(e.OldValue as ProjectDialog, e.NewValue as ProjectDialog);
+            }
+        }
+
+        #endregion
+
+        #region Dependency
+
+        public static readonly DependencyProperty DialogProperty = DependencyProperty.Register(nameof(Dialog), typeof(ProjectDialog),
+            typeof(DiagramView), new(OnDialogChanged));
 
         #endregion
     }

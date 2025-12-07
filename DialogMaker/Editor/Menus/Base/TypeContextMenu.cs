@@ -7,10 +7,10 @@
         }
         public TypeContextMenu(T item)
         {
-            _item = item;
+            Item = item;
         }
 
-        private readonly T? _item;
+        protected readonly T? Item;
 
         #region Управление
 
@@ -21,9 +21,9 @@
 
         protected bool Resolve(object? parameter, Action<T> execute)
         {
-            if (_item != null)
+            if (Item != null)
             {
-                execute(_item);
+                execute(Item);
             }
             else if (parameter is T typedParameter)
             {

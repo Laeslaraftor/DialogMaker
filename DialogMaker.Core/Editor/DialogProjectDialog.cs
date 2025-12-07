@@ -24,7 +24,7 @@ namespace DialogMaker.Core.Editor
                 try
                 {
                     var restoredNode = DialogProjectDialogNode.Restore(this, node);
-                    _nodes.Add(restoredNode);
+                    Nodes.Add(restoredNode);
                 }
                 catch (Exception error)
                 {
@@ -37,8 +37,6 @@ namespace DialogMaker.Core.Editor
             Pack = pack;
             Id = id;
             Folder = Path.Combine(pack.Folder, DialogsFolder);
-            _nodes = new();
-            Nodes = new(_nodes);
 
             if (createResources)
             {
@@ -66,12 +64,11 @@ namespace DialogMaker.Core.Editor
                 }
             }
         }
-        public ReferenceReadOnlyList<DialogProjectDialogNode> Nodes { get; }
+        public EditableCollection<DialogProjectDialogNode> Nodes { get; } = [];
         public DialogProjectResources Resources { get; }
 
         IProjectResourcesOwner? IProjectResourcesOwner.Parent => Pack;
 
-        private readonly ObservableList<DialogProjectDialogNode> _nodes;
         private string _name = string.Empty;
 
         #region Управление
@@ -84,7 +81,7 @@ namespace DialogMaker.Core.Editor
             {
                 Id = Id,
                 Name = Name,
-                Nodes = _nodes.Select(n => n.Save()).ToArray()
+                Nodes = Nodes.Select(n => n.Save()).ToArray()
             };
 
             FileExtensions.CreateDirectory(Folder);
@@ -95,7 +92,7 @@ namespace DialogMaker.Core.Editor
 
         public bool TryGetNode(Guid id, [NotNullWhen(true)] out DialogProjectDialogNode? result)
         {
-            return _nodes.TryGetValue(n => n.Id == id, out result);
+            return Nodes.TryGetValue(n => n.Id == id, out result);
         }
         bool IProjectResourcesOwner.TryGetChild(string id, [NotNullWhen(true)] out IProjectResourcesOwner? result)
         {
@@ -106,13 +103,13 @@ namespace DialogMaker.Core.Editor
         public DialogProjectDialogNode CreateNode(DialogNodeType type)
         {
             var node = DialogProjectDialogNode.Create(this, type);
-            _nodes.Add(node);
+            Nodes.Add(node);
 
             return node;
         }
         public bool RemoveNode(DialogProjectDialogNode node)
         {
-            return _nodes.Remove(node);
+            return Nodes.Remove(node);
         }
 
         public override string ToString()
