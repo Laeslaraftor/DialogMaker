@@ -1,23 +1,25 @@
 ﻿using DialogMaker.Core;
-using System.Reflection;
-using System.ComponentModel;
-using System.Windows;
 using DialogMaker.Core.Editor;
+using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Lib.InputFields;
+using System.ComponentModel;
+using System.Reflection;
+using System.Windows;
 
 namespace DialogMaker.Editor
 {
     public class DialogProjectNodeProperty : ObservableObject, IDisposable
     {
-        protected DialogProjectNodeProperty(DialogProjectNode node, PropertyInfo property)
+        protected DialogProjectNodeProperty(DialogProjectNode node, PropertyInfo property, AllowedType typeInfo)
         {
-            InputField = InputField.GetField(property.PropertyType);
+            InputField = typeInfo.ViewFabric(property);
             Node = node;
             Property = property;
             Name = property.GetName();
             Description = property.GetDescription();
             InputField.Placeholder = Name;
             InputField.Value = Value;
+            TypeInfo = typeInfo;
 
             node.Original.PropertyChanged += OnOriginalNodePropertyChanged;
             node.Original.PropertyChanging += OnOriginalNodePropertyChanging;
@@ -34,12 +36,21 @@ namespace DialogMaker.Editor
         public object? Value
         {
             get => Property.GetValue(Node.Original);
-            set => Property.SetValue(Node.Original, value);
+            set
+            {
+                if (TypeInfo.Converter != null)
+                {
+                    value = TypeInfo.Converter(value);
+                }
+
+                Property.SetValue(Node.Original, value);
+            }
         }
         public FrameworkElement View => InputField.View;
 
         protected PropertyInfo Property { get; }
-        protected InputField InputField { get; } 
+        protected InputField InputField { get; }
+        protected AllowedType TypeInfo { get; }
 
         #region Управление
 
@@ -106,21 +117,28 @@ namespace DialogMaker.Editor
 
         #region Статика
 
-        private static readonly Dictionary<Type, Type> _allowedTypes = new()
+        private static readonly List<AllowedType> _allowedTypes = new()
         {
-            { typeof(string), typeof(DialogProjectNodeProperty) },
-            { typeof(bool), typeof(DialogProjectNodeProperty) },
-            //{ typeof(float), typeof(DialogProjectNodeProperty) },
-            //{ typeof(int), typeof(DialogProjectNodeProperty) },
-            { typeof(Enum), typeof(DialogProjectNodeProperty) },
-            { typeof(DialogProjectReference<>), typeof(DialogProjectNodeProperty) },
+            new(typeof(string), t => new TextInputField()),
+            new(typeof(bool), t => new BoolInputField()),
+            //new(typeof(float), t => new TextInputField()),
+            //new(typeof(int), t => new TextInputField()),
+            new(typeof(Enum), t => new EnumInputField()),
+            new(typeof(DialogProjectReference<>), t =>
+            {
+                return new ReferenceInputField()
+                {
+                    ResourceType = t?.GetCustomAttribute<ReferenceAttribute>()?.Type
+                };
+            }, EditorExtensions.ToOriginalReference),
         };
 
         public static List<DialogProjectNodeProperty> GetProperties(DialogProjectNode node)
         {
             List<DialogProjectNodeProperty> result = [];
+            var properties = node.Original.GetType().GetProperties();
 
-            foreach (var property in node.GetType().GetProperties(BindingFlags.Public))
+            foreach (var property in properties)
             {
                 if (!property.CanWrite || !property.CanWrite)
                 {
@@ -129,15 +147,34 @@ namespace DialogMaker.Editor
 
                 foreach (var typeInfo in _allowedTypes)
                 {
-                    if (property.PropertyType == typeInfo.Key ||
-                        property.PropertyType.IsEnum && typeInfo.Key.IsEnum)
+                    if (typeInfo.Equals(property.PropertyType))
                     {
-                        result.Add(new(node, property));
+                        result.Add(new(node, property, typeInfo));
                     }
                 }
             }
 
             return result;
+        }
+
+        #endregion
+
+        #region Классы
+
+        protected readonly struct AllowedType(Type type, Func<MemberInfo, InputField> viewFabric, Func<object?, object?>? converter = null)
+            : IEquatable<Type>
+        {
+            public Type Type { get; } = type;
+            public Func<MemberInfo, InputField> ViewFabric { get; } = viewFabric;
+            public Func<object?, object?>? Converter { get; } = converter;
+
+            public readonly bool Equals(Type? other)
+            {
+                return other != null &&
+                       (Type == other ||
+                       Type.IsEnum && other.IsEnum ||
+                       Type.Name.Contains(other.Name));
+            }
         }
 
         #endregion

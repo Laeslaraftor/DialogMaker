@@ -60,21 +60,12 @@ namespace DialogMaker.Editor.Menus
                 Command = this,
             };
 
-            if (Icon != null)
+            if (Icons.TryCreateIconBlock(Icon, out var iconBlock))
             {
-                var font = Icons.Font;
-
-                if (font != null)
-                {
-                    TextBlock iconBlock = new()
-                    {
-                        Text = Icon,
-                        FontFamily = font,
-                        FontSize = 14
-                    };
-                    item.Icon = iconBlock;
-                }
+                iconBlock.FontSize = 14;
             }
+
+            item.Icon = iconBlock;
 
             menu.Add(item);
             _items.Add(item);

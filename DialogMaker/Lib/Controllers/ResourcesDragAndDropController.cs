@@ -176,6 +176,7 @@ namespace DialogMaker.Lib.Controllers
         private Point _startPosition;
         private Point _endPosition;
         private object? _itemPreview;
+        private bool _isHiding;
 
         #region Управление
 
@@ -283,6 +284,11 @@ namespace DialogMaker.Lib.Controllers
 
         private async void OnWindowPreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
+            if (_isHiding)
+            {
+                return;
+            }
+
             var position = e.GetPosition(_window);
             var element = await _window.Fetch<Window, TextBox>(position);
 
@@ -298,7 +304,7 @@ namespace DialogMaker.Lib.Controllers
         }
         private async void OnWindowPreviewMouseMove(object sender, MouseEventArgs e)
         {
-            if (CurrentItem == null)
+            if (CurrentItem == null || _isHiding)
             {
                 return;
             }
@@ -333,20 +339,22 @@ namespace DialogMaker.Lib.Controllers
                 return;
             }
             if (EndView != null &&
-                EndView.RequestedResourceType != null &&
-                EndView.RequestedResourceType == CurrentItem.ResourceType)
+                (EndView.RequestedResourceType == null ||
+                EndView.RequestedResourceType == CurrentItem.ResourceType))
             {
                 EndView.Item = CurrentItem;
             }
 
             IsVisible = false;
             EndView = null;
+            _isHiding = true;
 
             HideAllToolTips();
 
             await Task.Delay(_animationsDuration);
 
             CurrentItem = null;
+            _isHiding = false;
         }
 
         private async void OnWeightAnimationTick(ValueAnimation animation, float value)

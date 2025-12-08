@@ -7,6 +7,30 @@ namespace DialogMaker.Editor
 {
     public static class EditorExtensions
     {
+        public static object? ToOriginalReference(object? projectReference)
+        {
+            if (projectReference == null)
+            {
+                return null;
+            }
+
+            var type = projectReference.GetType();
+
+            if (type.Name != "ProjectReference`2")
+            {
+                return null;
+            }
+
+            var property = type.GetProperty("Reference");
+
+            if (property?.CanRead == true)
+            {
+                return property.GetValue(projectReference);
+            }
+
+            return null;
+        }
+
         public static string GetName(this MemberInfo info)
         {
             var name = info.GetCustomAttribute<NameAttribute>();

@@ -45,7 +45,7 @@ namespace DialogMaker.Lib.InputFields
             {
                 return new BoolInputField();
             }
-            if (type == typeof(DialogProjectReference<>) ||
+            if (type.Name == typeof(DialogProjectReference<>).Name ||
                 type == typeof(DialogProjectResourceObject))
             {
                 return new ReferenceInputField();

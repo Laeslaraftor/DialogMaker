@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 
 namespace DialogMaker.Lib
@@ -26,6 +28,7 @@ namespace DialogMaker.Lib
         public const string Edit = "\uE70F";
         public const string Create = "\uECC8";
         public const string Language = "\uF2B7";
+        public const string Node = "\uE964";
         public static FontFamily? Font
         {
             get
@@ -40,5 +43,31 @@ namespace DialogMaker.Lib
         }
 
         private static FontFamily? _font;
+
+        public static TextBlock? CreateIconBlock(string? icon)
+        {
+            if (icon == null)
+            {
+                return null;
+            }
+
+            var font = Font;
+
+            if (font != null)
+            {
+                return new TextBlock()
+                {
+                    Text = icon,
+                    FontFamily = font
+                };
+            }
+
+            return null;
+        }
+        public static bool TryCreateIconBlock(string? icon, [NotNullWhen(true)] out TextBlock? result)
+        {
+            result = CreateIconBlock(icon);
+            return result != null;
+        }
     }
 }

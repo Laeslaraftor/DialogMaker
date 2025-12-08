@@ -14,7 +14,7 @@ namespace DialogMaker.Core.Editor.Nodes
         }
 
         public override DialogNodeType NodeType => DialogNodeType.Choice;
-        [Reference(DialogResourceType.Character)]
+        [Name("Персонаж"), Reference(DialogResourceType.Character)]
         public DialogProjectReference<DialogProjectCharacter>? Character
         {
             get => field;
@@ -28,7 +28,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 }
             }
         }
-        [Reference(DialogResourceType.String)]
+        [Name("Варианты ответа"), Reference(DialogResourceType.String)]
         public EditableCollection<DialogProjectReference<DialogProjectString>> Variants { get; } = [];
         [NodeInput("Вход")]
         public DialogProjectNodeInputAction Input

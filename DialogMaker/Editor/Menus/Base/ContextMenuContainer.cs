@@ -1,9 +1,17 @@
-﻿using System.Windows.Controls;
+﻿using DialogMaker.Lib;
+using System.Windows.Controls;
 
 namespace DialogMaker.Editor.Menus
 {
     public class ContextMenuContainer(string name, IEnumerable<IContextMenuModifier> modifiers) : IContextMenuModifier
     {
+        public ContextMenuContainer(string icon, string name, IEnumerable<IContextMenuModifier> modifiers)
+            : this(name, modifiers)
+        {
+            Icon = icon;
+        }
+
+        public string? Icon { get; }
         public string Name { get; } = name;
         public IEnumerable<IContextMenuModifier> Modifiers { get; } = modifiers;
 
@@ -13,8 +21,15 @@ namespace DialogMaker.Editor.Menus
         {
             MenuItem item = new()
             {
-                Name = Name
+                Header = Name
             };
+
+            if (Icons.TryCreateIconBlock(Icon, out var iconBlock))
+            {
+                iconBlock.FontSize = 14;
+            }
+
+            item.Icon = iconBlock;
 
             foreach (var modifier in Modifiers)
             {

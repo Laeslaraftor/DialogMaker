@@ -14,7 +14,7 @@ namespace DialogMaker.Core.Editor.Nodes
         }
 
         public override DialogNodeType NodeType => DialogNodeType.SimpleReplica;
-        [Reference(DialogResourceType.Character)]
+        [Name("Персонаж"), Reference(DialogResourceType.Character)]
         public DialogProjectReference<DialogProjectCharacter>? Character
         {
             get => field;
@@ -28,7 +28,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 }
             }
         }
-        [Reference(DialogResourceType.String)]
+        [Name("Текст"), Reference(DialogResourceType.String)]
         public DialogProjectReference<DialogProjectString>? Text
         {
             get => field;

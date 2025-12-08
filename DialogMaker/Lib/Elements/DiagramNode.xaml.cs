@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Threading.Tasks;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -30,7 +31,7 @@ namespace DialogMaker.Lib.Elements
 
         #region Управление
 
-        private void SetNode(DialogProjectNode? oldValue, DialogProjectNode? newValue)
+        private async void SetNode(DialogProjectNode? oldValue, DialogProjectNode? newValue)
         {
             if (oldValue == newValue)
             {
@@ -45,7 +46,13 @@ namespace DialogMaker.Lib.Elements
             _properties.Children.Clear();
             _inputPorts.Clear();
             _outputPorts.Clear();
+
             _properties.Width = double.NaN;
+
+            while (_properties.Children.Count > 0)
+            {
+                await Task.Delay(50);
+            }
 
             ToolTip = newValue?.Description;
             _title.Text = newValue?.Name;
@@ -71,6 +78,7 @@ namespace DialogMaker.Lib.Elements
             }
             foreach (var property in newValue.Properties)
             {
+                property.View.RemoveFromParent();
                 _properties.Children.Add(property.View);
             }
 
@@ -127,6 +135,15 @@ namespace DialogMaker.Lib.Elements
             view.Color = port.Color;
             view.IsActive = port.IsActive;
             view.Invert = port.Original is DialogProjectNodeInput;
+
+            HorizontalAlignment alignment = HorizontalAlignment.Right;
+
+            if (view.Invert)
+            {
+                alignment = HorizontalAlignment.Left;
+            }
+
+            view.HorizontalAlignment = alignment;
         }
 
         #endregion

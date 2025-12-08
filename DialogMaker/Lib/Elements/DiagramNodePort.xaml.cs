@@ -46,7 +46,7 @@ namespace DialogMaker.Lib.Elements
             if (d is DiagramNodePort view)
             {
                 view._background.Background = e.NewValue as Brush;
-                view._border.Background = e.NewValue as Brush;
+                view._border.BorderBrush = e.NewValue as Brush;
             }
         }
         private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

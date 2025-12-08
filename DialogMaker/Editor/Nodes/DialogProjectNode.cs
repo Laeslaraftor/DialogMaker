@@ -1,18 +1,20 @@
-﻿using DialogMaker.Core;
-using DialogMaker.Core.Editor.Nodes;
+﻿using DialogMaker.Core.Editor.Nodes;
+using DialogMaker.Lib;
+using System.Collections;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace DialogMaker.Editor
 {
-    public class DialogProjectNode : ObservableObject, IDisposable
+    public class DialogProjectNode : ProjectStructureItem
     {
-        public DialogProjectNode(ProjectDialog dialog, DialogProjectDialogNode node)
+        public DialogProjectNode(ProjectDialog dialog, DialogProjectDialogNode node) 
+            : base(dialog.Project, dialog.Original)
         {
             var nodeType = node.GetType();
 
-            Project = dialog.Project;
             Dialog = dialog;
             Original = node;
             Position = new(node.Position.X, node.Position.Y);
@@ -24,15 +26,11 @@ namespace DialogMaker.Editor
 
             node.PropertyChanged += OnNodePropertyChanged;
         }
-        ~DialogProjectNode()
-        {
-            Dispose();
-        }
 
-        public ProjectController Project { get; }
         public ProjectDialog Dialog { get; }
         public DialogProjectDialogNode Original { get; }
-        public string Name
+        public override string Icon => Icons.Node;
+        public override string Name
         {
             get => _name;
             set { }
@@ -55,13 +53,17 @@ namespace DialogMaker.Editor
         public ReadOnlyCollection<DialogProjectNodePortProxy> Inputs { get; }
         public ReadOnlyCollection<DialogProjectNodePortProxy> Outputs { get; }
         public ReadOnlyCollection<DialogProjectNodeProperty> Properties { get; }
+        public override ContextMenu? ContextMenu => null;
+        public override IEnumerable? Children => null;
 
-        private string _name;
+        private readonly string _name;
 
         #region Управление
 
-        public void Dispose()
+        protected override void Dispose(bool isDisposing)
         {
+            base.Dispose(isDisposing);
+
             Original.PropertyChanged -= OnNodePropertyChanged;
 
             foreach (var input in Inputs)
@@ -76,8 +78,6 @@ namespace DialogMaker.Editor
             {
                 property.Dispose();
             }
-
-            GC.SuppressFinalize(this);
         }
 
         #endregion

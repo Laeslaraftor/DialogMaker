@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Numerics;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using WColor = System.Windows.Media.Color;
@@ -221,6 +222,38 @@ namespace DialogMaker
             }
 
             return -1;
+        }
+        public static void RemoveFromParent(this FrameworkElement element)
+        {
+            if (element.Parent is Panel panel)
+            {
+                panel.Children.Remove(element);
+                return;
+            }
+            if (element.Parent is Decorator decorator)
+            {
+                if (decorator.Child == element)
+                {
+                    decorator.Child = null;
+                }
+                return;
+            }
+            if (element.Parent is ContentPresenter contentPresenter)
+            {
+                if (contentPresenter.Content == element)
+                {
+                    contentPresenter.Content = null;
+                }
+                return;
+            }
+            if (element.Parent is ContentControl contentControl)
+            {
+                if (contentControl.Content == element)
+                {
+                    contentControl.Content = null;
+                }
+                return;
+            }
         }
     }
 }
