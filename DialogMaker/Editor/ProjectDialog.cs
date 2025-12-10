@@ -6,6 +6,7 @@ using DialogMaker.Lib;
 using System.Collections;
 using System.ComponentModel;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace DialogMaker.Editor
 {
@@ -53,6 +54,71 @@ namespace DialogMaker.Editor
         private readonly CollectionSynchronizer<DialogProjectDialogNode, DialogProjectNode> _nodesSync;
 
         #region Управление
+
+        public IEnumerable<DialogProjectNodePortProxy> GetConnections(DialogProjectNodePortProxy port)
+        {
+            foreach (var node in Nodes)
+            {
+                if (node.Original == port.Original.Node)
+                {
+                    continue;
+                }
+
+                foreach (var input in node.Inputs)
+                {
+                    if (input.Original.IsConnected(port.Original))
+                    {
+                        yield return input;
+                    }
+                }
+                foreach (var output in node.Outputs)
+                {
+                    if (output.Original.IsConnected(port.Original))
+                    {
+                        yield return output;
+                    }
+                }
+            }
+        }
+        public IEnumerable<KeyValuePair<DialogProjectNodePortProxy, List<DialogProjectNodePortProxy>>> GetConnections()
+        {
+            Dictionary<DialogProjectNodePortProxy, List<DialogProjectNodePortProxy>> connections = [];
+
+            void CheckPort(DialogProjectNodePortProxy port)
+            {
+                foreach (var info in connections)
+                {
+                    if (info.Key.Original.IsConnected(port.Original))
+                    {
+                        info.Value.Add(port);
+                    }
+                }
+            }
+
+            foreach (var node in Nodes)
+            {
+                foreach (var output in node.Outputs)
+                {
+                    connections.Add(output, []);
+                }
+
+            }
+            foreach (var node in Nodes)
+            {
+                foreach (var port in node.Inputs)
+                {
+                    CheckPort(port);
+                }
+            }
+
+            foreach (var info in connections)
+            {
+                if (info.Value.Count > 0)
+                {
+                    yield return info;
+                }
+            }
+        }
 
         protected override void Dispose(bool isDisposing)
         {

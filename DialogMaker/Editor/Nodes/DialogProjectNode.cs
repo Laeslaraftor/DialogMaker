@@ -20,8 +20,8 @@ namespace DialogMaker.Editor
             Position = new(node.Position.X, node.Position.Y);
             _name = nodeType.GetName();
             Description = nodeType.GetDescription();
-            Inputs = new(DialogProjectNodePortProxy.GetInputs(node));
-            Outputs = new(DialogProjectNodePortProxy.GetOutputs(node));
+            Inputs = new(DialogProjectNodePortProxy.GetInputs(this));
+            Outputs = new(DialogProjectNodePortProxy.GetOutputs(this));
             Properties = new(DialogProjectNodeProperty.GetProperties(this));
 
             node.PropertyChanged += OnNodePropertyChanged;

@@ -1,10 +1,13 @@
 ﻿using Acly;
+using Acly.Numbers;
+using DialogMaker.Editor;
+using DialogMaker.Lib.Controllers;
+using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
-using DialogMaker.Lib.Controllers;
-using DragEventArgs = DialogMaker.Lib.Controllers.DragEventArgs;
+using System.Windows.Input;
 using System.Windows.Media;
-using DialogMaker.Editor;
+using DragEventArgs = DialogMaker.Lib.Controllers.DragEventArgs;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -14,10 +17,22 @@ namespace DialogMaker.Lib.Elements
         {
             InitializeComponent();
 
+            _canvas.RenderTransform = new TranslateTransform();
             _dragAndDrop = new(this);
+            _connections = new(this, _canvas)
+            {
+                CurvesThickness = CurvesThickness,
+                CurvesOffset = CurvesOffset,
+                CurvesResolution = CurvesResolution,
+                CurvesEasing = CurvesEasing
+            }
+            ;
+
             _dragAndDrop.DragUpdated += OnDragAndDropDragUpdated;
             _dragAndDrop.DragCheck += OnDragAndDropDragCheck;
         }
+
+        public event EventHandler<ItemMouseEventArgs<DialogProjectNodePortProxy>>? PortPressed;
 
         public UIElementCollection Children => _canvas.Children;
         public ProjectDialog? Dialog
@@ -25,12 +40,73 @@ namespace DialogMaker.Lib.Elements
             get => GetValue(DialogProperty) as ProjectDialog;
             set => SetValue(DialogProperty, value);
         }
+        public double CurvesThickness
+        {
+            get => (double)GetValue(CurvesThicknessProperty);
+            set => SetValue(CurvesThicknessProperty, value);
+        }
+        public double CurvesOffset
+        {
+            get => (double)GetValue(CurvesOffsetProperty);
+            set => SetValue(CurvesOffsetProperty, value);
+        }
+        public int CurvesResolution
+        {
+            get => (int)GetValue(CurvesResolutionProperty);
+            set => SetValue(CurvesResolutionProperty, value);
+        }
+        public Easing CurvesEasing
+        {
+            get => (Easing)GetValue(CurvesEasingProperty);
+            set => SetValue(CurvesEasingProperty, value);
+        }
 
         private readonly DragAndDropController _dragAndDrop;
+        private readonly DiagramViewConnectionsController _connections;
         private readonly ElementsPool<DiagramNode> _nodesPool = new();
         private readonly Dictionary<DialogProjectNode, DiagramNode> _nodes = [];
 
         #region Управление
+
+        public bool TryGetNode(DialogProjectNode node, [NotNullWhen(true)] out DiagramNode? result)
+        {
+            return _nodes.TryGetValue(node, out result);
+        }
+        public bool TryGetNode(DiagramNode node, [NotNullWhen(true)] out DialogProjectNode? result)
+        {
+            result = null;
+
+            foreach (var info in _nodes)
+            {
+                if (info.Value == node)
+                {
+                    result = info.Key;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        public Point GetPortPosition(DialogProjectNodePortProxy port)
+        {
+            if (TryGetNode(port.Node, out var view))
+            {
+                return view.GetPortPosition(port, _canvas);
+            }
+
+            return new();
+        }
+        public bool TryGetPortView(DialogProjectNodePortProxy port, [NotNullWhen(true)] out DiagramNodePort? result)
+        {
+            result = null;
+
+            if (TryGetNode(port.Node, out var view))
+            {
+                return view.TryGetPortView(port, out result);
+            }
+
+            return false;
+        }
 
         private void SetDialog(ProjectDialog? oldValue, ProjectDialog? newValue)
         {
@@ -54,6 +130,8 @@ namespace DialogMaker.Lib.Elements
                     CreateNode(node);
                 }
             }
+
+            _connections.Dialog = newValue;
 
             ContextMenu = newValue?.EditorContextMenu;
         }
@@ -84,6 +162,8 @@ namespace DialogMaker.Lib.Elements
             {
                 view = _nodesPool.GetElement();
                 view.Node = node;
+                view.PortPressed += OnViewPortPressed;
+                _nodes.Add(node, view);
                 _canvas.Children.Add(view);
             }
         }
@@ -92,6 +172,7 @@ namespace DialogMaker.Lib.Elements
             if (_nodes.TryGetValue(node, out var view))
             {
                 view.Node = null;
+                view.PortPressed -= OnViewPortPressed;
                 _nodes.Remove(node);
                 _canvas.Children.Remove(view);
                 _nodesPool.Free(view);
@@ -101,6 +182,11 @@ namespace DialogMaker.Lib.Elements
         #endregion
 
         #region События
+
+        private void OnViewPortPressed(object? sender, ItemMouseEventArgs<DialogProjectNodePortProxy> e)
+        {
+            PortPressed?.Invoke(sender, e);
+        }
 
         private void OnNodesItemChanged(object? sender, CollectionItemEventArgs<DialogProjectNode> e)
         {
@@ -117,9 +203,21 @@ namespace DialogMaker.Lib.Elements
         private void OnDragAndDropDragUpdated(object? sender, DragEventArgs e)
         {
             UpdateCanvasSize();
+
+            if (e.Element is DiagramNode node 
+                && TryGetNode(node, out var model))
+            {
+                _connections.UpdateConnections(model);
+            }
         }
         private void OnDragAndDropDragCheck(object? sender, DragCheckEventArgs e)
         {
+            if (e.PotentialDragObject.Equals(_mainGrid))
+            {
+                e.PotentialDragObject = _canvas;
+                return;
+            }
+
             e.Ignore = e.PotentialDragObject is not DiagramView &&
                        e.PotentialDragObject is not DiagramNode;
         }
@@ -131,6 +229,34 @@ namespace DialogMaker.Lib.Elements
                 view.SetDialog(e.OldValue as ProjectDialog, e.NewValue as ProjectDialog);
             }
         }
+        private static void OnCurvesThicknessChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is DiagramView view)
+            {
+                view._connections.CurvesThickness = (double)e.NewValue;
+            }
+        }
+        private static void OnCurvesOffsetChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is DiagramView view)
+            {
+                view._connections.CurvesOffset = (double)e.NewValue;
+            }
+        }
+        private static void OnCurvesEasingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is DiagramView view)
+            {
+                view._connections.CurvesEasing = (Easing)e.NewValue;
+            }
+        }
+        private static void OnCurvesResolutionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is DiagramView view)
+            {
+                view._connections.CurvesResolution = (int)e.NewValue;
+            }
+        }
 
         #endregion
 
@@ -138,6 +264,14 @@ namespace DialogMaker.Lib.Elements
 
         public static readonly DependencyProperty DialogProperty = DependencyProperty.Register(nameof(Dialog), typeof(ProjectDialog),
             typeof(DiagramView), new(OnDialogChanged));
+        public static readonly DependencyProperty CurvesThicknessProperty = DependencyProperty.Register(nameof(CurvesThickness), typeof(double),
+            typeof(DiagramView), new(OnCurvesThicknessChanged));
+        public static readonly DependencyProperty CurvesOffsetProperty = DependencyProperty.Register(nameof(CurvesOffset), typeof(double),
+            typeof(DiagramView), new(OnCurvesOffsetChanged));
+        public static readonly DependencyProperty CurvesEasingProperty = DependencyProperty.Register(nameof(CurvesEasing), typeof(Easing),
+            typeof(DiagramView), new(Easing.EaseInOutCubic, OnCurvesEasingChanged));
+        public static readonly DependencyProperty CurvesResolutionProperty = DependencyProperty.Register(nameof(CurvesResolution), typeof(int),
+            typeof(DiagramView), new(8, OnCurvesResolutionChanged));
 
         #endregion
     }

@@ -2,6 +2,7 @@
 using DialogMaker.ViewModels;
 using System.ComponentModel;
 using System.Threading.Tasks;
+using System.Transactions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -46,7 +47,7 @@ namespace DialogMaker.Lib.Controllers
 
         private bool _isDisposed;
         private UIElement? _draggedElement;
-        private TranslateTransform? _draggedElementTransform;
+        private Action<Vector>? _draggedElementTransform;
         private Point _dragOffset;
 
         #region Управление
@@ -66,13 +67,13 @@ namespace DialogMaker.Lib.Controllers
             ElementsContainer.MouseLeave -= OnElementsContainerMouseLeave;
         }
 
-        private async Task<UIElement?> HitTest(MouseEventArgs mouse)
+        private async Task<FrameworkElement?> HitTest(MouseEventArgs mouse)
         {
-            UIElement? item = null;
+            FrameworkElement? item = null;
 
             await ElementsContainer.Fetch(mouse, target =>
             {
-                if (target is not UIElement element)
+                if (target is not FrameworkElement element)
                 {
                     return;
                 }
@@ -81,6 +82,11 @@ namespace DialogMaker.Lib.Controllers
 
                 DragCheck?.Invoke(this, check);
 
+                if (check.PotentialDragObject != target &&
+                    check.PotentialDragObject is FrameworkElement newElement)
+                {
+                    element = newElement;
+                }
                 if (!check.Ignore)
                 {
                     item = element;
@@ -98,22 +104,46 @@ namespace DialogMaker.Lib.Controllers
             }
 
             Point position = mouse.GetPosition(ElementsContainer);
-            UIElement? uiElement = await HitTest(mouse);
+            FrameworkElement? uiElement = await HitTest(mouse);
 
             if (uiElement == null)
             {
                 return;
             }
-            if (uiElement.RenderTransform is not TranslateTransform translation)
-            {
-                translation = new();
-                uiElement.RenderTransform = translation;
-            }
 
             _dragOffset = position;
-            _dragOffset.X -= translation.X;
-            _dragOffset.Y -= translation.Y;
-            _draggedElementTransform = translation;
+
+            if (uiElement.Parent is Canvas)
+            {
+                double x = Canvas.GetLeft(uiElement);
+                double y = Canvas.GetTop(uiElement);
+
+                _dragOffset.X -= double.IsNaN(x) ? 0 : x;
+                _dragOffset.Y -= double.IsNaN(y) ? 0 : y;
+                _draggedElementTransform = p =>
+                {
+                    Canvas.SetLeft(uiElement, p.X);
+                    Canvas.SetTop(uiElement, p.Y);
+                };
+            }
+            else
+            {
+                if (uiElement.RenderTransform is not TranslateTransform translation)
+                {
+                    translation = new();
+                    uiElement.RenderTransform = translation;
+                }
+
+                _dragOffset.X -= translation.X;
+                _dragOffset.Y -= translation.Y;
+                _draggedElementTransform = p =>
+                {
+                    translation.X = p.X;
+                    translation.Y = p.Y;
+                };
+            }
+
+
             _draggedElement = uiElement;
 
             DragBeginning?.Invoke(this, new(uiElement, mouse));
@@ -140,9 +170,14 @@ namespace DialogMaker.Lib.Controllers
             PropertyChanged?.Invoke(this, new(propertyName));
         }
 
-        private void OnElementsContainerPreviewMouseDown(object sender, MouseButtonEventArgs e)
+        private async void OnElementsContainerPreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
-            StartDrag(e);
+            await Task.Delay(50);
+
+            if (!e.Handled)
+            {
+                StartDrag(e);
+            }
         }
         private void OnElementsContainerPreviewMouseMove(object sender, MouseEventArgs e)
         {
@@ -152,8 +187,7 @@ namespace DialogMaker.Lib.Controllers
             }
 
             var position = e.GetPosition(ElementsContainer);
-            _draggedElementTransform.X = position.X - _dragOffset.X;
-            _draggedElementTransform.Y = position.Y - _dragOffset.Y;
+            _draggedElementTransform?.Invoke(position - _dragOffset);
 
             DragUpdated?.Invoke(this, new(_draggedElement, e));
         }

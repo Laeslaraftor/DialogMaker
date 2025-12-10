@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace DialogMaker.Lib.Elements
@@ -31,6 +32,16 @@ namespace DialogMaker.Lib.Elements
             get => (bool)GetValue(InvertProperty);
             set => SetValue(InvertProperty, value);
         }
+
+        #region Управление
+
+        public Point GetConnectorPosition(Visual relativeTo)
+        {
+            var size = _background.RenderSize / 2;
+            return _background.GetPosition(relativeTo) + size;
+        }
+
+        #endregion
 
         #region События
 

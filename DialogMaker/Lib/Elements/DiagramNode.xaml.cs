@@ -1,12 +1,12 @@
 ﻿using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor;
-using System.Windows;
-using System.Windows.Controls;
+using DialogMaker.Lib.Controllers;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Threading.Tasks;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -17,6 +17,8 @@ namespace DialogMaker.Lib.Elements
             InitializeComponent();
             RenderTransform = _translation;
         }
+
+        public event EventHandler<ItemMouseEventArgs<DialogProjectNodePortProxy>>? PortPressed;
 
         public DialogProjectNode? Node
         {
@@ -31,6 +33,29 @@ namespace DialogMaker.Lib.Elements
 
         #region Управление
 
+        public Point GetPortPosition(DialogProjectNodePortProxy port, Visual relativeTo)
+        {
+            if (TryGetPortView(port, out var view))
+            {
+                return view.GetConnectorPosition(relativeTo);
+            }
+
+            return new();
+        }
+        public bool TryGetPortView(DialogProjectNodePortProxy port, [NotNullWhen(true)] out DiagramNodePort? result)
+        {
+            if (_inputPorts.TryGetValue(port, out result))
+            {
+                return true;
+            }
+            if (_outputPorts.TryGetValue(port, out result))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         private async void SetNode(DialogProjectNode? oldValue, DialogProjectNode? newValue)
         {
             if (oldValue == newValue)
@@ -38,8 +63,8 @@ namespace DialogMaker.Lib.Elements
                 return;
             }
 
-            Clear(_inputPorts.Keys);
-            Clear(_outputPorts.Keys);
+            Clear(_inputPorts);
+            Clear(_outputPorts);
 
             _inputs.Children.Clear();
             _outputs.Children.Clear();
@@ -93,24 +118,38 @@ namespace DialogMaker.Lib.Elements
         {
             return GetNode(_inputPorts, port);
         }
-        private bool TryGetPortView(DialogProjectNodePortProxy port, [NotNullWhen(true)] out DiagramNodePort? result)
+        
+        private bool TryGetPort(DiagramNodePort view, [NotNullWhen(true)] out DialogProjectNodePortProxy? result)
         {
-            if (_inputPorts.TryGetValue(port, out result))
+            bool Search(Dictionary<DialogProjectNodePortProxy, DiagramNodePort> ports, [NotNullWhen(true)] out DialogProjectNodePortProxy? model)
             {
-                return true;
+                model = null;
+
+                foreach (var info in ports)
+                {
+                    if (info.Value == view)
+                    {
+                        model = info.Key;
+                        return true;
+                    }
+                }
+
+                return false;
             }
-            if (_outputPorts.TryGetValue(port, out result))
+
+            if (Search(_inputPorts, out result) || Search(_outputPorts, out result))
             {
                 return true;
             }
 
             return false;
         }
-        private void Clear(IEnumerable<DialogProjectNodePortProxy> ports)
+        private void Clear(Dictionary<DialogProjectNodePortProxy, DiagramNodePort> ports)
         {
-            foreach (var port in ports)
+            foreach (var info in ports)
             {
-                port.PropertyChanged -= OnPortPropertyChanged;
+                info.Key.PropertyChanged -= OnPortPropertyChanged;
+                info.Value.PreviewMouseDown -= OnPortPreviewMouseDown;
             }
         }
 
@@ -122,6 +161,7 @@ namespace DialogMaker.Lib.Elements
                 Setup(port, result);
 
                 port.PropertyChanged += OnPortPropertyChanged;
+                result.PreviewMouseDown += OnPortPreviewMouseDown;
 
                 ports.Add(port, result);
             }
@@ -156,6 +196,13 @@ namespace DialogMaker.Lib.Elements
                 TryGetPortView(port, out var view))
             {
                 Setup(port, view);
+            }
+        }
+        private void OnPortPreviewMouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is DiagramNodePort view && TryGetPort(view, out var port))
+            {
+                PortPressed?.Invoke(this, new(port, e));
             }
         }
 

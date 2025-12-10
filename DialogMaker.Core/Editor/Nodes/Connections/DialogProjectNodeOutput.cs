@@ -1,4 +1,5 @@
 ﻿using Acly;
+using System.Collections.Generic;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -32,6 +33,11 @@ namespace DialogMaker.Core.Editor.Nodes
         protected override bool Validate(DialogProjectNodePort? port)
         {
             return port is DialogProjectNodeInput;
+        }
+
+        public override IEnumerator<DialogProjectNodePort> GetEnumerator()
+        {
+            return Connections.GetEnumerator();
         }
 
         #endregion

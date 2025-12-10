@@ -1,12 +1,13 @@
 ﻿using Acly;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
-    public abstract class DialogProjectNodePort : ObservableObject, ISavable, IDisposable
+    public abstract class DialogProjectNodePort : ObservableObject, IEnumerable<DialogProjectNodePort>, ISavable, IDisposable
     {
         protected DialogProjectNodePort(INode node, int portId, DialogNodePortType dataType)
             : this(node, portId, dataType.ToConnectionType(), dataType)
@@ -138,6 +139,16 @@ namespace DialogMaker.Core.Editor.Nodes
         protected virtual DialogProjectNodePortSavedState CreateSavedState()
         {
             return new();
+        }
+
+        #endregion
+
+        #region Перечисление
+
+        public abstract IEnumerator<DialogProjectNodePort> GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
 
         #endregion

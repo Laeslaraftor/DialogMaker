@@ -6,8 +6,18 @@
              xmlns:local="clr-namespace:DialogMaker.Lib.Elements"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <ScrollViewer HorizontalScrollBarVisibility="Auto"
-                  VerticalScrollBarVisibility="Auto">
-        <Canvas x:Name="_canvas"/>
-    </ScrollViewer>
+    <Grid x:Name="_mainGrid" Background="Transparent">
+        <Canvas x:Name="_canvas">
+            <local:CurveLine StrokeThickness="2" Resolution="24" Offset="5"
+                 Easing="EaseInOutCubic"
+                 StartPoint="40,0" EndPoint="60,90">
+                <local:CurveLine.Stroke>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Color="Blue" Offset="0"/>
+                        <GradientStop Color="Red" Offset="1"/>
+                    </LinearGradientBrush>
+                </local:CurveLine.Stroke>
+            </local:CurveLine>
+        </Canvas>
+    </Grid>
 </UserControl>

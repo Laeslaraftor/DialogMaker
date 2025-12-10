@@ -61,6 +61,8 @@ namespace DialogMaker
             public async Task Fetch(Point position, Action<DependencyObject> targetHandler, Predicate<HitTestResult> hitCallback)
             {
                 bool completed = false;
+                var timeout = TimeSpan.FromSeconds(0.1);
+                var startTime = DateTime.Now;
 
                 HitTestFilterBehavior Filter(DependencyObject potentialHitTestTarget)
                 {
@@ -81,7 +83,7 @@ namespace DialogMaker
 
                 VisualTreeHelper.HitTest(visual, Filter, Callback, new PointHitTestParameters(position));
 
-                while (!completed)
+                while (!completed && timeout > DateTime.Now - startTime)
                 {
                     await Task.Delay(50);
                 }
@@ -149,6 +151,42 @@ namespace DialogMaker
                     X = p1.X - s2.Width,
                     Y = p1.Y - s2.Height
                 };
+            }
+            public static Point operator /(Point p1, double p2)
+            {
+                return new()
+                {
+                    X = p1.X / p2,
+                    Y = p1.Y / p2
+                };
+            }
+            public static Point operator *(Point p1, double s2)
+            {
+                return new()
+                {
+                    X = p1.X * s2,
+                    Y = p1.Y * s2
+                };
+            }
+
+            public static Point Lerp(Point from, Point to, double weight)
+            {
+                return Lerp(from, to, (float)weight);
+            }
+            public static Point Lerp(Point from, Point to, float weight)
+            {
+                return Vector2.Lerp(from.ToVector2(), to.ToVector2(), weight).ToPoint();
+            }
+            public Vector2 ToVector2()
+            {
+                return new((float)point.X, (float)point.Y);
+            }
+        }
+        extension(Vector2 vector)
+        {
+            public Point ToPoint()
+            {
+                return new(vector.X, vector.Y);
             }
         }
         extension(Size Size)

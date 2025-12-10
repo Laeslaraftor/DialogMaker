@@ -3,7 +3,6 @@ using Acly.Numbers;
 using DialogMaker.Core;
 using DialogMaker.Editor;
 using DialogMaker.Lib.Elements;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;

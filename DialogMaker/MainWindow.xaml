@@ -196,48 +196,8 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        <lib:DiagramView Grid.Column="1" Grid.Row="1"
-                         Dialog="{Binding Source={x:Reference Name=_projectStruct}, Path=SelectedItem}">
-            <lib:DiagramView.Children>
-                <lib:DiagramNode/>
-                <Border Padding="0,0,0,5" Visibility="Collapsed"
-                        Background="{DynamicResource LayerOnAcrylicFillColorDefaultBrush}"
-                        BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}" 
-                        BorderThickness="1" CornerRadius="8">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <TextBlock Grid.ColumnSpan="3" Margin="12,4"
-                                   Text="Название узла" FontWeight="Medium"/>
-                        <Border VerticalAlignment="Bottom" Grid.ColumnSpan="3"
-                                Background="{DynamicResource SurfaceStrokeColorDefaultBrush}"
-                                Height="1"/>
-                        <StackPanel Grid.Row="1" Margin="4"
-                                    Orientation="Vertical">
-                            <lib:DiagramNodePort HorizontalAlignment="Right"
-                                                Text="Точка входа" Invert="True"/>
-                        </StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="2"
-                                    Orientation="Vertical" Margin="4">
-                            <lib:DiagramNodePort HorizontalAlignment="Right"
-                                                 Text="Точка входа"/>
-                        </StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="1" 
-                                    Margin="4" Width="150">
-                            <TextBox/>
-                            <lib:ReferenceView/>
-                            <ComboBox/>
-                        </StackPanel>
-                    </Grid>
-                </Border>
-            </lib:DiagramView.Children>
-        </lib:DiagramView>
+        <lib:DiagramView Grid.Column="1" Grid.Row="1" ClipToBounds="True"
+                         CurvesThickness="6" CurvesOffset="5" CurvesResolution="24"
+                         Dialog="{Binding Source={x:Reference Name=_projectStruct}, Path=SelectedItem}"/>
     </Grid>
 </Window>

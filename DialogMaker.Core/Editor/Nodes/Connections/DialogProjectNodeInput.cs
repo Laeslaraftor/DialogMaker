@@ -1,5 +1,6 @@
 ﻿using Acly;
 using System;
+using System.Collections.Generic;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -78,6 +79,11 @@ namespace DialogMaker.Core.Editor.Nodes
             }
 
             return true;
+        }
+
+        public override IEnumerator<DialogProjectNodePort> GetEnumerator()
+        {
+            return Connections.GetEnumerator();
         }
 
         #endregion
