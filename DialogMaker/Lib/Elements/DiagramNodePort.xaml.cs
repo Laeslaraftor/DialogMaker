@@ -65,6 +65,7 @@ namespace DialogMaker.Lib.Elements
             if (d is DiagramNodePort view && e.NewValue is bool value)
             {
                 view._background.Opacity = value == true ? 1 : 0.1;
+                Panel.SetZIndex(view._background, value == true ? 100 : 0);
             }
         }
         private static void OnInvertChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

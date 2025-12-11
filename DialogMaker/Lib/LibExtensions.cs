@@ -38,7 +38,16 @@ namespace DialogMaker
             }
             public Point GetPosition(Visual relativeTo, Point origin)
             {
-                return visual.TransformToAncestor(relativeTo).Transform(origin);
+                try
+                {
+                    return visual.TransformToAncestor(relativeTo).Transform(origin);
+                }
+                catch (Exception error)
+                {
+                    error.Alert();
+                }
+
+                return new();
             }
 
             

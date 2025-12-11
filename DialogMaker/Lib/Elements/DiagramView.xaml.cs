@@ -5,7 +5,6 @@ using DialogMaker.Lib.Controllers;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Media;
 using DragEventArgs = DialogMaker.Lib.Controllers.DragEventArgs;
 
@@ -63,49 +62,13 @@ namespace DialogMaker.Lib.Elements
 
         private readonly DragAndDropController _dragAndDrop;
         private readonly DiagramViewConnectionsController _connections;
-        private readonly ElementsPool<DiagramNode> _nodesPool = new();
-        private readonly Dictionary<DialogProjectNode, DiagramNode> _nodes = [];
 
         #region Управление
 
-        public bool TryGetNode(DialogProjectNode node, [NotNullWhen(true)] out DiagramNode? result)
-        {
-            return _nodes.TryGetValue(node, out result);
-        }
         public bool TryGetNode(DiagramNode node, [NotNullWhen(true)] out DialogProjectNode? result)
         {
-            result = null;
-
-            foreach (var info in _nodes)
-            {
-                if (info.Value == node)
-                {
-                    result = info.Key;
-                    return true;
-                }
-            }
-
-            return false;
-        }
-        public Point GetPortPosition(DialogProjectNodePortProxy port)
-        {
-            if (TryGetNode(port.Node, out var view))
-            {
-                return view.GetPortPosition(port, _canvas);
-            }
-
-            return new();
-        }
-        public bool TryGetPortView(DialogProjectNodePortProxy port, [NotNullWhen(true)] out DiagramNodePort? result)
-        {
-            result = null;
-
-            if (TryGetNode(port.Node, out var view))
-            {
-                return view.TryGetPortView(port, out result);
-            }
-
-            return false;
+            result = node.Node;
+            return result != null;
         }
 
         private void SetDialog(ProjectDialog? oldValue, ProjectDialog? newValue)
@@ -158,25 +121,20 @@ namespace DialogMaker.Lib.Elements
 
         private void CreateNode(DialogProjectNode node)
         {
-            if (!_nodes.TryGetValue(node, out var view))
-            {
-                view = _nodesPool.GetElement();
-                view.Node = node;
-                view.PortPressed += OnViewPortPressed;
-                _nodes.Add(node, view);
-                _canvas.Children.Add(view);
-            }
+            var view = node.View;
+            view.RemoveFromParent();
+
+            view.PortPressed -= OnViewPortPressed;
+            view.PortPressed += OnViewPortPressed;
+
+            _canvas.Children.Add(view);
         }
         private void RemoveNode(DialogProjectNode node)
         {
-            if (_nodes.TryGetValue(node, out var view))
-            {
-                view.Node = null;
-                view.PortPressed -= OnViewPortPressed;
-                _nodes.Remove(node);
-                _canvas.Children.Remove(view);
-                _nodesPool.Free(view);
-            }
+            var view = node.View;
+            view.PortPressed -= OnViewPortPressed;
+
+            _canvas.Children.Remove(view);
         }
 
         #endregion

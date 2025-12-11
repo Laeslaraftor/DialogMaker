@@ -57,6 +57,7 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             return port != null &&
                    port != this &&
+                   Node != port.Node &&
                    ConnectionType == port.ConnectionType &&
                    Node.DataConverter.CanConvert(DataType, port.DataType) &&
                    Validate(port);
@@ -66,6 +67,10 @@ namespace DialogMaker.Core.Editor.Nodes
             if (port == null || IsConnected(port))
             {
                 return;
+            }
+            if (!CanConnect(port))
+            {
+                throw new InvalidDataException($"Невозможно установить связь для {port}");
             }
 
             ConnectionsList.AddNew(port);
@@ -160,6 +165,14 @@ namespace DialogMaker.Core.Editor.Nodes
             if (!CanConnect(port))
             {
                 throw new InvalidDataException($"Невозможно установить связь для {port}");
+            }
+            if (action == CollectionItemAction.Add)
+            {
+                port.Connect(this);
+            }
+            else if (action == CollectionItemAction.Remove)
+            {
+                port.Disconnect(this);
             }
 
             InvokePropertyChanged(nameof(ConnectionsCount));

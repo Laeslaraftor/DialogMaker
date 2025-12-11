@@ -27,9 +27,6 @@ namespace DialogMaker.Lib.Elements
         }
 
         private readonly TranslateTransform _translation = new();
-        private readonly ElementsPool<DiagramNodePort> _ports = new();
-        private readonly Dictionary<DialogProjectNodePortProxy, DiagramNodePort> _inputPorts = [];
-        private readonly Dictionary<DialogProjectNodePortProxy, DiagramNodePort> _outputPorts = [];
 
         #region Управление
 
@@ -44,11 +41,10 @@ namespace DialogMaker.Lib.Elements
         }
         public bool TryGetPortView(DialogProjectNodePortProxy port, [NotNullWhen(true)] out DiagramNodePort? result)
         {
-            if (_inputPorts.TryGetValue(port, out result))
-            {
-                return true;
-            }
-            if (_outputPorts.TryGetValue(port, out result))
+            var node = Node;
+            result = null;
+
+            if (node != null && node.TryGetPortView(port, out result))
             {
                 return true;
             }
@@ -63,14 +59,15 @@ namespace DialogMaker.Lib.Elements
                 return;
             }
 
-            Clear(_inputPorts);
-            Clear(_outputPorts);
+            if (oldValue != null)
+            {
+                Clear(oldValue.Inputs);
+                Clear(oldValue.Outputs);
+            }
 
             _inputs.Children.Clear();
             _outputs.Children.Clear();
             _properties.Children.Clear();
-            _inputPorts.Clear();
-            _outputPorts.Clear();
 
             _properties.Width = double.NaN;
 
@@ -93,13 +90,11 @@ namespace DialogMaker.Lib.Elements
 
             foreach (var port in newValue.Inputs)
             {
-                var view = GetInput(port);
-                _inputs.Children.Add(view);
+                _inputs.Children.Add(GetPortView(port));
             }
             foreach (var port in newValue.Outputs)
             {
-                var view = GetOutput(port);
-                _outputs.Children.Add(view);
+                _outputs.Children.Add(GetPortView(port));
             }
             foreach (var property in newValue.Properties)
             {
@@ -109,95 +104,41 @@ namespace DialogMaker.Lib.Elements
 
             _properties.Width = newValue.Properties.Count > 0 ? 150 : 0;
         }
-
-        private DiagramNodePort GetOutput(DialogProjectNodePortProxy port)
-        {
-            return GetNode(_outputPorts, port);
-        }
-        private DiagramNodePort GetInput(DialogProjectNodePortProxy port)
-        {
-            return GetNode(_inputPorts, port);
-        }
         
         private bool TryGetPort(DiagramNodePort view, [NotNullWhen(true)] out DialogProjectNodePortProxy? result)
         {
-            bool Search(Dictionary<DialogProjectNodePortProxy, DiagramNodePort> ports, [NotNullWhen(true)] out DialogProjectNodePortProxy? model)
+            result = null;
+
+            if (view.DataContext is DialogProjectNodePortProxy model)
             {
-                model = null;
-
-                foreach (var info in ports)
-                {
-                    if (info.Value == view)
-                    {
-                        model = info.Key;
-                        return true;
-                    }
-                }
-
-                return false;
-            }
-
-            if (Search(_inputPorts, out result) || Search(_outputPorts, out result))
-            {
+                result = model;
                 return true;
             }
 
             return false;
         }
-        private void Clear(Dictionary<DialogProjectNodePortProxy, DiagramNodePort> ports)
+        private void Clear(IEnumerable<DialogProjectNodePortProxy> ports)
         {
-            foreach (var info in ports)
+            foreach (var port in ports)
             {
-                info.Key.PropertyChanged -= OnPortPropertyChanged;
-                info.Value.PreviewMouseDown -= OnPortPreviewMouseDown;
+                port.View.PreviewMouseDown -= OnPortPreviewMouseDown;
             }
         }
-
-        private DiagramNodePort GetNode(Dictionary<DialogProjectNodePortProxy, DiagramNodePort> ports, DialogProjectNodePortProxy port)
+        private DiagramNodePort GetPortView(DialogProjectNodePortProxy port)
         {
-            if (!ports.TryGetValue(port, out var result))
-            {
-                result = _ports.GetElement();
-                Setup(port, result);
+            var view = port.View;
+            view.RemoveFromParent();
 
-                port.PropertyChanged += OnPortPropertyChanged;
-                result.PreviewMouseDown += OnPortPreviewMouseDown;
+            view.PreviewMouseDown -= OnPortPreviewMouseDown;
+            view.PreviewMouseDown += OnPortPreviewMouseDown;
 
-                ports.Add(port, result);
-            }
-
-            return result;
-        }
-        private void Setup(DialogProjectNodePortProxy port, DiagramNodePort view)
-        {
-            view.ToolTip = port.Description;
-            view.Text = port.Name;
-            view.Color = port.Color;
-            view.IsActive = port.IsActive;
-            view.Invert = port.Original is DialogProjectNodeInput;
-
-            HorizontalAlignment alignment = HorizontalAlignment.Right;
-
-            if (view.Invert)
-            {
-                alignment = HorizontalAlignment.Left;
-            }
-
-            view.HorizontalAlignment = alignment;
+            return view;
         }
 
         #endregion
 
         #region События
 
-        private void OnPortPropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (sender is DialogProjectNodePortProxy port &&
-                TryGetPortView(port, out var view))
-            {
-                Setup(port, view);
-            }
-        }
         private void OnPortPreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             if (sender is DiagramNodePort view && TryGetPort(view, out var port))

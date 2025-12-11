@@ -1,9 +1,11 @@
 ﻿using DialogMaker.Core;
 using DialogMaker.Core.Editor.Nodes;
+using DialogMaker.Lib.Controllers;
+using DialogMaker.Lib.Elements;
+using System.ComponentModel;
 using System.Reflection;
 using System.Windows.Media;
 using Color = System.Drawing.Color;
-using System.ComponentModel;
 
 namespace DialogMaker.Editor
 {
@@ -18,7 +20,8 @@ namespace DialogMaker.Editor
 
             if (!_colorBrushes.TryGetValue(port.Color, out var colorBrush))
             {
-                colorBrush = new SolidColorBrush(port.Color.ToWindows());
+                colorBrush = new(port.Color.ToWindows());
+                _colorBrushes.Add(port.Color, colorBrush);
             }
 
             Color = colorBrush;
@@ -30,17 +33,53 @@ namespace DialogMaker.Editor
             Dispose();
         }
 
+        public bool IsDisposed { get; private set; }
         public DialogProjectNode Node { get; }
         public DialogProjectNodePort Original { get; }
         public string Name { get; }
         public string Description { get; }
-        public Brush Color { get; }
+        public SolidColorBrush Color { get; }
         public bool IsActive => Original.ConnectionsCount > 0;
+        public DiagramNodePort View
+        {
+            get
+            {
+                if (IsDisposed)
+                {
+                    throw new InvalidOperationException("Элемент очищен, взаимодействие невозможно");
+                }
+                if (_view == null)
+                {
+                    _view = Node.Project.NodesViewFabric.GetPort();
+                    _viewController ??= new(this);
+                }
+
+                return _view;
+            }
+        }
+
+        private DiagramNodePort? _view;
+        private DiagramNodePortController? _viewController;
 
         #region Управление
 
         public void Dispose()
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
+            IsDisposed = true;
+            _viewController?.Dispose();
+            _viewController = null;
+
+            if (_view != null)
+            {
+                Node.Project.NodesViewFabric.Free(_view);
+                _view = null;
+            }
+
             Original.PropertyChanged -= OnPortPropertyChanged;
 
             GC.SuppressFinalize(this);
@@ -62,7 +101,7 @@ namespace DialogMaker.Editor
 
         #region Статика
 
-        private static readonly Dictionary<Color, Brush> _colorBrushes = [];
+        private static readonly Dictionary<Color, SolidColorBrush> _colorBrushes = [];
 
         public static List<DialogProjectNodePortProxy> GetOutputs(DialogProjectNode node)
         {

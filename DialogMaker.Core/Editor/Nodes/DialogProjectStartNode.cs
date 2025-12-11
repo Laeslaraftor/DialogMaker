@@ -12,7 +12,7 @@
         }
 
         public override DialogNodeType NodeType => DialogNodeType.Start;
-        [NodeInput("Точка входа")]
+        [NodeOutput("Точка входа")]
         public DialogProjectNodeOutput Begin
         {
             get

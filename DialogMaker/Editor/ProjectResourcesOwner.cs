@@ -11,6 +11,7 @@ namespace DialogMaker.Editor
             Dispose(false);
         }
 
+        public bool IsDisposed { get; private set; }
         public ProjectController Project { get; } = project;
         public ProjectResources Resources { get; } = new(project, resourcesOwner.Resources);
 
@@ -18,6 +19,13 @@ namespace DialogMaker.Editor
 
         public void Dispose()
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
+            IsDisposed = true;
+
             Dispose(true);
             GC.SuppressFinalize(this);
         }
