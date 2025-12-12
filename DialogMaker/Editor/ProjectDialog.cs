@@ -5,8 +5,8 @@ using DialogMaker.Editor.Menus;
 using DialogMaker.Lib;
 using System.Collections;
 using System.ComponentModel;
+using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 
 namespace DialogMaker.Editor
 {
@@ -25,6 +25,19 @@ namespace DialogMaker.Editor
 
         public DialogProjectDialog Original { get; }
         public ProjectPack Pack { get; }
+        public Point LastMouseClickPosition
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(LastMouseClickPosition));
+                    field = value;
+                    InvokePropertyChanged(nameof(LastMouseClickPosition));
+                }
+            }
+        }
         public override string Icon => Icons.Message;
         public override string Name
         {

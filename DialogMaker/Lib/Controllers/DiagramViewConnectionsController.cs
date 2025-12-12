@@ -18,7 +18,7 @@ namespace DialogMaker.Lib.Controllers
 
             view.PortPressed += OnNodePortPressed;
             view.PreviewMouseMove += OnViewPreviewMouseMove;
-            view.PreviewMouseUp += OnViewPreviewMouseUp; ;
+            view.PreviewMouseUp += OnViewPreviewMouseUp;
         }
         ~DiagramViewConnectionsController()
         {
@@ -390,7 +390,7 @@ namespace DialogMaker.Lib.Controllers
                 {
                     StartPort.Original.Disconnect(EndPort.Original);
                 }
-                else if (port != null && port != EndPort)
+                else if (port != null)
                 {
                     if (EndPort != null && 
                         port != EndPort &&

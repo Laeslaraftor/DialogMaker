@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Input;
 using DragEventArgs = DialogMaker.Lib.Controllers.DragEventArgs;
 
 namespace DialogMaker.Lib.Elements
@@ -16,7 +17,15 @@ namespace DialogMaker.Lib.Elements
         {
             InitializeComponent();
 
-            _canvas.RenderTransform = new TranslateTransform();
+            _canvas.RenderTransform = new TransformGroup()
+            {
+                Children = [new TranslateTransform(), new ScaleTransform()]
+            };
+            _scaleController = new(_mainGrid)
+            {
+                Container = _canvas,
+                OverrideScaleTransform = _canvas.GetTransform<ScaleTransform>()
+            };
             _dragAndDrop = new(this);
             _connections = new(this, _canvas)
             {
@@ -24,8 +33,7 @@ namespace DialogMaker.Lib.Elements
                 CurvesOffset = CurvesOffset,
                 CurvesResolution = CurvesResolution,
                 CurvesEasing = CurvesEasing
-            }
-            ;
+            };
 
             _dragAndDrop.DragUpdated += OnDragAndDropDragUpdated;
             _dragAndDrop.DragCheck += OnDragAndDropDragCheck;
@@ -61,6 +69,7 @@ namespace DialogMaker.Lib.Elements
         }
 
         private readonly DragAndDropController _dragAndDrop;
+        private readonly ViewScaleController _scaleController;
         private readonly DiagramViewConnectionsController _connections;
 
         #region Управление
@@ -141,6 +150,18 @@ namespace DialogMaker.Lib.Elements
 
         #region События
 
+        protected override void OnPreviewMouseUp(MouseButtonEventArgs e)
+        {
+            base.OnPreviewMouseUp(e);
+
+            var dialog = Dialog;
+
+            if (dialog != null)
+            {
+                dialog.LastMouseClickPosition = e.GetPosition(_canvas);
+            }
+        }
+
         private void OnViewPortPressed(object? sender, ItemMouseEventArgs<DialogProjectNodePortProxy> e)
         {
             PortPressed?.Invoke(sender, e);
@@ -162,7 +183,7 @@ namespace DialogMaker.Lib.Elements
         {
             UpdateCanvasSize();
 
-            if (e.Element is DiagramNode node 
+            if (e.Element is DiagramNode node
                 && TryGetNode(node, out var model))
             {
                 _connections.UpdateConnections(model);
@@ -170,14 +191,25 @@ namespace DialogMaker.Lib.Elements
         }
         private void OnDragAndDropDragCheck(object? sender, DragCheckEventArgs e)
         {
+            if (e.PotentialDragObject.Equals(this))
+            {
+                e.Ignore = true;
+                return;
+            }
             if (e.PotentialDragObject.Equals(_mainGrid))
             {
                 e.PotentialDragObject = _canvas;
+                e.DragMouseButton = MouseButton.Middle;
                 return;
             }
 
             e.Ignore = e.PotentialDragObject is not DiagramView &&
                        e.PotentialDragObject is not DiagramNode;
+
+            if (e.PotentialDragObject.Equals(_canvas))
+            {
+                e.DragMouseButton = MouseButton.Middle;
+            }
         }
 
         private static void OnDialogChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

@@ -15,7 +15,6 @@ namespace DialogMaker.Lib.Elements
         public DiagramNode()
         {
             InitializeComponent();
-            RenderTransform = _translation;
         }
 
         public event EventHandler<ItemMouseEventArgs<DialogProjectNodePortProxy>>? PortPressed;
@@ -25,8 +24,6 @@ namespace DialogMaker.Lib.Elements
             get => GetValue(NodeProperty) as DialogProjectNode;
             set => SetValue(NodeProperty, value);
         }
-
-        private readonly TranslateTransform _translation = new();
 
         #region Управление
 
@@ -63,6 +60,8 @@ namespace DialogMaker.Lib.Elements
             {
                 Clear(oldValue.Inputs);
                 Clear(oldValue.Outputs);
+
+                oldValue.PropertyChanged -= OnNodePropertyChanged;
             }
 
             _inputs.Children.Clear();
@@ -80,8 +79,7 @@ namespace DialogMaker.Lib.Elements
             _title.Text = newValue?.Name;
             Point position = (newValue?.Position).GetValueOrDefault();
 
-            _translation.X = position.X;
-            _translation.Y = position.Y;
+            Canvas.SetElementPosition(this, position);
 
             if (newValue == null)
             {
@@ -103,8 +101,9 @@ namespace DialogMaker.Lib.Elements
             }
 
             _properties.Width = newValue.Properties.Count > 0 ? 150 : 0;
+
+            newValue.PropertyChanged += OnNodePropertyChanged;
         }
-        
         private bool TryGetPort(DiagramNodePort view, [NotNullWhen(true)] out DialogProjectNodePortProxy? result)
         {
             result = null;
@@ -146,11 +145,23 @@ namespace DialogMaker.Lib.Elements
                 PortPressed?.Invoke(this, new(port, e));
             }
         }
+        private void OnNodePropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (sender is DialogProjectNode node &&
+                e.PropertyName == "Position")
+            {
+                Canvas.SetElementPosition(this, node.Position);
+            }
+        }
 
         protected override void OnPreviewMouseMove(MouseEventArgs e)
         {
             base.OnPreviewMouseMove(e);
-            Node?.Position = new(_translation.X, _translation.Y);
+
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                Node?.Position = Canvas.GetElementPosition(this);
+            }
         }
 
         private static void OnNodeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

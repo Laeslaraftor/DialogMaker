@@ -24,19 +24,18 @@ namespace DialogMaker.Core.Editor.Nodes
         public abstract DialogNodeType NodeType { get; }
         public Vector2 Position
         {
-            get => _position;
+            get => field;
             set
             {
-                if (_position != value)
+                if (field != value)
                 {
-                    _position = value;
+                    InvokePropertyChanging(nameof(Position));
+                    field = value;
                     InvokePropertyChanged(nameof(Position));
                 }
             }
         }
         public IPortDataConverter DataConverter => DialogProjectPortDataConverter.Instance;
-
-        private Vector2 _position;
 
         #region Управление
 

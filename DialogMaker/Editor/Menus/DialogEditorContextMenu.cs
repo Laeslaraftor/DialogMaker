@@ -40,7 +40,9 @@ namespace DialogMaker.Editor.Menus
             {
                 try
                 {
-                    dialog.Original.CreateNode(nodeType);
+                    var node = dialog.Original.CreateNode(nodeType);
+                    var position = dialog.LastMouseClickPosition;
+                    node.Position = new((float)position.X, (float)position.Y);
                 }
                 catch (Exception error)
                 {

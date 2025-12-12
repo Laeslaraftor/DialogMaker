@@ -7,6 +7,10 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid x:Name="_mainGrid" Background="Transparent">
-        <Canvas x:Name="_canvas"/>
+        <Canvas x:Name="_canvas"
+                RenderTransformOrigin="0.5,0.5"
+                MaxWidth="200" MaxHeight="200"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"/>
     </Grid>
 </UserControl>

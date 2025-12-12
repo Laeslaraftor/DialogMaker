@@ -1,8 +1,4 @@
-﻿using DialogMaker.Editor;
-using DialogMaker.ViewModels;
-using System.ComponentModel;
-using System.Threading.Tasks;
-using System.Transactions;
+﻿using DialogMaker.Core;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -10,7 +6,7 @@ using System.Windows.Media;
 
 namespace DialogMaker.Lib.Controllers
 {
-    public class DragAndDropController : INotifyPropertyChanged, IDisposable
+    public class DragAndDropController : Disposable
     {
         public DragAndDropController(UIElement elementsContainer)
         {
@@ -20,46 +16,24 @@ namespace DialogMaker.Lib.Controllers
             elementsContainer.PreviewMouseUp += OnElementsContainerPreviewMouseUp;
             elementsContainer.MouseLeave += OnElementsContainerMouseLeave;
         }
-        ~DragAndDropController()
-        {
-            Dispose();
-        }
 
-        public event PropertyChangedEventHandler? PropertyChanged;
         public event EventHandler<DragCheckEventArgs>? DragCheck;
         public event EventHandler<DragEventArgs>? DragBeginning;
         public event EventHandler<DragEventArgs>? DragUpdated;
         public event EventHandler<DragEventArgs>? DragEnded;
 
-        public bool IsDisposed
-        {
-            get => _isDisposed;
-            private set
-            {
-                if (_isDisposed != value)
-                {
-                    _isDisposed = value;
-                    InvokePropertyChanged(nameof(IsDisposed));
-                }
-            }
-        }
         public UIElement ElementsContainer { get; }
 
-        private bool _isDisposed;
         private UIElement? _draggedElement;
-        private Action<Vector>? _draggedElementTransform;
+        private Action<Point>? _draggedElementTransform;
         private Point _dragOffset;
+        private MouseButton _dragMouseButton;
 
         #region Управление
 
-        public void Dispose()
+        protected override void Dispose(bool isDisposing)
         {
-            if (IsDisposed)
-            {
-                return;
-            }
-
-            IsDisposed = true;
+            base.Dispose(isDisposing);
 
             ElementsContainer.PreviewMouseDown -= OnElementsContainerPreviewMouseDown;
             ElementsContainer.PreviewMouseMove -= OnElementsContainerPreviewMouseMove;
@@ -67,9 +41,9 @@ namespace DialogMaker.Lib.Controllers
             ElementsContainer.MouseLeave -= OnElementsContainerMouseLeave;
         }
 
-        private async Task<FrameworkElement?> HitTest(MouseEventArgs mouse)
+        private async Task<Dictionary<MouseButton, DragHitTest>> HitTest(MouseEventArgs mouse)
         {
-            FrameworkElement? item = null;
+            Dictionary<MouseButton, DragHitTest> result = [];
 
             await ElementsContainer.Fetch(mouse, target =>
             {
@@ -89,11 +63,12 @@ namespace DialogMaker.Lib.Controllers
                 }
                 if (!check.Ignore)
                 {
-                    item = element;
+                    result.ForceAdd(check.DragMouseButton, new(element, check.DragMouseButton));
                 }
             });
 
-            return item;
+
+            return result;
         }
 
         private async void StartDrag(MouseEventArgs mouse)
@@ -104,53 +79,68 @@ namespace DialogMaker.Lib.Controllers
             }
 
             Point position = mouse.GetPosition(ElementsContainer);
-            FrameworkElement? uiElement = await HitTest(mouse);
+            var dragHitTests = await HitTest(mouse);
+            DragHitTest dragHitTest = new();
 
-            if (uiElement == null)
+            foreach (var info in dragHitTests)
+            {
+                if (mouse.IsPressed(info.Key))
+                {
+                    dragHitTest = info.Value;
+                    break;
+                }
+            }
+
+            var uiElement = dragHitTest.Element;
+
+            if (dragHitTest.IsEmpty ||
+                uiElement == null)
             {
                 return;
             }
 
             _dragOffset = position;
+            var scale = uiElement.GetVisualTreeScale();
 
             if (uiElement.Parent is Canvas)
             {
-                double x = Canvas.GetLeft(uiElement);
-                double y = Canvas.GetTop(uiElement);
-
-                _dragOffset.X -= double.IsNaN(x) ? 0 : x;
-                _dragOffset.Y -= double.IsNaN(y) ? 0 : y;
                 _draggedElementTransform = p =>
                 {
-                    Canvas.SetLeft(uiElement, p.X);
-                    Canvas.SetTop(uiElement, p.Y);
+                    var currentPosition = Canvas.GetElementPosition(uiElement);
+                    Point newPosition = (Point)(p - _dragOffset);
+                    newPosition /= scale;
+                    newPosition += currentPosition;
+
+                    Canvas.SetLeft(uiElement, newPosition.X);
+                    Canvas.SetTop(uiElement, newPosition.Y);
+                    _dragOffset = p;
                 };
             }
             else
             {
-                if (uiElement.RenderTransform is not TranslateTransform translation)
-                {
-                    translation = new();
-                    uiElement.RenderTransform = translation;
-                }
+                var translation = uiElement.GetTransform<TranslateTransform>();
 
-                _dragOffset.X -= translation.X;
-                _dragOffset.Y -= translation.Y;
                 _draggedElementTransform = p =>
                 {
-                    translation.X = p.X;
-                    translation.Y = p.Y;
+                    var delta = (Point)(p - _dragOffset);
+                    delta /= scale;
+
+                    translation.X += delta.X;
+                    translation.Y += delta.Y;
+
+                    _dragOffset = p;
                 };
             }
 
-
             _draggedElement = uiElement;
+            _dragMouseButton = dragHitTest.DragButton;
 
             DragBeginning?.Invoke(this, new(uiElement, mouse));
         }
         private void StopDrag(MouseEventArgs mouse)
         {
-            if (_draggedElement == null)
+            if (_draggedElement == null ||
+                mouse.IsPressed(_dragMouseButton))
             {
                 return;
             }
@@ -165,11 +155,6 @@ namespace DialogMaker.Lib.Controllers
 
         #region События
 
-        private void InvokePropertyChanged(string propertyName)
-        {
-            PropertyChanged?.Invoke(this, new(propertyName));
-        }
-
         private async void OnElementsContainerPreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
             await Task.Delay(50);
@@ -181,13 +166,15 @@ namespace DialogMaker.Lib.Controllers
         }
         private void OnElementsContainerPreviewMouseMove(object sender, MouseEventArgs e)
         {
-            if (_draggedElementTransform == null || _draggedElement == null)
+            if (_draggedElementTransform == null ||
+                _draggedElement == null ||
+                !e.IsPressed(_dragMouseButton))
             {
                 return;
             }
 
             var position = e.GetPosition(ElementsContainer);
-            _draggedElementTransform?.Invoke(position - _dragOffset);
+            _draggedElementTransform?.Invoke(position);
 
             DragUpdated?.Invoke(this, new(_draggedElement, e));
         }
@@ -198,6 +185,24 @@ namespace DialogMaker.Lib.Controllers
         private void OnElementsContainerMouseLeave(object sender, MouseEventArgs e)
         {
             StopDrag(e);
+        }
+
+        #endregion
+
+        #region Классы
+
+        private readonly struct DragHitTest
+        {
+            public DragHitTest(FrameworkElement element, MouseButton button)
+            {
+                IsEmpty = false;
+                Element = element;
+                DragButton = button;
+            }
+
+            public bool IsEmpty { get; } = true;
+            public FrameworkElement Element { get; }
+            public MouseButton DragButton { get; }
         }
 
         #endregion

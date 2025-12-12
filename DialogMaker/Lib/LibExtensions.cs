@@ -1,10 +1,12 @@
 ﻿using DialogMaker.Lib;
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using Vector = System.Windows.Vector;
 using WColor = System.Windows.Media.Color;
 
 namespace DialogMaker
@@ -30,6 +32,133 @@ namespace DialogMaker
             return true;
         }
 
+        public static Point ToPoint(this Vector vector)
+        {
+            return new(vector.X, vector.Y);
+        }
+        public static bool IsPressed(this MouseEventArgs mouse, MouseButton button)
+        {
+            return (mouse.LeftButton == MouseButtonState.Pressed && button == MouseButton.Left) ||
+                   (mouse.RightButton == MouseButtonState.Pressed && button == MouseButton.Right) ||
+                   (mouse.MiddleButton == MouseButtonState.Pressed && button == MouseButton.Middle) ||
+                   (mouse.XButton1 == MouseButtonState.Pressed && button == MouseButton.XButton1) ||
+                   (mouse.XButton2 == MouseButtonState.Pressed && button == MouseButton.XButton2);
+        }
+        public static void ForceAdd<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue value)
+        {
+            if (!dictionary.TryAdd(key, value))
+            {
+                dictionary[key] = value;
+            }
+        }
+
+        extension (Canvas canvas)
+        {
+            public static Point GetElementPosition(UIElement element)
+            {
+                double x = Canvas.GetLeft(element);
+                double y = Canvas.GetTop(element);
+
+                x = double.IsNaN(x) ? 0 : x;
+                y = double.IsNaN(y) ? 0 : y;
+
+                return new(x, y);
+            }
+            public static void SetElementPosition(UIElement element, Point position)
+            {
+                Canvas.SetLeft(element, position.X);
+                Canvas.SetTop(element, position.Y);
+            }
+        }
+        extension(FrameworkElement element)
+        {
+            public Point GetVisualTreeScale()
+            {
+                FrameworkElement? parent = element;
+                Point scale = new(1, 1);
+
+                while (parent != null)
+                {
+                    if (parent.TryGetTransform<ScaleTransform>(out var transform))
+                    {
+                        scale.X *= transform.ScaleX;
+                        scale.Y *= transform.ScaleY;
+                    }
+
+                    parent = parent.Parent as FrameworkElement;
+                }
+
+                return scale;
+            }
+        }
+        extension (UIElement element)
+        {
+            public bool TryGetTransform<T>([NotNullWhen(true)] out T? result)
+                where T : Transform, new()
+            {
+                result = null;
+
+                if (element.RenderTransform is T typedTransform)
+                {
+                    result = typedTransform;
+                    return true;
+                }
+                if (element.RenderTransform is TransformGroup group)
+                {
+                    foreach (var child in group.Children)
+                    {
+                        if (child is T typedChild)
+                        {
+                            result = typedChild;
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+            public T GetTransform<T>() where T : Transform, new()
+            {
+                if (element.RenderTransform == null)
+                {
+                    T transform = new();
+                    element.RenderTransform = transform;
+
+                    return transform;
+                }
+                if (element.RenderTransform is T currentTransform)
+                {
+                    return currentTransform;
+                }
+
+                Transform existsTransform = element.RenderTransform;
+
+                if (existsTransform is TransformGroup group)
+                {
+                    foreach (var transform in group.Children)
+                    {
+                        if (transform is T child)
+                        {
+                            return child;
+                        }
+                    }
+
+                    T childTransform = new();
+                    group.Children.Add(childTransform);
+
+                    return childTransform;
+                }
+
+                T newTransform = new();
+                group = new();
+                group.Children.Add(existsTransform);
+                group.Children.Add(newTransform);
+
+                element.RenderTransform = group;
+
+                return newTransform;
+            }
+        }
         extension (Visual visual)
         {
             public Point GetPosition(Visual relativeTo)
@@ -145,6 +274,22 @@ namespace DialogMaker
                     Y = p1.Y - p2.Y
                 };
             }
+            public static Point operator *(Point p1, Point p2)
+            {
+                return new()
+                {
+                    X = p1.X * p2.X,
+                    Y = p1.Y * p2.Y
+                };
+            }
+            public static Point operator /(Point p1, Point p2)
+            {
+                return new()
+                {
+                    X = p1.X / p2.X,
+                    Y = p1.Y / p2.Y
+                };
+            }
             public static Point operator +(Point p1, Size p2)
             {
                 return new()
@@ -175,6 +320,22 @@ namespace DialogMaker
                 {
                     X = p1.X * s2,
                     Y = p1.Y * s2
+                };
+            }
+            public static Point operator *(Point p1, Size p2)
+            {
+                return new()
+                {
+                    X = p1.X * p2.Width,
+                    Y = p1.Y * p2.Height
+                };
+            }
+            public static Point operator /(Point p1, Size p2)
+            {
+                return new()
+                {
+                    X = p1.X / p2.Width,
+                    Y = p1.Y / p2.Height
                 };
             }
 
@@ -230,6 +391,14 @@ namespace DialogMaker
                 {
                     Width = p1.Width - p2.X,
                     Height = p1.Height - p2.Y
+                };
+            }
+            public static Size operator /(Size p1, Point p2)
+            {
+                return new()
+                {
+                    Width = p1.Width / p2.X,
+                    Height = p1.Height / p2.Y
                 };
             }
             public static Size operator *(Size p1, double value)
