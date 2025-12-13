@@ -3,7 +3,10 @@ using DialogMaker.Editor;
 using DialogMaker.Lib;
 using DialogMaker.Lib.Controllers;
 using DialogMaker.ViewModels;
+using System.Reflection.Metadata.Ecma335;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace DialogMaker
 {
@@ -31,6 +34,12 @@ namespace DialogMaker
         private readonly ResourcesDragAndDropController _resourcesDragAndDrop;
 
         #region Управление
+
+        public void ClearFocus()
+        {
+            Keyboard.ClearFocus();
+            FocusManager.SetFocusedElement(this, null);
+        }
 
         private void SetProject(DialogProject? project)
         {
@@ -78,6 +87,81 @@ namespace DialogMaker
         private void ExecuteCloseProject(object? parameter)
         {
             SetProject(null);
+        }
+
+        #endregion
+
+        #region События
+
+        protected override async void OnPreviewMouseDown(MouseButtonEventArgs e)
+        {
+            base.OnPreviewMouseDown(e);
+
+            static bool SimpleIsTextInput(object? obj)
+            {
+                return obj is TextBox ||
+                       obj is RichTextBox;
+            }
+            static bool IsTextInput(object? obj)
+            {
+                if (SimpleIsTextInput(obj))
+                {
+                    return true;
+                }
+
+                if (obj is FrameworkElement element)
+                {
+                    FrameworkElement? parent = element;
+
+                    while (parent != null)
+                    {
+                        if (SimpleIsTextInput(parent))
+                        {
+                            return true;
+                        }
+
+                        parent = parent.Parent as FrameworkElement;
+                    }
+                }
+
+                return false;
+            }
+
+            IInputElement? pressedElement = null;
+            int callbackCount = 0;
+
+            await this.Fetch(e, obj =>
+            {
+                if (IsTextInput(obj))
+                {
+                    pressedElement = (IInputElement)obj;
+                }
+            }, callback =>
+            {
+                if (callbackCount > 0)
+                {
+                    return true;
+                }
+
+                callbackCount++;
+
+                return false;
+            });
+
+            if (!IsTextInput(Keyboard.FocusedElement))
+            {
+                return;
+            }
+
+            if (Keyboard.FocusedElement?.Equals(pressedElement) != true)
+            {
+
+                if (pressedElement == null ||
+                    !pressedElement.Focus())
+                {
+                    ClearFocus();
+                }
+            }
         }
 
         #endregion

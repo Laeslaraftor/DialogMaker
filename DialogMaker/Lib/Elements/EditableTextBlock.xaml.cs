@@ -93,7 +93,9 @@ namespace DialogMaker.Lib.Elements
 
             _lostFocusEventAdded = true;
             _box.LostFocus += OnBoxLostFocus;
+            _box.PreviewLostKeyboardFocus += OnBoxLostKeyboardFocus;
         }
+
         private void RemoveLostFocusEvent()
         {
             _lostFocusEventAddToken = null;
@@ -101,8 +103,15 @@ namespace DialogMaker.Lib.Elements
             if (_lostFocusEventAdded)
             {
                 _box.LostFocus -= OnBoxLostFocus;
+                _box.PreviewLostKeyboardFocus -= OnBoxLostKeyboardFocus;
                 _lostFocusEventAdded = false;
             }
+        }
+
+        private void RemoveFocus()
+        {
+            RemoveLostFocusEvent();
+            EditMode = _box.IsFocused;
         }
 
         #endregion
@@ -138,8 +147,11 @@ namespace DialogMaker.Lib.Elements
         }
         private void OnBoxLostFocus(object sender, RoutedEventArgs e)
         {
-            RemoveLostFocusEvent();
-            EditMode = _box.IsFocused;
+            RemoveFocus();
+        }
+        private void OnBoxLostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+        {
+            RemoveFocus();
         }
         private void OnBoxKeyDown(object sender, KeyEventArgs e)
         {

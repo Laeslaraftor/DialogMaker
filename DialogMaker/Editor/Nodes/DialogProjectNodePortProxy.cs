@@ -11,12 +11,12 @@ namespace DialogMaker.Editor
 {
     public class DialogProjectNodePortProxy : ObservableObject, IDisposable
     {
-        public DialogProjectNodePortProxy(DialogProjectNode node, DialogProjectNodePort port, string name)
+        public DialogProjectNodePortProxy(DialogProjectNode node, DialogProjectNodePort port, string name, string description)
         {
             Node = node;
             Original = port;
             Name = name;
-            Description = port.GetType().GetDescription();
+            Description = description;
 
             if (!_colorBrushes.TryGetValue(port.Color, out var colorBrush))
             {
@@ -130,7 +130,8 @@ namespace DialogMaker.Editor
                     }
 
                     var name = attribute.GetType().GetProperty("Name")?.GetValue(attribute) as string;
-                    result.Add(new(proxy, port, name ?? string.Empty));
+                    string description = property.GetCustomAttribute<DescriptionAttribute>()?.Description ?? string.Empty;
+                    result.Add(new(proxy, port, name ?? string.Empty, description));
                 }
             }
 

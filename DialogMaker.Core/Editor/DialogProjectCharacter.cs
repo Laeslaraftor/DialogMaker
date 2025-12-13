@@ -1,8 +1,11 @@
-﻿namespace DialogMaker.Core.Editor
+﻿using System;
+using System.Diagnostics;
+
+namespace DialogMaker.Core.Editor
 {
     public class DialogProjectCharacter : DialogProjectResourceObject
     {
-        public DialogProjectCharacter(DialogProjectResources resources) 
+        public DialogProjectCharacter(DialogProjectResources resources)
             : base(resources)
         {
         }
@@ -11,7 +14,14 @@
         {
             if (savedState.Name != null)
             {
-                _name = DialogProjectReference<DialogProjectString>.Restore(resources.Owner.Project, savedState.Name);
+                try
+                {
+                    _name = DialogProjectReference<DialogProjectString>.Restore(resources.Owner.Project, savedState.Name);
+                }
+                catch (Exception error)
+                {
+                    Debug.WriteLine(error);
+                }
             }
         }
 

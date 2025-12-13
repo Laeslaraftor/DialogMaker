@@ -1,23 +1,21 @@
-﻿namespace DialogMaker.Lib.Elements
+﻿using DialogMaker.Core;
+
+namespace DialogMaker.Lib.Elements
 {
-    public class ElementsPool<T>(Func<T> fabric) : IDisposable
+    public class ElementsPool(Func<object> fabric) : Disposable
     {
-        public ElementsPool()
-            : this(() => Activator.CreateInstance<T>())
+        public ElementsPool(Type objectType)
+            : this(() => Activator.CreateInstance(objectType) ?? throw new InvalidOperationException("Не удалось создать объект"))
         {
-        }
-        ~ElementsPool()
-        {
-            Dispose();
         }
 
-        private readonly Queue<T> _freeElements = new();
-        private readonly List<T> _usedElements = [];
-        private readonly Func<T> _fabric = fabric;
+        private readonly Queue<object> _freeElements = new();
+        private readonly List<object> _usedElements = [];
+        private readonly Func<object> _fabric = fabric;
 
         #region Управление
 
-        public T GetElement()
+        public object GetElement()
         {
             if (!_freeElements.TryDequeue(out var result))
             {
@@ -28,7 +26,7 @@
 
             return result;
         }
-        public bool Free(T element)
+        public bool Free(object element)
         {
             if (_usedElements.Remove(element))
             {
@@ -48,14 +46,14 @@
             _usedElements.Clear();
         }
 
-        public void Dispose()
+        protected override void Dispose(bool isDisposing)
         {
+            base.Dispose(isDisposing);
+
             _freeElements.Clear();
             _freeElements.EnsureCapacity(4);
             _usedElements.Clear();
             _usedElements.EnsureCapacity(4);
-
-            GC.SuppressFinalize(this);
         }
 
         #endregion

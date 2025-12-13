@@ -6,6 +6,7 @@ using DialogMaker.Lib.Elements;
 using System.ComponentModel;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows;
 
 namespace DialogMaker.Editor
 {
@@ -70,6 +71,8 @@ namespace DialogMaker.Editor
         public virtual object? GetPreview()
         {
             var block = _previewBlocks.GetElement();
+            block.Margin = new(5, 0, 5, 0);
+            block.TextWrapping = TextWrapping.Wrap;
             block.Text = ToString() ?? string.Empty;
 
             _createdBlocks.Add(block);

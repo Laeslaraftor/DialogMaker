@@ -1,0 +1,21 @@
+﻿<UserControl x:Class="DialogMaker.Lib.Elements.Entry"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:DialogMaker.Lib.Elements"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <TextBlock x:Name="_placeholder" 
+                   VerticalAlignment="Center"
+                   Margin="12,0,0,0" Opacity="0.5"
+                   TextTrimming="CharacterEllipsis"
+                   TextWrapping="NoWrap"/>
+        <TextBox x:Name="_text"
+                 GotFocus="OnTextGotFocus"
+                 LostFocus="OnTextLostFocus"
+                 KeyDown="OnTextKeyDown"
+                 TextChanged="OnTextTextChanged"/>
+    </Grid>
+</UserControl>

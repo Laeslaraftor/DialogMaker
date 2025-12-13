@@ -100,35 +100,45 @@ namespace DialogMaker.Core.Editor
         {
             return Characters.TryGetValue(i => i.ProjectId == id, out result);
         }
-        public bool TryGetObject<T>(Guid id, [NotNullWhen(true)] out T? result)
-            where T : DialogProjectResourceObject
+        public bool TryGetObject(Guid id, Type resourceType, [NotNullWhen(true)] out DialogProjectResourceObject? result)
         {
-            var requestedType = typeof(T);
             result = null;
 
-            if (requestedType == typeof(DialogProjectString))
+            if (resourceType == typeof(DialogProjectString))
             {
                 if (TryGetString(id, out var str))
                 {
-                    result = (T)Convert.ChangeType(str, requestedType);
+                    result = (DialogProjectResourceObject)Convert.ChangeType(str, resourceType);
                 }
             }
-            else if (requestedType == typeof(DialogProjectItem))
+            else if (resourceType == typeof(DialogProjectItem))
             {
                 if (TryGetItem(id, out var item))
                 {
-                    result = (T)Convert.ChangeType(item, requestedType);
+                    result = (DialogProjectResourceObject)Convert.ChangeType(item, resourceType);
                 }
             }
-            else if (requestedType == typeof(DialogProjectCharacter))
+            else if (resourceType == typeof(DialogProjectCharacter))
             {
                 if (TryGetCharacter(id, out var character))
                 {
-                    result = (T)Convert.ChangeType(character, requestedType);
+                    result = (DialogProjectResourceObject)Convert.ChangeType(character, resourceType);
                 }
             }
 
             return result != null;
+        }
+        public bool TryGetObject<T>(Guid id, [NotNullWhen(true)] out T? result)
+            where T : DialogProjectResourceObject
+        {
+            result = null;
+
+            if (TryGetObject(id, typeof(T), out var resource))
+            {
+                result = (T)resource;
+            }
+
+            return false;
         }
 
         public DialogProjectItem AddItem(string filePath, bool overwrite = false)

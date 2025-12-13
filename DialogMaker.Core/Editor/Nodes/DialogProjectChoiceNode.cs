@@ -1,5 +1,6 @@
 ﻿using Acly;
 using System;
+using System.ComponentModel;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -28,9 +29,9 @@ namespace DialogMaker.Core.Editor.Nodes
                 }
             }
         }
-        [Name("Варианты ответа"), Reference(DialogResourceType.String)]
+        [Name("Варианты ответа"), ItemName("Вариант ответа"), Reference(DialogResourceType.String)]
         public EditableCollection<DialogProjectReference<DialogProjectString>> Variants { get; } = [];
-        [NodeInput("Вход")]
+        [NodeInput("Вход"), Description("Вход в узел")]
         public DialogProjectNodeInputAction Input
         {
             get
@@ -39,7 +40,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 return field;
             }
         }
-        [NodeOutput("Выход")]
+        [NodeOutput("Выход"), Description("Действие после выбора ответа")]
         public DialogProjectNodeOutput Output
         {
             get
@@ -48,7 +49,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 return field;
             }
         }
-        [NodeOutput("Выбранный вариант")]
+        [NodeOutput("Варианты ответа"), Description("Индекс выбранного варианта ответа")]
         public DialogProjectNodeOutput SelectedVarianIndex
         {
             get

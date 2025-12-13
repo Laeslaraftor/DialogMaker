@@ -63,10 +63,11 @@ namespace DialogMaker.Lib
             {
                 textBoxControl.Loaded -= OnTextBoxControlLoaded;
                 GetOrCreateAdorner(textBoxControl, out _);
+                OnTextBoxControlTextChanged(textBoxControl, null);
             }
         }
 
-        private static void OnTextBoxControlTextChanged(object sender, TextChangedEventArgs e)
+        private static void OnTextBoxControlTextChanged(object sender, TextChangedEventArgs? e)
         {
             if (sender is TextBox textBoxControl
                 && GetOrCreateAdorner(textBoxControl, out var adorner))

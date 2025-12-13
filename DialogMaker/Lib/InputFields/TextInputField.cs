@@ -1,5 +1,6 @@
-﻿using System.Windows;
-using System.Windows.Controls;
+﻿using DialogMaker.Lib.Elements;
+using System.Diagnostics.CodeAnalysis;
+using System.Windows;
 
 namespace DialogMaker.Lib.InputFields
 {
@@ -8,7 +9,7 @@ namespace DialogMaker.Lib.InputFields
         public TextInputField()
         {
             _view = new();
-            _view.TextChanged += OnTextTextChanged;
+            _view.ConfirmedText += OnViewConfirmedText;
         }
 
         public override string Placeholder
@@ -39,39 +40,69 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (field != value)
                 {
+                    if (value != null && value.GetType() != ValueType)
+                    {
+                        throw new ArgumentException($"Недопустимый тип! Требуется: {ValueType}, получен: {value.GetType()}", nameof(value));
+                    }
+
                     InvokePropertyChanging(nameof(Value));
 
                     field = value;
+                    string textValue = ValueToString(value);
 
-                    if (_view.Text?.Equals(value) != true)
+                    if (textValue.Equals(_view.Text) != true)
                     {
-                        _view.Text = value as string;
+                        _view.Text = textValue;
                     }
 
                     InvokePropertyChanged(nameof(Value));
                 }
             }
         }
-
         public override FrameworkElement View => _view;
 
-        private readonly TextBox _view;
+        protected virtual Type ValueType { get; } = typeof(string);
+        protected string Text
+        {
+            get => _view.Text;
+            set => _view.Text = value;
+        }
+
+        private readonly Entry _view;
 
         #region Управление
 
         protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);
-            _view.TextChanged -= OnTextTextChanged;
+
+            _view.ConfirmedText -= OnViewConfirmedText;
+        }
+
+        protected virtual bool TryHandle(string newValue, [NotNullWhen(true)] out object value)
+        {
+            value = newValue;
+            return true;
+        }
+        protected virtual string ValueToString(object? value)
+        {
+            var result = value?.ToString();
+            return result ?? string.Empty;
         }
 
         #endregion
 
         #region События
 
-        private void OnTextTextChanged(object sender, TextChangedEventArgs e)
+        private void OnViewConfirmedText(object? sender, ValueChangedEventArgs<string> e)
         {
-            Value = _view.Text;
+            if (TryHandle(e.NewValue, out var value))
+            {
+                Value = value;
+                return;
+            }
+
+            Text = e.OldValue;
         }
 
         #endregion

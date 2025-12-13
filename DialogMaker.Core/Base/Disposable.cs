@@ -9,6 +9,8 @@ namespace DialogMaker.Core
             Dispose(false);
         }
 
+        public event EventHandler? Disposed;
+
         public bool IsDisposed
         {
             get => field;
@@ -29,6 +31,8 @@ namespace DialogMaker.Core
             {
                 return;
             }
+
+            Disposed?.Invoke(this, EventArgs.Empty);
 
             Dispose(true);
             GC.SuppressFinalize(this);

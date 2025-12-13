@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Editor.Nodes;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace DialogMaker.Core
@@ -43,9 +44,13 @@ namespace DialogMaker.Core
 
         public static T? GetEnumAttribute<T>(this object? enumValue) where T : Attribute
         {
+            return enumValue.GetEnumAttributes<T>().FirstOrDefault();
+        }
+        public static List<T> GetEnumAttributes<T>(this object? enumValue) where T : Attribute
+        {
             if (enumValue == null)
             {
-                return null;
+                return [];
             }
 
             var enumType = enumValue.GetType();
@@ -53,7 +58,7 @@ namespace DialogMaker.Core
 
             if (valueName == null)
             {
-                return null;
+                return [];
             }
 
             var memberInfo = enumType.GetMember(valueName);
@@ -62,10 +67,10 @@ namespace DialogMaker.Core
 
             if (valueAttributes != null && valueAttributes.Length > 0)
             {
-                return (T)valueAttributes[0];
+                return [.. valueAttributes.Cast<T>()];
             }
 
-            return null;
+            return [];
         }
     }
 }

@@ -67,6 +67,16 @@ namespace DialogMaker.Lib.Elements
             get => (Easing)GetValue(CurvesEasingProperty);
             set => SetValue(CurvesEasingProperty, value);
         }
+        public double MaxZoom
+        {
+            get => (double)GetValue(MaxZoomProperty);
+            set => SetValue(MaxZoomProperty, value);
+        }
+        public double MinZoom
+        {
+            get => (double)GetValue(MinZoomProperty);
+            set => SetValue(MinZoomProperty, value);
+        }
 
         private readonly DragAndDropController _dragAndDrop;
         private readonly ViewScaleController _scaleController;
@@ -247,6 +257,20 @@ namespace DialogMaker.Lib.Elements
                 view._connections.CurvesResolution = (int)e.NewValue;
             }
         }
+        private static void OnMaxZoomChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is DiagramView view)
+            {
+                view._scaleController.MaxScale = (double)e.NewValue;
+            }
+        }
+        private static void OnMinZoomChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is DiagramView view)
+            {
+                view._scaleController.MinScale = (double)e.NewValue;
+            }
+        }
 
         #endregion
 
@@ -262,6 +286,10 @@ namespace DialogMaker.Lib.Elements
             typeof(DiagramView), new(Easing.EaseInOutCubic, OnCurvesEasingChanged));
         public static readonly DependencyProperty CurvesResolutionProperty = DependencyProperty.Register(nameof(CurvesResolution), typeof(int),
             typeof(DiagramView), new(8, OnCurvesResolutionChanged));
+        public static readonly DependencyProperty MaxZoomProperty = DependencyProperty.Register(nameof(MaxZoom), typeof(double),
+            typeof(DiagramView), new(2d, OnMaxZoomChanged));
+        public static readonly DependencyProperty MinZoomProperty = DependencyProperty.Register(nameof(MinZoom), typeof(double),
+            typeof(DiagramView), new(0.25d, OnMinZoomChanged));
 
         #endregion
     }

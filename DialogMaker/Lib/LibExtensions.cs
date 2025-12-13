@@ -1,4 +1,5 @@
-﻿using DialogMaker.Lib;
+﻿using Acly;
+using DialogMaker.Lib;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
@@ -258,6 +259,15 @@ namespace DialogMaker
                 return Vector2.Distance(new((float)point.X, (float)point.Y), new((float)other.X, (float)other.Y));
             }
 
+            public static Point Clamp(Point p, double min, double max)
+            {
+                return new()
+                {
+                    X = Helper.Clamp(p.X, min, max),
+                    Y = Helper.Clamp(p.Y, min, max)
+                };
+            }
+
             public static Point operator +(Point p1, Point p2)
             {
                 return new()
@@ -304,6 +314,22 @@ namespace DialogMaker
                 {
                     X = p1.X - s2.Width,
                     Y = p1.Y - s2.Height
+                };
+            }
+            public static Point operator +(Point p1, double p2)
+            {
+                return new()
+                {
+                    X = p1.X + p2,
+                    Y = p1.Y + p2
+                };
+            }
+            public static Point operator -(Point p1, double s2)
+            {
+                return new()
+                {
+                    X = p1.X - s2,
+                    Y = p1.Y - s2
                 };
             }
             public static Point operator /(Point p1, double p2)

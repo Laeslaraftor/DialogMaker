@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Converters;
 
 namespace DialogMaker.Lib.Controllers
 {
@@ -16,6 +17,8 @@ namespace DialogMaker.Lib.Controllers
 
         public UIElement Element { get; }
         public UIElement? Container { get; set; }
+        public double MaxScale { get; set; } = 2;
+        public double MinScale { get; set; } = 0.25;
         public ScaleTransform? OverrideScaleTransform { get; set; }
 
         #region Управление
@@ -36,9 +39,16 @@ namespace DialogMaker.Lib.Controllers
             var scale = OverrideScaleTransform;
             scale ??= Element.GetTransform<ScaleTransform>();
             double delta = (double)e.Delta / 2000;
+            Point currentScale = new(scale.ScaleX, scale.ScaleY);
+            Point newScale = Point.Clamp(currentScale + delta, MinScale, MaxScale);
 
-            scale.ScaleX += delta;
-            scale.ScaleY += delta;
+            if (currentScale == newScale)
+            {
+                return;
+            }
+
+            scale.ScaleX = newScale.X;
+            scale.ScaleY = newScale.Y;
 
             if (Container != null)
             {
@@ -58,7 +68,7 @@ namespace DialogMaker.Lib.Controllers
                 Point origin = (position / Element.RenderSize) * Element.RenderSize;
                 origin -= halfSize;
                 origin *= (-delta * 2) / scale.ScaleX;
-
+                
                 translation.X += origin.X;
                 translation.Y += origin.Y;
             }

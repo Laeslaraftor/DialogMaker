@@ -100,7 +100,8 @@ namespace DialogMaker.Lib.Elements
                 _properties.Children.Add(property.View);
             }
 
-            _properties.Width = newValue.Properties.Count > 0 ? 150 : 0;
+            _properties.Width = newValue.Properties.Count > 0 ? double.NaN : 0;
+            _properties.MinWidth = newValue.Properties.Count > 0 ? 150 : 0;
 
             newValue.PropertyChanged += OnNodePropertyChanged;
         }

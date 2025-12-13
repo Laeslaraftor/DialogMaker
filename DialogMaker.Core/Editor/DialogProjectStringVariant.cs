@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace DialogMaker.Core.Editor
 {
@@ -18,6 +19,17 @@ namespace DialogMaker.Core.Editor
                 replica.Resources.Owner.Project.TryGetLanguage(languageId, out var language))
             {
                 _language = language;
+            }
+            if (savedState.VoiceId != null)
+            {
+                try
+                {
+                    Voice = DialogProjectReference<DialogProjectItem>.Restore(replica.Resources.Owner.Project, savedState.VoiceId);
+                }
+                catch (Exception error)
+                {
+                    Debug.WriteLine(error);
+                }
             }
         }
 

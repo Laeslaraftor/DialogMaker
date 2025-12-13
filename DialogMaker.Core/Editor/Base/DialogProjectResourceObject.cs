@@ -1,8 +1,11 @@
-﻿using System;
+﻿using DialogMaker.Core.Attributes;
+using System;
+using System.Collections.Generic;
+using System.Data;
 
 namespace DialogMaker.Core.Editor
 {
-    public abstract class DialogProjectResourceObject : ObservableObject, ISavable, IDisposable
+    public abstract class DialogProjectResourceObject : Disposable
     {
         protected DialogProjectResourceObject(DialogProjectResources resources, Guid id)
         {
@@ -17,10 +20,6 @@ namespace DialogMaker.Core.Editor
             : this(resources, Guid.Parse(savedState.ProjectId))
         {
             Id = savedState.Id;
-        }
-        ~DialogProjectResourceObject()
-        {
-            Dispose(false);
         }
 
         public DialogProjectResources Resources { get; }
@@ -59,23 +58,42 @@ namespace DialogMaker.Core.Editor
             return savedState;
         }
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
         protected abstract DialogProjectResourceObjectSavedState CreateSavedState();
-
-        protected virtual void Dispose(bool isDisposing)
-        {
-        }
 
         #endregion
 
         #region Константы
 
         public const string DefaultId = "Идентификатор ресурса";
+
+        #endregion
+
+        #region Статика
+
+        private static readonly Dictionary<KeyValuePair<DialogResourceType, bool>, Type> _resourceTypes = [];
+
+        public static Type GetType(DialogResourceType type, bool isDev)
+        {
+            KeyValuePair<DialogResourceType, bool> pair = new(type, isDev);
+
+            if (_resourceTypes.TryGetValue(pair, out var resourceType))
+            {
+                return resourceType;
+            }
+
+            var types = type.GetEnumAttributes<ResourceTypeAttribute>();
+
+            foreach (var info in types)
+            {
+                if (info.IsDev == isDev)
+                {
+                    _resourceTypes.TryAdd(pair, info.Type);
+                    return info.Type;
+                }
+            }
+
+            throw new ArgumentException("Не удалось получить тип ресурса", nameof(type));
+        }
 
         #endregion
     }

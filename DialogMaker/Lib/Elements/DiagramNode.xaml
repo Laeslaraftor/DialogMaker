@@ -7,7 +7,7 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Border x:Name="_main" Padding="0,0,0,5"
-            Background="{DynamicResource LayerOnAcrylicFillColorDefaultBrush}"
+            Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
             BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}" 
             BorderThickness="1" CornerRadius="8">
         <Grid>
@@ -30,7 +30,7 @@
             <StackPanel x:Name="_outputs" Grid.Row="1" Margin="4"
                         Grid.Column="2" Orientation="Vertical"/>
             <StackPanel x:Name="_properties" Grid.Row="1" 
-                        Grid.Column="1" Margin="4"/>
+                        Grid.Column="1" Margin="4" MaxWidth="200"/>
         </Grid>
     </Border>
 </UserControl>

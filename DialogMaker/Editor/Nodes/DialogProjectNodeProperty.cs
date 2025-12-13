@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core;
+﻿using Acly;
+using DialogMaker.Core;
 using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Lib.InputFields;
@@ -121,8 +122,7 @@ namespace DialogMaker.Editor
         {
             new(typeof(string), t => new TextInputField()),
             new(typeof(bool), t => new BoolInputField()),
-            //new(typeof(float), t => new TextInputField()),
-            //new(typeof(int), t => new TextInputField()),
+            new(typeof(float), t => new FloatInputField()),
             new(typeof(Enum), t => new EnumInputField()),
             new(typeof(DialogProjectReference<>), t =>
             {
@@ -131,6 +131,24 @@ namespace DialogMaker.Editor
                     ResourceType = t?.GetCustomAttribute<ReferenceAttribute>()?.Type
                 };
             }, EditorExtensions.ToOriginalReference),
+            new(t => t?.GetInterface(nameof(IEditableList)) != null, t =>
+            {
+                var resourceType = t?.GetCustomAttribute<ReferenceAttribute>()?.Type;
+                var itemName = t?.GetCustomAttribute<ItemNameAttribute>()?.Name ?? string.Empty;
+
+                return new EditableListInputField()
+                {
+                    InputFieldHandler = field =>
+                    {
+                        field.Placeholder = itemName;
+
+                        if (field is ReferenceInputField referenceField)
+                        {
+                            referenceField.ResourceType = resourceType;
+                        }
+                    }
+                };
+            }),
         };
 
         public static List<DialogProjectNodeProperty> GetProperties(DialogProjectNode node)
@@ -140,7 +158,7 @@ namespace DialogMaker.Editor
 
             foreach (var property in properties)
             {
-                if (!property.CanWrite || !property.CanWrite)
+                if (!property.CanRead)
                 {
                     continue;
                 }
@@ -161,19 +179,30 @@ namespace DialogMaker.Editor
 
         #region Классы
 
-        protected readonly struct AllowedType(Type type, Func<MemberInfo, InputField> viewFabric, Func<object?, object?>? converter = null)
+        protected readonly struct AllowedType(Predicate<Type?> comparer, Func<MemberInfo, InputField> viewFabric, Func<object?, object?>? converter = null)
             : IEquatable<Type>
         {
-            public Type Type { get; } = type;
+            public AllowedType(Type type, Func<MemberInfo, InputField> viewFabric, Func<object?, object?>? converter = null)
+                : this(t => TypeEquals(type, t), viewFabric, converter)
+            {
+
+            }
+
+            public Predicate<Type?> Type { get; } = comparer;
             public Func<MemberInfo, InputField> ViewFabric { get; } = viewFabric;
             public Func<object?, object?>? Converter { get; } = converter;
 
             public readonly bool Equals(Type? other)
             {
+                return Type(other);
+            }
+
+            private static bool TypeEquals(Type type, Type? other)
+            {
                 return other != null &&
-                       (Type == other ||
-                       Type.IsEnum && other.IsEnum ||
-                       Type.Name.Contains(other.Name));
+                       (type == other ||
+                       type.IsEnum && other.IsEnum ||
+                       type.Name.Contains(other.Name));
             }
         }
 

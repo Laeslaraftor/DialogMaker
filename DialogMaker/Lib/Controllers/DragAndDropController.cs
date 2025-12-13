@@ -1,6 +1,7 @@
 ﻿using DialogMaker.Core;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -44,6 +45,7 @@ namespace DialogMaker.Lib.Controllers
         private async Task<Dictionary<MouseButton, DragHitTest>> HitTest(MouseEventArgs mouse)
         {
             Dictionary<MouseButton, DragHitTest> result = [];
+            bool shouldRemoveLeftButton = false;
 
             await ElementsContainer.Fetch(mouse, target =>
             {
@@ -61,12 +63,24 @@ namespace DialogMaker.Lib.Controllers
                 {
                     element = newElement;
                 }
+                if ((element is TextBox || 
+                    element is RichTextBox ||
+                    element is ScrollBar) && 
+                    check.DragMouseButton == MouseButton.Left)
+                {
+                    shouldRemoveLeftButton = true;
+                    return;
+                }
                 if (!check.Ignore)
                 {
                     result.ForceAdd(check.DragMouseButton, new(element, check.DragMouseButton));
                 }
             });
 
+            if (shouldRemoveLeftButton)
+            {
+                result.Remove(MouseButton.Left);
+            }
 
             return result;
         }
