@@ -1,11 +1,11 @@
 ﻿using Acly;
 using DialogMaker.Core;
 using DialogMaker.Lib.InputFields;
-using Newtonsoft.Json.Linq;
+using System.Collections;
 
 namespace DialogMaker.Lib.Converters
 {
-    public class ObjectEditorsConverter : Disposable, IValueConverter<object?, InputField>
+    public class ObjectEditorsConverter : Disposable, ICollectionValueConverter<object?, InputField>
     {
         public event EventHandler<CollectionItemEventArgs<InputField>>? EditorChanged;
 
@@ -13,9 +13,18 @@ namespace DialogMaker.Lib.Converters
 
         #region Управление
 
-        public InputField Convert(object? Value)
+        public InputField Convert(object? Value, int Index, IList FirstCollection, IList SecondCollection)
         {
-            var field = InputField.GetField(Value?.GetType());
+            var fieldType = InputField.GetFieldType(Value);
+
+            if (SecondCollection.Count > Index && 
+                SecondCollection[Index] is InputField createdField && 
+                createdField.GetType() == fieldType)
+            {
+                return createdField;
+            }
+
+            var field = InputField.GetFromFieldType(fieldType);
             _createdFields.Add(field);
 
             try
@@ -31,7 +40,7 @@ namespace DialogMaker.Lib.Converters
 
             return field;
         }
-        public object? ConvertBack(InputField Value)
+        public object? ConvertBack(InputField Value, int Index, IList FirstCollection, IList SecondCollection)
         {
             if (Value == null)
             {

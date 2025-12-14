@@ -3,35 +3,16 @@ using DialogMaker.Core.Editor;
 
 namespace DialogMaker.Editor
 {
-    public abstract class ProjectResourcesOwner(ProjectController project, IProjectResourcesOwner resourcesOwner) 
-        : ObservableObject, IDisposable
+    public abstract class ProjectResourcesOwner(ProjectController project, IProjectResourcesOwner resourcesOwner) : Disposable
     {
-        ~ProjectResourcesOwner()
-        {
-            Dispose(false);
-        }
-
-        public bool IsDisposed { get; private set; }
         public ProjectController Project { get; } = project;
         public ProjectResources Resources { get; } = new(project, resourcesOwner.Resources);
 
         #region Управление
 
-        public void Dispose()
+        protected override void Dispose(bool isDisposing)
         {
-            if (IsDisposed)
-            {
-                return;
-            }
-
-            IsDisposed = true;
-
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool isDisposing)
-        {
+            base.Dispose(isDisposing);
             Resources.Dispose();
         }
 

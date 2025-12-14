@@ -1,47 +1,57 @@
-﻿using DialogMaker.Core;
-using DialogMaker.Core.Editor;
+﻿using DialogMaker.Core.Editor;
 
 namespace DialogMaker.Editor
 {
-    public class ProjectReference<T, TItem> : ObservableObject
-        where T : ProjectResourceItem<TItem> where TItem : DialogProjectResourceObject
+    public class ProjectReference
     {
-#pragma warning disable CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.
-        public ProjectReference(ProjectController project, DialogProjectReference<TItem> reference)
-#pragma warning restore CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.
+        public ProjectReference(ProjectController project, DialogProjectReference reference)
         {
             Project = project;
             Reference = reference;
-#pragma warning disable CS8600 // Преобразование литерала, допускающего значение NULL или возможного значения NULL в тип, не допускающий значение NULL.
-#pragma warning disable CS8601 // Возможно, назначение-ссылка, допускающее значение NULL.
-            Item = (T)Activator.CreateInstance(typeof(T), project, reference.Resolve());
-#pragma warning restore CS8601 // Возможно, назначение-ссылка, допускающее значение NULL.
-#pragma warning restore CS8600 // Преобразование литерала, допускающего значение NULL или возможного значения NULL в тип, не допускающий значение NULL.
+            Item = ProjectResourceItem.Create(project, reference);
         }
-        public ProjectReference(ProjectController project, T item)
+        public ProjectReference(ProjectResourceItem item)
         {
-            Project = project;
-            Reference = item.Original;
+            Project = item.Project;
+            Reference = item.Model;
             Item = item;
         }
 
         public ProjectController Project { get; }
-        public DialogProjectReference<TItem> Reference { get; }
-        public T Item { get; }
+        public DialogProjectReference Reference { get; }
+        public ProjectResourceItem Item { get; }
 
         #region Операторы
 
-        public static implicit operator T(ProjectReference<T, TItem> reference)
+        public static implicit operator ProjectResourceItem(ProjectReference reference)
         {
             return reference.Item;
         }
-        public static implicit operator DialogProjectReference<TItem>(ProjectReference<T, TItem> reference)
+        public static implicit operator DialogProjectReference(ProjectReference reference)
         {
             return reference.Reference;
         }
-        public static implicit operator ProjectReference<T, TItem>(T item)
+        public static implicit operator ProjectReference(ProjectResourceItem item)
         {
-            return new(item.Project, item);
+            return Create(item);
+        }
+
+        #endregion
+
+        #region Статика
+
+        public static ProjectReference Create(ProjectResourceItem item)
+        {
+            var openReference = typeof(ProjectReference<,>);
+            var itemType = DialogProjectResourceObject.GetType(item.ResourceType, true);
+            var closedType = openReference.MakeGenericType(item.GetType(), itemType);
+
+            if (Activator.CreateInstance(closedType, item) is not ProjectReference result)
+            {
+                throw new InvalidOperationException($"Не удалось создать ссылку для {item}");
+            }
+
+            return result;
         }
 
         #endregion

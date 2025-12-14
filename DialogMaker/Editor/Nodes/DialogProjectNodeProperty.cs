@@ -1,116 +1,59 @@
-﻿using Acly;
-using DialogMaker.Core;
-using DialogMaker.Core.Editor;
-using DialogMaker.Core.Editor.Nodes;
-using DialogMaker.Lib.InputFields;
+﻿using DialogMaker.Core;
+using DialogMaker.Lib.Controllers;
 using System.ComponentModel;
-using System.Reflection;
 using System.Windows;
 
 namespace DialogMaker.Editor
 {
-    public class DialogProjectNodeProperty : ObservableObject, IDisposable
+    public class DialogProjectNodeProperty : Disposable
     {
-        protected DialogProjectNodeProperty(DialogProjectNode node, PropertyInfo property, AllowedType typeInfo)
+        protected DialogProjectNodeProperty(DialogProjectNode node, PropertyEditorController controller)
         {
-            InputField = typeInfo.ViewFabric(property);
             Node = node;
-            Property = property;
-            Name = property.GetName();
-            Description = property.GetDescription();
-            InputField.Placeholder = Name;
-            InputField.Value = Value;
-            TypeInfo = typeInfo;
+            _controller = controller;
 
-            node.Original.PropertyChanged += OnOriginalNodePropertyChanged;
-            node.Original.PropertyChanging += OnOriginalNodePropertyChanging;
-            InputField.PropertyChanged += OnInputFieldPropertyChanged;
-        }
-        ~DialogProjectNodeProperty()
-        {
-            Dispose(false);
+            controller.PropertyChanged += OnControllerPropertyChanged;
+            controller.PropertyChanging += OnControllerPropertyChanging;
         }
 
         public DialogProjectNode Node { get; }
-        public string Name { get; }
-        public string Description { get; }
         public object? Value
         {
-            get => Property.GetValue(Node.Original);
-            set
-            {
-                if (TypeInfo.Converter != null)
-                {
-                    value = TypeInfo.Converter(value);
-                }
-
-                Property.SetValue(Node.Original, value);
-            }
+            get => _controller.Value;
+            set => _controller.Value = value;
         }
-        public FrameworkElement View => InputField.View;
+        public FrameworkElement View => _controller.View;
 
-        protected PropertyInfo Property { get; }
-        protected InputField InputField { get; }
-        protected AllowedType TypeInfo { get; }
+        private readonly PropertyEditorController _controller;
 
         #region Управление
 
-        public void Dispose()
+        protected override void Dispose(bool isDisposing)
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
+            base.Dispose(isDisposing);
 
-        protected virtual void Dispose(bool isDisposing)
-        {
-            Node.Original.PropertyChanged -= OnOriginalNodePropertyChanged;
-            Node.Original.PropertyChanging -= OnOriginalNodePropertyChanging;
-            InputField.PropertyChanged -= OnInputFieldPropertyChanged;
+            _controller.PropertyChanged -= OnControllerPropertyChanged;
+            _controller.PropertyChanging -= OnControllerPropertyChanging;
 
-            InputField.Dispose();
+            _controller.Dispose();
         }
 
         #endregion
 
         #region События
 
-        protected virtual void OnValueChanging()
+        private void OnControllerPropertyChanging(object? sender, PropertyChangingEventArgs e)
         {
-            InvokePropertyChanging(nameof(Value));
-        }
-        protected virtual void OnValueChanged()
-        {
-            InvokePropertyChanged(nameof(Value));
-
-            var value = Value;
-
-            if (InputField.Value?.Equals(value) != true)
+            if (e.PropertyName == nameof(Value))
             {
-                InputField.Value = value;
+                InvokePropertyChanging(nameof(Value));
             }
         }
-
-        private void OnInputFieldPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        private void OnControllerPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            var value = InputField.Value;
-
-            if (Value?.Equals(value) != true)
+            if (e.PropertyName == nameof(Value))
             {
-                Value = value;
-            }
-        }
-        protected virtual void OnOriginalNodePropertyChanging(object? sender, PropertyChangingEventArgs e)
-        {
-            if (e.PropertyName == Property.Name)
-            {
-                OnValueChanging();
-            }
-        }
-        protected virtual void OnOriginalNodePropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == Property.Name)
-            {
-                OnValueChanged();
+                InvokePropertyChanged(nameof(Value));
             }
         }
 
@@ -118,92 +61,17 @@ namespace DialogMaker.Editor
 
         #region Статика
 
-        private static readonly List<AllowedType> _allowedTypes = new()
-        {
-            new(typeof(string), t => new TextInputField()),
-            new(typeof(bool), t => new BoolInputField()),
-            new(typeof(float), t => new FloatInputField()),
-            new(typeof(Enum), t => new EnumInputField()),
-            new(typeof(DialogProjectReference<>), t =>
-            {
-                return new ReferenceInputField()
-                {
-                    ResourceType = t?.GetCustomAttribute<ReferenceAttribute>()?.Type
-                };
-            }, EditorExtensions.ToOriginalReference),
-            new(t => t?.GetInterface(nameof(IEditableList)) != null, t =>
-            {
-                var resourceType = t?.GetCustomAttribute<ReferenceAttribute>()?.Type;
-                var itemName = t?.GetCustomAttribute<ItemNameAttribute>()?.Name ?? string.Empty;
-
-                return new EditableListInputField()
-                {
-                    InputFieldHandler = field =>
-                    {
-                        field.Placeholder = itemName;
-
-                        if (field is ReferenceInputField referenceField)
-                        {
-                            referenceField.ResourceType = resourceType;
-                        }
-                    }
-                };
-            }),
-        };
-
         public static List<DialogProjectNodeProperty> GetProperties(DialogProjectNode node)
         {
-            List<DialogProjectNodeProperty> result = [];
-            var properties = node.Original.GetType().GetProperties();
+            var properties = PropertyEditorController.CreateForAllProperties(node.Original);
+            List<DialogProjectNodeProperty> result = new(properties.Count);
 
             foreach (var property in properties)
             {
-                if (!property.CanRead)
-                {
-                    continue;
-                }
-
-                foreach (var typeInfo in _allowedTypes)
-                {
-                    if (typeInfo.Equals(property.PropertyType))
-                    {
-                        result.Add(new(node, property, typeInfo));
-                    }
-                }
+                result.Add(new(node, property));
             }
 
             return result;
-        }
-
-        #endregion
-
-        #region Классы
-
-        protected readonly struct AllowedType(Predicate<Type?> comparer, Func<MemberInfo, InputField> viewFabric, Func<object?, object?>? converter = null)
-            : IEquatable<Type>
-        {
-            public AllowedType(Type type, Func<MemberInfo, InputField> viewFabric, Func<object?, object?>? converter = null)
-                : this(t => TypeEquals(type, t), viewFabric, converter)
-            {
-
-            }
-
-            public Predicate<Type?> Type { get; } = comparer;
-            public Func<MemberInfo, InputField> ViewFabric { get; } = viewFabric;
-            public Func<object?, object?>? Converter { get; } = converter;
-
-            public readonly bool Equals(Type? other)
-            {
-                return Type(other);
-            }
-
-            private static bool TypeEquals(Type type, Type? other)
-            {
-                return other != null &&
-                       (type == other ||
-                       type.IsEnum && other.IsEnum ||
-                       type.Name.Contains(other.Name));
-            }
         }
 
         #endregion

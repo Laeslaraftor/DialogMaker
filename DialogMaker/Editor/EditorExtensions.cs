@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core;
+using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
 using System.ComponentModel;
 using System.Reflection;
@@ -7,25 +8,38 @@ namespace DialogMaker.Editor
 {
     public static class EditorExtensions
     {
-        public static object? ToOriginalReference(object? projectReference)
+        public static DialogProjectReference? ToOriginalReference(object? projectReference)
         {
-            if (projectReference == null)
+            if (projectReference is DialogProjectReference originalReference)
             {
-                return null;
+                return originalReference; 
+            }
+            if (projectReference is ProjectReference reference)
+            {
+                return reference.Reference;
             }
 
-            var type = projectReference.GetType();
-
-            if (type.Name != "ProjectReference`2")
+            return null;
+        }
+        public static ProjectResourceItem? ToEditorItem(object? projectItem)
+        {
+            if (projectItem is DialogProjectResourceObject resourceObject &&
+                ProjectController.TryFindController(resourceObject.Resources.Owner.Project, out var controller))
             {
-                return null;
+                return ProjectResourceItem.Create(controller, resourceObject);
             }
-
-            var property = type.GetProperty("Reference");
-
-            if (property?.CanRead == true)
+            else if (projectItem is ProjectResourceItem resourceItem)
             {
-                return property.GetValue(projectReference);
+                return resourceItem;
+            }
+            else if (projectItem is DialogProjectReference reference &&
+                ProjectController.TryFindController(reference.Project, out controller))
+            {
+                return ProjectResourceItem.Create(controller, reference.Resolve());
+            }
+            else if (projectItem is ProjectReference editorReference)
+            {
+                return editorReference.Item;
             }
 
             return null;

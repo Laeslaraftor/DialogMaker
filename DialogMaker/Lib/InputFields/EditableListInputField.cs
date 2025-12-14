@@ -72,5 +72,13 @@ namespace DialogMaker.Lib.InputFields
         public override FrameworkElement View => _view;
 
         private readonly ListEditView _view = new();
+
+        #region Управление
+
+        protected override void SetEnabled(bool value)
+        {
+        }
+
+        #endregion
     }
 }

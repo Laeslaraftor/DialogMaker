@@ -20,7 +20,7 @@ namespace DialogMaker.Editor
 
         public T Original { get; }
     }
-    public abstract class ProjectResourceItem : ObservableObject, IDisposable
+    public abstract class ProjectResourceItem : Disposable
     {
         protected ProjectResourceItem(ProjectController project, DialogProjectResourceObject model)
         {
@@ -28,10 +28,6 @@ namespace DialogMaker.Editor
             Model = model;
 
             Model.PropertyChanged += OnModelPropertyChanged;
-        }
-        ~ProjectResourceItem()
-        {
-            Dispose(false);
         }
 
         public ProjectController Project { get; }
@@ -59,11 +55,6 @@ namespace DialogMaker.Editor
 
         public abstract ItemContextMenu CreateContextMenu();
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
         public override string? ToString()
         {
             return Model.ToString();
@@ -88,8 +79,10 @@ namespace DialogMaker.Editor
             }
         }
 
-        protected virtual void Dispose(bool isDisposing)
+        protected override void Dispose(bool isDisposing)
         {
+            base.Dispose(isDisposing);
+
             Model.PropertyChanged -= OnModelPropertyChanged;
             _previewBlocks.Dispose();
             _createdBlocks.Clear();

@@ -1,18 +1,17 @@
 ﻿using Acly;
 using DialogMaker.Core;
 using DialogMaker.Core.Editor;
-using DialogMaker.Editor.Menus;
 using DialogMaker.Lib;
-using DialogMaker.ViewModels;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Input;
 using System.Collections.Specialized;
 using DialogMaker.Editor.Nodes;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Editor
 {
-    public partial class ProjectController : ObservableObject, IDisposable
+    public partial class ProjectController : Disposable
     {
         public ProjectController(DialogProject project)
         {
@@ -40,24 +39,10 @@ namespace DialogMaker.Editor
             Resources = new(this, project.Resources);
 
             UpdateDefaultLanguage();
-        }
-        ~ProjectController()
-        {
-            Dispose();
+
+            _controllers.Add(this);
         }
 
-        public bool IsDisposed
-        {
-            get => _isDisposed;
-            private set
-            {
-                if (_isDisposed != value)
-                {
-                    _isDisposed = value;
-                    InvokePropertyChanged(nameof(IsDisposed));
-                }
-            }
-        }
         public DialogProject Project { get; }
         public ObservableCollection<ProjectLanguage> Languages { get; }
         public ObservableCollection<ProjectPack> Packs { get; }
@@ -75,6 +60,7 @@ namespace DialogMaker.Editor
             {
                 if (field != value)
                 {
+                    InvokePropertyChanging(nameof(DefaultLanguage));
                     field = value;
                     IsDefaultLanguageSetted = value != null;
 
@@ -94,6 +80,7 @@ namespace DialogMaker.Editor
             {
                 if (field != value)
                 {
+                    InvokePropertyChanging(nameof(IsDefaultLanguageSetted));
                     field = value;
                     InvokePropertyChanged(nameof(IsDefaultLanguageSetted));
                 }
@@ -111,7 +98,6 @@ namespace DialogMaker.Editor
         private readonly CollectionSynchronizer<DialogProjectPack, ProjectPack> _packs;
         private readonly CollectionSynchronizer<DialogProjectLanguage, ProjectLanguage> _languages;
         private readonly CollectionSynchronizer<ProjectLanguage, string> _languagesName;
-        private bool _isDisposed;
 
         #region Управление
 
@@ -127,14 +113,9 @@ namespace DialogMaker.Editor
             }
         }
 
-        public void Dispose()
+        protected override void Dispose(bool isDisposing)
         {
-            if (IsDisposed)
-            {
-                return;
-            }
-
-            IsDisposed = true;
+            base.Dispose(isDisposing);
 
             Project.PropertyChanged -= OnProjectPropertyChanged;
             Languages.CollectionChanged -= OnLanguagesCollectionChanged;
@@ -146,7 +127,7 @@ namespace DialogMaker.Editor
             _languageConverter.Dispose();
             _packs.Dispose();
 
-            GC.SuppressFinalize(this);
+            _controllers.Remove(this);
         }
 
         private void UpdateDefaultLanguage()
@@ -231,6 +212,29 @@ namespace DialogMaker.Editor
         #endregion
 
         #region Статика
+
+        private static readonly List<ProjectController> _controllers = [];
+
+        public static bool TryFindController(DialogProject? project, [NotNullWhen(true)] out ProjectController? result)
+        {
+            result = null;
+
+            if (project == null)
+            {
+                return false;
+            }
+
+            foreach (var controller in _controllers)
+            {
+                if (controller.Project == project)
+                {
+                    result = controller;
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         private static bool Try(Action method)
         {

@@ -45,7 +45,7 @@ namespace DialogMaker.Lib.InputFields
 
                     if (_view.Item?.Equals(value) != true)
                     {
-                        _view.Item = value as ProjectResourceItem;
+                        _view.Item = EditorExtensions.ToEditorItem(value);
                     }
 
                     InvokePropertyChanged(nameof(Value));
