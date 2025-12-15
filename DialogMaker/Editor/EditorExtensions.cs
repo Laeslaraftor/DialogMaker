@@ -1,6 +1,8 @@
 ﻿using DialogMaker.Core;
 using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
+using DialogMaker.Lib;
+using DialogMaker.Lib.Elements;
 using System.ComponentModel;
 using System.Reflection;
 
@@ -40,6 +42,19 @@ namespace DialogMaker.Editor
             else if (projectItem is ProjectReference editorReference)
             {
                 return editorReference.Item;
+            }
+
+            return null;
+        }
+        public static DialogProjectNode? ToNode(this ISelectable selectable)
+        {
+            if (selectable is DialogProjectNode node)
+            {
+                return node;
+            }
+            else if (selectable is DiagramNode nodeView)
+            {
+                return nodeView.Node;
             }
 
             return null;

@@ -33,6 +33,11 @@ namespace DialogMaker
             return true;
         }
 
+        public static IEnumerable<T> EmptyEnumerable<T>()
+        {
+            yield break;
+        }
+
         public static Point ToPoint(this Vector vector)
         {
             return new(vector.X, vector.Y);

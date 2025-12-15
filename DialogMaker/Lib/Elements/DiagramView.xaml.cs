@@ -26,7 +26,8 @@ namespace DialogMaker.Lib.Elements
                 Container = _canvas,
                 OverrideScaleTransform = _canvas.GetTransform<ScaleTransform>()
             };
-            _dragAndDrop = new(this);
+            _dragAndDrop = new(_mainGrid);
+            _selectionController = new(_dragAndDrop);
             _connections = new(this, _canvas)
             {
                 CurvesThickness = CurvesThickness,
@@ -37,6 +38,9 @@ namespace DialogMaker.Lib.Elements
 
             _dragAndDrop.DragUpdated += OnDragAndDropDragUpdated;
             _dragAndDrop.DragCheck += OnDragAndDropDragCheck;
+
+            _selectionController.EmptyClick += OnSelectionControllerEmptyClick;
+            _selectionController.Selected += OnSelectionControllerSelected;
         }
 
         public event EventHandler<ItemMouseEventArgs<DialogProjectNodePortProxy>>? PortPressed;
@@ -80,6 +84,7 @@ namespace DialogMaker.Lib.Elements
 
         private readonly DragAndDropController _dragAndDrop;
         private readonly ViewScaleController _scaleController;
+        private readonly MouseMultiselectController _selectionController;
         private readonly DiagramViewConnectionsController _connections;
 
         #region Управление
@@ -220,6 +225,35 @@ namespace DialogMaker.Lib.Elements
             {
                 e.DragMouseButton = MouseButton.Middle;
             }
+        }
+        private void OnSelectionControllerSelected(object? sender, SelectionEventArgs<ISelectable> e)
+        {
+            var dialog = Dialog;
+            var node = e.Item.ToNode();
+
+            if (dialog == null ||
+                node == null)
+            {
+                return;
+            }
+            if (e.IsSingle && dialog.SelectedNodes.Count > 1)
+            {
+                dialog.SelectedNodes.Clear();
+            }
+
+            if (e.IsSingle && dialog.SelectedNodes.Count > 0)
+            {
+                dialog.SelectedNodes[0] = node;
+            }
+            else
+            {
+                dialog.SelectedNodes.Add(node);
+            }
+        }
+
+        private void OnSelectionControllerEmptyClick(object? sender, EventArgs e)
+        {
+            Dialog?.SelectedNodes.Clear();
         }
 
         private static void OnDialogChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

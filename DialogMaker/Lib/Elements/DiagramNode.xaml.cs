@@ -1,6 +1,6 @@
-﻿using DialogMaker.Core.Editor.Nodes;
-using DialogMaker.Editor;
+﻿using DialogMaker.Editor;
 using DialogMaker.Lib.Controllers;
+using Newtonsoft.Json.Linq;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
@@ -10,7 +10,7 @@ using System.Windows.Media;
 
 namespace DialogMaker.Lib.Elements
 {
-    public partial class DiagramNode : UserControl
+    public partial class DiagramNode : UserControl, ISelectable
     {
         public DiagramNode()
         {
@@ -24,8 +24,26 @@ namespace DialogMaker.Lib.Elements
             get => GetValue(NodeProperty) as DialogProjectNode;
             set => SetValue(NodeProperty, value);
         }
+        public bool IsSelected
+        {
+            get => (bool)GetValue(IsSelectedProperty);
+            set => SetValue(IsSelectedProperty, value);
+        }
+        public FrameworkElement? View => this;
 
         #region Управление
+
+        public IEnumerable<ISelectable> GetOtherSelectables()
+        {
+            var node = Node;
+
+            if (node != null)
+            {
+                return node.GetOtherSelectables();
+            }
+
+            return LibExtensions.EmptyEnumerable<ISelectable>();
+        }
 
         public Point GetPortPosition(DialogProjectNodePortProxy port, Visual relativeTo)
         {
@@ -148,10 +166,18 @@ namespace DialogMaker.Lib.Elements
         }
         private void OnNodePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (sender is DialogProjectNode node &&
-                e.PropertyName == "Position")
+            if (sender is not DialogProjectNode node)
+            {
+                return;
+            }
+            if (e.PropertyName == "Position")
             {
                 Canvas.SetElementPosition(this, node.Position);
+            }
+            else if (e.PropertyName == nameof(IsSelected) && 
+                     IsSelected != node.IsSelected)
+            {
+                IsSelected = node.IsSelected;
             }
         }
 
@@ -172,6 +198,27 @@ namespace DialogMaker.Lib.Elements
                 view.SetNode(e.OldValue as DialogProjectNode, e.NewValue as DialogProjectNode);
             }
         }
+        private static void OnIsSelectedChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not DiagramNode view || e.NewValue is not bool value)
+            {
+                return;
+            }
+
+            Visibility visibility = Visibility.Collapsed;
+            var node = view.Node;
+
+            if (value)
+            {
+                visibility = Visibility.Visible;
+            }
+            if (node != null && node.IsSelected != value)
+            {
+                node.IsSelected = value;
+            }
+
+            view._selectionOutline.Visibility = visibility;
+        }
 
         #endregion
 
@@ -179,6 +226,8 @@ namespace DialogMaker.Lib.Elements
 
         public static readonly DependencyProperty NodeProperty = DependencyProperty.Register(nameof(Node), typeof(DialogProjectNode),
             typeof(DiagramNode), new(OnNodeChanged));
+        public static readonly DependencyProperty IsSelectedProperty = DependencyProperty.Register(nameof(IsSelected), typeof(bool),
+            typeof(DiagramNode), new(OnIsSelectedChanged));
 
         #endregion
     }

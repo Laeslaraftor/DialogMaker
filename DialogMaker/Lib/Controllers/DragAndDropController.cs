@@ -9,7 +9,7 @@ namespace DialogMaker.Lib.Controllers
 {
     public class DragAndDropController : Disposable
     {
-        public DragAndDropController(UIElement elementsContainer)
+        public DragAndDropController(Panel elementsContainer)
         {
             ElementsContainer = elementsContainer;
             elementsContainer.PreviewMouseDown += OnElementsContainerPreviewMouseDown;
@@ -22,8 +22,11 @@ namespace DialogMaker.Lib.Controllers
         public event EventHandler<DragEventArgs>? DragBeginning;
         public event EventHandler<DragEventArgs>? DragUpdated;
         public event EventHandler<DragEventArgs>? DragEnded;
+        public event EventHandler<MouseButtonEventArgs>? MouseDown;
+        public event EventHandler<MouseEventArgs>? MouseMove;
+        public event EventHandler<MouseButtonEventArgs>? MouseUp;
 
-        public UIElement ElementsContainer { get; }
+        public Panel ElementsContainer { get; }
 
         private UIElement? _draggedElement;
         private Action<Point>? _draggedElementTransform;
@@ -63,9 +66,9 @@ namespace DialogMaker.Lib.Controllers
                 {
                     element = newElement;
                 }
-                if ((element is TextBox || 
+                if ((element is TextBox ||
                     element is RichTextBox ||
-                    element is ScrollBar) && 
+                    element is ScrollBar) &&
                     check.DragMouseButton == MouseButton.Left)
                 {
                     shouldRemoveLeftButton = true;
@@ -85,7 +88,7 @@ namespace DialogMaker.Lib.Controllers
             return result;
         }
 
-        private async void StartDrag(MouseEventArgs mouse)
+        private async Task<bool> StartDrag(MouseEventArgs mouse)
         {
             if (_draggedElement != null)
             {
@@ -110,7 +113,7 @@ namespace DialogMaker.Lib.Controllers
             if (dragHitTest.IsEmpty ||
                 uiElement == null)
             {
-                return;
+                return false;
             }
 
             _dragOffset = position;
@@ -150,6 +153,8 @@ namespace DialogMaker.Lib.Controllers
             _dragMouseButton = dragHitTest.DragButton;
 
             DragBeginning?.Invoke(this, new(uiElement, mouse));
+
+            return true;
         }
         private void StopDrag(MouseEventArgs mouse)
         {
@@ -171,15 +176,26 @@ namespace DialogMaker.Lib.Controllers
 
         private async void OnElementsContainerPreviewMouseDown(object sender, MouseButtonEventArgs e)
         {
-            await Task.Delay(50);
+            MouseDown?.Invoke(this, e);
 
-            if (!e.Handled)
+            await Task.Delay(25);
+
+            if (e.Handled)
             {
-                StartDrag(e);
+                return;
+            }
+
+            var isStarted = await StartDrag(e);
+
+            if (isStarted)
+            {
+                e.Handled = true;
             }
         }
         private void OnElementsContainerPreviewMouseMove(object sender, MouseEventArgs e)
         {
+            MouseMove?.Invoke(this, e);
+
             if (_draggedElementTransform == null ||
                 _draggedElement == null ||
                 !e.IsPressed(_dragMouseButton))
@@ -194,6 +210,7 @@ namespace DialogMaker.Lib.Controllers
         }
         private void OnElementsContainerPreviewMouseUp(object sender, MouseButtonEventArgs e)
         {
+            MouseUp?.Invoke(this, e);
             StopDrag(e);
         }
         private void OnElementsContainerMouseLeave(object sender, MouseEventArgs e)

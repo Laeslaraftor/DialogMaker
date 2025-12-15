@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Editor.Nodes;
+﻿using Acly;
+using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Lib;
 using DialogMaker.Lib.Elements;
 using System.Collections;
@@ -10,9 +11,9 @@ using System.Windows.Controls;
 
 namespace DialogMaker.Editor
 {
-    public class DialogProjectNode : ProjectStructureItem
+    public class DialogProjectNode : ProjectStructureItem, ISelectable
     {
-        public DialogProjectNode(ProjectDialog dialog, DialogProjectDialogNode node) 
+        public DialogProjectNode(ProjectDialog dialog, DialogProjectDialogNode node)
             : base(dialog.Project, dialog.Original)
         {
             var nodeType = node.GetType();
@@ -27,6 +28,7 @@ namespace DialogMaker.Editor
             Properties = new(DialogProjectNodeProperty.GetProperties(this));
 
             node.PropertyChanged += OnNodePropertyChanged;
+            dialog.SelectedNodes.ItemChanged += OnSelectedNodesItemChanged;
         }
 
         public ProjectDialog Dialog { get; }
@@ -57,6 +59,30 @@ namespace DialogMaker.Editor
         public ReadOnlyCollection<DialogProjectNodeProperty> Properties { get; }
         public override ContextMenu? ContextMenu => null;
         public override IEnumerable? Children => null;
+        public bool IsSelected
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(IsSelected));
+                    field = value;
+                    bool contains = Dialog.SelectedNodes.Contains(this);
+
+                    if (value && !contains)
+                    {
+                        Dialog.SelectedNodes.Add(this);
+                    }
+                    else if (!value && contains)
+                    {
+                        Dialog.SelectedNodes.Remove(this);
+                    }
+
+                    InvokePropertyChanged(nameof(IsSelected));
+                }
+            }
+        }
         public DiagramNode View
         {
             get
@@ -75,10 +101,23 @@ namespace DialogMaker.Editor
             }
         }
 
+        FrameworkElement? ISelectable.View => View;
+
         private readonly string _name;
         private DiagramNode? _view;
 
         #region Управление
+
+        public IEnumerable<ISelectable> GetOtherSelectables()
+        {
+            foreach (var selectedNode in Dialog.SelectedNodes)
+            {
+                if (selectedNode != this)
+                {
+                    yield return selectedNode;
+                }
+            }
+        }
 
         public bool TryGetPortView(DialogProjectNodePortProxy port, [NotNullWhen(true)] out DiagramNodePort? result)
         {
@@ -121,6 +160,7 @@ namespace DialogMaker.Editor
             }
 
             Original.PropertyChanged -= OnNodePropertyChanged;
+            Dialog.SelectedNodes.ItemChanged -= OnSelectedNodesItemChanged;
 
             foreach (var input in Inputs)
             {
@@ -146,6 +186,15 @@ namespace DialogMaker.Editor
             {
                 Position = new(Original.Position.X, Original.Position.Y);
             }
+        }
+        private void OnSelectedNodesItemChanged(object? sender, CollectionItemEventArgs<DialogProjectNode> e)
+        {
+            if (e.Item != this || e.Action == CollectionItemAction.Move)
+            {
+                return;
+            }
+
+            IsSelected = e.Action == CollectionItemAction.Add;
         }
 
         #endregion

@@ -21,6 +21,7 @@ namespace DialogMaker.Editor
             _nodesSync = new(dialog.Nodes, Nodes, _nodesConverter);
 
             dialog.PropertyChanged += OnDialogPropertyChanged;
+            SelectedNodes.ItemChanged += OnSelectedNodesItemChanged;
         }
 
         public DialogProjectDialog Original { get; }
@@ -62,6 +63,7 @@ namespace DialogMaker.Editor
         }
         public override IEnumerable? Children => Nodes;
         public EditableCollection<DialogProjectNode> Nodes { get; } = [];
+        public EditableCollection<DialogProjectNode> SelectedNodes { get; } = [];
 
         private readonly ProjectNodeConverter _nodesConverter;
         private readonly CollectionSynchronizer<DialogProjectDialogNode, DialogProjectNode> _nodesSync;
@@ -139,6 +141,7 @@ namespace DialogMaker.Editor
             _nodesSync.Dispose();
 
             Original.PropertyChanged -= OnDialogPropertyChanged;
+            SelectedNodes.ItemChanged -= OnSelectedNodesItemChanged;
         }
 
         #endregion
@@ -150,6 +153,13 @@ namespace DialogMaker.Editor
             if (e.PropertyName == nameof(Name))
             {
                 InvokePropertyChanged(nameof(Name));
+            }
+        }
+        private void OnSelectedNodesItemChanged(object? sender, CollectionItemEventArgs<DialogProjectNode> e)
+        {
+            if (e.Action == CollectionItemAction.Add && !Nodes.Contains(e.Item))
+            {
+                SelectedNodes.Remove(e.Item);
             }
         }
 
