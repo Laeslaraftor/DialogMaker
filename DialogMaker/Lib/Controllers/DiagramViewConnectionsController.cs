@@ -1,7 +1,9 @@
 ﻿using Acly.Numbers;
+using DialogMaker.Core;
 using DialogMaker.Editor;
 using DialogMaker.Lib.Elements;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -9,20 +11,13 @@ using System.Windows.Media;
 
 namespace DialogMaker.Lib.Controllers
 {
-    public class DiagramViewConnectionsController : IDisposable
+    public class DiagramViewConnectionsController : MouseController
     {
         public DiagramViewConnectionsController(DiagramView view, Canvas canvas)
+            : base(view)
         {
             View = view;
             Canvas = canvas;
-
-            view.PortPressed += OnNodePortPressed;
-            view.PreviewMouseMove += OnViewPreviewMouseMove;
-            view.PreviewMouseUp += OnViewPreviewMouseUp;
-        }
-        ~DiagramViewConnectionsController()
-        {
-            Dispose();
         }
 
         public DiagramView View { get; }
@@ -34,12 +29,16 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
+                    InvokePropertyChanging(nameof(CurvesThickness));
+
                     field = value;
 
                     foreach (var curve in _curves)
                     {
                         curve.Line.StrokeThickness = value;
                     }
+
+                    InvokePropertyChanged(nameof(CurvesThickness));
                 }
             }
         }
@@ -50,12 +49,16 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
+                    InvokePropertyChanging(nameof(CurvesOffset));
+
                     field = value;
 
                     foreach (var curve in _curves)
                     {
                         curve.Line.Offset = value;
                     }
+
+                    InvokePropertyChanged(nameof(CurvesOffset));
                 }
             }
         }
@@ -66,12 +69,16 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
+                    InvokePropertyChanging(nameof(CurvesEasing));
+
                     field = value;
 
                     foreach (var curve in _curves)
                     {
                         curve.Line.Easing = value;
                     }
+
+                    InvokePropertyChanged(nameof(CurvesEasing));
                 }
             }
         }
@@ -82,12 +89,16 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
+                    InvokePropertyChanging(nameof(CurvesResolution)); 
+
                     field = value;
 
                     foreach (var curve in _curves)
                     {
                         curve.Line.Resolution = value;
                     }
+
+                    InvokePropertyChanged(nameof(CurvesResolution));
                 }
             }
         }
@@ -98,8 +109,11 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
+                    InvokePropertyChanging(nameof(Dialog));
+
                     field = value;
                     UpdateConnections();
+                    InvokePropertyChanged(nameof(Dialog));
                 }
             }
         }
@@ -155,13 +169,16 @@ namespace DialogMaker.Lib.Controllers
             CheckPorts(node.Outputs);
         }
 
-        public void Dispose()
+        protected override void Dispose(bool isDisposing)
         {
-            View.PortPressed -= OnNodePortPressed;
-            View.PreviewMouseMove -= OnViewPreviewMouseMove;
-            View.PreviewMouseUp -= OnViewPreviewMouseUp;
+            View.PreviewMouseDown -= OnMouseDown;
+            View.PreviewMouseMove -= OnMouseMove;
+            View.PreviewMouseUp -= OnMouseUp;
 
-            GC.SuppressFinalize(this);
+            Clear();
+            _curvesPool.Dispose();
+
+            base.Dispose(isDisposing);
         }
 
         private void Clear()
@@ -201,7 +218,7 @@ namespace DialogMaker.Lib.Controllers
                 StartPort = port
             };
 
-
+            Panel.SetZIndex(view, 100);
             Canvas.Children.Add(view);
             _curves.Add(result);
 
@@ -224,24 +241,67 @@ namespace DialogMaker.Lib.Controllers
             return false;
         }
 
+        private async Task<DialogProjectNodePortProxy?> FindPort(MouseButtonEventArgs mouse)
+        {
+            DialogProjectNodePortProxy? result = null;
+            int skipCount = 0;
+
+            await View.Fetch(mouse, obj =>
+            {
+                if (obj is DiagramNodePort view &&
+                    view.DataContext is DialogProjectNodePortProxy port)
+                {
+                    result = port;
+                }
+            }, callback =>
+            {
+                if (result != null || skipCount > 2)
+                {
+                    return true;
+                }
+                if (callback.VisualHit is CurveLine)
+                {
+                    return false;
+                }
+
+                skipCount++;
+
+                return false;
+            });
+
+            return result;
+        }
+
         #endregion
 
         #region События
 
-        private void OnNodePortPressed(object? sender, ItemMouseEventArgs<DialogProjectNodePortProxy> e)
+        protected override async void OnMouseDown(object? sender, MouseButtonEventArgs e)
         {
-            if (e.Mouse.LeftButton != MouseButtonState.Pressed ||
-                _currentCurve != null)
+            if (e.LeftButton == MouseButtonState.Pressed &&
+                _currentCurve == null)
             {
-                return;
+                var port = await FindPort(e);
+
+                if (port != null)
+                {
+                    e.Handled = true;
+                    _currentCurve = GetCurve(port);
+                    _currentCurve.SyncPositions();
+                }
             }
 
-            e.Mouse.Handled = true;
-            _currentCurve = GetCurve(e.Item);
-            _currentCurve.SyncPositions();
+            base.OnMouseDown(sender, e);
         }
-        private async void OnViewPreviewMouseUp(object sender, MouseButtonEventArgs e)
+        protected override void OnMouseMove(object? sender, MouseEventArgs e)
         {
+            base.OnMouseMove(sender, e);
+            _currentCurve?.EndPosition = e.GetPosition(Canvas);
+        }
+        protected override async void OnMouseUp(object? sender, MouseButtonEventArgs e)
+        {
+            base.OnMouseUp(sender, e);
+
             if (e.LeftButton != MouseButtonState.Released ||
                 _currentCurve == null)
             {
@@ -280,10 +340,6 @@ namespace DialogMaker.Lib.Controllers
             }
 
             _currentCurve = null;
-        }
-        private void OnViewPreviewMouseMove(object sender, MouseEventArgs e)
-        {
-            _currentCurve?.EndPosition = e.GetPosition(Canvas);
         }
 
         #endregion

@@ -34,7 +34,7 @@
                         Grid.Column="1" Margin="4" MaxWidth="200"/>
             <Border x:Name="_selectionOutline" Visibility="Collapsed"
                     Grid.ColumnSpan="3" Grid.RowSpan="3"
-                    CornerRadius="10" Margin="-5"
+                    CornerRadius="10" Margin="-4"
                     BorderBrush="{DynamicResource FocusStrokeColorOuterBrush}"
                     BorderThickness="2">
                 <Border BorderBrush="{DynamicResource FocusStrokeColorInnerBrush}"

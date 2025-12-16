@@ -6,7 +6,7 @@ namespace DialogMaker.Lib.Controllers
     public class DragEventArgs(UIElement element, MouseEventArgs mouse) : DragEventArgs<UIElement>(element, mouse)
     {
     }
-    public class DragEventArgs<T>(T element, MouseEventArgs mouse) : EventArgs where T : UIElement
+    public class DragEventArgs<T>(T element, MouseEventArgs mouse) : EventArgs
     {
         public T Element { get; } = element;
         public MouseEventArgs Mouse { get; } = mouse;

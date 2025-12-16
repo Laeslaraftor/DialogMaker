@@ -1,6 +1,5 @@
 ﻿using DialogMaker.Editor;
 using DialogMaker.Lib.Controllers;
-using Newtonsoft.Json.Linq;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
@@ -17,8 +16,6 @@ namespace DialogMaker.Lib.Elements
             InitializeComponent();
         }
 
-        public event EventHandler<ItemMouseEventArgs<DialogProjectNodePortProxy>>? PortPressed;
-
         public DialogProjectNode? Node
         {
             get => GetValue(NodeProperty) as DialogProjectNode;
@@ -30,9 +27,30 @@ namespace DialogMaker.Lib.Elements
             set => SetValue(IsSelectedProperty, value);
         }
         public FrameworkElement? View => this;
+        public int GroupCount
+        {
+            get
+            {
+                var node = Node;
+
+                if (node != null)
+                {
+                    return node.GroupCount;
+                }
+
+                return 0;
+            }
+        }
 
         #region Управление
 
+        public Rect GetViewRect(Visual container)
+        {
+            Point position = this.GetPosition(container);
+            Point scale = this.GetVisualTreeScale();
+
+            return new(position, RenderSize * scale);
+        }
         public IEnumerable<ISelectable> GetOtherSelectables()
         {
             var node = Node;
@@ -76,9 +94,6 @@ namespace DialogMaker.Lib.Elements
 
             if (oldValue != null)
             {
-                Clear(oldValue.Inputs);
-                Clear(oldValue.Outputs);
-
                 oldValue.PropertyChanged -= OnNodePropertyChanged;
             }
 
@@ -123,32 +138,10 @@ namespace DialogMaker.Lib.Elements
 
             newValue.PropertyChanged += OnNodePropertyChanged;
         }
-        private bool TryGetPort(DiagramNodePort view, [NotNullWhen(true)] out DialogProjectNodePortProxy? result)
-        {
-            result = null;
-
-            if (view.DataContext is DialogProjectNodePortProxy model)
-            {
-                result = model;
-                return true;
-            }
-
-            return false;
-        }
-        private void Clear(IEnumerable<DialogProjectNodePortProxy> ports)
-        {
-            foreach (var port in ports)
-            {
-                port.View.PreviewMouseDown -= OnPortPreviewMouseDown;
-            }
-        }
         private DiagramNodePort GetPortView(DialogProjectNodePortProxy port)
         {
             var view = port.View;
             view.RemoveFromParent();
-
-            view.PreviewMouseDown -= OnPortPreviewMouseDown;
-            view.PreviewMouseDown += OnPortPreviewMouseDown;
 
             return view;
         }
@@ -157,13 +150,6 @@ namespace DialogMaker.Lib.Elements
 
         #region События
 
-        private void OnPortPreviewMouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (sender is DiagramNodePort view && TryGetPort(view, out var port))
-            {
-                PortPressed?.Invoke(this, new(port, e));
-            }
-        }
         private void OnNodePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (sender is not DialogProjectNode node)

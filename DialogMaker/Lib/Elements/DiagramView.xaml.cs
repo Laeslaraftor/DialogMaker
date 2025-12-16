@@ -26,14 +26,18 @@ namespace DialogMaker.Lib.Elements
                 Container = _canvas,
                 OverrideScaleTransform = _canvas.GetTransform<ScaleTransform>()
             };
-            _dragAndDrop = new(_mainGrid);
-            _selectionController = new(_dragAndDrop);
             _connections = new(this, _canvas)
             {
                 CurvesThickness = CurvesThickness,
                 CurvesOffset = CurvesOffset,
                 CurvesResolution = CurvesResolution,
                 CurvesEasing = CurvesEasing
+            };
+            _dragAndDrop = new(_connections, _mainGrid);
+            _selectionController = new(_dragAndDrop)
+            {
+                SelectionDepth = 2,
+                ExtraMouseButton = MouseButton.Right
             };
 
             _dragAndDrop.DragUpdated += OnDragAndDropDragUpdated;
@@ -42,8 +46,6 @@ namespace DialogMaker.Lib.Elements
             _selectionController.EmptyClick += OnSelectionControllerEmptyClick;
             _selectionController.Selected += OnSelectionControllerSelected;
         }
-
-        public event EventHandler<ItemMouseEventArgs<DialogProjectNodePortProxy>>? PortPressed;
 
         public UIElementCollection Children => _canvas.Children;
         public ProjectDialog? Dialog
@@ -148,15 +150,11 @@ namespace DialogMaker.Lib.Elements
             var view = node.View;
             view.RemoveFromParent();
 
-            view.PortPressed -= OnViewPortPressed;
-            view.PortPressed += OnViewPortPressed;
-
             _canvas.Children.Add(view);
         }
         private void RemoveNode(DialogProjectNode node)
         {
             var view = node.View;
-            view.PortPressed -= OnViewPortPressed;
 
             _canvas.Children.Remove(view);
         }
@@ -177,11 +175,6 @@ namespace DialogMaker.Lib.Elements
             }
         }
 
-        private void OnViewPortPressed(object? sender, ItemMouseEventArgs<DialogProjectNodePortProxy> e)
-        {
-            PortPressed?.Invoke(sender, e);
-        }
-
         private void OnNodesItemChanged(object? sender, CollectionItemEventArgs<DialogProjectNode> e)
         {
             if (e.Action == CollectionItemAction.Add)
@@ -194,14 +187,17 @@ namespace DialogMaker.Lib.Elements
             }
         }
 
-        private void OnDragAndDropDragUpdated(object? sender, DragEventArgs e)
+        private void OnDragAndDropDragUpdated(object? sender, DragEventArgs<List<FrameworkElement>> e)
         {
             UpdateCanvasSize();
 
-            if (e.Element is DiagramNode node
-                && TryGetNode(node, out var model))
+            foreach (var element in e.Element)
             {
-                _connections.UpdateConnections(model);
+                if (element is DiagramNode node
+                    && TryGetNode(node, out var model))
+                {
+                    _connections.UpdateConnections(model);
+                }
             }
         }
         private void OnDragAndDropDragCheck(object? sender, DragCheckEventArgs e)

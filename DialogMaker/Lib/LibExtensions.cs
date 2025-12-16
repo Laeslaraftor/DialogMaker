@@ -257,6 +257,17 @@ namespace DialogMaker
                 return result;
             }
         }
+        extension (Rect rect)
+        {
+            public static Rect operator *(Rect r, Point p)
+            {
+                return new(r.TopLeft, r.Size * p);
+            }
+            public static Rect operator /(Rect r, Point p)
+            {
+                return new(r.TopLeft, r.Size / p);
+            }
+        }
         extension(Point point)
         {
             public double Distance(Point other)
@@ -422,6 +433,14 @@ namespace DialogMaker
                 {
                     Width = p1.Width - p2.X,
                     Height = p1.Height - p2.Y
+                };
+            }
+            public static Size operator *(Size p1, Point p2)
+            {
+                return new()
+                {
+                    Width = p1.Width * p2.X,
+                    Height = p1.Height * p2.Y
                 };
             }
             public static Size operator /(Size p1, Point p2)

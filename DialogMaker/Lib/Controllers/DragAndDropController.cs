@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -7,48 +8,34 @@ using System.Windows.Media;
 
 namespace DialogMaker.Lib.Controllers
 {
-    public class DragAndDropController : Disposable
+    public class DragAndDropController : MouseController
     {
-        public DragAndDropController(Panel elementsContainer)
+        public DragAndDropController(MouseController parentMouseController, Panel elementsContainer)
+            : base(parentMouseController)
         {
             ElementsContainer = elementsContainer;
-            elementsContainer.PreviewMouseDown += OnElementsContainerPreviewMouseDown;
-            elementsContainer.PreviewMouseMove += OnElementsContainerPreviewMouseMove;
-            elementsContainer.PreviewMouseUp += OnElementsContainerPreviewMouseUp;
-            elementsContainer.MouseLeave += OnElementsContainerMouseLeave;
         }
 
         public event EventHandler<DragCheckEventArgs>? DragCheck;
-        public event EventHandler<DragEventArgs>? DragBeginning;
-        public event EventHandler<DragEventArgs>? DragUpdated;
-        public event EventHandler<DragEventArgs>? DragEnded;
-        public event EventHandler<MouseButtonEventArgs>? MouseDown;
-        public event EventHandler<MouseEventArgs>? MouseMove;
-        public event EventHandler<MouseButtonEventArgs>? MouseUp;
+        public event EventHandler<DragEventArgs<List<FrameworkElement>>>? DragBeginning;
+        public event EventHandler<DragEventArgs<List<FrameworkElement>>>? DragUpdated;
+        public event EventHandler<DragEventArgs<List<FrameworkElement>>>? DragEnded;
+        public event EventHandler<DragRejectedEventArgs>? DragRejected;
 
         public Panel ElementsContainer { get; }
 
-        private UIElement? _draggedElement;
+        private readonly List<FrameworkElement> _draggedElements = [];
         private Action<Point>? _draggedElementTransform;
         private Point _dragOffset;
         private MouseButton _dragMouseButton;
 
         #region Управление
 
-        protected override void Dispose(bool isDisposing)
-        {
-            base.Dispose(isDisposing);
-
-            ElementsContainer.PreviewMouseDown -= OnElementsContainerPreviewMouseDown;
-            ElementsContainer.PreviewMouseMove -= OnElementsContainerPreviewMouseMove;
-            ElementsContainer.PreviewMouseUp -= OnElementsContainerPreviewMouseUp;
-            ElementsContainer.MouseLeave -= OnElementsContainerMouseLeave;
-        }
-
         private async Task<Dictionary<MouseButton, DragHitTest>> HitTest(MouseEventArgs mouse)
         {
             Dictionary<MouseButton, DragHitTest> result = [];
             bool shouldRemoveLeftButton = false;
+            int skipCount = 0;
 
             await ElementsContainer.Fetch(mouse, target =>
             {
@@ -78,6 +65,16 @@ namespace DialogMaker.Lib.Controllers
                 {
                     result.ForceAdd(check.DragMouseButton, new(element, check.DragMouseButton));
                 }
+            }, callback =>
+            {
+                if (skipCount > 1)
+                {
+                    return true;
+                }
+
+                skipCount++;
+
+                return false;
             });
 
             if (shouldRemoveLeftButton)
@@ -90,7 +87,7 @@ namespace DialogMaker.Lib.Controllers
 
         private async Task<bool> StartDrag(MouseEventArgs mouse)
         {
-            if (_draggedElement != null)
+            if (_draggedElements.Count > 0)
             {
                 StopDrag(mouse);
             }
@@ -118,86 +115,141 @@ namespace DialogMaker.Lib.Controllers
 
             _dragOffset = position;
             var scale = uiElement.GetVisualTreeScale();
+            _draggedElements.Clear();
+            _draggedElements.Add(uiElement);
+
+            if (uiElement is ISelectable selectable && selectable.IsSelected)
+            {
+                foreach (var otherSelectable in selectable.GetOtherSelectables())
+                {
+                    if (otherSelectable.View != null)
+                    {
+                        _draggedElements.Add(otherSelectable.View);
+                    }
+                }
+            }
 
             if (uiElement.Parent is Canvas)
             {
+                SetTopZIndex(uiElement);
+
                 _draggedElementTransform = p =>
                 {
-                    var currentPosition = Canvas.GetElementPosition(uiElement);
-                    Point newPosition = (Point)(p - _dragOffset);
-                    newPosition /= scale;
-                    newPosition += currentPosition;
+                    Point newMousePosition = (Point)(p - _dragOffset);
+                    newMousePosition /= scale;
 
-                    Canvas.SetLeft(uiElement, newPosition.X);
-                    Canvas.SetTop(uiElement, newPosition.Y);
+                    foreach (var element in _draggedElements)
+                    {
+                        var currentPosition = Canvas.GetElementPosition(element);
+                        currentPosition += newMousePosition;
+
+                        Canvas.SetLeft(element, currentPosition.X);
+                        Canvas.SetTop(element, currentPosition.Y);
+                    }
+
                     _dragOffset = p;
                 };
             }
             else
             {
-                var translation = uiElement.GetTransform<TranslateTransform>();
+                List<TranslateTransform> translations = new(_draggedElements.Count);
+
+                foreach (var element in _draggedElements)
+                {
+                    var translation = uiElement.GetTransform<TranslateTransform>();
+                    translations.Add(translation);
+                }
 
                 _draggedElementTransform = p =>
                 {
                     var delta = (Point)(p - _dragOffset);
                     delta /= scale;
 
-                    translation.X += delta.X;
-                    translation.Y += delta.Y;
+                    foreach (var translation in translations)
+                    {
+                        translation.X += delta.X;
+                        translation.Y += delta.Y;
+                    }
 
                     _dragOffset = p;
                 };
             }
 
-            _draggedElement = uiElement;
             _dragMouseButton = dragHitTest.DragButton;
 
-            DragBeginning?.Invoke(this, new(uiElement, mouse));
+            DragBeginning?.Invoke(this, new(_draggedElements, mouse));
 
             return true;
         }
         private void StopDrag(MouseEventArgs mouse)
         {
-            if (_draggedElement == null ||
+            if (_draggedElements.Count == 0 ||
                 mouse.IsPressed(_dragMouseButton))
             {
                 return;
             }
 
-            DragEnded?.Invoke(this, new(_draggedElement, mouse));
+            DragEnded?.Invoke(this, new(_draggedElements, mouse));
 
             _draggedElementTransform = null;
-            _draggedElement = null;
+            _draggedElements.Clear();
+        }
+
+        private void SetTopZIndex(FrameworkElement element)
+        {
+            if (element.Parent is not Panel panel)
+            {
+                return;
+            }
+
+            int minIndex = int.MaxValue;
+
+            foreach (UIElement child in panel.Children)
+            {
+                minIndex = Math.Min(Panel.GetZIndex(child), minIndex);
+            }
+            foreach (UIElement child in panel.Children)
+            {
+                if (child is ISelectable)
+                {
+                    Panel.SetZIndex(child, minIndex);
+                }
+            }
+
+            Panel.SetZIndex(element, minIndex + 1);
         }
 
         #endregion
 
         #region События
 
-        private async void OnElementsContainerPreviewMouseDown(object sender, MouseButtonEventArgs e)
+        protected override async void OnMouseDown(object? sender, MouseButtonEventArgs e)
         {
-            MouseDown?.Invoke(this, e);
-
-            await Task.Delay(25);
-
             if (e.Handled)
             {
+                base.OnMouseDown(sender, e);
+                DragRejected?.Invoke(this, new(e, DragRejectReason.AlreadyHandled));
                 return;
             }
 
             var isStarted = await StartDrag(e);
+            e.Handled = isStarted || e.Handled;
 
-            if (isStarted)
+            base.OnMouseDown(sender, e);
+
+            e.Handled = false;
+
+            if (!isStarted)
             {
-                e.Handled = true;
+                DragRejected?.Invoke(this, new(e, DragRejectReason.ElementNotFound));
             }
         }
-        private void OnElementsContainerPreviewMouseMove(object sender, MouseEventArgs e)
+        protected override void OnMouseMove(object? sender, MouseEventArgs e)
         {
-            MouseMove?.Invoke(this, e);
+            base.OnMouseMove(sender, e);
 
             if (_draggedElementTransform == null ||
-                _draggedElement == null ||
+                _draggedElements.Count == 0 ||
                 !e.IsPressed(_dragMouseButton))
             {
                 return;
@@ -206,15 +258,16 @@ namespace DialogMaker.Lib.Controllers
             var position = e.GetPosition(ElementsContainer);
             _draggedElementTransform?.Invoke(position);
 
-            DragUpdated?.Invoke(this, new(_draggedElement, e));
+            DragUpdated?.Invoke(this, new(_draggedElements, e));
         }
-        private void OnElementsContainerPreviewMouseUp(object sender, MouseButtonEventArgs e)
+        protected override void OnMouseUp(object? sender, MouseButtonEventArgs e)
         {
-            MouseUp?.Invoke(this, e);
+            base.OnMouseUp(sender, e);
             StopDrag(e);
         }
-        private void OnElementsContainerMouseLeave(object sender, MouseEventArgs e)
+        protected override void OnMouseLeave(object? sender, MouseEventArgs e)
         {
+            base.OnMouseLeave(sender, e);
             StopDrag(e);
         }
 

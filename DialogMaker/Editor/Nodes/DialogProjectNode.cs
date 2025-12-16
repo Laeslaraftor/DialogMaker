@@ -8,6 +8,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace DialogMaker.Editor
 {
@@ -100,7 +101,7 @@ namespace DialogMaker.Editor
                 return _view;
             }
         }
-
+        public int GroupCount => Dialog.SelectedNodes.Count;
         FrameworkElement? ISelectable.View => View;
 
         private readonly string _name;
@@ -108,6 +109,10 @@ namespace DialogMaker.Editor
 
         #region Управление
 
+        public Rect GetViewRect(Visual container)
+        {
+            return View.GetViewRect(container);
+        }
         public IEnumerable<ISelectable> GetOtherSelectables()
         {
             foreach (var selectedNode in Dialog.SelectedNodes)
