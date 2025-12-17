@@ -19,7 +19,7 @@ namespace DialogMaker.Lib.Controllers
             Property = property;
             Info = info;
             InputField = inputField;
-            Name = property.GetName();
+            Name = info.Name;
             Description = property.GetDescription();
 
             inputField.CanEdit = property.CanWrite;
@@ -168,6 +168,27 @@ namespace DialogMaker.Lib.Controllers
 
             return false;
         }
+        public static bool TryGetInfo(PropertyInfo? propertyInfo, [NotNullWhen(true)] out EditableTypeInfo result)
+        {
+            result = default;
+
+            if (propertyInfo == null ||
+                !propertyInfo.TryGetName(out var name))
+            {
+                return false;
+            }
+
+            if (TryGetInfo(propertyInfo?.PropertyType, out result))
+            {
+                result = new(result)
+                {
+                    Name = name
+                };
+                return true;
+            }
+
+            return false;
+        }
         public static bool IsAvailable(Type? propertyType)
         {
             return TryGetInfo(propertyType, out _);
@@ -191,7 +212,7 @@ namespace DialogMaker.Lib.Controllers
         {
             result = null;
 
-            if (property.CanRead && TryGetInfo(property.PropertyType, out var info))
+            if (property.CanRead && TryGetInfo(property, out var info))
             {
                 var view = info.ViewFabric(property);
                 result = new(instance, property, info, view);

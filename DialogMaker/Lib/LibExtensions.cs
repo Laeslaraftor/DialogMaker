@@ -58,7 +58,7 @@ namespace DialogMaker
             }
         }
 
-        extension (Canvas canvas)
+        extension(Canvas canvas)
         {
             public static Point GetElementPosition(UIElement element)
             {
@@ -97,7 +97,7 @@ namespace DialogMaker
                 return scale;
             }
         }
-        extension (UIElement element)
+        extension(UIElement element)
         {
             public bool TryGetTransform<T>([NotNullWhen(true)] out T? result)
                 where T : Transform, new()
@@ -165,7 +165,7 @@ namespace DialogMaker
                 return newTransform;
             }
         }
-        extension (Visual visual)
+        extension(Visual visual)
         {
             public Point GetPosition(Visual relativeTo)
             {
@@ -173,19 +173,19 @@ namespace DialogMaker
             }
             public Point GetPosition(Visual relativeTo, Point origin)
             {
-                try
-                {
-                    return visual.TransformToAncestor(relativeTo).Transform(origin);
-                }
-                catch (Exception error)
-                {
-                    error.Alert();
-                }
+                return visual.TransformToAncestor(relativeTo).Transform(origin);
+                //try
+                //{
+                //}
+                //catch (Exception error)
+                //{
+                //    error.Alert();
+                //}
 
-                return new();
+                //return new();
             }
 
-            
+
         }
         extension<T>(T visual) where T : Visual, IInputElement
         {
@@ -257,7 +257,7 @@ namespace DialogMaker
                 return result;
             }
         }
-        extension (Rect rect)
+        extension(Rect rect)
         {
             public static Rect operator *(Rect r, Point p)
             {
@@ -472,7 +472,7 @@ namespace DialogMaker
         public static WColor ToWindows(this System.Drawing.Color color)
         {
             return WColor.FromArgb(color.A, color.R, color.G, color.B);
-        } 
+        }
         public static int IndexOf(this IEnumerable enumerable, object? item)
         {
             int index = 0;
@@ -481,7 +481,7 @@ namespace DialogMaker
             {
                 if (i?.Equals(item) == true)
                 {
-                    return index; 
+                    return index;
                 }
 
                 index++;

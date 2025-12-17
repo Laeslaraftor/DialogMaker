@@ -5,10 +5,12 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.ComponentModel;
+using System.Collections.Generic;
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectDialog : ObservableObject, IProjectResourcesOwner
+    public class DialogProjectDialog : Disposable, IProjectResourcesOwner
     {
         public DialogProjectDialog(DialogProjectPack pack, string id)
             : this(pack, id, true)
@@ -19,11 +21,14 @@ namespace DialogMaker.Core.Editor
         {
             Name = savedState.Name;
 
+            Dictionary<DialogProjectDialogNode, DialogProjectDialogNodeSavedState> nodeStates = [];
+
             foreach (var node in savedState.Nodes)
             {
                 try
                 {
                     var restoredNode = DialogProjectDialogNode.Restore(this, node);
+                    nodeStates.Add(restoredNode, node);
                     Nodes.Add(restoredNode);
                 }
                 catch (Exception error)
@@ -31,6 +36,8 @@ namespace DialogMaker.Core.Editor
                     Debug.WriteLine(error); 
                 }
             }
+
+            RestoreConnections(nodeStates);
         }
         private DialogProjectDialog(DialogProjectPack pack, string id, bool createResources)
         {
@@ -46,6 +53,8 @@ namespace DialogMaker.Core.Editor
             {
                 Resources = DialogProjectResources.OpenOrCreate(this);
             }
+
+            Nodes.ItemChanged += OnNodesItemChanged;
         }
 
         public DialogProject Project => Pack.Project;
@@ -81,7 +90,7 @@ namespace DialogMaker.Core.Editor
             {
                 Id = Id,
                 Name = Name,
-                Nodes = Nodes.Select(n => n.Save()).ToArray()
+                Nodes = [.. Nodes.Select(n => n.Save())]
             };
 
             FileExtensions.CreateDirectory(Folder);
@@ -115,6 +124,94 @@ namespace DialogMaker.Core.Editor
         public override string ToString()
         {
             return $"[{Id}] {Name}";
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+            Nodes.ItemChanged -= OnNodesItemChanged;
+        }
+
+        private void RestoreConnections(Dictionary<DialogProjectDialogNode, DialogProjectDialogNodeSavedState> nodes)
+        {
+            void Restore(DialogProjectDialogNode node, Dictionary<int, DialogProjectNodePortSavedState> ports)
+            {
+                foreach (var portInfo in ports)
+                {
+                    if (node.TryGetPort(portInfo.Key, out var port))
+                    {
+                        RestorePort(port, portInfo.Value.Connections);
+                    }
+                }
+            }
+            void RestorePort(DialogProjectNodePort port, Dictionary<Guid, List<int>> connections)
+            {
+                foreach (var connection in connections)
+                {
+                    if (connection.Value.Count == 0 ||
+                        !TryGetNode(connection.Key, out var connectedNode))
+                    {
+                        continue;
+                    }
+
+                    foreach (var connectedPortId in connection.Value)
+                    {
+                        if (connectedNode.TryGetPort(connectedPortId, out var connectedPort))
+                        {
+                            try
+                            {
+                                port.Connect(connectedPort);
+                            }
+                            catch (Exception error)
+                            {
+                                Debug.WriteLine(error);
+                            }
+                        }
+                    }
+                }
+            }
+
+            foreach (var node in nodes)
+            {
+                if (node.Value.Inputs.Count != 0)
+                {
+                    Restore(node.Key, node.Value.Inputs);
+                }
+                if (node.Value.Outputs.Count != 0)
+                {
+                    Restore(node.Key, node.Value.Inputs);
+                }
+            }
+        }
+
+        #endregion
+
+        #region События
+
+        private void OnNodesItemChanged(object sender, CollectionItemEventArgs<DialogProjectDialogNode> e)
+        {
+            if (e.Action == CollectionItemAction.Add)
+            {
+                e.Item.PropertyChanged += OnNodePropertyChanged;
+            }
+            else if (e.Action == CollectionItemAction.Remove)
+            {
+                e.Item.PropertyChanged -= OnNodePropertyChanged;
+
+                if (!e.Item.IsDisposed)
+                {
+                    e.Item.Dispose();
+                }
+            }
+        }
+
+        private void OnNodePropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (sender is DialogProjectDialogNode node && 
+                e.PropertyName == "IsDisposed")
+            {
+                Nodes.Remove(node);
+            }
         }
 
         #endregion

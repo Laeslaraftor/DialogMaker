@@ -21,10 +21,5 @@
                 return field;
             }
         }
-
-        protected override DialogProjectDialogNodeSavedState CreateSavedState()
-        {
-            return new();
-        }
     }
 }

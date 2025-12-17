@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace DialogMaker.Lib.Controllers
 {
-    public readonly struct EditableTypeInfo(Predicate<Type?> comparer, Func<PropertyInfo, InputField> viewFabric, Func<object?, object?>? converter = null)
+    public struct EditableTypeInfo(Predicate<Type?> comparer, Func<PropertyInfo, InputField> viewFabric, Func<object?, object?>? converter = null)
             : IEquatable<Type>, IEquatable<EditableTypeInfo>
     {
         public EditableTypeInfo(Type type, Func<PropertyInfo, InputField> viewFabric, Func<object?, object?>? converter = null)
@@ -12,7 +12,12 @@ namespace DialogMaker.Lib.Controllers
         {
 
         }
+        public EditableTypeInfo(EditableTypeInfo reference)
+            : this(reference.Type, reference.ViewFabric, reference.Converter)
+        {
+        }
 
+        public string Name { get; set; } = string.Empty;
         public Predicate<Type?> Type { get; } = comparer;
         public Func<PropertyInfo, InputField> ViewFabric { get; } = viewFabric;
         public Func<object?, object?>? Converter { get; } = converter;

@@ -8,7 +8,7 @@ namespace DialogMaker.Core.Editor.Nodes
         public DialogProjectReplicaNode(DialogProjectDialog dialog) : base(dialog)
         {
         }
-        public DialogProjectReplicaNode(DialogProjectDialog dialog, DialogProjectDialogNodeSavedState savedState) 
+        public DialogProjectReplicaNode(DialogProjectDialog dialog, DialogProjectDialogNodeSavedState savedState)
             : base(dialog, savedState)
         {
         }
@@ -61,9 +61,24 @@ namespace DialogMaker.Core.Editor.Nodes
             }
         }
 
+        #region Управление
+
         protected override DialogProjectDialogNodeSavedState CreateSavedState()
         {
-            throw new NotImplementedException();
+            var savedState = base.CreateSavedState();
+            savedState.Properties.TryAdd(nameof(Character), Character?.Save());
+            savedState.Properties.TryAdd(nameof(Text), Text?.Save());
+
+            return savedState;
         }
+        protected override void Restore(DialogProjectDialogNodeSavedState savedState)
+        {
+            base.Restore(savedState);
+
+            Character = savedState.RestoreReference<DialogProjectCharacter>(Project, nameof(Character));
+            Text = savedState.RestoreReference<DialogProjectString>(Project, nameof(Text));
+        }
+
+        #endregion
     }
 }

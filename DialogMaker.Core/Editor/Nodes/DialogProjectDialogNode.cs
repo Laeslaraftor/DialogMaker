@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using System.Reflection;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
-    public abstract class DialogProjectDialogNode : ObservableObject, INode, ISavable
+    public abstract class DialogProjectDialogNode : Disposable, INode, ISavable
     {
         protected DialogProjectDialogNode(DialogProjectDialog dialog)
         {
@@ -17,8 +21,12 @@ namespace DialogMaker.Core.Editor.Nodes
             Id = Guid.Parse(savedState.Id);
             Dialog = dialog;
             Position = savedState.Position;
+
+            Restore(savedState);
         }
 
+        public DialogProject Project => Pack.Project;
+        public DialogProjectPack Pack => Dialog.Pack;
         public DialogProjectDialog Dialog { get; }
         public Guid Id { get; }
         public abstract DialogNodeType NodeType { get; }
@@ -37,7 +45,57 @@ namespace DialogMaker.Core.Editor.Nodes
         }
         public IPortDataConverter DataConverter => DialogProjectPortDataConverter.Instance;
 
+        private ReadOnlyDictionary<DialogProjectNodeInput, DialogProjectNodeMetadata>? _inputs;
+        private ReadOnlyDictionary<DialogProjectNodeOutput, DialogProjectNodeMetadata>? _outputs;
+
         #region Управление
+
+        public ReadOnlyDictionary<DialogProjectNodeInput, DialogProjectNodeMetadata> GetInputs()
+        {
+            if (_inputs == null)
+            {
+                var ports = GetPorts<DialogProjectNodeInput, NodeInputAttribute>(this);
+                _inputs = new(ports);
+            }
+
+            return _inputs;
+        }
+        public ReadOnlyDictionary<DialogProjectNodeOutput, DialogProjectNodeMetadata> GetOutputs()
+        {
+            if (_outputs == null)
+            {
+                var ports = GetPorts<DialogProjectNodeOutput, NodeOutputAttribute>(this);
+                _outputs = new(ports);
+            }
+
+            return _outputs;
+        }
+        public bool TryGetPort(int id, [NotNullWhen(true)] out DialogProjectNodePort? result)
+        {
+            bool Search(IEnumerable<DialogProjectNodePort> ports, [NotNullWhen(true)] out DialogProjectNodePort? result)
+            {
+                result = null;
+
+                foreach (var port in ports)
+                {
+                    if (port.Id == id)
+                    {
+                        result = port;
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            if (Search(GetInputs().Keys, out result) ||
+                Search(GetOutputs().Keys, out result))
+            {
+                return true;
+            }
+
+            return false;
+        }
 
         public DialogProjectDialogNodeSavedState Save()
         {
@@ -45,13 +103,48 @@ namespace DialogMaker.Core.Editor.Nodes
             savedState.Id = Id.ToString();
             savedState.NodeType = NodeType;
             savedState.Position = Position;
+            
+            foreach (var port in GetInputs().Keys)
+            {
+                savedState.Inputs.Add(port.Id, port.Save());
+            }
+            foreach (var port in GetOutputs().Keys)
+            {
+                savedState.Outputs.Add(port.Id, port.Save());
+            }
 
             return savedState;
         }
 
         ISavedState ISavable.Save() => Save();
 
-        protected abstract DialogProjectDialogNodeSavedState CreateSavedState();
+        protected virtual DialogProjectDialogNodeSavedState CreateSavedState()
+        {
+            return new();
+        }
+        protected virtual void Restore(DialogProjectDialogNodeSavedState savedState)
+        {
+            static void Restore(IEnumerable<DialogProjectNodePort> ports, Dictionary<int, DialogProjectNodePortSavedState> states)
+            {
+                foreach (var port in ports)
+                {
+                    if (states.TryGetValue(port.Id, out var state))
+                    {
+                        try
+                        {
+                            port.Restore(state);
+                        }
+                        catch (Exception error)
+                        {
+                            Debug.WriteLine(error);
+                        }
+                    }
+                }
+            }
+
+            Restore(GetInputs().Keys, savedState.Inputs);
+            Restore(GetOutputs().Keys, savedState.Inputs);
+        }
 
         #endregion
 
@@ -76,7 +169,7 @@ namespace DialogMaker.Core.Editor.Nodes
                     }
 
                     field = new(result);
-                } 
+                }
 
                 return field;
             }
@@ -99,6 +192,34 @@ namespace DialogMaker.Core.Editor.Nodes
             }
 
             throw new ArgumentException($"Узел недоступен: {savedState.NodeType}", nameof(savedState));
+        }
+
+        private static Dictionary<TPort, DialogProjectNodeMetadata> GetPorts<TPort, T>(DialogProjectDialogNode node)
+            where TPort : DialogProjectNodePort
+            where T : NameAttribute
+        {
+            Dictionary<TPort, DialogProjectNodeMetadata> result = [];
+
+            foreach (var property in node.GetType().GetProperties())
+            {
+                var attribute = property.GetCustomAttribute<T>();
+
+                if (attribute != null)
+                {
+                    if (property.GetValue(node) is not TPort port)
+                    {
+                        continue;
+                    }
+
+                    string name = attribute.Name;
+                    string description = property.GetCustomAttribute<DescriptionAttribute>()?.Description ?? string.Empty;
+                    DialogProjectNodeMetadata metadata = new(name, description);
+
+                    result.Add(port, metadata);
+                }
+            }
+
+            return result;
         }
 
         #endregion

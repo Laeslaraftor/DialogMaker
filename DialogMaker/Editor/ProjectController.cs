@@ -15,6 +15,8 @@ namespace DialogMaker.Editor
     {
         public ProjectController(DialogProject project)
         {
+            _controllers.Add(this);
+
             Project = project;
             CreatePackCommand = new RelayCommand(ExecuteCreatePack);
             CreateLanguageCommand = new RelayCommand(p => project.CreateLanguage());
@@ -39,8 +41,6 @@ namespace DialogMaker.Editor
             Resources = new(this, project.Resources);
 
             UpdateDefaultLanguage();
-
-            _controllers.Add(this);
         }
 
         public DialogProject Project { get; }

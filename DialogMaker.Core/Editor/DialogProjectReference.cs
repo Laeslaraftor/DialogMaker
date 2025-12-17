@@ -92,6 +92,38 @@ namespace DialogMaker.Core.Editor
 
         ISavedState ISavable.Save() => Save();
 
+        public override bool Equals(object obj)
+        {
+            bool CompareReference(DialogProjectReference reference)
+            {
+                return ResourceType == reference.ResourceType &&
+                       ItemId == reference.ItemId &&
+                       ResourcesPath == reference.ResourcesPath;
+            }
+
+            if (obj is DialogProjectReference reference)
+            {
+                return CompareReference(reference);
+            }
+            if (obj is DialogProjectResourceObject resource)
+            {
+                return ItemId == resource.ProjectId;
+            }
+            if (obj is IModelContainer<DialogProjectReference> referenceContainer)
+            {
+                return CompareReference(referenceContainer.Model);
+            }
+            if (obj is IModelContainer<DialogProjectResourceObject> resourceContainer)
+            {
+                return ItemId == resourceContainer.Model.ProjectId;
+            }
+
+            return obj?.Equals(this) == true;
+        }
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(ResourceType, ItemId, ResourcesPath);
+        }
         public override string ToString()
         {
             return $"{ResourceType}:{ItemId}:{ResourcesPath}";
@@ -115,6 +147,32 @@ namespace DialogMaker.Core.Editor
         #region Статика
 
         public static DialogProjectReference Create(DialogProjectResourceObject obj)
+        {
+            var path = GetPath(obj);
+            return CreateGeneric(obj.Resources.Owner.Project, obj.ProjectId, path, obj.ResourceType);
+        }
+        public static DialogProjectReference Restore(DialogProject project, DialogProjectReferenceSavedState savedState)
+        {
+            if (savedState.ItemPath == null)
+            {
+                return new();
+            }
+
+            string[] parts = savedState.ItemPath.Split(':');
+
+            if (parts.Length != 3)
+            {
+                throw new ArgumentException($"Недопустимый путь к ресурсу: {savedState.ItemPath}", nameof(savedState));
+            }
+            if (!Enum.TryParse<DialogResourceType>(parts[0], out var resourceType))
+            {
+                throw new ArgumentException($"Не удалось получить тип ресурса. Недопустимый путь к ресурсу: {savedState.ItemPath}", nameof(savedState));
+            }
+
+            return CreateGeneric(project, Guid.Parse(parts[1]), parts[2], resourceType);
+        }
+
+        private static string GetPath(DialogProjectResourceObject obj)
         {
             List<string> pathParts = [];
             IProjectResourcesOwner? current = obj.Resources.Owner;
@@ -144,29 +202,8 @@ namespace DialogMaker.Core.Editor
                 }
             }
 
-            return CreateGeneric(obj.Resources.Owner.Project, obj.ProjectId, path, obj.ResourceType);
+            return path;
         }
-        public static DialogProjectReference Restore(DialogProject project, DialogProjectReferenceSavedState savedState)
-        {
-            if (savedState.ItemPath == null)
-            {
-                return new();
-            }
-
-            string[] parts = savedState.ItemPath.Split(':');
-
-            if (parts.Length != 3)
-            {
-                throw new ArgumentException($"Недопустимый путь к ресурсу: {savedState.ItemPath}", nameof(savedState));
-            }
-            if (!Enum.TryParse<DialogResourceType>(parts[0], out var resourceType)) 
-            {
-                throw new ArgumentException($"Не удалось получить тип ресурса. Недопустимый путь к ресурсу: {savedState.ItemPath}", nameof(savedState));
-            }
-
-            return CreateGeneric(project, Guid.Parse(parts[1]), parts[2], resourceType);
-        }
-
         private static DialogProjectReference CreateGeneric(DialogProject project, Guid id, string path, DialogResourceType type)
         {
             var resourceType = DialogProjectResourceObject.GetType(type, true);

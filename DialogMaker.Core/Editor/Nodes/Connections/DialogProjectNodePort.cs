@@ -1,13 +1,13 @@
 ﻿using Acly;
-using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.IO;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
-    public abstract class DialogProjectNodePort : ObservableObject, IEnumerable<DialogProjectNodePort>, ISavable, IDisposable
+    public abstract class DialogProjectNodePort : Disposable, IEnumerable<DialogProjectNodePort>, ISavable
     {
         protected DialogProjectNodePort(INode node, int portId, DialogNodePortType dataType)
             : this(node, portId, dataType.ToConnectionType(), dataType)
@@ -19,11 +19,9 @@ namespace DialogMaker.Core.Editor.Nodes
             Node = node;
             ConnectionType = connectionType;
             DataType = dataType;
+
             ConnectionsList.ItemChanged += OnConnectionsListItemChanged;
-        }
-        ~DialogProjectNodePort()
-        {
-            Dispose(false);
+            node.PropertyChanged += OnNodePropertyChanged;
         }
 
         public int Id { get; }
@@ -84,6 +82,13 @@ namespace DialogMaker.Core.Editor.Nodes
 
             ConnectionsList.Remove(port);
         }
+        public void ClearConnections()
+        {
+            if (ConnectionsList is IList list)
+            {
+                list.Clear();
+            }
+        }
 
         public DialogProjectNodePortSavedState Save()
         {
@@ -93,22 +98,28 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 foreach (var connection in enumerable)
                 {
-                    if (connection is DialogProjectNodePort port)
+                    if (connection is not DialogProjectNodePort port)
                     {
-                        result.Connections.TryAdd(port.Node.Id.ToString(), port.Id);
+                        continue;
                     }
+                    if (!result.Connections.TryGetValue(port.Node.Id, out var connectedPorts))
+                    {
+                        connectedPorts = [];
+                        result.Connections.Add(port.Node.Id, connectedPorts);
+                    }
+
+                    connectedPorts.Add(port.Id);
                 }
             }
 
             return result;
         }
         ISavedState ISavable.Save() => Save();
-
-        public void Dispose()
+        internal void Restore(DialogProjectNodePortSavedState savedState)
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            RestoreState(savedState);
         }
+
         public override string ToString()
         {
             string nextNodeName = "?";
@@ -122,7 +133,7 @@ namespace DialogMaker.Core.Editor.Nodes
                     {
                         nextNodeName = $"[{port.Node.NodeType}] {port.Id}";
                         break;
-                    } 
+                    }
                 }
             }
             if (this is DialogProjectNodeInput)
@@ -133,9 +144,14 @@ namespace DialogMaker.Core.Editor.Nodes
             return $"{currentConnection} -> {nextNodeName}";
         }
 
-        protected virtual void Dispose(bool isDisposing)
+        protected override void Dispose(bool isDisposing)
         {
+            base.Dispose(isDisposing);
+
+            ClearConnections();
+
             ConnectionsList.ItemChanged -= OnConnectionsListItemChanged;
+            Node.PropertyChanged -= OnNodePropertyChanged;
         }
         protected virtual bool Validate(DialogProjectNodePort? port)
         {
@@ -144,6 +160,9 @@ namespace DialogMaker.Core.Editor.Nodes
         protected virtual DialogProjectNodePortSavedState CreateSavedState()
         {
             return new();
+        }
+        protected virtual void RestoreState(DialogProjectNodePortSavedState savedState)
+        {
         }
 
         #endregion
@@ -184,6 +203,14 @@ namespace DialogMaker.Core.Editor.Nodes
                 e.Item is DialogProjectNodePort port)
             {
                 OnConnectionChanged(e.Action, port);
+            }
+        }
+        private void OnNodePropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == "IsDisposed" &&
+                Node.IsDisposed && !IsDisposed)
+            {
+                Dispose();
             }
         }
 

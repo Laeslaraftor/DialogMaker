@@ -2,21 +2,23 @@
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Lib.Controllers;
 using DialogMaker.Lib.Elements;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Reflection;
 using System.Windows.Media;
+using System.Xml.Linq;
 using Color = System.Drawing.Color;
 
 namespace DialogMaker.Editor
 {
     public class DialogProjectNodePortProxy : ObservableObject, IDisposable
     {
-        public DialogProjectNodePortProxy(DialogProjectNode node, DialogProjectNodePort port, string name, string description)
+        public DialogProjectNodePortProxy(DialogProjectNode node, DialogProjectNodePort port, DialogProjectNodeMetadata metadata)
         {
             Node = node;
             Original = port;
-            Name = name;
-            Description = description;
+            Name = metadata.Name;
+            Description = metadata.Description;
 
             if (!_colorBrushes.TryGetValue(port.Color, out var colorBrush))
             {
@@ -105,34 +107,21 @@ namespace DialogMaker.Editor
 
         public static List<DialogProjectNodePortProxy> GetOutputs(DialogProjectNode node)
         {
-            return GetPorts<NodeOutputAttribute>(node);
+            return GetPorts(node, node.Original.GetOutputs());
         }
         public static List<DialogProjectNodePortProxy> GetInputs(DialogProjectNode node)
         {
-            return GetPorts<NodeInputAttribute>(node);
+            return GetPorts(node, node.Original.GetInputs());
         }
 
-        private static List<DialogProjectNodePortProxy> GetPorts<T>(DialogProjectNode proxy)
-            where T : Attribute
+        private static List<DialogProjectNodePortProxy> GetPorts<T>(DialogProjectNode node, ReadOnlyDictionary<T, DialogProjectNodeMetadata> ports)
+            where T : DialogProjectNodePort
         {
             List<DialogProjectNodePortProxy> result = [];
-            DialogProjectDialogNode node = proxy.Original;
 
-            foreach (var property in node.GetType().GetProperties())
+            foreach (var port in ports)
             {
-                var attribute = property.GetCustomAttribute<T>();
-
-                if (attribute != null)
-                {
-                    if (property.GetValue(node) is not DialogProjectNodePort port)
-                    {
-                        continue;
-                    }
-
-                    var name = attribute.GetType().GetProperty("Name")?.GetValue(attribute) as string;
-                    string description = property.GetCustomAttribute<DescriptionAttribute>()?.Description ?? string.Empty;
-                    result.Add(new(proxy, port, name ?? string.Empty, description));
-                }
+                result.Add(new(node, port.Key, port.Value));
             }
 
             return result;

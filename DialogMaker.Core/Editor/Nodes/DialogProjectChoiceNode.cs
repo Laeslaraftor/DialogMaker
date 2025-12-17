@@ -1,6 +1,10 @@
 ﻿using Acly;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Linq;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -59,10 +63,49 @@ namespace DialogMaker.Core.Editor.Nodes
             }
         }
 
+        #region Управление
 
         protected override DialogProjectDialogNodeSavedState CreateSavedState()
         {
-            throw new NotImplementedException();
+            var savedState = base.CreateSavedState();
+            var variants = Variants.Select(v => v.Save()).ToList();
+
+            savedState.Properties.TryAdd(nameof(Character), Character?.Save());
+            savedState.Properties.TryAdd(nameof(Variants), variants);
+
+            return savedState;
         }
+        protected override void Restore(DialogProjectDialogNodeSavedState savedState)
+        {
+            base.Restore(savedState);
+
+            Character = savedState.RestoreReference<DialogProjectCharacter>(Project, nameof(Character));
+
+            var variants = savedState.GetProperty<DialogProjectReferenceSavedState[]>(nameof(Variants));
+
+            if (variants == null)
+            {
+                return;
+            }
+
+            foreach (var variant in variants)
+            {
+                DialogProjectReference<DialogProjectString> reference;
+
+                try
+                {
+                    reference = DialogProjectReference<DialogProjectString>.Restore(Project, variant);
+                }
+                catch (Exception error)
+                {
+                    Debug.WriteLine(error);
+                    continue;
+                }
+
+                Variants.Add(reference);
+            }
+        }
+
+        #endregion
     }
 }

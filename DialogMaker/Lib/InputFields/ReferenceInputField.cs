@@ -43,7 +43,7 @@ namespace DialogMaker.Lib.InputFields
                     InvokePropertyChanging(nameof(Value));
                     field = value;
 
-                    if (_view.Item?.Equals(value) != true)
+                    if (value?.Equals(_view.Item) != true)
                     {
                         _view.Item = EditorExtensions.ToEditorItem(value);
                     }

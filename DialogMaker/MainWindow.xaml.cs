@@ -43,6 +43,11 @@ namespace DialogMaker
 
         private void SetProject(DialogProject? project)
         {
+            if (_model.Project?.Project == project)
+            {
+                return;
+            }
+
             ProjectController? controller = null;
 
             if (project != null)
@@ -50,6 +55,7 @@ namespace DialogMaker
                 controller = new(project);
             }
 
+            _model.Project?.Dispose();
             _model.Project = controller;
             _model.CanCreatePack = controller != null;
             _model.CreatePackCommand = controller?.CreatePackCommand;

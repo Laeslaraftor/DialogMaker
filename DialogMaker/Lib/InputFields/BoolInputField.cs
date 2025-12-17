@@ -75,7 +75,7 @@ namespace DialogMaker.Lib.InputFields
         public override FrameworkElement View => _view;
 
         private readonly Grid _view;
-        private readonly TextBox _placeholder;
+        private readonly TextBlock _placeholder;
         private readonly CheckBox _box;
 
         #region Управление

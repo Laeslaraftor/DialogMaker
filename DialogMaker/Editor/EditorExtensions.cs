@@ -4,7 +4,9 @@ using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Lib;
 using DialogMaker.Lib.Elements;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Xml.Linq;
 
 namespace DialogMaker.Editor
 {
@@ -12,6 +14,10 @@ namespace DialogMaker.Editor
     {
         public static DialogProjectReference? ToOriginalReference(object? projectReference)
         {
+            if (projectReference == null)
+            {
+                return null;
+            }
             if (projectReference is DialogProjectReference originalReference)
             {
                 return originalReference; 
@@ -20,11 +26,21 @@ namespace DialogMaker.Editor
             {
                 return reference.Reference;
             }
+            if (projectReference is ProjectResourceItem editorItem)
+            {
+                return DialogProjectReference.Create(editorItem.Model);
+            }
+            if (projectReference is DialogProjectResourceObject item)
+            {
+                return DialogProjectReference.Create(item);
+            }
 
             return null;
         }
         public static ProjectResourceItem? ToEditorItem(object? projectItem)
         {
+            var type = projectItem?.GetType();
+
             if (projectItem is DialogProjectResourceObject resourceObject &&
                 ProjectController.TryFindController(resourceObject.Resources.Owner.Project, out var controller))
             {
@@ -60,16 +76,19 @@ namespace DialogMaker.Editor
             return null;
         }
 
+        public static bool TryGetName(this MemberInfo info, [NotNullWhen(true)] out string? result)
+        {
+            result = info.GetCustomAttribute<NameAttribute>()?.Name;
+            return result != null;
+        }
         public static string GetName(this MemberInfo info)
         {
-            var name = info.GetCustomAttribute<NameAttribute>();
-
-            if (name == null)
+            if (!TryGetName(info, out var name))
             {
-                return string.Empty;
+                name = info.Name;
             }
 
-            return name.Name;
+            return name;
         }
         public static string GetDescription(this MemberInfo info)
         {

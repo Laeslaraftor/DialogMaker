@@ -8,6 +8,8 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Input;
 using DragEventArgs = DialogMaker.Lib.Controllers.DragEventArgs;
+using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -97,7 +99,7 @@ namespace DialogMaker.Lib.Elements
             return result != null;
         }
 
-        private void SetDialog(ProjectDialog? oldValue, ProjectDialog? newValue)
+        private async void SetDialog(ProjectDialog? oldValue, ProjectDialog? newValue)
         {
             if (oldValue == newValue)
             {
@@ -120,9 +122,30 @@ namespace DialogMaker.Lib.Elements
                 }
             }
 
-            _connections.Dialog = newValue;
-
             ContextMenu = newValue?.EditorContextMenu;
+            int tries = 0;
+
+            while (2 > tries)
+            {
+                try
+                {
+                    _connections.Dialog = newValue;
+                }
+                catch (InvalidOperationException invalidTry)
+                {
+                    _connections.Dialog = null;
+                    tries++;
+                    Debug.WriteLine(invalidTry);
+                    await Task.Delay(50);
+                    continue;
+                }
+                catch (Exception error)
+                {
+                    error.Alert();
+                }
+
+                break;
+            }
         }
 
         private void UpdateCanvasSize()

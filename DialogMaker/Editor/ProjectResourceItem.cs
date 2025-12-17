@@ -10,7 +10,7 @@ using System.Windows;
 
 namespace DialogMaker.Editor
 {
-    public abstract class ProjectResourceItem<T> : ProjectResourceItem
+    public abstract class ProjectResourceItem<T> : ProjectResourceItem, IModelContainer<DialogProjectResourceObject>
         where T : DialogProjectResourceObject
     {
         protected ProjectResourceItem(ProjectController project, T original) : base(project, original)

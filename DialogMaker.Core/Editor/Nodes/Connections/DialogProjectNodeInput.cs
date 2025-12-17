@@ -70,6 +70,18 @@ namespace DialogMaker.Core.Editor.Nodes
 
         #region Управление
 
+        protected override DialogProjectNodePortSavedState CreateSavedState()
+        {
+            DialogProjectNodePortSavedState result = new();
+
+            if (CanPresetValue)
+            {
+                result.Value = PresetValue;
+            }
+
+            return result;
+        }
+
         protected override bool Validate(DialogProjectNodePort? port)
         {
             if (port is not DialogProjectNodeOutput output ||

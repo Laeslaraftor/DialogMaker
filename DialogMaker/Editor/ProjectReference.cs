@@ -2,7 +2,7 @@
 
 namespace DialogMaker.Editor
 {
-    public class ProjectReference
+    public class ProjectReference : IModelContainer<DialogProjectReference>, IModelContainer<DialogProjectResourceObject>
     {
         public ProjectReference(ProjectController project, DialogProjectReference reference)
         {
@@ -20,6 +20,9 @@ namespace DialogMaker.Editor
         public ProjectController Project { get; }
         public DialogProjectReference Reference { get; }
         public ProjectResourceItem Item { get; }
+
+        DialogProjectReference IModelContainer<DialogProjectReference>.Model => Reference;
+        DialogProjectResourceObject IModelContainer<DialogProjectResourceObject>.Model => Item.Model;
 
         #region Операторы
 
