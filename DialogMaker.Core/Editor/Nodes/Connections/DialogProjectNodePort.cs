@@ -20,15 +20,25 @@ namespace DialogMaker.Core.Editor.Nodes
             ConnectionType = connectionType;
             DataType = dataType;
 
+            var color = DataType.GetEnumAttribute<ColorAttribute>();
+
+            if (color != null)
+            {
+                Color = color.Color;
+            }
+            else
+            {
+                Color = Color.Gray;
+            }
+
             ConnectionsList.ItemChanged += OnConnectionsListItemChanged;
-            node.PropertyChanged += OnNodePropertyChanged;
         }
 
         public int Id { get; }
         public INode Node { get; }
         public DialogNodeConnectionType ConnectionType { get; }
         public DialogNodePortType DataType { get; }
-        public virtual Color Color { get; } = Color.Gray;
+        public Color Color { get; }
         public abstract int ConnectionsCount { get; }
 
         protected abstract IEditableList ConnectionsList { get; }
@@ -84,10 +94,7 @@ namespace DialogMaker.Core.Editor.Nodes
         }
         public void ClearConnections()
         {
-            if (ConnectionsList is IList list)
-            {
-                list.Clear();
-            }
+            ConnectionsList.Clear();
         }
 
         public DialogProjectNodePortSavedState Save()
@@ -151,7 +158,6 @@ namespace DialogMaker.Core.Editor.Nodes
             ClearConnections();
 
             ConnectionsList.ItemChanged -= OnConnectionsListItemChanged;
-            Node.PropertyChanged -= OnNodePropertyChanged;
         }
         protected virtual bool Validate(DialogProjectNodePort? port)
         {
@@ -203,14 +209,6 @@ namespace DialogMaker.Core.Editor.Nodes
                 e.Item is DialogProjectNodePort port)
             {
                 OnConnectionChanged(e.Action, port);
-            }
-        }
-        private void OnNodePropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == "IsDisposed" &&
-                Node.IsDisposed && !IsDisposed)
-            {
-                Dispose();
             }
         }
 

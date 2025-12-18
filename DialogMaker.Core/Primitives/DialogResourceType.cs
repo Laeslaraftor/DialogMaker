@@ -10,6 +10,8 @@ namespace DialogMaker.Core
         [ResourceType(typeof(DialogProjectCharacter), IsDev = true)]
         Character,
         [ResourceType(typeof(DialogProjectItem), IsDev = true)]
-        File
+        File,
+        [ResourceType(typeof(DialogProjectItem), IsDev = true)]
+        Variable = String,
     }
 }

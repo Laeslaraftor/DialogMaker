@@ -21,20 +21,24 @@
 
         protected bool Resolve(object? parameter, Action<T> execute)
         {
+            return Resolve(parameter, obj =>
+            {
+                execute(obj);
+                return true;
+            });
+        }
+        protected bool Resolve(object? parameter, Func<T, bool> execute)
+        {
             if (Item != null)
             {
-                execute(Item);
+                return execute(Item);
             }
             else if (parameter is T typedParameter)
             {
-                execute(typedParameter);
-            }
-            else
-            {
-                return false;
+                return execute(typedParameter);
             }
 
-            return true;
+            return false;
         }
 
         #endregion

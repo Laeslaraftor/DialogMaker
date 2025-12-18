@@ -1,8 +1,5 @@
-﻿using System;
-
-namespace DialogMaker.Core.Editor.Nodes
+﻿namespace DialogMaker.Core.Editor.Nodes
 {
-    [Name("Реплика")]
     public class DialogProjectReplicaNode : DialogProjectDialogNode
     {
         public DialogProjectReplicaNode(DialogProjectDialog dialog) : base(dialog)
@@ -63,13 +60,12 @@ namespace DialogMaker.Core.Editor.Nodes
 
         #region Управление
 
-        protected override DialogProjectDialogNodeSavedState CreateSavedState()
+        protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)
         {
-            var savedState = base.CreateSavedState();
+            base.ModifySavedState(savedState);
+
             savedState.Properties.TryAdd(nameof(Character), Character?.Save());
             savedState.Properties.TryAdd(nameof(Text), Text?.Save());
-
-            return savedState;
         }
         protected override void Restore(DialogProjectDialogNodeSavedState savedState)
         {

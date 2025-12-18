@@ -1,0 +1,42 @@
+﻿namespace DialogMaker.Core.Editor.Nodes
+{
+    public class DialogProjectAddNode : DialogProjectDialogNode
+    {
+        public DialogProjectAddNode(DialogProjectDialog dialog) : base(dialog)
+        {
+        }
+        public DialogProjectAddNode(DialogProjectDialog dialog, DialogProjectDialogNodeSavedState savedState)
+            : base(dialog, savedState)
+        {
+        }
+
+        public override DialogNodeType NodeType => DialogNodeType.Add;
+        [NodeInput("Значение 1")]
+        public DialogProjectNodeInputValue FirstValue
+        {
+            get
+            {
+                field ??= new(this, 0);
+                return field;
+            }
+        }
+        [NodeInput("Значение 2")]
+        public DialogProjectNodeInputValue SecondValue
+        {
+            get
+            {
+                field ??= new(this, 1);
+                return field;
+            }
+        }
+        [NodeOutput("Сумма")]
+        public DialogProjectNodeOutputObject Output
+        {
+            get
+            {
+                field ??= new(this, 2);
+                return field;
+            }
+        }
+    }
+}

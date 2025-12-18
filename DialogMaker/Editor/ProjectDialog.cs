@@ -70,6 +70,25 @@ namespace DialogMaker.Editor
 
         #region Управление
 
+        public bool RemoveSelectedNodes()
+        {
+            if (SelectedNodes.Count == 0)
+            {
+                return false;
+            }
+
+            List<DialogProjectNode> nodes = [.. SelectedNodes];
+
+            foreach (var node in nodes)
+            {
+                Original.RemoveNode(node.Original);
+            }
+
+            SelectedNodes.Clear();
+
+            return true;
+        }
+
         public IEnumerable<DialogProjectNodePortProxy> GetConnections(DialogProjectNodePortProxy port)
         {
             foreach (var node in Nodes)

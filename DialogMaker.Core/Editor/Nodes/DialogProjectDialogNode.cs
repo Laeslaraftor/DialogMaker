@@ -29,6 +29,32 @@ namespace DialogMaker.Core.Editor.Nodes
         public DialogProjectPack Pack => Dialog.Pack;
         public DialogProjectDialog Dialog { get; }
         public Guid Id { get; }
+        public string Name
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = NodeType.GetEnumAttribute<NameAttribute>()?.Name;
+                    field ??= NodeType.ToString();
+                }
+
+                return field;
+            }
+        }
+        public string Description
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = NodeType.GetEnumAttribute<DescriptionAttribute>()?.Description;
+                    field ??= string.Empty;
+                }
+
+                return field;
+            }
+        }
         public abstract DialogNodeType NodeType { get; }
         public Vector2 Position
         {
@@ -100,6 +126,8 @@ namespace DialogMaker.Core.Editor.Nodes
         public DialogProjectDialogNodeSavedState Save()
         {
             var savedState = CreateSavedState();
+            ModifySavedState(savedState);
+
             savedState.Id = Id.ToString();
             savedState.NodeType = NodeType;
             savedState.Position = Position;
@@ -121,6 +149,9 @@ namespace DialogMaker.Core.Editor.Nodes
         protected virtual DialogProjectDialogNodeSavedState CreateSavedState()
         {
             return new();
+        }
+        protected virtual void ModifySavedState(DialogProjectDialogNodeSavedState savedState)
+        {
         }
         protected virtual void Restore(DialogProjectDialogNodeSavedState savedState)
         {
@@ -144,6 +175,25 @@ namespace DialogMaker.Core.Editor.Nodes
 
             Restore(GetInputs().Keys, savedState.Inputs);
             Restore(GetOutputs().Keys, savedState.Inputs);
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+
+            static void DisposePorts(IEnumerable<DialogProjectNodePort> ports)
+            {
+                foreach (var port in ports)
+                {
+                    port.Dispose();
+                }
+            }
+
+            DisposePorts(GetInputs().Keys);
+            DisposePorts(GetOutputs().Keys);
+
+            _inputs = null;
+            _outputs = null;
         }
 
         #endregion

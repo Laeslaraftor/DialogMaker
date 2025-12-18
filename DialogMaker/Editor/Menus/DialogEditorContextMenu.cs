@@ -17,8 +17,15 @@ namespace DialogMaker.Editor.Menus
         {
             yield return new ContextMenuContainer("Добавить", GetNodes());
             yield return ContextMenuSeparator.Instance;
+            yield return new ContextMenuAction("Копировать",
+                CanClipboardAction, RemoveDialog, Icons.Copy);
+            yield return new ContextMenuAction("Вырезать",
+                CanClipboardAction, RemoveDialog, Icons.Cut);
+            yield return new ContextMenuAction("Вставить",
+                CanClipboardAction, RemoveDialog, Icons.Paste);
+            yield return ContextMenuSeparator.Instance;
             yield return new ContextMenuAction("Удалить",
-                CanExecute, RemoveDialog, Icons.Delete);
+                CanDelete, RemoveDialog, Icons.Delete);
         }
 
         private IEnumerable<IContextMenuModifier> GetNodes()
@@ -51,9 +58,24 @@ namespace DialogMaker.Editor.Menus
             });
         }
 
+        private bool CanClipboardAction(object? parameter)
+        {
+            return false;
+        }
+        private bool CanDelete(object? parameter)
+        {
+            return Resolve(parameter, dialog =>
+            {
+                return dialog.SelectedNodes.Count > 0;
+            });
+        }
+
         private void RemoveDialog(object? parameter)
         {
-            
+            Resolve(parameter, dialog =>
+            {
+                dialog.RemoveSelectedNodes();
+            });
         }
 
         #endregion

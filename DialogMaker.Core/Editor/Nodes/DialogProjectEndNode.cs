@@ -1,6 +1,5 @@
 ﻿namespace DialogMaker.Core.Editor.Nodes
 {
-    [Name("Завершение диалога")]
     public class DialogProjectEndNode : DialogProjectDialogNode
     {
         public DialogProjectEndNode(DialogProjectDialog dialog) : base(dialog)
@@ -10,7 +9,7 @@
         {
         }
 
-        public override DialogNodeType NodeType => DialogNodeType.Start;
+        public override DialogNodeType NodeType => DialogNodeType.End;
         [NodeInput("Действие")]
         public DialogProjectNodeInputAction End
         {

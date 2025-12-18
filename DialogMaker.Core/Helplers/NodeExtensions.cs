@@ -7,6 +7,13 @@ namespace DialogMaker.Core
 {
     public static class NodeExtensions
     {
+        public static string[] GetPath(this DialogNodeType nodeType)
+        {
+            var path = nodeType.GetEnumAttribute<PathAttribute>()?.GetComponents();
+            path ??= [];
+
+            return path;
+        }
         public static DialogNodeConnectionType ToConnectionType(this DialogNodePortType portType)
         {
             if (portType == DialogNodePortType.Action)

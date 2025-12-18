@@ -168,6 +168,35 @@ namespace DialogMaker.Lib.Controllers
             CheckPorts(node.Inputs);
             CheckPorts(node.Outputs);
         }
+        public void RemoveConnections(DialogProjectNode node)
+        {
+            var ports = node.GetPorts();
+
+            bool ContainsNodePort(Curve curve)
+            {
+                foreach (var port in ports)
+                {
+                    if (curve.StartPort == port ||
+                        curve.EndPort == port)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            _curves.RemoveAll(curve =>
+            {
+                if (ContainsNodePort(curve))
+                {
+                    RemoveCurve(curve, false);
+                    return true;
+                }
+
+                return false;
+            });
+        }
 
         protected override void Dispose(bool isDisposing)
         {

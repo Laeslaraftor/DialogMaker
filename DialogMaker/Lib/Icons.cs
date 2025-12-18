@@ -44,7 +44,7 @@ namespace DialogMaker.Lib
 
         private static FontFamily? _font;
 
-        public static TextBlock? CreateIconBlock(string? icon)
+        public static TextBlock? CreateIconBlock(string? icon, TextBlock? textBlock)
         {
             if (icon == null)
             {
@@ -55,19 +55,27 @@ namespace DialogMaker.Lib
 
             if (font != null)
             {
-                return new TextBlock()
-                {
-                    Text = icon,
-                    FontFamily = font
-                };
+                textBlock ??= new();
+                textBlock.Text = icon;
+                textBlock.FontFamily = font;
+
+                return textBlock;
             }
 
             return null;
         }
+        public static TextBlock? CreateIconBlock(string? icon)
+        {
+            return CreateIconBlock(icon, null);
+        }
+        public static bool TryCreateIconBlock(string? icon, TextBlock? textBlock, [NotNullWhen(true)] out TextBlock? result)
+        {
+            result = CreateIconBlock(icon, textBlock);
+            return result != null;
+        }
         public static bool TryCreateIconBlock(string? icon, [NotNullWhen(true)] out TextBlock? result)
         {
-            result = CreateIconBlock(icon);
-            return result != null;
+            return TryCreateIconBlock(icon, null, out result);
         }
     }
 }

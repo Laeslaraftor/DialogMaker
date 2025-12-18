@@ -6,6 +6,11 @@ namespace DialogMaker.Core.Editor.Nodes
     {
         public bool CanConvert(DialogNodePortType from, DialogNodePortType to)
         {
+            if ((to == DialogNodePortType.Object && from != DialogNodePortType.Action) ||
+                (from == DialogNodePortType.Object && to != DialogNodePortType.Action))
+            {
+                return true;
+            }
             if (AtLeastOneEquals(from, to, DialogNodePortType.Action) ||
                 (from == DialogNodePortType.String && to != DialogNodePortType.String))
             {

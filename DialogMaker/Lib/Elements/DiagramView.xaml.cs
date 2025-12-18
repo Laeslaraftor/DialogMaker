@@ -7,8 +7,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Input;
-using DragEventArgs = DialogMaker.Lib.Controllers.DragEventArgs;
-using System.Threading.Tasks;
 using System.Diagnostics;
 
 namespace DialogMaker.Lib.Elements
@@ -179,6 +177,7 @@ namespace DialogMaker.Lib.Elements
         {
             var view = node.View;
 
+            _connections.RemoveConnections(node);
             _canvas.Children.Remove(view);
         }
 

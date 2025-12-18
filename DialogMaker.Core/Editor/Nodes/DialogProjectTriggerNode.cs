@@ -1,0 +1,55 @@
+﻿using Newtonsoft.Json.Linq;
+
+namespace DialogMaker.Core.Editor.Nodes
+{
+    public class DialogProjectTriggerNode : DialogProjectDialogNode
+    {
+        public DialogProjectTriggerNode(DialogProjectDialog dialog) : base(dialog)
+        {
+        }
+        public DialogProjectTriggerNode(DialogProjectDialog dialog, DialogProjectDialogNodeSavedState savedState)
+            : base(dialog, savedState)
+        {
+        }
+
+        public override DialogNodeType NodeType => DialogNodeType.Trigger;
+        [Name("Идентификатор")]
+        public string? TriggerId
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(TriggerId));
+                    field = value;
+                    InvokePropertyChanged(nameof(TriggerId));
+                }
+            }
+        }
+        [NodeInput("Вход")]
+        public DialogProjectNodeInputAction Input
+        {
+            get
+            {
+                field ??= new(this, 0);
+                return field;
+            }
+        }
+
+        #region Управление
+
+        protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)
+        {
+            base.ModifySavedState(savedState);
+            savedState.Properties.TryAdd(nameof(TriggerId), TriggerId);
+        }
+        protected override void Restore(DialogProjectDialogNodeSavedState savedState)
+        {
+            base.Restore(savedState);
+            TriggerId = savedState.GetProperty<string>(nameof(TriggerId));
+        }
+
+        #endregion
+    }
+}

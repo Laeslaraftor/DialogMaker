@@ -86,7 +86,7 @@ namespace DialogMaker.Lib.Controllers
             DragAndDrop.ElementsContainer.Children.Remove(_selection);
         }
 
-        private async void SelectPoint(Point position, bool force = false)
+        private async void SelectPoint(Point position, bool force = false, bool onlyNotSelected = false)
         {
             var mode = Mode;
             ISelectable? selectable = null;
@@ -112,6 +112,10 @@ namespace DialogMaker.Lib.Controllers
 
             if (selectable != null)
             {
+                if (onlyNotSelected && selectable.IsSelected)
+                {
+                    return;
+                }
                 if (force)
                 {
                     _lastForceSelectable = selectable;
@@ -202,7 +206,7 @@ namespace DialogMaker.Lib.Controllers
             if ((!e.Handled && multiselectButtonPressed) ||
                 extraButtonPressed)
             {
-                SelectPoint(position);
+                SelectPoint(position, onlyNotSelected: extraButtonPressed && !multiselectButtonPressed);
             }
             if (!multiselectButtonPressed || _isSelecting || e.Handled)
             {

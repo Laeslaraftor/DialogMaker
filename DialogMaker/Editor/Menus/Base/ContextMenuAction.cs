@@ -4,7 +4,7 @@ using System.Windows.Input;
 
 namespace DialogMaker.Editor.Menus
 {
-    public class ContextMenuAction : IContextMenuModifier, ICommand
+    public class ContextMenuAction : ContextMenuItemModifier, IContextMenuModifier, ICommand
     {
         public ContextMenuAction(string name, Action<object?> execute, string? icon = null)
             : this(name, execute, null, icon)
@@ -19,6 +19,7 @@ namespace DialogMaker.Editor.Menus
         {
         }
         public ContextMenuAction(string name, Action<object?> execute, Func<object?, bool>? canExecute, string? icon = null)
+            : base(icon, name)
         {
             Icon = icon;
             Name = name;
@@ -28,47 +29,15 @@ namespace DialogMaker.Editor.Menus
 
         public event EventHandler? CanExecuteChanged;
 
-        public string? Icon { get; }
-        public string Name
-        {
-            get => field;
-            set
-            {
-                if (field != value)
-                {
-                    field = value;
-
-                    foreach (var item in _items)
-                    {
-                        item.Header = value;
-                    }
-                }
-            }
-        }
         public Action<object?> Execute { get; }
         public Func<object?, bool>? CanExecute { get; }
 
-        private readonly List<MenuItem> _items = [];
-
         #region Управление
 
-        public void Modify(ItemCollection menu)
+        public void Modify(ContextMenu menu, ItemCollection items)
         {
-            MenuItem item = new()
-            {
-                Header = Name,
-                Command = this,
-            };
-
-            if (Icons.TryCreateIconBlock(Icon, out var iconBlock))
-            {
-                iconBlock.FontSize = 14;
-            }
-
-            item.Icon = iconBlock;
-
-            menu.Add(item);
-            _items.Add(item);
+            var item = GetItem(menu, items);
+            items.Add(item);
         }
 
         bool ICommand.CanExecute(object? parameter)
@@ -83,6 +52,26 @@ namespace DialogMaker.Editor.Menus
         void ICommand.Execute(object? parameter)
         {
             Execute(parameter);
+        }
+
+        protected override void SetupItem(MenuItem item)
+        {
+            base.SetupItem(item);
+            item.Command = this;
+        }
+
+        #endregion
+
+        #region События
+
+        protected override void OnContextMenuOpened(ContextMenu menu, ItemCollection items, MenuItem item)
+        {
+            base.OnContextMenuOpened(menu, items, item);
+            
+            if (CanExecute != null)
+            {
+                CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+            }
         }
 
         #endregion

@@ -41,7 +41,8 @@ namespace DialogMaker.Editor
         public string Name { get; }
         public string Description { get; }
         public SolidColorBrush Color { get; }
-        public bool IsActive => Original.ConnectionsCount > 0;
+        public bool IsActive => ConnectionsCount > 0;
+        public int ConnectionsCount => Original.ConnectionsCount;
         public DiagramNodePort View
         {
             get
@@ -93,9 +94,10 @@ namespace DialogMaker.Editor
 
         private void OnPortPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == "ConnectionsCount")
+            if (e.PropertyName == nameof(ConnectionsCount))
             {
                 InvokePropertyChanged(nameof(IsActive));
+                InvokePropertyChanged(e.PropertyName);
             }
         }
 

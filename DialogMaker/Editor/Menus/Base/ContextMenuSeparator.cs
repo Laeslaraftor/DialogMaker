@@ -1,12 +1,13 @@
-﻿using System.Windows.Controls;
+﻿using DialogMaker.Core;
+using System.Windows.Controls;
 
 namespace DialogMaker.Editor.Menus
 {
-    public class ContextMenuSeparator : IContextMenuModifier
+    public class ContextMenuSeparator : Disposable, IContextMenuModifier
     {
-        public void Modify(ItemCollection menu)
+        public void Modify(ContextMenu menu, ItemCollection items)
         {
-            menu.Add(new Separator());
+            items.Add(new Separator());
         }
 
         #region Статика

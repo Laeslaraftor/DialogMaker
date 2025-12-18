@@ -22,8 +22,6 @@ namespace DialogMaker.Editor
             Dialog = dialog;
             Original = node;
             Position = new(node.Position.X, node.Position.Y);
-            _name = nodeType.GetName();
-            Description = nodeType.GetDescription();
             Inputs = new(DialogProjectNodePortProxy.GetInputs(this));
             Outputs = new(DialogProjectNodePortProxy.GetOutputs(this));
             Properties = new(DialogProjectNodeProperty.GetProperties(this));
@@ -37,10 +35,10 @@ namespace DialogMaker.Editor
         public override string Icon => Icons.Node;
         public override string Name
         {
-            get => _name;
+            get => Original.Name;
             set { }
         }
-        public string Description { get; }
+        public string Description => Original.Description;
         public Point Position
         {
             get => field;
@@ -96,6 +94,7 @@ namespace DialogMaker.Editor
                 {
                     _view = Project.NodesViewFabric.GetNode();
                     _view.Node = this;
+                    _view.ToolTip = string.IsNullOrEmpty(Description) ? null : Description;
                 }
 
                 return _view;
@@ -104,7 +103,6 @@ namespace DialogMaker.Editor
         public int GroupCount => Dialog.SelectedNodes.Count;
         FrameworkElement? ISelectable.View => View;
 
-        private readonly string _name;
         private DiagramNode? _view;
 
         #region Управление
@@ -121,6 +119,17 @@ namespace DialogMaker.Editor
                 {
                     yield return selectedNode;
                 }
+            }
+        }
+        public IEnumerable<DialogProjectNodePortProxy> GetPorts()
+        {
+            foreach (var port in Inputs)
+            {
+                yield return port;
+            }
+            foreach (var port in Outputs)
+            {
+                yield return port;
             }
         }
 

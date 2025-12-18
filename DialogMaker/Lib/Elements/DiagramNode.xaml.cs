@@ -108,7 +108,6 @@ namespace DialogMaker.Lib.Elements
                 await Task.Delay(50);
             }
 
-            ToolTip = newValue?.Description;
             _title.Text = newValue?.Name;
             Point position = (newValue?.Position).GetValueOrDefault();
 

@@ -1,9 +1,10 @@
-﻿using System.Windows.Controls;
+﻿using System.ComponentModel;
+using System.Windows.Controls;
 
 namespace DialogMaker.Editor.Menus
 {
-    public interface IContextMenuModifier
+    public interface IContextMenuModifier : INotifyPropertyChanged, IDisposable
     {
-        public void Modify(ItemCollection menu);
+        public void Modify(ContextMenu menu, ItemCollection items);
     }
 }

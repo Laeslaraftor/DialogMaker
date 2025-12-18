@@ -43,7 +43,7 @@ namespace DialogMaker.Editor.Menus
 
             foreach (var modifier in GetItems())
             {
-                modifier.Modify(ContextMenu.Items);
+                modifier.Modify(ContextMenu, ContextMenu.Items);
             }
         }
 
