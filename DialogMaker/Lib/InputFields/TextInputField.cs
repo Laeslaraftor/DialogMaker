@@ -39,15 +39,15 @@ namespace DialogMaker.Lib.InputFields
             set
             {
                 if (field != value)
-                {
-                    if (value != null && value.GetType() != ValueType)
+                {   
+                    if (!CanConvert(value))
                     {
-                        throw new ArgumentException($"Недопустимый тип! Требуется: {ValueType}, получен: {value.GetType()}", nameof(value));
+                        throw new ArgumentException($"Недопустимый тип! Требуется: {ValueType}, получен: {value?.GetType()}", nameof(value));
                     }
 
                     InvokePropertyChanging(nameof(Value));
 
-                    field = value;
+                    field = Convert(value);
                     string textValue = ValueToString(value);
 
                     if (textValue.Equals(_view.Text) != true)
@@ -88,6 +88,19 @@ namespace DialogMaker.Lib.InputFields
         {
             var result = value?.ToString();
             return result ?? string.Empty;
+        }
+        protected virtual bool CanConvert(object? value)
+        {
+            return value == null || value.GetType() == ValueType;
+        }
+        protected virtual object? Convert(object? value)
+        {
+            if (value is string)
+            {
+                return value;
+            }
+
+            return value?.ToString();
         }
 
         #endregion

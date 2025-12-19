@@ -59,7 +59,8 @@ namespace DialogMaker.Lib.Controllers
         {
             return other != null &&
                    (type == other ||
-                   type.IsEnum && other.IsEnum ||
+                   type.IsEnum && other == typeof(Enum) ||
+                   type == typeof(Enum) && other.IsEnum ||
                    type.Name.Contains(other.Name));
         }
 

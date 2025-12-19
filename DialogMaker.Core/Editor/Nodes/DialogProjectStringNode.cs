@@ -11,20 +11,6 @@
         }
 
         public override DialogNodeType NodeType => DialogNodeType.String;
-        [Name("Значение")]
-        public string? Value
-        {
-            get => field;
-            set
-            {
-                if (field != value)
-                {
-                    InvokePropertyChanging(nameof(Value));
-                    field = value;
-                    InvokePropertyChanged(nameof(Value));
-                }
-            }
-        }
         [NodeInput("Значение")]
         public DialogProjectNodeInputString Input
         {
@@ -43,21 +29,5 @@
                 return field;
             }
         }
-
-        #region Управление
-
-        protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)
-        {
-            base.ModifySavedState(savedState);
-            savedState.Properties.TryAdd(nameof(Value), Value);
-        }
-
-        protected override void Restore(DialogProjectDialogNodeSavedState savedState)
-        {
-            base.Restore(savedState);
-            Value = savedState.GetProperty<string>(nameof(Value));
-        }
-
-        #endregion
     }
 }

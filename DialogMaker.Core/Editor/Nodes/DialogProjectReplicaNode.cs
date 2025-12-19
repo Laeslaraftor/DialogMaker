@@ -25,26 +25,21 @@
                 }
             }
         }
-        [Name("Текст"), Reference(DialogResourceType.String)]
-        public DialogProjectReference<DialogProjectString>? Text
-        {
-            get => field;
-            set
-            {
-                if (field != value)
-                {
-                    InvokePropertyChanging(nameof(Text));
-                    field = value;
-                    InvokePropertyChanged(nameof(Text));
-                }
-            }
-        }
         [NodeInput("Вход")]
         public DialogProjectNodeInputAction Input
         {
             get
             {
                 field ??= new(this, 0);
+                return field;
+            }
+        }
+        [NodeInput("Текст")]
+        public DialogProjectNodeInputString Text
+        {
+            get
+            {
+                field ??= new(this, 2);
                 return field;
             }
         }
@@ -63,16 +58,12 @@
         protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)
         {
             base.ModifySavedState(savedState);
-
             savedState.Properties.TryAdd(nameof(Character), Character?.Save());
-            savedState.Properties.TryAdd(nameof(Text), Text?.Save());
         }
         protected override void Restore(DialogProjectDialogNodeSavedState savedState)
         {
             base.Restore(savedState);
-
             Character = savedState.RestoreReference<DialogProjectCharacter>(Project, nameof(Character));
-            Text = savedState.RestoreReference<DialogProjectString>(Project, nameof(Text));
         }
 
         #endregion

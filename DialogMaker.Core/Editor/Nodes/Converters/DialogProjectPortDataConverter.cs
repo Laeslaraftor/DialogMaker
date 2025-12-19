@@ -31,8 +31,8 @@ namespace DialogMaker.Core.Editor.Nodes
             }
             if (convertType == DialogNodePortType.Bool)
             {
-                if (valueType == DialogNodePortType.Integer ||
-                    valueType == DialogNodePortType.Float)
+                if (valueType == DialogNodePortType.Number ||
+                    valueType == DialogNodePortType.Number)
                 {
                     if (value is IComparable comparable)
                     {
@@ -40,17 +40,17 @@ namespace DialogMaker.Core.Editor.Nodes
                     }
                 }
             }
-            else if (convertType == DialogNodePortType.Integer)
+            else if (convertType == DialogNodePortType.Number)
             {
-                if (valueType == DialogNodePortType.Float ||
+                if (valueType == DialogNodePortType.Number ||
                     valueType == DialogNodePortType.Bool)
                 {
                     return System.Convert.ToInt32(value);
                 }
             }
-            else if (convertType == DialogNodePortType.Float)
+            else if (convertType == DialogNodePortType.Number)
             {
-                if (valueType == DialogNodePortType.Integer ||
+                if (valueType == DialogNodePortType.Number ||
                     valueType == DialogNodePortType.Bool)
                 {
                     return System.Convert.ToSingle(value);
@@ -74,12 +74,12 @@ namespace DialogMaker.Core.Editor.Nodes
                 instance is short ||
                 instance is long)
             {
-                return DialogNodePortType.Integer;
+                return DialogNodePortType.Number;
             }
             else if (instance is float ||
                      instance is double)
             {
-                return DialogNodePortType.Float;
+                return DialogNodePortType.Number;
             }
             else if (instance is string)
             {

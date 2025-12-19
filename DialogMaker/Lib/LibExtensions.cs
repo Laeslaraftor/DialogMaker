@@ -259,6 +259,14 @@ namespace DialogMaker
         }
         extension(Rect rect)
         {
+            public bool IntersectsWith(Point point)
+            {
+                return point.X >= rect.Left && 
+                       point.Y >= rect.Top &&
+                       rect.Right >= point.X &&
+                       rect.Bottom >= point.Y;
+            }
+
             public static Rect operator *(Rect r, Point p)
             {
                 return new(r.TopLeft, r.Size * p);

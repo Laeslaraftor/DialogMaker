@@ -1,6 +1,5 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Media;
 
 namespace DialogMaker.Lib.Elements
@@ -32,6 +31,16 @@ namespace DialogMaker.Lib.Elements
             get => (bool)GetValue(InvertProperty);
             set => SetValue(InvertProperty, value);
         }
+        public UIElement? ExtraControl
+        {
+            get => GetValue(ExtraControlProperty) as UIElement;
+            set => SetValue(ExtraControlProperty, value);
+        }
+        public bool IsExtraControlVisible
+        {
+            get => (bool)GetValue(IsExtraControlVisibleProperty);
+            set => SetValue(IsExtraControlVisibleProperty, value);
+        }
 
         #region Управление
 
@@ -39,6 +48,14 @@ namespace DialogMaker.Lib.Elements
         {
             var size = _background.RenderSize / 2;
             return _background.GetPosition(relativeTo) + size;
+        }
+        public Rect GetConnectorRect(Visual relativeTo)
+        {
+            var scale = _border.GetVisualTreeScale();
+            var position = _border.GetPosition(relativeTo);
+            var size = _border.RenderSize;
+
+            return new(position, size * scale);
         }
 
         #endregion
@@ -72,15 +89,30 @@ namespace DialogMaker.Lib.Elements
         {
             if (d is DiagramNodePort view && e.NewValue is bool value)
             {
-                int column = 0;
+                int column = 2;
 
                 if (value)
                 {
-                    column = 1;
+                    column = 0;
                 }
 
-                Grid.SetColumn(view._text, column);
-                Grid.SetColumn(view._border, 1 - column);
+                Grid.SetColumn(view._fieldContainer, 2 - column);
+                //Grid.SetColumn(view._text, column);
+                Grid.SetColumn(view._border, column);
+            }
+        }
+        private static void OnExtraControlChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is DiagramNodePort view)
+            {
+                view._fieldContainer.Child = e.NewValue as UIElement;
+            }
+        }
+        private static void OnIsExtraControlVisiblePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is DiagramNodePort view && e.NewValue is bool value)
+            {
+                view._fieldContainer.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
             }
         }
 
@@ -96,6 +128,10 @@ namespace DialogMaker.Lib.Elements
             typeof(DiagramNodePort), new(OnIsActiveChanged));
         public static readonly DependencyProperty InvertProperty = DependencyProperty.Register(nameof(Invert), typeof(bool),
             typeof(DiagramNodePort), new(OnInvertChanged));
+        public static readonly DependencyProperty ExtraControlProperty = DependencyProperty.Register(nameof(ExtraControl), typeof(UIElement),
+            typeof(DiagramNodePort), new(OnExtraControlChanged));
+        public static readonly DependencyProperty IsExtraControlVisibleProperty = DependencyProperty.Register(nameof(IsExtraControlVisible), typeof(bool),
+            typeof(DiagramNodePort), new(true, OnIsExtraControlVisiblePropertyChanged));
 
         #endregion
     }

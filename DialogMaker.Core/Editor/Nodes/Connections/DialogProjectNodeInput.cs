@@ -1,16 +1,18 @@
 ﻿using Acly;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
     public class DialogProjectNodeInput : DialogProjectNodePort, IValuePort
     {
-        public DialogProjectNodeInput(INode node, int portId, DialogNodePortType dataType) 
+        public DialogProjectNodeInput(INode node, int portId, DialogNodePortType dataType)
             : base(node, portId, dataType)
         {
         }
-        public DialogProjectNodeInput(INode node, int portId, DialogNodeConnectionType connectionType, DialogNodePortType dataType) 
+        public DialogProjectNodeInput(INode node, int portId, DialogNodeConnectionType connectionType, DialogNodePortType dataType)
             : base(node, portId, connectionType, dataType)
         {
         }
@@ -25,16 +27,8 @@ namespace DialogMaker.Core.Editor.Nodes
         }
         public override int ConnectionsCount => Connections.Count;
         public virtual bool CanPresetValue { get; }
-
-        protected override IEditableList ConnectionsList => Connections;
-        protected virtual bool Multiconnection { get; }
-        protected object PresetValue
-        {
-            get => ((IValuePort)this).Value;
-            set => ((IValuePort)this).Value = value;
-        }
-
-        object IValuePort.Value
+        [Name("Значение")]
+        public object Value
         {
             get
             {
@@ -59,12 +53,14 @@ namespace DialogMaker.Core.Editor.Nodes
                     throw new ArgumentException($"Невозможно преобразовать значение из {type} в {DataType}", nameof(value));
                 }
 
-                InvokePropertyChanging("Value");
+                InvokePropertyChanging(nameof(Value));
                 field = Node.DataConverter.Convert(type, value, DataType);
-                InvokePropertyChanging("Value");
+                InvokePropertyChanged(nameof(Value));
             }
         }
 
+        protected override IEditableList ConnectionsList => Connections;
+        protected virtual bool Multiconnection { get; }
 
         private EditableCollection<DialogProjectNodeOutput>? _connections;
 
@@ -76,10 +72,41 @@ namespace DialogMaker.Core.Editor.Nodes
 
             if (CanPresetValue)
             {
-                result.Value = PresetValue;
+                result.Value = Value;
             }
 
             return result;
+        }
+        protected override void RestoreState(DialogProjectNodePortSavedState savedState)
+        {
+            base.RestoreState(savedState);
+
+            if (!CanPresetValue || savedState.Value == null)
+            {
+                return;
+            }
+
+            try
+            {
+                var restoredValue = savedState.Value;
+
+                if (savedState.Value is JToken token)
+                {
+                    var defaultType = DataType.GetDefaultType();
+                    restoredValue = token.ToObject(defaultType);
+                    restoredValue ??= DataType.GetDefaultValue();
+                }
+                if (restoredValue == null)
+                {
+                    return;
+                }
+
+                Value = restoredValue;
+            }
+            catch (Exception error)
+            {
+                Debug.WriteLine(error);
+            }
         }
 
         protected override bool Validate(DialogProjectNodePort? port)

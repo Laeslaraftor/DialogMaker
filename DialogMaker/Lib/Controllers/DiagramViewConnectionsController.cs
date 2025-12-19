@@ -274,10 +274,12 @@ namespace DialogMaker.Lib.Controllers
         {
             DialogProjectNodePortProxy? result = null;
             int skipCount = 0;
+            Point position = mouse.GetPosition(View);
 
-            await View.Fetch(mouse, obj =>
+            await View.Fetch(position, obj =>
             {
                 if (obj is DiagramNodePort view &&
+                    view.GetConnectorRect(View).IntersectsWith(position) &&
                     view.DataContext is DialogProjectNodePortProxy port)
                 {
                     result = port;

@@ -58,7 +58,7 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             get
             {
-                field ??= new(this, 2, DialogNodePortType.Integer);
+                field ??= new(this, 2, DialogNodePortType.Number);
                 return field;
             }
         }

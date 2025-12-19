@@ -7,6 +7,7 @@ using DialogMaker.Lib.InputFields;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
 using System.Windows;
 
 namespace DialogMaker.Lib.Controllers
@@ -168,7 +169,7 @@ namespace DialogMaker.Lib.Controllers
 
             return false;
         }
-        public static bool TryGetInfo(PropertyInfo? propertyInfo, [NotNullWhen(true)] out EditableTypeInfo result)
+        public static bool TryGetInfo(PropertyInfo? propertyInfo, Type? propertyType, [NotNullWhen(true)] out EditableTypeInfo result)
         {
             result = default;
 
@@ -178,7 +179,9 @@ namespace DialogMaker.Lib.Controllers
                 return false;
             }
 
-            if (TryGetInfo(propertyInfo?.PropertyType, out result))
+            propertyType ??= propertyInfo.PropertyType;
+
+            if (TryGetInfo(propertyType, out result))
             {
                 result = new(result)
                 {
@@ -188,6 +191,10 @@ namespace DialogMaker.Lib.Controllers
             }
 
             return false;
+        }
+        public static bool TryGetInfo(PropertyInfo? propertyInfo, [NotNullWhen(true)] out EditableTypeInfo result)
+        {
+            return TryGetInfo(propertyInfo, propertyInfo?.PropertyType, out result);
         }
         public static bool IsAvailable(Type? propertyType)
         {
@@ -208,11 +215,11 @@ namespace DialogMaker.Lib.Controllers
             var view = info.ViewFabric(property);
             return new(instance, property, info, view);
         }
-        public static bool TryCreate(ObservableObject instance, PropertyInfo property, [NotNullWhen(true)] out PropertyEditorController? result)
+        public static bool TryCreate(ObservableObject instance, PropertyInfo property, Type propertyType, [NotNullWhen(true)] out PropertyEditorController? result)
         {
             result = null;
 
-            if (property.CanRead && TryGetInfo(property, out var info))
+            if (property.CanRead && TryGetInfo(property, propertyType, out var info))
             {
                 var view = info.ViewFabric(property);
                 result = new(instance, property, info, view);
@@ -220,6 +227,10 @@ namespace DialogMaker.Lib.Controllers
             }
 
             return false;
+        }
+        public static bool TryCreate(ObservableObject instance, PropertyInfo property, [NotNullWhen(true)] out PropertyEditorController? result)
+        {
+            return TryCreate(instance, property, property.PropertyType, out result);
         }
         public static List<PropertyEditorController> CreateForAllProperties(ObservableObject instance)
         {

@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core.Editor.Nodes
+﻿using System;
+
+namespace DialogMaker.Core.Editor.Nodes
 {
     public interface IValuePort
     {

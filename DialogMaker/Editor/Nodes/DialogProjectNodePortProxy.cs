@@ -4,9 +4,7 @@ using DialogMaker.Lib.Controllers;
 using DialogMaker.Lib.Elements;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Reflection;
 using System.Windows.Media;
-using System.Xml.Linq;
 using Color = System.Drawing.Color;
 
 namespace DialogMaker.Editor

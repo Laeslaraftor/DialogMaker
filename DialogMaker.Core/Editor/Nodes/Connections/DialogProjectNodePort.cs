@@ -67,7 +67,7 @@ namespace DialogMaker.Core.Editor.Nodes
                    port != this &&
                    Node != port.Node &&
                    ConnectionType == port.ConnectionType &&
-                   Node.DataConverter.CanConvert(DataType, port.DataType) &&
+                   Node.DataConverter.CanConvert(this, port) &&
                    Validate(port);
         }
         public void Connect(DialogProjectNodePort? port)

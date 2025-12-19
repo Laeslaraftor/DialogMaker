@@ -10,10 +10,12 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <TextBlock x:Name="_text" Margin="4,0"
-                   VerticalAlignment="Bottom"/>
-        <Border x:Name="_border" Grid.Column="1" Width="14" Height="14"
+        <Border x:Name="_fieldContainer"/>
+        <TextBlock x:Name="_text" Margin="4,0" Grid.Column="1"
+                   VerticalAlignment="Center"/>
+        <Border x:Name="_border" Grid.Column="2" Width="14" Height="14"
                 BorderBrush="{DynamicResource AccentFillColorDefaultBrush}" 
                 BorderThickness="2" CornerRadius="30">
             <Border x:Name="_background" Background="{DynamicResource AccentFillColorDefaultBrush}"

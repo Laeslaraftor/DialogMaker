@@ -11,22 +11,8 @@
         }
 
         public override DialogNodeType NodeType => DialogNodeType.Number;
-        [Name("Значение")]
-        public float Value
-        {
-            get => field;
-            set
-            {
-                if (field != value)
-                {
-                    InvokePropertyChanging(nameof(Value));
-                    field = value;
-                    InvokePropertyChanged(nameof(Value));
-                }
-            }
-        }
         [NodeInput("Значение")]
-        public DialogProjectNodeInputFloat Input
+        public DialogProjectNodeInputNumber Input
         {
             get
             {
@@ -35,7 +21,7 @@
             }
         }
         [NodeOutput("Значение")]
-        public DialogProjectNodeOutputFloat Output
+        public DialogProjectNodeOutputNumber Output
         {
             get
             {
@@ -43,21 +29,5 @@
                 return field;
             }
         }
-
-        #region Управление
-
-        protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)
-        {
-            base.ModifySavedState(savedState);
-            savedState.Properties.TryAdd(nameof(Value), Value);
-        }
-
-        protected override void Restore(DialogProjectDialogNodeSavedState savedState)
-        {
-            base.Restore(savedState);
-            Value = savedState.GetProperty<float>(nameof(Value));
-        }
-
-        #endregion
     }
 }
