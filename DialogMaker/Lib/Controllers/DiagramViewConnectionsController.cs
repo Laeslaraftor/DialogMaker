@@ -3,6 +3,7 @@ using DialogMaker.Core;
 using DialogMaker.Editor;
 using DialogMaker.Lib.Elements;
 using System.Diagnostics.CodeAnalysis;
+using System.Printing;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -124,16 +125,23 @@ namespace DialogMaker.Lib.Controllers
 
         #region Управление
 
-        public void UpdateConnections()
+        public void UpdateConnections(DialogProjectNode? node = null)
         {
-            Clear();
-
             if (Dialog == null)
             {
+                Clear();
                 return;
             }
 
-            var connections = Dialog.GetConnections();
+            var connections = Dialog.GetPairConnections(node);
+            List<Curve>? curvesToRemove = null;
+            Action<Curve> handleCurve = EmptyCurveHandler;
+
+            if (node == null)
+            {
+                curvesToRemove = [.. _curves];
+                handleCurve = c => curvesToRemove.Remove(c);
+            }
 
             foreach (var info in connections)
             {
@@ -141,10 +149,19 @@ namespace DialogMaker.Lib.Controllers
                 {
                     var curve = GetCurve(info.Key, true);
                     curve.EndPort = end;
+                    handleCurve(curve);
+                }
+            }
+            
+            if (curvesToRemove != null)
+            {
+                foreach (var curve in curvesToRemove)
+                {
+                    RemoveCurve(curve, true);
                 }
             }
         }
-        public void UpdateConnections(DialogProjectNode node)
+        public void UpdatePosition(DialogProjectNode node)
         {
             void CheckPorts(IEnumerable<DialogProjectNodePortProxy> ports)
             {
@@ -371,6 +388,14 @@ namespace DialogMaker.Lib.Controllers
             }
 
             _currentCurve = null;
+        }
+
+        #endregion
+
+        #region Статика
+
+        private static void EmptyCurveHandler(Curve curve)
+        {
         }
 
         #endregion

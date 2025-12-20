@@ -18,7 +18,7 @@ namespace DialogMaker.Core.Editor.Nodes
         }
         protected DialogProjectDialogNode(DialogProjectDialog dialog, DialogProjectDialogNodeSavedState savedState)
         {
-            Id = Guid.Parse(savedState.Id);
+            Id = savedState.Id;
             Dialog = dialog;
             Position = savedState.Position;
 
@@ -128,7 +128,7 @@ namespace DialogMaker.Core.Editor.Nodes
             var savedState = CreateSavedState();
             ModifySavedState(savedState);
 
-            savedState.Id = Id.ToString();
+            savedState.Id = Id;
             savedState.NodeType = NodeType;
             savedState.Position = Position;
             

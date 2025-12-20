@@ -292,6 +292,39 @@ namespace DialogMaker
                 };
             }
 
+            public static Point operator +(Point p1, Vector2 p2)
+            {
+                return new()
+                {
+                    X = p1.X + p2.X,
+                    Y = p1.Y + p2.Y
+                };
+            }
+            public static Point operator -(Point p1, Vector2 p2)
+            {
+                return new()
+                {
+                    X = p1.X - p2.X,
+                    Y = p1.Y - p2.Y
+                };
+            }
+            public static Point operator *(Point p1, Vector2 p2)
+            {
+                return new()
+                {
+                    X = p1.X * p2.X,
+                    Y = p1.Y * p2.Y
+                };
+            }
+            public static Point operator /(Point p1, Vector2 p2)
+            {
+                return new()
+                {
+                    X = p1.X / p2.X,
+                    Y = p1.Y / p2.Y
+                };
+            }
+
             public static Point operator +(Point p1, Point p2)
             {
                 return new()
@@ -407,6 +440,39 @@ namespace DialogMaker
             public Point ToPoint()
             {
                 return new(vector.X, vector.Y);
+            }
+
+            public static Vector2 operator +(Vector2 p1, Point p2)
+            {
+                return new()
+                {
+                    X = (float)(p1.X + p2.X),
+                    Y = (float)(p1.Y + p2.Y)
+                };
+            }
+            public static Vector2 operator -(Vector2 p1, Point p2)
+            {
+                return new()
+                {
+                    X = (float)(p1.X - p2.X),
+                    Y = (float)(p1.Y - p2.Y)
+                };
+            }
+            public static Vector2 operator *(Vector2 p1, Point p2)
+            {
+                return new()
+                {
+                    X = (float)(p1.X * p2.X),
+                    Y = (float)(p1.Y * p2.Y)
+                };
+            }
+            public static Vector2 operator /(Vector2 p1, Point p2)
+            {
+                return new()
+                {
+                    X = (float)(p1.X / p2.X),
+                    Y = (float)(p1.Y / p2.Y)
+                };
             }
         }
         extension(Size Size)

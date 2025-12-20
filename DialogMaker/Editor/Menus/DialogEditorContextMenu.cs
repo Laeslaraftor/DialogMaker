@@ -1,6 +1,7 @@
-﻿using DialogMaker.Core.Editor.Nodes;
+﻿using DialogMaker.Core;
+using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Lib;
-using DialogMaker.Core;
+using System.Windows.Input;
 
 namespace DialogMaker.Editor.Menus
 {
@@ -15,27 +16,89 @@ namespace DialogMaker.Editor.Menus
 
         protected override IEnumerable<IContextMenuModifier> GetItems()
         {
-            yield return new ContextMenuContainer("Добавить", GetNodes());
+            yield return new ContextMenuContainer(Icons.Add, "Добавить", GetNodes());
             yield return ContextMenuSeparator.Instance;
-            yield return new ContextMenuAction("Копировать",
-                CanClipboardAction, RemoveDialog, Icons.Copy);
-            yield return new ContextMenuAction("Вырезать",
-                CanClipboardAction, RemoveDialog, Icons.Cut);
-            yield return new ContextMenuAction("Вставить",
-                CanClipboardAction, RemoveDialog, Icons.Paste);
-            yield return ContextMenuSeparator.Instance;
+
+            foreach (var modifier in CreateClipboardModifiers(Item))
+            {
+                yield return modifier;
+            }
+
             yield return new ContextMenuAction("Удалить",
-                CanDelete, RemoveDialog, Icons.Delete);
+                CanDelete, RemoveDialog, Icons.Delete)
+            {
+                Shortcut = Key.Delete.ToString()
+            };
         }
 
         private IEnumerable<IContextMenuModifier> GetNodes()
         {
+            Dictionary<string, List<NodeInfo>> folders = [];
+
             foreach (var nodeInfo in DialogProjectDialogNode.AvailableNodes)
             {
                 var name = nodeInfo.Key.GetEnumAttribute<NameAttribute>()?.Name;
+                var path = nodeInfo.Key.GetEnumAttribute<PathAttribute>()?.Path ?? string.Empty;
                 name ??= nodeInfo.Key.ToString();
 
-                yield return new ContextMenuAction(name, p => AddNode(p, nodeInfo.Key));
+                if (!folders.TryGetValue(path, out var nodes))
+                {
+                    nodes = [];
+                    folders.Add(path, nodes);
+                }
+
+                nodes.Add(new(name, nodeInfo.Key, nodeInfo.Value));
+            }
+
+            foreach (var info in folders)
+            {
+                foreach (var modifier in CreateFolder(info))
+                {
+                    yield return modifier;
+                }
+            }
+        }
+        IEnumerable<IContextMenuModifier> CreateFolder(KeyValuePair<string, List<NodeInfo>> info)
+        {
+            if (info.Value.Count == 0)
+            {
+                return [];
+            }
+
+            var parts = info.Key.Split('/');
+            var nodes = CreateNodes(info.Value);
+
+            return CreateContainer(nodes, parts);
+        }
+        IEnumerable<IContextMenuModifier> CreateContainer(IEnumerable<IContextMenuModifier> nodes, string[] parts)
+        {
+            if (parts.Length == 0)
+            {
+                foreach (var node in nodes)
+                {
+                    yield return node;
+                }
+            }
+
+            ContextMenuContainer Create(int index)
+            {
+                IEnumerable<IContextMenuModifier> next = nodes;
+
+                if (index + 1 < parts.Length)
+                {
+                    next = [Create(index + 1)];
+                }
+
+                return new ContextMenuContainer(parts[index], next);
+            }
+
+            yield return Create(0);
+        }
+        private IEnumerable<IContextMenuModifier> CreateNodes(IEnumerable<NodeInfo> nodesInfo)
+        {
+            foreach (var info in nodesInfo)
+            {
+                yield return new ContextMenuAction(info.Name, p => AddNode(p, info.NodeType));
             }
         }
 
@@ -58,10 +121,6 @@ namespace DialogMaker.Editor.Menus
             });
         }
 
-        private bool CanClipboardAction(object? parameter)
-        {
-            return false;
-        }
         private bool CanDelete(object? parameter)
         {
             return Resolve(parameter, dialog =>
@@ -83,6 +142,42 @@ namespace DialogMaker.Editor.Menus
         #region Статика
 
         public static readonly DialogContextMenu Instance = new();
+
+        public static IEnumerable<IContextMenuModifier> CreateClipboardModifiers(ProjectDialog? dialog)
+        {
+            if (dialog == null)
+            {
+                yield break;
+            }
+
+            yield return new ContextMenuAction("Копировать",
+                    dialog.Clipboard.CopyCommand, Icons.Copy)
+            {
+                Shortcut = "Ctrl+C"
+            };
+            yield return new ContextMenuAction("Вырезать",
+                    dialog.Clipboard.CutCommand, Icons.Cut)
+            {
+                Shortcut = "Ctrl+X"
+            };
+            yield return new ContextMenuAction("Вставить",
+                    dialog.Clipboard.PasteCommand, Icons.Paste)
+            {
+                Shortcut = "Ctrl+V"
+            };
+            yield return ContextMenuSeparator.Instance;
+        }
+
+        #endregion
+
+        #region Классы
+
+        private readonly struct NodeInfo(string name, DialogNodeType nodeType, Type type)
+        {
+            public string Name { get; } = name;
+            public DialogNodeType NodeType { get; } = nodeType;
+            public Type Type { get; } = type;
+        }
 
         #endregion
     }

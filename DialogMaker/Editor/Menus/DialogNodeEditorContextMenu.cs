@@ -1,6 +1,5 @@
-﻿using DialogMaker.Core;
-using DialogMaker.Core.Editor.Nodes;
-using DialogMaker.Lib;
+﻿using DialogMaker.Lib;
+using System.Windows.Input;
 
 namespace DialogMaker.Editor.Menus
 {
@@ -15,23 +14,20 @@ namespace DialogMaker.Editor.Menus
 
         protected override IEnumerable<IContextMenuModifier> GetItems()
         {
-            yield return new ContextMenuAction("Копировать",
-                CanClipboardAction, RemoveDialog, Icons.Copy);
-            yield return new ContextMenuAction("Вырезать",
-                CanClipboardAction, RemoveDialog, Icons.Cut);
-            yield return new ContextMenuAction("Вставить",
-                CanClipboardAction, RemoveDialog, Icons.Paste);
-            yield return ContextMenuSeparator.Instance;
+            foreach (var modifier in DialogEditorContextMenu.CreateClipboardModifiers(Item?.Dialog))
+            {
+                yield return modifier;
+            }
+
             yield return new ContextMenuAction("Удалить",
-                CanDelete, RemoveDialog, Icons.Delete);
+                CanDelete, RemoveDialog, Icons.Delete)
+            {
+                Shortcut = Key.Delete.ToString()
+            };
         }
 
         #region Команды
 
-        private bool CanClipboardAction(object? parameter)
-        {
-            return false;
-        }
         private bool CanDelete(object? parameter)
         {
             return Resolve(parameter, node =>

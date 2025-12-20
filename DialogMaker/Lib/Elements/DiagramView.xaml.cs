@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Input;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -112,6 +113,7 @@ namespace DialogMaker.Lib.Elements
             }
             if (newValue != null)
             {
+                newValue.Nodes.ItemChanged -= OnNodesItemChanged;
                 newValue.Nodes.ItemChanged += OnNodesItemChanged;
 
                 foreach (var node in newValue.Nodes)
@@ -197,11 +199,13 @@ namespace DialogMaker.Lib.Elements
             }
         }
 
-        private void OnNodesItemChanged(object? sender, CollectionItemEventArgs<DialogProjectNode> e)
+        private async void OnNodesItemChanged(object? sender, CollectionItemEventArgs<DialogProjectNode> e)
         {
             if (e.Action == CollectionItemAction.Add)
             {
                 CreateNode(e.Item);
+                await Task.Delay(50);
+                _connections.UpdateConnections(e.Item);
             }
             else if (e.Action == CollectionItemAction.Remove)
             {
@@ -218,7 +222,7 @@ namespace DialogMaker.Lib.Elements
                 if (element is DiagramNode node
                     && TryGetNode(node, out var model))
                 {
-                    _connections.UpdateConnections(model);
+                    _connections.UpdatePosition(model);
                 }
             }
         }

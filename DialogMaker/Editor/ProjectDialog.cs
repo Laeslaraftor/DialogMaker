@@ -2,11 +2,13 @@
 using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor.Menus;
+using DialogMaker.Editor.Nodes;
 using DialogMaker.Lib;
 using System.Collections;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Xml.Linq;
 
 namespace DialogMaker.Editor
 {
@@ -16,6 +18,7 @@ namespace DialogMaker.Editor
         {
             Original = dialog;
             Pack = pack;
+            Clipboard = new(this);
 
             _nodesConverter = new(this);
             _nodesSync = new(dialog.Nodes, Nodes, _nodesConverter);
@@ -64,6 +67,7 @@ namespace DialogMaker.Editor
         public override IEnumerable? Children => Nodes;
         public EditableCollection<DialogProjectNode> Nodes { get; } = [];
         public EditableCollection<DialogProjectNode> SelectedNodes { get; } = [];
+        public ProjectNodesClipboard Clipboard { get; }
 
         private readonly ProjectNodeConverter _nodesConverter;
         private readonly CollectionSynchronizer<DialogProjectDialogNode, DialogProjectNode> _nodesSync;
@@ -114,7 +118,70 @@ namespace DialogMaker.Editor
                 }
             }
         }
-        public IEnumerable<KeyValuePair<DialogProjectNodePortProxy, List<DialogProjectNodePortProxy>>> GetConnections()
+        public IEnumerable<KeyValuePair<DialogProjectNodePortProxy, List<DialogProjectNodePortProxy>>> GetPairConnections(DialogProjectNode? connectedNode)
+        {
+            if (connectedNode == null)
+            {
+                return GetPairConnections();
+            }
+
+            Dictionary<DialogProjectNodePortProxy, List<DialogProjectNodePortProxy>> connections = [];
+
+            void AddOutputs(DialogProjectNode node)
+            {
+                foreach (var output in node.Outputs)
+                {
+                    connections.TryAdd(output, []);
+                }
+            }
+            DialogProjectNodePortProxy FindProxy(DialogProjectNodePort port)
+            {
+                foreach (var node in Nodes)
+                {
+                    if (node.Original == port.Node)
+                    {
+                        foreach (var proxy in node.GetPorts())
+                        {
+                            if (proxy.Original == port)
+                            {
+                                return proxy;
+                            }
+                        }
+                    }
+                }
+
+                throw new ArgumentException($"Не удалось найти порт {port}", nameof(port));
+            }
+
+            AddOutputs(connectedNode);
+
+            foreach (var port in connectedNode.Inputs)
+            {
+                foreach (var output in port.Original)
+                {
+                    try
+                    {
+                        connections.Add(FindProxy(output), [port]);
+                    }
+                    catch (Exception error)
+                    {
+                        error.Alert();
+                    }
+                }
+            }
+            foreach (var port in connectedNode.Outputs)
+            {
+                var connectionsList = connections[port];
+
+                foreach (var input in port.Original)
+                {
+                    connectionsList.Add(FindProxy(input));
+                }
+            }
+
+            return connections;
+        }
+        public IEnumerable<KeyValuePair<DialogProjectNodePortProxy, List<DialogProjectNodePortProxy>>> GetPairConnections()
         {
             Dictionary<DialogProjectNodePortProxy, List<DialogProjectNodePortProxy>> connections = [];
 

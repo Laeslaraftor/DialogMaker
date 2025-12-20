@@ -81,7 +81,7 @@ namespace DialogMaker.Core.Editor.Nodes
 
             Character = savedState.RestoreReference<DialogProjectCharacter>(Project, nameof(Character));
 
-            var variants = savedState.GetProperty<DialogProjectReferenceSavedState[]>(nameof(Variants));
+            var variants = savedState.GetProperty<IEnumerable<DialogProjectReferenceSavedState>>(nameof(Variants));
 
             if (variants == null)
             {

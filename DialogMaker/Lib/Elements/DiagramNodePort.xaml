@@ -12,7 +12,8 @@
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <Border x:Name="_fieldContainer"/>
+        <Border x:Name="_fieldContainer"
+                MaxWidth="250"/>
         <TextBlock x:Name="_text" Margin="4,0" Grid.Column="1"
                    VerticalAlignment="Center"/>
         <Border x:Name="_border" Grid.Column="2" Width="14" Height="14"

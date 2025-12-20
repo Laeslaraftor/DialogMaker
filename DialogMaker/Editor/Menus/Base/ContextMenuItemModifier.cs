@@ -44,6 +44,19 @@ namespace DialogMaker.Editor.Menus
                 }
             }
         }
+        public string? Shortcut
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(Shortcut));
+                    field = value;
+                    InvokePropertyChanged(nameof(Shortcut));
+                }
+            }
+        }
 
         private readonly ElementsPool<MenuItem> _itemsPool = new();
         private readonly Dictionary<ItemCollection, ItemInfo> _items = [];
@@ -88,6 +101,7 @@ namespace DialogMaker.Editor.Menus
         protected virtual void SetupItem(MenuItem item)
         {
             item.Header = Name;
+            item.InputGestureText = Shortcut;
 
             if (Icon == null)
             {

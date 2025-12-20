@@ -1,12 +1,13 @@
 ﻿using Acly;
 using DialogMaker.Core.Editor.Nodes;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.ComponentModel;
-using System.Collections.Generic;
+using System.Xml.Linq;
 
 namespace DialogMaker.Core.Editor
 {
@@ -33,7 +34,7 @@ namespace DialogMaker.Core.Editor
                 }
                 catch (Exception error)
                 {
-                    Debug.WriteLine(error); 
+                    Debug.WriteLine(error);
                 }
             }
 
@@ -109,6 +110,34 @@ namespace DialogMaker.Core.Editor
             return false;
         }
 
+        public DialogProjectDialogNode RestoreNode(DialogProjectDialogNodeSavedState savedState)
+        {
+            return RestoreNode(savedState, true);
+        }
+        public IEnumerable<DialogProjectDialogNode> RestoreNode(IEnumerable<DialogProjectDialogNodeSavedState> savedStates, Action<Exception>? exceptionsHandler = null)
+        {
+            Dictionary<DialogProjectDialogNode, DialogProjectDialogNodeSavedState> nodeStates = [];
+
+            foreach (var node in savedStates)
+            {
+                DialogProjectDialogNode restoredNode;
+
+                try
+                {
+                    restoredNode = RestoreNode(node, false);
+                    nodeStates.Add(restoredNode, node);
+                }
+                catch (Exception error)
+                {
+                    exceptionsHandler?.Invoke(error);
+                    continue;
+                }
+
+                yield return restoredNode;
+            }
+
+            RestoreConnections(nodeStates);
+        }
         public DialogProjectDialogNode CreateNode(DialogNodeType type)
         {
             var node = DialogProjectDialogNode.Create(this, type);
@@ -132,7 +161,20 @@ namespace DialogMaker.Core.Editor
             Nodes.ItemChanged -= OnNodesItemChanged;
         }
 
-        private void RestoreConnections(Dictionary<DialogProjectDialogNode, DialogProjectDialogNodeSavedState> nodes)
+        private DialogProjectDialogNode RestoreNode(DialogProjectDialogNodeSavedState savedState, bool restoreConnections)
+        {
+            var restoredNode = DialogProjectDialogNode.Restore(this, savedState);
+            Nodes.Add(restoredNode);
+
+            if (restoreConnections)
+            {
+                RestoreConnections(restoredNode, savedState);
+            }
+
+            return restoredNode;
+        }
+
+        private void RestoreConnections(DialogProjectDialogNode node, DialogProjectDialogNodeSavedState savedState)
         {
             void Restore(DialogProjectDialogNode node, Dictionary<int, DialogProjectNodePortSavedState> ports)
             {
@@ -171,16 +213,20 @@ namespace DialogMaker.Core.Editor
                 }
             }
 
+            if (savedState.Inputs.Count != 0)
+            {
+                Restore(node, savedState.Inputs);
+            }
+            if (savedState.Outputs.Count != 0)
+            {
+                Restore(node, savedState.Inputs);
+            }
+        }
+        private void RestoreConnections(Dictionary<DialogProjectDialogNode, DialogProjectDialogNodeSavedState> nodes)
+        {
             foreach (var node in nodes)
             {
-                if (node.Value.Inputs.Count != 0)
-                {
-                    Restore(node.Key, node.Value.Inputs);
-                }
-                if (node.Value.Outputs.Count != 0)
-                {
-                    Restore(node.Key, node.Value.Inputs);
-                }
+                RestoreConnections(node.Key, node.Value);
             }
         }
 
@@ -207,7 +253,7 @@ namespace DialogMaker.Core.Editor
 
         private void OnNodePropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (sender is DialogProjectDialogNode node && 
+            if (sender is DialogProjectDialogNode node &&
                 e.PropertyName == "IsDisposed")
             {
                 Nodes.Remove(node);
