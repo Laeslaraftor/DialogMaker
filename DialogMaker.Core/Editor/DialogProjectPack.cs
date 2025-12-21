@@ -35,6 +35,11 @@ namespace DialogMaker.Core.Editor
         }
         private DialogProjectPack(DialogProject project, string id, bool createResources)
         {
+            if (string.IsNullOrEmpty(id))
+            {
+                throw new ArgumentNullException("Идентификатор набора не должен быть пустым!", nameof(id));
+            }
+
             Project = project;
             Id = id;
             Folder = Path.Combine(project.ProjectPath, id);

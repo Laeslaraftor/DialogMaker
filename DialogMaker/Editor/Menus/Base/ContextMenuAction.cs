@@ -31,6 +31,19 @@ namespace DialogMaker.Editor.Menus
 
         public Action<object?> Execute { get; }
         public Func<object?, bool>? CanExecute { get; }
+        public object? CommandParameter
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(CommandParameter));
+                    field = value;
+                    InvokePropertyChanged(nameof(CommandParameter));
+                }
+            }
+        }
 
         #region Управление
 
@@ -58,6 +71,7 @@ namespace DialogMaker.Editor.Menus
         {
             base.SetupItem(item);
             item.Command = this;
+            item.CommandParameter = CommandParameter;
         }
 
         #endregion

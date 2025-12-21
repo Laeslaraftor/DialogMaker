@@ -31,7 +31,7 @@
             <StackPanel x:Name="_outputs" Grid.Row="1" Margin="4"
                         Grid.Column="2" Orientation="Vertical"/>
             <StackPanel x:Name="_properties" Grid.Row="1" 
-                        Grid.Column="1" Margin="4" MaxWidth="200"/>
+                        Grid.Column="1" Margin="4"/>
             <Border x:Name="_selectionOutline" Visibility="Collapsed"
                     Grid.ColumnSpan="3" Grid.RowSpan="3"
                     CornerRadius="10" Margin="-4"

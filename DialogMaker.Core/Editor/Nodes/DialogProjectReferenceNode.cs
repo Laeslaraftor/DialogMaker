@@ -15,7 +15,7 @@ namespace DialogMaker.Core.Editor.Nodes
         }
 
         public override DialogNodeType NodeType => DialogNodeType.Reference;
-        [Name("Переменная")]
+        [Name("Ресурс")]
         public DialogProjectReference? Reference
         {
             get => field;
@@ -50,7 +50,7 @@ namespace DialogMaker.Core.Editor.Nodes
         protected override void Restore(DialogProjectDialogNodeSavedState savedState)
         {
             base.Restore(savedState);
-            Reference = savedState.RestoreReference<DialogProjectString>(Project, nameof(Reference));
+            Reference = savedState.RestoreReference(Project, nameof(Reference));
         }
 
         #endregion

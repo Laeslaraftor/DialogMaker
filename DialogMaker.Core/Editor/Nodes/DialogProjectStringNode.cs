@@ -11,7 +11,7 @@
         }
 
         public override DialogNodeType NodeType => DialogNodeType.String;
-        [Name("Текст")]
+        [Name("Текст"), Text(AllowMultiline = true)]
         public string? Value
         {
             get => field;

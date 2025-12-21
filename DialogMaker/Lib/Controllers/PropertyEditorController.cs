@@ -25,7 +25,7 @@ namespace DialogMaker.Lib.Controllers
 
             inputField.CanEdit = property.CanWrite;
             inputField.Placeholder = Name;
-            inputField.View.ToolTip = Description;
+            inputField.View.ToolTip = string.IsNullOrEmpty(Description) ? null : Description;
             inputField.Value = Value;
 
             instance.PropertyChanged += OnInstancePropertyChanged;
@@ -111,7 +111,13 @@ namespace DialogMaker.Lib.Controllers
 
         private static readonly List<EditableTypeInfo> _allowedTypes = new()
         {
-            new(typeof(string), t => new TextInputField()),
+            new(typeof(string), t =>
+            {
+                return new TextInputField() 
+                {
+                    Multiline = t.GetCustomAttribute<TextAttribute>()?.AllowMultiline == true
+                };
+            }),
             new(typeof(bool), t => new BoolInputField()),
             new(typeof(float), t => new FloatInputField()),
             new(typeof(int), t => new IntInputField()),

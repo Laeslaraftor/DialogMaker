@@ -15,6 +15,15 @@ namespace DialogMaker.Core.Editor.Nodes
         }
 
         public override DialogNodeType NodeType => DialogNodeType.Divide;
+        [NodeInput("Вход")]
+        public DialogProjectNodeInputAction Input
+        {
+            get
+            {
+                field ??= new(this, 3);
+                return field;
+            }
+        }
         [NodeInput("Делимое")]
         public DialogProjectNodeInputValue FirstValue
         {

@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProject : ObservableObject, IProjectResourcesOwner, IDisposable
+    public class DialogProject : Disposable, IProjectResourcesOwner
     {
         public DialogProject(string projectPath, string id)
             : this(projectPath, id, true)
@@ -60,10 +60,6 @@ namespace DialogMaker.Core.Editor
             Languages = new();
 
             Languages.ItemChanged += OnLanguagesItemChanged;
-        }
-        ~DialogProject()
-        {
-            Dispose();
         }
 
         public event EventHandler<ItemActionEventArgs<DialogProjectPack>>? PacksChanged;
@@ -208,15 +204,15 @@ namespace DialogMaker.Core.Editor
             return Languages.Remove(language);
         }
 
-        public void Dispose()
-        {
-            Languages.ItemChanged -= OnLanguagesItemChanged;
-            GC.SuppressFinalize(this);
-        }
-
         public override string ToString()
         {
             return $"[{Id}] {Name}";
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+            Languages.ItemChanged -= OnLanguagesItemChanged;
         }
 
         #endregion

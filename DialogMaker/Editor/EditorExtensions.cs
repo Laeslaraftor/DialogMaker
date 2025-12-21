@@ -53,7 +53,16 @@ namespace DialogMaker.Editor
             else if (projectItem is DialogProjectReference reference &&
                 ProjectController.TryFindController(reference.Project, out controller))
             {
-                return ProjectResourceItem.Create(controller, reference.Resolve());
+                try
+                {
+                    return ProjectResourceItem.Create(controller, reference.Resolve());
+                }
+                catch (Exception error)
+                {
+                    error.Alert();
+                }
+
+                return null;
             }
             else if (projectItem is ProjectReference editorReference)
             {

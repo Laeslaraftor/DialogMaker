@@ -59,6 +59,20 @@ namespace DialogMaker.Lib.InputFields
                 }
             }
         }
+        public bool Multiline
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(Multiline));
+                    field = value;
+                    _view.TextBox.AcceptsReturn = value;
+                    InvokePropertyChanged(nameof(Multiline));
+                }
+            }
+        }
         public override FrameworkElement View => _view;
 
         protected virtual Type ValueType { get; } = typeof(string);

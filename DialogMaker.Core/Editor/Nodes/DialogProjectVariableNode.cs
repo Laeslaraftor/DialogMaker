@@ -12,7 +12,7 @@
 
         public override DialogNodeType NodeType => DialogNodeType.Variable;
         [Name("Переменная"), Reference(DialogResourceType.Variable)]
-        public DialogProjectReference<DialogProjectString>? Variable
+        public DialogProjectReference<DialogProjectVariable>? Variable
         {
             get => field;
             set
@@ -25,7 +25,7 @@
                 }
             }
         }
-        [NodeInput("Значение")]
+        [NodeInput("Ввод")]
         public DialogProjectNodeInputValue Input
         {
             get
@@ -34,7 +34,7 @@
                 return field;
             }
         }
-        [NodeOutput("Значение")]
+        [NodeOutput("Вывод")]
         public DialogProjectNodeOutputObject Output
         {
             get
@@ -55,7 +55,7 @@
         protected override void Restore(DialogProjectDialogNodeSavedState savedState)
         {
             base.Restore(savedState);
-            Variable = savedState.RestoreReference<DialogProjectString>(Project, nameof(Variable));
+            Variable = savedState.RestoreReference<DialogProjectVariable>(Project, nameof(Variable));
         }
 
         #endregion

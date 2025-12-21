@@ -53,7 +53,7 @@ namespace DialogMaker.Lib.Elements
         }
         private void OnTextKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Enter || e.Key == Key.Escape)
+            if ((e.Key == Key.Enter && !_text.AcceptsReturn) || e.Key == Key.Escape)
             {
                 MainWindow.Instance.ClearFocus();
             }

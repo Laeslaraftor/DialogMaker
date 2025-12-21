@@ -11,6 +11,15 @@
         }
 
         public override DialogNodeType NodeType => DialogNodeType.Add;
+        [NodeInput("Вход")]
+        public DialogProjectNodeInputAction Input
+        {
+            get
+            {
+                field ??= new(this, 3);
+                return field;
+            }
+        }
         [NodeInput("Значение 1")]
         public DialogProjectNodeInputValue FirstValue
         {

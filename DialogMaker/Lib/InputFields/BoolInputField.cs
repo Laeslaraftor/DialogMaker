@@ -31,6 +31,7 @@ namespace DialogMaker.Lib.InputFields
             Grid.SetColumn(_placeholder, 1);
 
             _box.Checked += OnBoxChecked;
+            _box.Unchecked += OnBoxChecked;
         }
 
         public override string Placeholder
@@ -83,7 +84,9 @@ namespace DialogMaker.Lib.InputFields
         protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);
+
             _box.Checked -= OnBoxChecked;
+            _box.Unchecked -= OnBoxChecked;
         }
 
         #endregion

@@ -13,8 +13,9 @@ namespace DialogMaker.Core.Editor
         {
             Owner = owner;
             Folder = Path.Combine(owner.Folder, ResourcesFolder);
-            Strings = new();
-            Characters = new();
+            Strings = [];
+            Characters = [];
+            Variables = [];
 
             _items = new();
             Items = new(_items);
@@ -57,6 +58,17 @@ namespace DialogMaker.Core.Editor
                     Debug.WriteLine(error);
                 }
             }
+            foreach (var variable in savedState.Variables)
+            {
+                try
+                {
+                    Variables.Add(DialogProjectVariable.Restore(this, variable));
+                }
+                catch (Exception error)
+                {
+                    Debug.WriteLine(error);
+                }
+            }
         }
 
         public IProjectResourcesOwner Owner { get; }
@@ -64,6 +76,7 @@ namespace DialogMaker.Core.Editor
         public EditableCollection<DialogProjectString> Strings { get; }
         public ReferenceReadOnlyList<DialogProjectItem> Items { get; }
         public EditableCollection<DialogProjectCharacter> Characters { get; }
+        public EditableCollection<DialogProjectVariable> Variables { get; }
 
         private readonly ObservableList<DialogProjectItem> _items;
 
@@ -71,16 +84,17 @@ namespace DialogMaker.Core.Editor
 
         public void Save()
         {
-            if (!Directory.Exists(Folder))
+            if (Owner.Project.IsDisposed || !Directory.Exists(Folder))
             {
                 Directory.CreateDirectory(Folder);
             }
 
             DialogProjectResourcesSavedState savedState = new()
             {
-                Strings = Strings.Select(r => (DialogProjectStringSavedState)r.Save()).ToArray(),
-                Items = Items.Select(i => (DialogProjectResourceItemSavedState)i.Save()).ToArray(),
-                Characters = Characters.Select(c => (DialogProjectCharacterSavedState)c.Save()).ToArray()
+                Strings = [.. Strings.Select(r => (DialogProjectStringSavedState)r.Save())],
+                Items = [.. Items.Select(i => (DialogProjectResourceItemSavedState)i.Save())],
+                Characters = [.. Characters.Select(c => (DialogProjectCharacterSavedState)c.Save())],
+                Variables = [.. Variables.Select(v => (DialogProjectVariableSavedState)v.Save())]
             };
 
             string filePath = Path.Combine(Folder, ResourcesFileName);
@@ -100,6 +114,10 @@ namespace DialogMaker.Core.Editor
         {
             return Characters.TryGetValue(i => i.ProjectId == id, out result);
         }
+        public bool TryGetVariable(Guid id, [NotNullWhen(true)] out DialogProjectVariable? result)
+        {
+            return Variables.TryGetValue(i => i.ProjectId == id, out result);
+        }
         public bool TryGetObject(Guid id, Type resourceType, [NotNullWhen(true)] out DialogProjectResourceObject? result)
         {
             result = null;
@@ -108,21 +126,28 @@ namespace DialogMaker.Core.Editor
             {
                 if (TryGetString(id, out var str))
                 {
-                    result = (DialogProjectResourceObject)Convert.ChangeType(str, resourceType);
+                    result = str;
                 }
             }
             else if (resourceType == typeof(DialogProjectItem))
             {
                 if (TryGetItem(id, out var item))
                 {
-                    result = (DialogProjectResourceObject)Convert.ChangeType(item, resourceType);
+                    result = item;
                 }
             }
             else if (resourceType == typeof(DialogProjectCharacter))
             {
                 if (TryGetCharacter(id, out var character))
                 {
-                    result = (DialogProjectResourceObject)Convert.ChangeType(character, resourceType);
+                    result = character;
+                }
+            }
+            else if (typeof(DialogProjectVariable).IsAssignableFrom(resourceType))
+            {
+                if (TryGetVariable(id, out var variable))
+                {
+                    result = variable;
                 }
             }
 
@@ -190,6 +215,18 @@ namespace DialogMaker.Core.Editor
         public bool RemoveCharacter(DialogProjectCharacter character)
         {
             return Characters.Remove(character);
+        }
+
+        public DialogProjectVariable CreateVariable(DialogVariableType type)
+        {
+            DialogProjectVariable variable = DialogProjectVariable.Create(this, type);
+            Variables.Add(variable);
+
+            return variable;
+        }
+        public bool RemoveVariable(DialogProjectVariable variable)
+        {
+            return Variables.Remove(variable);
         }
 
         #endregion

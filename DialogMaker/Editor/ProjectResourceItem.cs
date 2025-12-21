@@ -62,6 +62,7 @@ namespace DialogMaker.Editor
         public virtual object? GetPreview()
         {
             var block = _previewBlocks.GetElement();
+            block.MaxWidth = 200;
             block.Margin = new(5, 0, 5, 0);
             block.TextWrapping = TextWrapping.Wrap;
             block.Text = ToString() ?? string.Empty;
@@ -132,6 +133,10 @@ namespace DialogMaker.Editor
             if (resource is DialogProjectItem item)
             {
                 return new ProjectResourceFile(controller, item);
+            }
+            if (resource is DialogProjectVariable variable)
+            {
+                return new ProjectVariable(controller, variable);
             }
 
             throw new ArgumentException($"Неизвестный тип ресурса: {resource.GetType()}", nameof(resource));

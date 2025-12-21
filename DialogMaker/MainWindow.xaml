@@ -6,8 +6,9 @@
         xmlns:lib="clr-namespace:DialogMaker.Lib.Elements"
         xmlns:models="clr-namespace:DialogMaker.ViewModels"
         xmlns:local="clr-namespace:DialogMaker"
+        xmlns:editor="clr-namespace:DialogMaker.Editor"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="1000"
+        Title="DialogMaker" Height="450" Width="1000"
         MinWidth="1000" MinHeight="400">
     <Grid>
         <Grid.RowDefinitions>
@@ -123,6 +124,37 @@
                                     <ListView.ItemTemplate>
                                         <DataTemplate>
                                             <lib:CharacterView Character="{Binding}"/>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </lib:MinimizableView.Child>
+                        </lib:MinimizableView>
+                        <lib:MinimizableView Margin="0,8,0,0">
+                            <lib:MinimizableView.Header>
+                                <Grid Margin="6,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Переменные" FontSize="28"
+                                               FontWeight="Medium" Margin="0,0,0,8"/>
+                                    <lib:DropDownButton Text="Создать" Grid.Column="1" VerticalAlignment="Center"
+                                                        ContextMenu="{Binding GlobalResources.CreateVariablesContextMenu}"/>
+                                </Grid>
+                            </lib:MinimizableView.Header>
+                            <lib:MinimizableView.Child>
+                                <ListView Grid.Row="1"
+                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                          HorizontalContentAlignment="Stretch"
+                                          ItemsSource="{Binding GlobalResources.Variables}">
+                                    <ListView.Template>
+                                        <ControlTemplate>
+                                            <ItemsPresenter/>
+                                        </ControlTemplate>
+                                    </ListView.Template>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <lib:VariableView Variable="{Binding}"/>
                                         </DataTemplate>
                                     </ListView.ItemTemplate>
                                 </ListView>

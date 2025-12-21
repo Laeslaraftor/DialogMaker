@@ -1,5 +1,4 @@
 ﻿using Acly;
-using DialogMaker.Core;
 using DialogMaker.Core.Editor;
 using DialogMaker.Editor.Menus;
 using DialogMaker.Lib;
@@ -8,7 +7,7 @@ using System.ComponentModel;
 
 namespace DialogMaker.Editor
 {
-    public class ProjectString : ProjectResourceItem<DialogProjectString>, IDisposable
+    public class ProjectString : ProjectResourceItem<DialogProjectString>
     {
         public ProjectString(ProjectController project, DialogProjectString original)
             : base(project, original)
@@ -20,10 +19,6 @@ namespace DialogMaker.Editor
 
             Project.PropertyChanged += OnProjectPropertyChanged;
             Variants.CollectionChanged += OnVariantsCollectionChanged;
-        }
-        ~ProjectString()
-        {
-            Dispose();
         }
 
         public ReferenceReadOnlyList<ProjectStringVariant> Variants { get; }

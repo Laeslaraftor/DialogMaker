@@ -21,7 +21,7 @@
                        Text="Пример текста" VerticalAlignment="Center"
                        FontSize="14" FontWeight="Medium" Foreground="Gray"
                        Margin="0,0,12,0"/>
-            <Label x:Name="_content" Grid.Column="1" Padding="0"
+            <Label x:Name="_content" Grid.Column="1" Padding="0,0,10,0"
                        VerticalAlignment="Center" FontWeight="Medium" 
                        Visibility="Collapsed"/>
         </Grid> 

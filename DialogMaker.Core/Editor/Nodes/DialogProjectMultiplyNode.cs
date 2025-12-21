@@ -11,6 +11,15 @@
         }
 
         public override DialogNodeType NodeType => DialogNodeType.Multiply;
+        [NodeInput("Вход")]
+        public DialogProjectNodeInputAction Input
+        {
+            get
+            {
+                field ??= new(this, 3);
+                return field;
+            }
+        }
         [NodeInput("Множимое")]
         public DialogProjectNodeInputValue FirstValue
         {

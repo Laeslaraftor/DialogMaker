@@ -45,8 +45,8 @@ namespace DialogMaker.Lib.Controllers
                 VerticalAlignment = VerticalAlignment.Top
             };
 
-            Grid.SetColumnSpan(_dragView, 100);
-            Grid.SetRowSpan(_dragView, 100);
+            Grid.SetColumnSpan(_dragViewContainer, 100);
+            Grid.SetRowSpan(_dragViewContainer, 100);
 
             panel.Children.Add(_dragViewContainer);
 

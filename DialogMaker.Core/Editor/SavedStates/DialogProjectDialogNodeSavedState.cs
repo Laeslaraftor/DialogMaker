@@ -106,8 +106,7 @@ namespace DialogMaker.Core.Editor
             return token.ToObject<T>();
         }
 
-        public DialogProjectReference<T>? RestoreReference<T>(DialogProject project, string name)
-            where T : DialogProjectResourceObject
+        public DialogProjectReference? RestoreReference(DialogProject project, string name)
         {
             var savedState = GetProperty<DialogProjectReferenceSavedState>(name);
 
@@ -118,11 +117,21 @@ namespace DialogMaker.Core.Editor
 
             try
             {
-                return DialogProjectReference<T>.Restore(project, savedState);
+                return DialogProjectReference.Restore(project, savedState);
             }
             catch (Exception error)
             {
                 Debug.WriteLine(error);
+            }
+
+            return null;
+        }
+        public DialogProjectReference<T>? RestoreReference<T>(DialogProject project, string name)
+            where T : DialogProjectResourceObject
+        {
+            if (RestoreReference(project, name) is DialogProjectReference<T> typedReference)
+            {
+                return typedReference;
             }
 
             return null;

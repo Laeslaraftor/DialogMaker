@@ -11,6 +11,15 @@
         }
 
         public override DialogNodeType NodeType => DialogNodeType.Compare;
+        [NodeInput("Вход")]
+        public DialogProjectNodeInputAction Input
+        {
+            get
+            {
+                field ??= new(this, 3);
+                return field;
+            }
+        }
         [Name("Тип сравнения")]
         public Comparison Comparison
         {

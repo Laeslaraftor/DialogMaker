@@ -27,7 +27,7 @@ namespace DialogMaker.Core.Editor.Nodes
         }
         public override int ConnectionsCount => Connections.Count;
         public virtual bool CanPresetValue { get; }
-        [Name("Значение")]
+        [Name("Значение"), Text(AllowMultiline = true)]
         public object Value
         {
             get
