@@ -15,6 +15,15 @@
         {
             return (T)base.GetElement();
         }
+        public bool Free(T element)
+        {
+            if (element == null)
+            {
+                return false;
+            }
+
+            return base.Free(element);
+        }
 
         #endregion
     }

@@ -16,9 +16,7 @@ namespace DialogMaker.Core.Editor
             Strings = [];
             Characters = [];
             Variables = [];
-
-            _items = new();
-            Items = new(_items);
+            Items = [];
 
             FileExtensions.CreateDirectory(Folder);
         }
@@ -29,7 +27,7 @@ namespace DialogMaker.Core.Editor
             {
                 try
                 {
-                    _items.Add(new(this, item));
+                    Items.Add(new(this, item));
                 }
                 catch (Exception error)
                 {
@@ -74,11 +72,9 @@ namespace DialogMaker.Core.Editor
         public IProjectResourcesOwner Owner { get; }
         public string Folder { get; }
         public EditableCollection<DialogProjectString> Strings { get; }
-        public ReferenceReadOnlyList<DialogProjectItem> Items { get; }
+        public EditableCollection<DialogProjectItem> Items { get; }
         public EditableCollection<DialogProjectCharacter> Characters { get; }
         public EditableCollection<DialogProjectVariable> Variables { get; }
-
-        private readonly ObservableList<DialogProjectItem> _items;
 
         #region Управление
 
@@ -108,7 +104,7 @@ namespace DialogMaker.Core.Editor
         }
         public bool TryGetItem(Guid id, [NotNullWhen(true)] out DialogProjectItem? result)
         {
-            return _items.TryGetValue(i => i.ProjectId == id, out result);
+            return Items.TryGetValue(i => i.ProjectId == id, out result);
         }
         public bool TryGetCharacter(Guid id, [NotNullWhen(true)] out DialogProjectCharacter? result)
         {
@@ -185,12 +181,13 @@ namespace DialogMaker.Core.Editor
             File.Copy(filePath, newFilePath, true);
 
             DialogProjectItem item = new(this, type, newFilePath);
+            Items.Add(item);
 
             return item;
         }
         public bool RemoveItem(DialogProjectItem item)
         {
-            return _items.Remove(item);
+            return Items.Remove(item);
         }
 
         public DialogProjectString CreateString()

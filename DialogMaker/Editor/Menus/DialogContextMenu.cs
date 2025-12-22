@@ -24,8 +24,6 @@ namespace DialogMaker.Editor.Menus
 
         #region Команды
 
-        #region Команды
-
         private void OpenInExplorer(object? parameter)
         {
             Resolve(parameter, dialog =>
@@ -44,8 +42,6 @@ namespace DialogMaker.Editor.Menus
                 dialog.Pack.RemoveDialog(dialog);
             });
         }
-
-        #endregion
 
         #endregion
 

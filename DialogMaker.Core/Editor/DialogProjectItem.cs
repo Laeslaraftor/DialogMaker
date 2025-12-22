@@ -35,7 +35,7 @@ namespace DialogMaker.Core.Editor
             string fileName = filePath.GetFileName(false);
             string expectedPath = Path.Combine(resources.Folder, fileName);
 
-            if (fileName != expectedPath)
+            if (filePath != expectedPath)
             {
                 throw new ArgumentException($"Неверный путь к файлу", nameof(filePath));
             }
@@ -43,27 +43,12 @@ namespace DialogMaker.Core.Editor
             FilePath = filePath;
             FileName = fileName;
             Type = type.GetValueOrDefault();
-            _name = filePath.GetFileName();
         }
 
         public override DialogResourceType ResourceType => DialogResourceType.File;
         public string FilePath { get; }
         public string FileName { get; }
         public DialogFileResourceType Type { get; }
-        public string Name
-        {
-            get => _name;
-            set
-            {
-                if (_name != value)
-                {
-                    _name = value;
-                    InvokePropertyChanged(nameof(Name));
-                }
-            }
-        }
-
-        private string _name;
 
         #region Управление
 
@@ -72,23 +57,28 @@ namespace DialogMaker.Core.Editor
             return new DialogProjectResourceItemSavedState
             {
                 FileName = FileName,
-                Name = Name?.Trim() ?? string.Empty,
                 ResourceType = Type
             };
         }
 
         public override string ToString()
         {
-            return $"[Ресурс {Id}:{Type}] {Name}";
+            return $"[Файл {Type}] {Id}";
         }
+
+        #endregion
+
+        #region Константы
+
+        public const string FilesFilter = "Все поддерживаемые форматы|*.ogg;*.mp3;*.mp4;*.jpg;*.jpeg;*.png|Аудиофайлы|*.ogg;*.mp3|Видео|*.mp4|Изображения|*.jpg;*.jpeg;*.png";
 
         #endregion
 
         #region Статика
 
-        private static readonly string[] _audioExtensions = { "ogg", "mp3" };
-        private static readonly string[] _videoExtensions = { "mp4" };
-        private static readonly string[] _imageExtensions = { "png", "jpg", "jpeg" };
+        private static readonly string[] _audioExtensions = ["ogg", "mp3"];
+        private static readonly string[] _videoExtensions = ["mp4"];
+        private static readonly string[] _imageExtensions = ["png", "jpg", "jpeg"];
 
         public static DialogFileResourceType? GetResourceType(string filePath)
         {

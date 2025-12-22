@@ -16,6 +16,8 @@ namespace DialogMaker.Core.Editor
         public DialogProject(string projectPath, DialogProjectSavedState savedState) 
             : this(projectPath, savedState.Id, false)
         {
+            _name = savedState.Name;
+
             foreach (var pack in savedState.Packs)
             {
                 string packFolder = Path.Combine(projectPath, pack);

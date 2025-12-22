@@ -132,7 +132,7 @@ namespace DialogMaker.Editor
             }
             if (resource is DialogProjectItem item)
             {
-                return new ProjectResourceFile(controller, item);
+                return new ProjectFile(controller, item);
             }
             if (resource is DialogProjectVariable variable)
             {

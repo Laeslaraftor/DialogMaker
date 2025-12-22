@@ -29,6 +29,16 @@ namespace DialogMaker.Lib.Elements
             get => GetValue(EditCommandParameterProperty);
             set => SetValue(EditCommandParameterProperty, value);
         }
+        public TextWrapping TextWrapping
+        {
+            get => (TextWrapping)GetValue(TextWrappingProperty);
+            set => SetValue(TextWrappingProperty, value);
+        }
+        public TextAlignment TextAlignment
+        {
+            get => (TextAlignment)GetValue(TextAlignmentProperty);
+            set => SetValue(TextAlignmentProperty, value);
+        }
 
         private bool CanChange => IsEnabled && EditCommand?.CanExecute(EditCommandParameter) != false;
         private bool EditMode
@@ -174,6 +184,22 @@ namespace DialogMaker.Lib.Elements
             view._block.Text = newValue;
             view._box.Text = newValue;
         }
+        private static void OnTextWrappingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is EditableTextBlock view && e.NewValue is TextWrapping value)
+            {
+                view._block.TextWrapping = value;
+                view._box.TextWrapping = value;
+            }
+        }
+        private static void OnTextAlignmentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is EditableTextBlock view && e.NewValue is TextAlignment value)
+            {
+                view._block.TextAlignment = value;
+                view._box.TextAlignment = value;
+            }
+        }
 
         #endregion
 
@@ -185,6 +211,10 @@ namespace DialogMaker.Lib.Elements
             typeof(EditableTextBlock));
         public static readonly DependencyProperty EditCommandParameterProperty = DependencyProperty.Register(nameof(EditCommandParameter), typeof(object),
             typeof(EditableTextBlock));
+        public static readonly DependencyProperty TextWrappingProperty = DependencyProperty.Register(nameof(TextWrapping), typeof(TextWrapping),
+            typeof(EditableTextBlock), new(TextWrapping.NoWrap, OnTextWrappingChanged));
+        public static readonly DependencyProperty TextAlignmentProperty = DependencyProperty.Register(nameof(TextAlignment), typeof(TextAlignment),
+            typeof(EditableTextBlock), new(TextAlignment.Left, OnTextAlignmentChanged));
 
         #endregion
     }

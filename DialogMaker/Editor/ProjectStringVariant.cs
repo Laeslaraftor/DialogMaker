@@ -87,7 +87,7 @@ namespace DialogMaker.Editor
                 }
             }
         }
-        public ProjectReference<ProjectResourceFile, DialogProjectItem>? Voice
+        public ProjectReference<ProjectFile, DialogProjectItem>? Voice
         {
             get => field;
             set
