@@ -1,5 +1,7 @@
 ﻿using Acly;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -9,19 +11,31 @@ namespace DialogMaker.Core.Editor
 {
     public class DialogProjectResources : ObservableObject
     {
-        public DialogProjectResources(IProjectResourcesOwner owner)
+        public DialogProjectResources(IProjectResourcesOwner owner, DialogResourcesFlags flags)
         {
             Owner = owner;
+            Flags = flags;
             Folder = Path.Combine(owner.Folder, ResourcesFolder);
             Strings = [];
             Characters = [];
             Variables = [];
             Items = [];
 
+            List<DialogProjectResources> inheritedResources = [];
+            var parent = owner.Parent;
+
+            while (parent != null)
+            {
+                inheritedResources.Add(parent.Resources);
+                parent = parent.Parent;
+            }
+
+            InheritedResources = new(inheritedResources);
+
             FileExtensions.CreateDirectory(Folder);
         }
-        public DialogProjectResources(IProjectResourcesOwner owner, DialogProjectResourcesSavedState savedState)
-            : this(owner)
+        public DialogProjectResources(IProjectResourcesOwner owner, DialogProjectResourcesSavedState savedState, DialogResourcesFlags flags)
+            : this(owner, flags)
         {
             foreach (var item in savedState.Items)
             {
@@ -70,11 +84,13 @@ namespace DialogMaker.Core.Editor
         }
 
         public IProjectResourcesOwner Owner { get; }
+        public DialogResourcesFlags Flags { get; }
         public string Folder { get; }
         public EditableCollection<DialogProjectString> Strings { get; }
         public EditableCollection<DialogProjectItem> Items { get; }
         public EditableCollection<DialogProjectCharacter> Characters { get; }
         public EditableCollection<DialogProjectVariable> Variables { get; }
+        public ReadOnlyCollection<DialogProjectResources> InheritedResources { get; }
 
         #region Управление
 
@@ -233,25 +249,25 @@ namespace DialogMaker.Core.Editor
         public const string ResourcesFolder = "Resources";
         public const string ResourcesFileName = $"Resources.{JsonData.FileExtension}";
 
-        public static DialogProjectResources Open(IProjectResourcesOwner owner)
+        public static DialogProjectResources Open(IProjectResourcesOwner owner, DialogResourcesFlags flags)
         {
             string filePath = Path.Combine(owner.Folder, ResourcesFolder, ResourcesFileName);
             var savedState = SavedState.Restore<DialogProjectResourcesSavedState>(filePath);
 
-            return new(owner, savedState);
+            return new(owner, savedState, flags);
         }
-        public static DialogProjectResources OpenOrCreate(IProjectResourcesOwner owner)
+        public static DialogProjectResources OpenOrCreate(IProjectResourcesOwner owner, DialogResourcesFlags flags)
         {
             try
             {
-                return Open(owner);
+                return Open(owner, flags);
             }
             catch (Exception error)
             {
                 Debug.WriteLine(error);
             }
 
-            return new(owner);
+            return new(owner, flags);
         }
 
         #endregion

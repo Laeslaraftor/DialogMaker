@@ -70,6 +70,24 @@ namespace DialogMaker.Editor
 
         #region Управление
 
+        public override bool ContainsValue(string value)
+        {
+            if (base.ContainsValue(value))
+            {
+                return true;
+            }
+
+            foreach (var variant in Variants)
+            {
+                if (variant.Text.Contains(value, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public override ItemContextMenu CreateContextMenu()
         {
             return new StringContextMenu(this);

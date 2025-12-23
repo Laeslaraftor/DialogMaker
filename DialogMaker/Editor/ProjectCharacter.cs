@@ -37,6 +37,16 @@ namespace DialogMaker.Editor
 
         #region Управление
 
+        public override bool ContainsValue(string value)
+        {
+            if (base.ContainsValue(value))
+            {
+                return true;
+            }
+
+            return Name?.Item.ContainsValue(value) == true;
+        }
+
         public override ItemContextMenu CreateContextMenu()
         {
             return new CharacterContextMenu(this);

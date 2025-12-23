@@ -21,6 +21,14 @@ namespace DialogMaker.Editor
         }
 
         public DialogProjectPack Original { get; }
+        public override ProjectResources Resources
+        {
+            get
+            {
+                _resources ??= new(Project, Original.Resources, Project.Resources);
+                return _resources;
+            }
+        }
         public override string Icon => string.Empty;
         public override string Name
         {
@@ -40,13 +48,18 @@ namespace DialogMaker.Editor
         private readonly ProjectDialogConverter _dialogsConverter;
         private readonly CollectionSynchronizer<DialogProjectDialog, ProjectDialog> _dialogsSync;
         private readonly ObservableCollection<ProjectDialog> _dialogs = [];
+        private ProjectResources? _resources;
 
         #region Управление
 
         protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);
+
             _dialogsSync.Dispose();
+            _resources?.Dispose();
+
+            _resources = null;
 
             Original.PropertyChanged -= OnPackPropertyChanged;
         }

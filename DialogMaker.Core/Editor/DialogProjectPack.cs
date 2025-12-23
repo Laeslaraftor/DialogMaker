@@ -46,11 +46,11 @@ namespace DialogMaker.Core.Editor
 
             if (createResources)
             {
-                Resources = new(this);
+                Resources = new(this, DialogResourcesFlags.Pack);
             }
             else
             {
-                Resources = DialogProjectResources.OpenOrCreate(this);
+                Resources = DialogProjectResources.OpenOrCreate(this, DialogResourcesFlags.Pack);
             }
 
             FileExtensions.CreateDirectory(Folder);

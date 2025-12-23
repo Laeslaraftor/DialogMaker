@@ -53,6 +53,11 @@ namespace DialogMaker.Editor
 
         #region Управление
 
+        public virtual bool ContainsValue(string value)
+        {
+            return Id.Contains(value, StringComparison.InvariantCultureIgnoreCase);
+        }
+
         public abstract ItemContextMenu CreateContextMenu();
 
         public override string? ToString()

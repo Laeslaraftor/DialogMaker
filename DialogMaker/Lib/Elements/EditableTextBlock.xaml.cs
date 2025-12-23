@@ -39,6 +39,11 @@ namespace DialogMaker.Lib.Elements
             get => (TextAlignment)GetValue(TextAlignmentProperty);
             set => SetValue(TextAlignmentProperty, value);
         }
+        public bool AutoEdit
+        {
+            get => (bool)GetValue(AutoEditProperty);
+            set => SetValue(AutoEditProperty, value);
+        }
 
         private bool CanChange => IsEnabled && EditCommand?.CanExecute(EditCommandParameter) != false;
         private bool EditMode
@@ -143,6 +148,11 @@ namespace DialogMaker.Lib.Elements
                 EditCommand.Execute(args);
             }
 
+            if (AutoEdit)
+            {
+                Text = args.NewValue;
+            }
+
             TextConfirmed?.Invoke(this, args);
         }
 
@@ -215,6 +225,8 @@ namespace DialogMaker.Lib.Elements
             typeof(EditableTextBlock), new(TextWrapping.NoWrap, OnTextWrappingChanged));
         public static readonly DependencyProperty TextAlignmentProperty = DependencyProperty.Register(nameof(TextAlignment), typeof(TextAlignment),
             typeof(EditableTextBlock), new(TextAlignment.Left, OnTextAlignmentChanged));
+        public static readonly DependencyProperty AutoEditProperty = DependencyProperty.Register(nameof(AutoEdit), typeof(bool),
+            typeof(EditableTextBlock), new(false));
 
         #endregion
     }

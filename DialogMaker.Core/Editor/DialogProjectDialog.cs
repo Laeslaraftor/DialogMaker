@@ -48,11 +48,11 @@ namespace DialogMaker.Core.Editor
 
             if (createResources)
             {
-                Resources = new(this);
+                Resources = new(this, DialogResourcesFlags.Dialog);
             }
             else
             {
-                Resources = DialogProjectResources.OpenOrCreate(this);
+                Resources = DialogProjectResources.OpenOrCreate(this, DialogResourcesFlags.Dialog);
             }
 
             Nodes.ItemChanged += OnNodesItemChanged;

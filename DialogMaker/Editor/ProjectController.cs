@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Collections.Specialized;
 using DialogMaker.Editor.Nodes;
 using System.Diagnostics.CodeAnalysis;
+using DialogMaker.Editor.Filters;
 
 namespace DialogMaker.Editor
 {
@@ -88,6 +89,7 @@ namespace DialogMaker.Editor
         }
         public ProjectStringConverter StringConverter { get; }
         public ProjectNodesFabric NodesViewFabric { get; } = new();
+        public ProjectResourcesFilter ResourcesFilter { get; } = new();
         public ICommand CreatePackCommand { get; }
         public ICommand CreateLanguageCommand { get; }
         public ICommand SaveCommand { get; }

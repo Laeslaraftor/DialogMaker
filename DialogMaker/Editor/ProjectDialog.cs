@@ -42,6 +42,14 @@ namespace DialogMaker.Editor
                 }
             }
         }
+        public override ProjectResources Resources
+        {
+            get
+            {
+                _resources ??= new(Project, Original.Resources, Pack.Resources);
+                return _resources;
+            }
+        }
         public override string Icon => Icons.Message;
         public override string Name
         {
@@ -71,6 +79,7 @@ namespace DialogMaker.Editor
 
         private readonly ProjectNodeConverter _nodesConverter;
         private readonly CollectionSynchronizer<DialogProjectDialogNode, DialogProjectNode> _nodesSync;
+        private ProjectResources? _resources;
 
         #region Управление
 
@@ -224,7 +233,10 @@ namespace DialogMaker.Editor
         protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);
+
             _nodesSync.Dispose();
+            _resources?.Dispose();
+            _resources = null;
 
             Original.PropertyChanged -= OnDialogPropertyChanged;
             SelectedNodes.ItemChanged -= OnSelectedNodesItemChanged;

@@ -3,7 +3,6 @@ using DialogMaker.Editor;
 using DialogMaker.Lib;
 using DialogMaker.Lib.Controllers;
 using DialogMaker.ViewModels;
-using System.Reflection.Metadata.Ecma335;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -20,18 +19,18 @@ namespace DialogMaker
             _model.OpenProjectCommand = new RelayCommand(ExecuteOpenProject);
             _model.CloseProjectCommand = new RelayCommand(ExecuteCloseProject);
             _resourcesDragAndDrop = new(this);
+            _tabsController = new(_dialogsTabs);
 
             DataContext = _model;
             Instance = this;
         }
-
-        public ProjectController? CurrentProject { get; private set; }
 
         private readonly MainWindowViewModel _model = new()
         {
             DefaultLanguageVisibility = Visibility.Collapsed
         };
         private readonly ResourcesDragAndDropController _resourcesDragAndDrop;
+        private readonly DialogTabsController _tabsController;
 
         #region Управление
 
@@ -167,6 +166,14 @@ namespace DialogMaker
                 {
                     ClearFocus();
                 }
+            }
+        }
+
+        private void OnProjectStructSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (e.NewValue is ProjectStructureItem item)
+            {
+                _tabsController.AddItem(item);
             }
         }
 

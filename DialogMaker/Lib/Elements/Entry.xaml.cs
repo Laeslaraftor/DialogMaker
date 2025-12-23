@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -27,6 +23,11 @@ namespace DialogMaker.Lib.Elements
             get => (string)GetValue(TextProperty);
             set => SetValue(TextProperty, value);
         }
+        public ICommand? ConfirmCommand
+        {
+            get => GetValue(ConfirmCommandProperty) as ICommand;
+            set => SetValue(ConfirmCommandProperty, value);
+        }
         public TextBox TextBox => _text;
 
         private string _startFocusValue = string.Empty;
@@ -48,8 +49,18 @@ namespace DialogMaker.Lib.Elements
         }
         private async void OnTextLostFocus(object sender, RoutedEventArgs e)
         {
+            var confirmCommand = ConfirmCommand;
+            ValueChangedEventArgs<string> confirmParameter = new(_startFocusValue, _text.Text);
+
+            if (confirmCommand?.CanExecute(confirmParameter) == false)
+            {
+                return;
+            }
+
             await Task.Delay(50);
-            ConfirmedText?.Invoke(this, new(_startFocusValue, _text.Text));
+
+            ConfirmedText?.Invoke(this, confirmParameter);
+            confirmCommand?.Execute(confirmParameter);
         }
         private void OnTextKeyDown(object sender, KeyEventArgs e)
         {
@@ -95,6 +106,8 @@ namespace DialogMaker.Lib.Elements
             typeof(Entry), new(string.Empty, OnPlaceholderChanged));
         public static readonly DependencyProperty TextProperty = DependencyProperty.Register(nameof(Text), typeof(string),
             typeof(Entry), new(string.Empty, OnTextChanged));
+        public static readonly DependencyProperty ConfirmCommandProperty = DependencyProperty.Register(nameof(ConfirmCommand), typeof(ICommand),
+           typeof(Entry));
 
         #endregion
     }

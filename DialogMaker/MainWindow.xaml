@@ -47,9 +47,9 @@
                             <ColumnDefinition/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="{Binding Project.Name}"
-                                   FontSize="22" FontWeight="Medium"
-                                   Margin="4,6"/>
+                        <lib:EditableTextBlock Text="{Binding Project.Name, Mode=TwoWay}"
+                                               FontSize="22" FontWeight="Medium"
+                                               Margin="4,6" AutoEdit="True"/>
                         <Button Grid.Column="1"
                                 FontFamily="{StaticResource SymbolThemeFontFamily}" 
                                 Content="&#xE710;" HorizontalAlignment="Right"
@@ -58,7 +58,8 @@
                                 ToolTip="Добавить язык"/>
                     </Grid>
                     <TreeView x:Name="_projectStruct" Grid.Row="1" 
-                              ItemsSource="{Binding Project.Packs}">
+                              ItemsSource="{Binding Project.Packs}"
+                              SelectedItemChanged="OnProjectStructSelectedItemChanged">
                         <TreeView.ItemTemplate>
                             <HierarchicalDataTemplate ItemsSource="{Binding Children}">
                                 <lib:ProjectItemView ContextMenu="{Binding ContextMenu}"
@@ -133,159 +134,7 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        <Grid Grid.Row="1" Grid.Column="1">
-            <Grid.RowDefinitions>
-                <RowDefinition/>
-                <RowDefinition Height="400"/>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition MinWidth="400" MaxWidth="500" Width="0.4*"/>
-            </Grid.ColumnDefinitions>
-            <ScrollViewer Grid.RowSpan="2" Grid.Column="1"
-                          HorizontalScrollBarVisibility="Disabled"
-                          VerticalScrollBarVisibility="Auto"
-                          Margin="4,0">
-                <StackPanel>
-                    <lib:MinimizableView Margin="0,8,0,0">
-                        <lib:MinimizableView.Header>
-                            <Grid Margin="6,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="Строки" FontSize="28"
-                                               FontWeight="Medium" Margin="0,0,0,8"/>
-                                <Button Content="Создать" Grid.Column="1" VerticalAlignment="Center"
-                                            Command="{Binding GlobalResources.CreateStringCommand}"/>
-                            </Grid>
-                        </lib:MinimizableView.Header>
-                        <lib:MinimizableView.Child>
-                            <ListView Grid.Row="1"
-                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                          HorizontalContentAlignment="Stretch"
-                                          ItemsSource="{Binding GlobalResources.Strings}">
-                                <ListView.Template>
-                                    <ControlTemplate>
-                                        <ItemsPresenter/>
-                                    </ControlTemplate>
-                                </ListView.Template>
-                                <ListView.ItemTemplate>
-                                    <DataTemplate>
-                                        <lib:ReplicaView ProjectString="{Binding}"
-                                                             IsMinimized="{Binding IsMinimized}"
-                                                             ContextMenu="{Binding ContextMenu}"/>
-                                    </DataTemplate>
-                                </ListView.ItemTemplate>
-                            </ListView>
-                        </lib:MinimizableView.Child>
-                    </lib:MinimizableView>
-                    <lib:MinimizableView Margin="0,8,0,0">
-                        <lib:MinimizableView.Header>
-                            <Grid Margin="6,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="Персонажи" FontSize="28"
-                                               FontWeight="Medium" Margin="0,0,0,8"/>
-                                <Button Content="Создать" Grid.Column="1" VerticalAlignment="Center"
-                                            Command="{Binding GlobalResources.CreateCharacterCommand}"/>
-                            </Grid>
-                        </lib:MinimizableView.Header>
-                        <lib:MinimizableView.Child>
-                            <ListView Grid.Row="1"
-                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                          HorizontalContentAlignment="Stretch"
-                                          ItemsSource="{Binding GlobalResources.Characters}">
-                                <ListView.Template>
-                                    <ControlTemplate>
-                                        <ItemsPresenter/>
-                                    </ControlTemplate>
-                                </ListView.Template>
-                                <ListView.ItemTemplate>
-                                    <DataTemplate>
-                                        <lib:CharacterView Character="{Binding}"/>
-                                    </DataTemplate>
-                                </ListView.ItemTemplate>
-                            </ListView>
-                        </lib:MinimizableView.Child>
-                    </lib:MinimizableView>
-                    <lib:MinimizableView Margin="0,8,0,0">
-                        <lib:MinimizableView.Header>
-                            <Grid Margin="6,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="Переменные" FontSize="28"
-                                               FontWeight="Medium" Margin="0,0,0,8"/>
-                                <lib:DropDownButton Text="Создать" Grid.Column="1" VerticalAlignment="Center"
-                                                        ContextMenu="{Binding GlobalResources.CreateVariablesContextMenu}"/>
-                            </Grid>
-                        </lib:MinimizableView.Header>
-                        <lib:MinimizableView.Child>
-                            <ListView Grid.Row="1"
-                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                          HorizontalContentAlignment="Stretch"
-                                          ItemsSource="{Binding GlobalResources.Variables}">
-                                <ListView.Template>
-                                    <ControlTemplate>
-                                        <ItemsPresenter/>
-                                    </ControlTemplate>
-                                </ListView.Template>
-                                <ListView.ItemTemplate>
-                                    <DataTemplate>
-                                        <lib:VariableView Variable="{Binding}"/>
-                                    </DataTemplate>
-                                </ListView.ItemTemplate>
-                            </ListView>
-                        </lib:MinimizableView.Child>
-                    </lib:MinimizableView>
-                </StackPanel>
-            </ScrollViewer>
-            <lib:DiagramView ClipToBounds="True"
-                             CurvesThickness="6" CurvesOffset="5" CurvesResolution="24"
-                             Dialog="{Binding Source={x:Reference Name=_projectStruct}, Path=SelectedItem}"/>
-            <Border Grid.RowSpan="2"
-                    BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
-                    BorderThickness="1,0,1,0"/>
-            <Border Grid.Row="1" VerticalAlignment="Top"
-                    Background="{DynamicResource DividerStrokeColorDefaultBrush}"
-                    Height="1"/>
-            <Grid Grid.Row="1" Margin="8,2">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition/>
-                </Grid.RowDefinitions>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Файлы" FontSize="28"
-                               FontWeight="Medium" Margin="0,0,0,8"/>
-                    <lib:Entry MaxWidth="300" Grid.Column="1" Placeholder="Поиск..."
-                               VerticalAlignment="Center" Margin="5,0"/>
-                    <Button Content="Добавить" Grid.Column="2" VerticalAlignment="Center"
-                            Command="{Binding GlobalResources.AddFileCommand}"
-                            HorizontalAlignment="Right"/>
-                </Grid>
-                <ListView Grid.Row="1" SelectionMode="Single"
-                          ItemsSource="{Binding GlobalResources.Files}">
-                    <ListView.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <WrapPanel/>
-                        </ItemsPanelTemplate>
-                    </ListView.ItemsPanel>
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <lib:FileView File="{Binding}"/>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-            </Grid>
-        </Grid>
+        <TabControl x:Name="_dialogsTabs"
+                    Grid.Row="1" Grid.Column="1"/>
     </Grid>
 </Window>

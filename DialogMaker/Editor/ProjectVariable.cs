@@ -22,6 +22,20 @@ namespace DialogMaker.Editor
 
         #region Управление
 
+        public override bool ContainsValue(string value)
+        {
+            if (base.ContainsValue(value))
+            {
+                return true;
+            }
+            if (Original.Value is string textValue)
+            {
+                return textValue.Contains(value, StringComparison.InvariantCultureIgnoreCase);
+            }
+
+            return false;
+        }
+
         public PropertyEditorController? CreateInputField()
         {
             PropertyEditorController.TryCreate(Original, ValueProperty, Original.ValueType, out var result);

@@ -45,7 +45,7 @@ namespace DialogMaker.Core.Editor
                 _defaultLanguage = defaultLanguage;
             }
 
-            Resources = DialogProjectResources.OpenOrCreate(this);
+            Resources = DialogProjectResources.OpenOrCreate(this, DialogResourcesFlags.Root);
         }
 #pragma warning disable CS8618 // Поле, не допускающее значения NULL, должно содержать значение, отличное от NULL, при выходе из конструктора. Рассмотрите возможность добавления модификатора "required" или объявления значения, допускающего значение NULL.
         private DialogProject(string projectPath, string id, bool createResources)
@@ -56,10 +56,10 @@ namespace DialogMaker.Core.Editor
 
             if (createResources)
             {
-                Resources = new(this);
+                Resources = new(this, DialogResourcesFlags.Root);
             }
 
-            Languages = new();
+            Languages = [];
 
             Languages.ItemChanged += OnLanguagesItemChanged;
         }

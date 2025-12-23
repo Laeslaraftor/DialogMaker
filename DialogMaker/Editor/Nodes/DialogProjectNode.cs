@@ -32,6 +32,7 @@ namespace DialogMaker.Editor
 
         public ProjectDialog Dialog { get; }
         public DialogProjectDialogNode Original { get; }
+        public override ProjectResources Resources => Dialog.Resources;
         public override string Icon => Icons.Node;
         public override string Name
         {
