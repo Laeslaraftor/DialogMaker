@@ -37,6 +37,20 @@ namespace DialogMaker
         {
             yield break;
         }
+        public static IEnumerable<T> GetValues<T>(this T flags) where T : Enum
+        {
+            long value = Convert.ToInt64(flags);
+
+            foreach (Enum enumValue in Enum.GetValues(flags.GetType()))
+            {
+                long enumNumberValue = Convert.ToInt64(enumValue);
+
+                if ((value & enumNumberValue) > 0)
+                {
+                    yield return (T)enumValue;
+                }
+            }
+        }
 
         public static Point ToPoint(this Vector vector)
         {

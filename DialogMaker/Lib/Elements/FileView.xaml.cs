@@ -48,6 +48,7 @@ namespace DialogMaker.Lib.Elements
             _preview.Content = newValue?.GetFilePreview();
             _idEditor.DataContext = newValue;
             _idEditor.EditCommandParameter = newValue;
+            _flagsView.Value = newValue?.Original.Resources.Flags;
             ContextMenu = newValue?.ContextMenu;
         }
 

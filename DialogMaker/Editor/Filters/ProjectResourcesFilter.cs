@@ -10,7 +10,7 @@ namespace DialogMaker.Editor.Filters
     {
         public ProjectResourcesFilter()
         {
-            Flags = DialogResourcesFlags.All;
+            Flags = AllFlags;
             SearchCommand = new RelayCommand(CanSearchCommand, ExecuteSearchCommand);
         }
 
@@ -57,7 +57,7 @@ namespace DialogMaker.Editor.Filters
             var searchValue = SearchValue;
             bool isNullSearchValue = string.IsNullOrEmpty(searchValue);
 
-            if (flags == DialogResourcesFlags.All && isNullSearchValue)
+            if (flags == AllFlags && isNullSearchValue)
             {
                 return true;
             }
@@ -100,6 +100,9 @@ namespace DialogMaker.Editor.Filters
         #region Статика
 
         public static readonly ProjectResourcesFilter Instance = new();
+        public static readonly DialogResourcesFlags AllFlags = DialogResourcesFlags.Pack |
+                                                               DialogResourcesFlags.Root |
+                                                               DialogResourcesFlags.Dialog;
 
         #endregion
     }

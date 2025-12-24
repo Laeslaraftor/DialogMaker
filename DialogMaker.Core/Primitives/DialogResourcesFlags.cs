@@ -1,14 +1,16 @@
-﻿using System;
+﻿using DialogMaker.Core.Editor.Nodes;
+using System;
 
 namespace DialogMaker.Core
 {
     [Flags]
     public enum DialogResourcesFlags
     {
-        Root,
-        Pack,
-        Dialog,
-
-        All = Root | Pack | Dialog
+        [Name("Проект")]
+        Root = 1 << 1,
+        [Name("Набор")]
+        Pack = 1 << 2,
+        [Name("Диалог")]
+        Dialog = 1 << 3,
     }
 }

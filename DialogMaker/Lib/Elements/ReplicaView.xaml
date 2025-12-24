@@ -12,6 +12,7 @@
             <ColumnDefinition Width="6"/>
             <ColumnDefinition/>
             <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -33,16 +34,19 @@
         <local:EditableTextBlock x:Name="_idBlock" Grid.Column="2"
                                  VerticalAlignment="Center" Text="{Binding Id}"
                                  FontSize="16"/>
+        <local:EnumValueView x:Name="_flagsView" Grid.Column="3"
+                             HorizontalAlignment="Right"
+                             VerticalAlignment="Center" Margin="6,0"/>
         <Button x:Name="_addVariantButton"
                 FontFamily="{StaticResource SymbolThemeFontFamily}" 
                 Content="&#xE710;" VerticalAlignment="Top"
-                HorizontalAlignment="Right" Grid.Column="3"
+                HorizontalAlignment="Right" Grid.Column="4"
                 Padding="6" ToolTip="Добавить вариант"/>
         <TextBlock x:Name="_preview" Grid.Row="1" Grid.Column="2" 
                    TextWrapping="Wrap" FontSize="18" FontWeight="Medium"
                    Text="{Binding Text}" Margin="0,0,0,4"/>
         <StackPanel x:Name="_extraContainer" Margin="0,4,0,0"
-                    Grid.Column="2" Grid.Row="2" Grid.ColumnSpan="2">
+                    Grid.Column="2" Grid.Row="2" Grid.ColumnSpan="3">
             <ListView x:Name="_variantsList"
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                       HorizontalContentAlignment="Stretch">
@@ -61,9 +65,6 @@
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
-            <local:ReferenceView Placeholder="Озвучка"
-                                 RequestedResourceType="File"
-                                 ToolTip="Озвучка" Margin="0,0,0,6"/>
         </StackPanel>
     </Grid>
 </UserControl>

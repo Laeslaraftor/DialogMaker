@@ -1,6 +1,7 @@
 ﻿using Acly;
 using DialogMaker.Core;
 using DialogMaker.Core.Editor;
+using DialogMaker.Editor.Filters;
 using DialogMaker.Editor.Menus;
 using DialogMaker.Lib;
 using Microsoft.Win32;
@@ -32,6 +33,7 @@ namespace DialogMaker.Editor
             List<ReferenceReadOnlyList<ProjectCharacter>> inheritCharacters = [Characters];
             List<ReferenceReadOnlyList<ProjectVariable>> inheritVariables = [Variables];
             List<ReferenceReadOnlyList<ProjectFile>> inheritFiles = [Files];
+            DialogResourcesFlags flags = resources.Flags;
 
             while (parent != null)
             {
@@ -40,6 +42,7 @@ namespace DialogMaker.Editor
                 inheritVariables.Add(parent.Variables);
                 inheritFiles.Add(parent.Files);
 
+                flags |= parent.Flags;
                 parent = parent.Parent;
             }
 
@@ -47,11 +50,14 @@ namespace DialogMaker.Editor
             InheritedCharacters = new(inheritCharacters, controller.ResourcesFilter);
             InheritedVariables = new(inheritVariables, controller.ResourcesFilter);
             InheritedFiles = new(inheritFiles, controller.ResourcesFilter);
+            Flags = flags;
+            UnsettedFlags = ProjectResourcesFilter.AllFlags & ~flags;
         }
 
         public ProjectController Controller { get; }
         public DialogProjectResources Original { get; }
-        public DialogResourcesFlags Flags => Original.Flags;
+        public DialogResourcesFlags Flags { get; }
+        public DialogResourcesFlags UnsettedFlags { get; }
         public ProjectResources? Parent { get; }
         public ReferenceReadOnlyList<ProjectString> Strings { get; }
         public ReferenceReadOnlyList<ProjectCharacter> Characters { get; }

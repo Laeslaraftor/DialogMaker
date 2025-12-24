@@ -11,14 +11,18 @@
             BorderThickness="1" CornerRadius="4" Width="100">
         <Grid>
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="80"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <Label x:Name="_preview"
+            <local:EnumValueView x:Name="_flagsView"
+                                 HorizontalAlignment="Stretch"
+                                 VerticalAlignment="Center" Margin="4,4,4,0"/>
+            <Label x:Name="_preview" Grid.Row="1"
                    FontFamily="{StaticResource SymbolThemeFontFamily}" 
                    HorizontalAlignment="Center" VerticalAlignment="Center" 
                    FontSize="40"/>
-            <local:EditableTextBlock x:Name="_idEditor" Grid.Row="1" 
+            <local:EditableTextBlock x:Name="_idEditor" Grid.Row="2" 
                                      FontSize="16" TextWrapping="Wrap"
                                      TextAlignment="Center"
                                      Text="{Binding Id}" Margin="2,0,2,6"/>

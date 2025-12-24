@@ -33,6 +33,7 @@ namespace DialogMaker.Lib.Elements
             _idBlock.DataContext = newValue;
             _idBlock.EditCommandParameter = newValue;
             _nameReference.Item = newValue?.Name?.Item;
+            _flagsView.Value = newValue?.Original.Resources.Flags;
             ContextMenu = newValue?.ContextMenu;
 
             if (oldValue != null)

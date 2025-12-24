@@ -11,11 +11,19 @@
             <ColumnDefinition Width="Auto" MinWidth="100"/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
         <ComboBox x:Name="_comboBox" VerticalAlignment="Top"
                   SelectionChanged="OnComboBoxSelectionChanged" 
                   DisplayMemberPath="Name" ContextMenu="{Binding Source=Self, Path=Parent.ContextMenu}"/>
         <TextBox x:Name="_textBox" Grid.Column="1" Margin="10,0,0,0"
                  VerticalAlignment="Top" TextWrapping="Wrap"
                  AcceptsReturn="True" TextChanged="OnTextBoxTextChanged"/>
+        <local:ReferenceView Placeholder="Озвучка" 
+                             Grid.Row="1" Grid.ColumnSpan="2"
+                             RequestedResourceType="File"
+                             ToolTip="Озвучка" Margin="0,10,0,0"/>
     </Grid>
 </UserControl>

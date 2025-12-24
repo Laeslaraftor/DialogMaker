@@ -20,6 +20,16 @@
                       VerticalScrollBarVisibility="Auto"
                       Margin="4,0">
             <StackPanel>
+                <local:FlagsViewer Enum="{Binding Project.ResourcesFilter.Flags}"
+                                   SelectedValues="{Binding Project.ResourcesFilter.Flags, Mode=TwoWay}"
+                                   ExcludeValues="{Binding Resources.UnsettedFlags}"
+                                   Margin="2.5,5" Spacing="2.5,0">
+                    <local:FlagsViewer.ItemsPanelTemplate>
+                        <ItemsPanelTemplate>
+                            <WrapPanel/>
+                        </ItemsPanelTemplate>
+                    </local:FlagsViewer.ItemsPanelTemplate>
+                </local:FlagsViewer>
                 <local:Entry Placeholder="Поиск..." Margin="5,0"
                              Text="{Binding Project.ResourcesFilter.SearchValue}"
                              ConfirmCommand="{Binding Project.ResourcesFilter.SearchCommand}"/>

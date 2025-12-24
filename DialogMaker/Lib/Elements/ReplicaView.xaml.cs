@@ -81,6 +81,7 @@ namespace DialogMaker.Lib.Elements
             _variantsList.ItemsSource = newValue?.Variants;
             _addVariantButton.IsEnabled = newValue != null;
             _addVariantButton.Command = newValue?.AddVariantCommand;
+            _flagsView.Value = newValue?.Original.Resources.Flags;
 
             if (newValue != null)
             {

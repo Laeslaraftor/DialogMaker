@@ -7,6 +7,7 @@
         xmlns:models="clr-namespace:DialogMaker.ViewModels"
         xmlns:local="clr-namespace:DialogMaker"
         xmlns:editor="clr-namespace:DialogMaker.Editor"
+        xmlns:core="clr-namespace:DialogMaker.Core;assembly=DialogMaker.Core"
         mc:Ignorable="d"
         Title="DialogMaker" Height="450" Width="1000"
         MinWidth="1000" MinHeight="400">

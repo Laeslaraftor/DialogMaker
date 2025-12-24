@@ -48,6 +48,7 @@ namespace DialogMaker.Lib.Elements
 
             _idBlock.DataContext = newValue;
             _idBlock.EditCommandParameter = newValue;
+            _flagsView.Value = newValue?.Original.Resources.Flags;
             ContextMenu = newValue?.ContextMenu;
 
             if (newValue == null)
@@ -61,7 +62,7 @@ namespace DialogMaker.Lib.Elements
             if (editor != null)
             {
                 Grid.SetRow(editor.View, 1);
-                Grid.SetColumnSpan(editor.View, 2);
+                Grid.SetColumnSpan(editor.View, _mainGrid.ColumnDefinitions.Count);
                 _mainGrid.Children.Add(editor.View);
                 _editorController = editor;
             }

@@ -15,10 +15,14 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
             <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
         <local:EditableTextBlock x:Name="_idBlock" Text="{Binding Id}"
                                  FontSize="16" Margin="0,8,0,4"/>
         <local:DialogValueTypeView Grid.Column="1" VerticalAlignment="Center"
                                    x:Name="_typeView"/>
+        <local:EnumValueView x:Name="_flagsView" Grid.Column="2"
+                             HorizontalAlignment="Right"
+                             VerticalAlignment="Center" Margin="6,0,0,0"/>
     </Grid>
 </UserControl>
