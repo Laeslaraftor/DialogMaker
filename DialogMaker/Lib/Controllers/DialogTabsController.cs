@@ -4,13 +4,31 @@ using DialogMaker.Lib.Elements;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Input;
 
 namespace DialogMaker.Lib.Controllers
 {
-    public class DialogTabsController(TabControl tabs) : Disposable
+    public class DialogTabsController : Disposable
     {
-        public TabControl TabControl { get; } = tabs;
+        public DialogTabsController()
+        {
+            TabControl = _tabsPool.GetElement();
+            TabControl.SelectionChanged += OnTabsSelectionChanged;
+        }
+
+        public TabControl TabControl { get; }
+        public ProjectStructureItem? CurrentItem
+        {
+            get => field;
+            private set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(CurrentItem));
+                    field = value;
+                    InvokePropertyChanged(nameof(CurrentItem));
+                }
+            }
+        }
 
         private readonly ElementsPool<DialogAndResourcesView> _viewsPool = new();
         private readonly ElementsPool<CloseView> _closeViewsPool = new();
@@ -21,6 +39,10 @@ namespace DialogMaker.Lib.Controllers
 
         public void AddItem(ProjectStructureItem item)
         {
+            if (IsDisposed)
+            {
+                return;
+            }
             if (_closeViews.TryGetValue(item, out var info))
             {
                 info.Select();
@@ -54,12 +76,22 @@ namespace DialogMaker.Lib.Controllers
         {
             base.Dispose(isDisposing);
 
+            TabControl.SelectionChanged -= OnTabsSelectionChanged;
+
             foreach (var info in _closeViews.Values)
             {
                 Remove(info, false);
             }
 
+            TabControl.Items.Clear();
+            TabControl.RemoveFromParent();
+
             _closeViews.Clear();
+            _closeViewsPool.Dispose();
+            _tabItemsPool.Dispose();
+            _viewsPool.Dispose();
+
+            _tabsPool.Free(TabControl);
         }
 
         private bool Remove(TabInfo info, bool full = true)
@@ -102,6 +134,37 @@ namespace DialogMaker.Lib.Controllers
                 Remove(info);
             }
         }
+        private void OnTabsSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            int selectedIndex = TabControl.SelectedIndex;
+
+            if (selectedIndex == -1)
+            {
+                CurrentItem = null;
+                return;
+            }
+
+            int index = 0;
+
+            foreach (var item in _closeViews.Keys)
+            {
+                if (index == selectedIndex)
+                {
+                    CurrentItem = item;
+                    return;
+                }
+
+                index++;
+            }
+
+            CurrentItem = null;
+        }
+
+        #endregion
+
+        #region Статика
+
+        private static readonly ElementsPool<TabControl> _tabsPool = new();
 
         #endregion
 

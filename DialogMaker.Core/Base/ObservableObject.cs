@@ -18,13 +18,21 @@ namespace DialogMaker.Core
 
         protected void InvokePropertyChanging(string propertyName)
         {
-            OnPropertyChanging(propertyName);
-            PropertyChanging?.Invoke(this, new(propertyName));
+            InvokePropertyChanging(new PropertyChangingEventArgs(propertyName));
+        }
+        protected void InvokePropertyChanging(PropertyChangingEventArgs args)
+        {
+            OnPropertyChanging(args.PropertyName);
+            PropertyChanging?.Invoke(this, args);
         }
         protected void InvokePropertyChanged(string propertyName)
         {
-            OnPropertyChanged(propertyName);
-            PropertyChanged?.Invoke(this, new(propertyName));
+            InvokePropertyChanged(new PropertyChangedEventArgs(propertyName));
+        }
+        protected void InvokePropertyChanged(PropertyChangedEventArgs args)
+        {
+            OnPropertyChanged(args.PropertyName);
+            PropertyChanged?.Invoke(this, args);
         }
 
         #endregion

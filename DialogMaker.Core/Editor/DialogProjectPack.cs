@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectPack : ObservableObject, IProjectResourcesOwner
+    public class DialogProjectPack : Disposable, IProjectResourcesOwner
     {
         public DialogProjectPack(DialogProject project, string id)
             : this(project, id, true)
@@ -54,6 +54,8 @@ namespace DialogMaker.Core.Editor
             }
 
             FileExtensions.CreateDirectory(Folder);
+
+            Dialogs.ItemChanged += OnDialogsItemChanged;
         }
 
         public event EventHandler<ItemActionEventArgs<DialogProjectDialog>>? DialogsChanged;
@@ -84,6 +86,7 @@ namespace DialogMaker.Core.Editor
 
         public void Save()
         {
+            CheckHelper.CheckIsDisposed(this);
             Resources.Save();
 
             foreach (var dialog in Dialogs)
@@ -126,24 +129,40 @@ namespace DialogMaker.Core.Editor
 
             Dialogs.Add(dialog);
 
-            DialogsChanged?.Invoke(this, new(ItemAction.Add, dialog));
-
             return dialog;
         }
         public bool RemoveDialog(DialogProjectDialog dialog)
         {
-            if (Dialogs.Remove(dialog))
-            {
-                DialogsChanged?.Invoke(this, new(ItemAction.Remove, dialog));
-                return true;
-            }
-
-            return false;
+            return Dialogs.Remove(dialog);
         }
 
         public override string ToString()
         {
             return $"[{Id}] {Name}";
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+
+            Dialogs.ItemChanged -= OnDialogsItemChanged;
+
+            foreach (var dialog in Dialogs)
+            {
+                dialog.Dispose();
+            }
+
+            Dialogs.Clear();
+            Resources.Dispose();
+        }
+
+        #endregion
+
+        #region События
+
+        private void OnDialogsItemChanged(object sender, CollectionItemEventArgs<DialogProjectDialog> e)
+        {
+            DialogsChanged?.Invoke(this, new((ItemAction)e.Action, e.Item));
         }
 
         #endregion

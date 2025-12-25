@@ -1,7 +1,4 @@
 ﻿using DialogMaker.Lib;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace DialogMaker.Editor.Menus
 {
@@ -12,10 +9,19 @@ namespace DialogMaker.Editor.Menus
         }
         public VariableContextMenu(ProjectVariable item) : base(item)
         {
+            _moveActions = new(item);
         }
+
+        private readonly MoveResourceItemActions? _moveActions;
 
         protected override IEnumerable<IContextMenuModifier> GetItems()
         {
+            if (_moveActions != null)
+            {
+                yield return _moveActions.GetModifier();
+                yield return ContextMenuSeparator.Instance;
+            }
+
             yield return new ContextMenuAction("Удалить переменную",
                 CanExecute, RemoveString, Icons.Delete);
         }

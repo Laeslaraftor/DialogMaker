@@ -5,9 +5,6 @@ namespace DialogMaker.Core.Editor
     public class DialogProjectReference<T> : DialogProjectReference
         where T : DialogProjectResourceObject
     {
-        public DialogProjectReference() : base()
-        {
-        }
         public DialogProjectReference(DialogProject project, Guid id, string path, DialogResourceType type)
             : base(project, id, path, type)
         {

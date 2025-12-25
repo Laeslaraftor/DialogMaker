@@ -1,8 +1,10 @@
-﻿namespace DialogMaker.Core.Editor
+﻿using Acly;
+
+namespace DialogMaker.Core.Editor
 {
     public enum ItemAction
     {
-        Add,
-        Remove
+        Add = CollectionItemAction.Add,
+        Remove = CollectionItemAction.Remove
     }
 }

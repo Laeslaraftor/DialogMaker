@@ -125,6 +125,8 @@ namespace DialogMaker.Core.Editor.Nodes
 
         public DialogProjectDialogNodeSavedState Save()
         {
+            CheckHelper.CheckIsDisposed(this);
+
             var savedState = CreateSavedState();
             ModifySavedState(savedState);
 

@@ -85,6 +85,8 @@ namespace DialogMaker.Core.Editor
 
         public void Save()
         {
+            CheckHelper.CheckIsDisposed(this);
+
             Resources.Save();
 
             DialogProjectDialogSavedState savedState = new()
@@ -159,6 +161,15 @@ namespace DialogMaker.Core.Editor
         {
             base.Dispose(isDisposing);
             Nodes.ItemChanged -= OnNodesItemChanged;
+
+            foreach (var node in Nodes)
+            {
+                node.PropertyChanged -= OnNodePropertyChanged;
+                node.Dispose();
+            }
+
+            Nodes.Clear();
+            Resources.Dispose();
         }
 
         private DialogProjectDialogNode RestoreNode(DialogProjectDialogNodeSavedState savedState, bool restoreConnections)
@@ -236,6 +247,11 @@ namespace DialogMaker.Core.Editor
 
         private void OnNodesItemChanged(object sender, CollectionItemEventArgs<DialogProjectDialogNode> e)
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
             if (e.Action == CollectionItemAction.Add)
             {
                 e.Item.PropertyChanged += OnNodePropertyChanged;

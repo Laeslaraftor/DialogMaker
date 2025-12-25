@@ -1,5 +1,6 @@
 ﻿using Acly;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -65,6 +66,7 @@ namespace DialogMaker.Core.Editor
         }
 
         public event EventHandler<ItemActionEventArgs<DialogProjectPack>>? PacksChanged;
+        public event EventHandler<ResourceItemPathChangedEventArgs>? ResourceItemPathChanged;
 
         public string ProjectPath { get; }
         public string Id { get; }
@@ -106,6 +108,7 @@ namespace DialogMaker.Core.Editor
         string IProjectResourcesOwner.Folder => ProjectPath;
 
 
+        private readonly List<DialogProjectResourceObject> _registeredResources = [];
         private string _name = string.Empty;
         private DialogProjectLanguage? _defaultLanguage;
 
@@ -113,6 +116,7 @@ namespace DialogMaker.Core.Editor
 
         public void Save()
         {
+            CheckHelper.CheckIsDisposed(this);
             Resources.Save();
 
             foreach (var pack in Packs)
@@ -215,12 +219,52 @@ namespace DialogMaker.Core.Editor
         {
             base.Dispose(isDisposing);
             Languages.ItemChanged -= OnLanguagesItemChanged;
+
+            foreach (var pack in Packs)
+            {
+                pack.Dispose();
+            }
+
+            Packs.Clear();
+            Resources.Dispose();
+        }
+
+        #endregion
+
+        #region Ресурсы
+
+        internal bool Register(DialogProjectResourceObject obj)
+        {
+            if (_registeredResources.Contains(obj))
+            {
+                return false;
+            }
+
+            obj.PathChanged += OnResourceItemPathChanged;
+
+            _registeredResources.Add(obj);
+
+            return true;
+        }
+        internal bool Unregister(DialogProjectResourceObject obj)
+        {
+            if (_registeredResources.Remove(obj))
+            {
+                obj.PathChanged -= OnResourceItemPathChanged;
+                return true;
+            }
+
+            return false;
         }
 
         #endregion
 
         #region События
 
+        private void OnResourceItemPathChanged(object sender, ResourceItemPathChangedEventArgs e)
+        {
+            ResourceItemPathChanged?.Invoke(this, e);
+        }
         private void OnLanguagesItemChanged(object sender, CollectionItemEventArgs<DialogProjectLanguage> e)
         {
             if (e.Action == CollectionItemAction.Remove && e.Item == DefaultLanguage)

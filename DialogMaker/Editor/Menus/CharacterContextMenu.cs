@@ -9,10 +9,19 @@ namespace DialogMaker.Editor.Menus
         }
         public CharacterContextMenu(ProjectCharacter item) : base(item)
         {
+            _moveActions = new(item);
         }
+
+        private readonly MoveResourceItemActions? _moveActions;
 
         protected override IEnumerable<IContextMenuModifier> GetItems()
         {
+            if (_moveActions != null)
+            {
+                yield return _moveActions.GetModifier();
+                yield return ContextMenuSeparator.Instance;
+            }
+
             yield return new ContextMenuAction("Удалить",
                 CanExecute, RemoveCharacter, Icons.Delete);
         }

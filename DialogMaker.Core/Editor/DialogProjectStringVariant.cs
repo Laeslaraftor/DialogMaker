@@ -41,6 +41,7 @@ namespace DialogMaker.Core.Editor
             {
                 if (_language != value)
                 {
+                    InvokePropertyChanging(nameof(Language));
                     _language = value;
                     InvokePropertyChanged(nameof(Language));
                 }
@@ -53,6 +54,7 @@ namespace DialogMaker.Core.Editor
             {
                 if (_text != value)
                 {
+                    InvokePropertyChanging(nameof(Text));
                     _text = value;
                     InvokePropertyChanged(nameof(Text));
                 }
@@ -65,6 +67,7 @@ namespace DialogMaker.Core.Editor
             {
                 if (_voice != value)
                 {
+                    InvokePropertyChanging(nameof(Voice)); 
                     _voice = value;
                     InvokePropertyChanged(nameof(Voice));
                 }

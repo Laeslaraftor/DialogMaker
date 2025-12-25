@@ -9,9 +9,11 @@ namespace DialogMaker.Lib.Elements
         public Entry()
         {
             InitializeComponent();
+            TextBox = _text;
         }
 
         public event EventHandler<ValueChangedEventArgs<string>>? ConfirmedText;
+        public event EventHandler<TextChangedEventArgs>? TextChanged;
 
         public string Placeholder
         {
@@ -28,7 +30,36 @@ namespace DialogMaker.Lib.Elements
             get => GetValue(ConfirmCommandProperty) as ICommand;
             set => SetValue(ConfirmCommandProperty, value);
         }
-        public TextBox TextBox => _text;
+        public TextBox TextBox
+        {
+            get => (TextBox)GetValue(TextBoxProperty.DependencyProperty);
+            private set => SetValue(TextBoxProperty, value);
+        }
+        public TextWrapping TextWrapping
+        {
+            get => (TextWrapping)GetValue(TextWrappingProperty);
+            set => SetValue(TextWrappingProperty, value);
+        }
+        public TextAlignment TextAlignment
+        {
+            get => (TextAlignment)GetValue(TextAlignmentProperty);
+            set => SetValue(TextAlignmentProperty, value);
+        }
+        public bool AcceptsReturn
+        {
+            get => (bool)GetValue(AcceptsReturnProperty);
+            set => SetValue(AcceptsReturnProperty, value);
+        }
+        public int MaxLines
+        {
+            get => (int)GetValue(MaxLinesProperty);
+            set => SetValue(MaxLinesProperty, value);
+        }
+        public int MaxLength
+        {
+            get => (int)GetValue(MaxLengthProperty);
+            set => SetValue(MaxLengthProperty, value);
+        }
 
         private string _startFocusValue = string.Empty;
 
@@ -81,6 +112,8 @@ namespace DialogMaker.Lib.Elements
 
             _placeholder.Visibility = visibility;
             Text = text;
+
+            TextChanged?.Invoke(this, e);
         }
 
         private static void OnPlaceholderChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -97,6 +130,41 @@ namespace DialogMaker.Lib.Elements
                 view._text.Text = e.NewValue as string;
             }
         }
+        private static void OnTextWrappingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is Entry view)
+            {
+                view._text.TextWrapping = (TextWrapping)e.NewValue;
+            }
+        }
+        private static void OnTextAlignmentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is Entry view)
+            {
+                view._text.TextAlignment = (TextAlignment)e.NewValue;
+            }
+        }
+        private static void OnAcceptsReturnChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is Entry view)
+            {
+                view._text.AcceptsReturn = (bool)e.NewValue;
+            }
+        }
+        private static void OnMaxLinesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is Entry view)
+            {
+                view._text.MaxLines = (int)e.NewValue;
+            }
+        }
+        private static void OnMaxLengthChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is Entry view)
+            {
+                view._text.MaxLength = (int)e.NewValue;
+            }
+        }
 
         #endregion
 
@@ -108,6 +176,18 @@ namespace DialogMaker.Lib.Elements
             typeof(Entry), new(string.Empty, OnTextChanged));
         public static readonly DependencyProperty ConfirmCommandProperty = DependencyProperty.Register(nameof(ConfirmCommand), typeof(ICommand),
            typeof(Entry));
+        public static readonly DependencyPropertyKey TextBoxProperty = DependencyProperty.RegisterReadOnly(nameof(TextBox), typeof(TextBox),
+           typeof(Entry), new(null));
+        public static readonly DependencyProperty TextWrappingProperty = DependencyProperty.Register(nameof(TextWrapping), typeof(TextWrapping),
+            typeof(Entry), new(TextWrapping.NoWrap, OnTextWrappingChanged));
+        public static readonly DependencyProperty TextAlignmentProperty = DependencyProperty.Register(nameof(TextAlignment), typeof(TextAlignment),
+            typeof(Entry), new(TextAlignment.Left, OnTextAlignmentChanged));
+        public static readonly DependencyProperty AcceptsReturnProperty = DependencyProperty.Register(nameof(AcceptsReturn), typeof(bool),
+            typeof(Entry), new(false, OnAcceptsReturnChanged));
+        public static readonly DependencyProperty MaxLinesProperty = DependencyProperty.Register(nameof(MaxLines), typeof(int),
+            typeof(Entry), new(-1, OnMaxLinesChanged));
+        public static readonly DependencyProperty MaxLengthProperty = DependencyProperty.Register(nameof(MaxLength), typeof(int),
+            typeof(Entry), new(-1, OnMaxLengthChanged));
 
         #endregion
     }

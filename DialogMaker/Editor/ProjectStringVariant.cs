@@ -4,10 +4,11 @@ using DialogMaker.Editor.Menus;
 using DialogMaker.Lib;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.ComponentModel;
 
 namespace DialogMaker.Editor
 {
-    public class ProjectStringVariant : ObservableObject
+    public class ProjectStringVariant : Disposable
     {
         public ProjectStringVariant(ProjectString projectString, DialogProjectStringVariant original)
         {
@@ -20,6 +21,9 @@ namespace DialogMaker.Editor
             }
 
             RemoveCommand = new RelayCommand(ExecuteRemove, CanRemove);
+
+            original.PropertyChanging += OnOriginalPropertyChanging;
+            original.PropertyChanged += OnOriginalPropertyChanged;
         }
 
         public ProjectString String { get; }
@@ -78,25 +82,39 @@ namespace DialogMaker.Editor
         public string Text
         {
             get => Original.Text;
-            set
-            {
-                if (Original.Text != value)
-                {
-                    Original.Text = value;
-                    InvokePropertyChanged(nameof(Text));
-                }
-            }
+            set => Original.Text = value;
         }
         public ProjectReference<ProjectFile, DialogProjectItem>? Voice
         {
-            get => field;
+            get
+            {
+                if (Original.Voice == null)
+                {
+                    return null;
+                }
+                if (_voice?.Item.Original.ProjectId != Original.Voice?.ItemId)
+                {
+                    _voice = Original.Voice == null ? null : new(String.Project, Original.Voice);
+                }
+
+                return _voice;
+            }
             set
             {
-                if (field != value)
+                if (Original.Voice?.ItemId == value?.Item.Original.ProjectId)
                 {
-                    field = value;
-                    InvokePropertyChanged(nameof(Voice));
+                    return;
                 }
+                if (value?.Item == null)
+                {
+                    Original.Voice = null;
+                }
+                else
+                {
+                    Original.Voice = value.Item.Original;
+                }
+
+                _voice = value;
             }
         }
         public ICommand RemoveCommand { get; }
@@ -109,7 +127,17 @@ namespace DialogMaker.Editor
             }
         }
 
+        private ProjectReference<ProjectFile, DialogProjectItem>? _voice;
+
         #region Управление
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+
+            Original.PropertyChanging -= OnOriginalPropertyChanging;
+            Original.PropertyChanged -= OnOriginalPropertyChanged;
+        }
 
         private bool CanRemove(object? parameter)
         {
@@ -124,7 +152,20 @@ namespace DialogMaker.Editor
             catch (Exception error)
             {
                 error.Alert();
-            } 
+            }
+        }
+
+        #endregion
+
+        #region События
+
+        private void OnOriginalPropertyChanging(object? sender, PropertyChangingEventArgs e)
+        {
+            InvokePropertyChanging(e);
+        }
+        private void OnOriginalPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            InvokePropertyChanged(e);
         }
 
         #endregion

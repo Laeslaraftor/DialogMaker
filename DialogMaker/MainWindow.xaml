@@ -135,7 +135,7 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        <TabControl x:Name="_dialogsTabs"
-                    Grid.Row="1" Grid.Column="1"/>
+        <Border x:Name="_dialogsTabsContainer"
+                Grid.Row="1" Grid.Column="1"/>
     </Grid>
 </Window>

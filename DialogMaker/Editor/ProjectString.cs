@@ -100,6 +100,11 @@ namespace DialogMaker.Editor
             Project.PropertyChanged -= OnProjectPropertyChanged;
             Variants.CollectionChanged -= OnVariantsCollectionChanged;
 
+            foreach (var variant in Variants)
+            {
+                variant.Dispose();
+            }
+
             _variants.Dispose();
         }
 

@@ -1,8 +1,8 @@
-﻿using System.Collections;
-using System.Collections.Specialized;
+﻿using DialogMaker.Editor;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
+using System.Windows.Data;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -13,98 +13,105 @@ namespace DialogMaker.Lib.Elements
             InitializeComponent();
         }
 
-        public event EventHandler<ValueChangedEventArgs<int>>? SelectedIndexChanged;
-
-        public string Text
+        public ProjectStringVariant? Variant
         {
-            get => (string)GetValue(TextProperty);
-            set => SetValue(TextProperty, value);
+            get => GetValue(VariantProperty) as ProjectStringVariant;
+            set => SetValue(VariantProperty, value);
         }
-        public ICommand? SelectIndexCommand
-        {
-            get => GetValue(SelectIndexCommandProperty) as ICommand;
-            set => SetValue(SelectIndexCommandProperty, value);
-        }
-        public object? SelectIndexCommandParameter
-        {
-            get => GetValue(SelectIndexCommandParameterProperty);
-            set => SetValue(SelectIndexCommandParameterProperty, value);
-        }
-        public IEnumerable? ItemsSource
-        {
-            get => GetValue(ItemsSourceProperty) as IEnumerable;
-            set => SetValue(ItemsSourceProperty, value);
-        }
-        public int SelectedIndex
-        {
-            get => (int)GetValue(SelectedIndexProperty);
-            set => SetValue(SelectedIndexProperty, value);
-        }
-
-        private bool _isItemsSourceChanging;
 
         #region Управление
 
-        private void SetItemsSource(IEnumerable? enumerable)
+        private void SetVariant(ProjectStringVariant? oldValue, ProjectStringVariant? newValue)
         {
-            _isItemsSourceChanging = true;
-            _comboBox.ItemsSource = enumerable;
-            _comboBox.SelectedIndex = SelectedIndex;
-            _isItemsSourceChanging = false;
+            if (oldValue == newValue)
+            {
+                return;
+            }
+            if (oldValue != null)
+            {
+                oldValue.PropertyChanged -= OnVariantPropertyChanged;
+            }
+
+            _textBox.Text = newValue?.Text ?? string.Empty;
+            _comboBox.ItemsSource = newValue?.String.Project.Languages;
+            ContextMenu = newValue?.ContextMenu;
+
+            try
+            {
+                _voiceField.Item = newValue?.Voice?.Item;
+            }
+            catch (Exception error)
+            {
+                error.Alert();
+            }
+
+            Binding languageBinding = new("LanguageIndex")
+            {
+                Mode = BindingMode.TwoWay
+            };
+
+            BindingOperations.SetBinding(_comboBox, ComboBox.SelectedIndexProperty, languageBinding);
+                
+            if (newValue != null)
+            {
+                newValue.PropertyChanged += OnVariantPropertyChanged;
+            }
         }
 
         #endregion
 
         #region События
 
-        private void OnComboBoxSelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void OnVariantPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (_isItemsSourceChanging)
+            if (sender is not ProjectStringVariant variant)
             {
                 return;
             }
+            if (e.PropertyName == "Text")
+            {
+                _textBox.Text = variant.Text;
+            }
+            else if (e.PropertyName == "Voice")
+            {
+                _voiceField.Item = variant.Voice?.Item;
+            }
+        }
 
-            var selectCommand = SelectIndexCommand;
-            var selectCommandParameter = SelectIndexCommandParameter;
+        private void OnReferenceViewItemChanged(object sender, ValueChangedEventArgs<ProjectResourceItem> e)
+        {
+            var variant = Variant;
 
-            if (selectCommand?.CanExecute(selectCommandParameter) == true)
+            if (variant == null)
             {
                 return;
             }
-
-            selectCommand?.Execute(selectCommandParameter);
-
-            SelectedIndexChanged?.Invoke(this, new(SelectedIndex, _comboBox.SelectedIndex));
-
-            SelectedIndex = _comboBox.SelectedIndex;
-        }
-        private void OnTextBoxTextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (_textBox.Text != Text)
+            if (e.NewValue == null)
             {
-                Text = _textBox.Text;
+                variant.Voice = null;
+                return;
+            }
+
+            try
+            {
+                variant.Voice = (ProjectFile)e.NewValue;
+            }
+            catch (Exception error)
+            {
+                error.Alert();
             }
         }
+        private void OnTextBoxConfirmedText(object sender, ValueChangedEventArgs<string> e)
+        {
+            Variant?.Text = e.NewValue;
+        }
 
-        private static void OnTextPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        
+        private static void OnVariantChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is ReplicaVariantView view)
             {
-                view._textBox.Text = e.NewValue as string;
-            }
-        }
-        private static void OnItemsSourcePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            if (d is ReplicaVariantView view)
-            {
-                view.SetItemsSource(e.NewValue as IEnumerable);
-            }
-        }
-        private static void OnSelectedIndexPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            if (d is ReplicaVariantView view)
-            {
-                view._comboBox.SelectedIndex = (int)e.NewValue;
+                view.SetVariant(e.OldValue as ProjectStringVariant, e.NewValue as ProjectStringVariant);
             }
         }
 
@@ -112,18 +119,11 @@ namespace DialogMaker.Lib.Elements
 
         #region Dependency
 
-        public static readonly DependencyProperty TextProperty = DependencyProperty.Register(nameof(Text), typeof(string),
-            typeof(ReplicaVariantView), new(string.Empty, OnTextPropertyChanged));
-        public static readonly DependencyProperty SelectIndexCommandProperty = DependencyProperty.Register(nameof(SelectIndexCommand), typeof(ICommand),
-            typeof(ReplicaVariantView));
-        public static readonly DependencyProperty SelectIndexCommandParameterProperty = DependencyProperty.Register(nameof(SelectIndexCommandParameter), typeof(object),
-            typeof(ReplicaVariantView));
-        public static readonly DependencyProperty ItemsSourceProperty = DependencyProperty.Register(nameof(ItemsSource), typeof(IEnumerable),
-            typeof(ReplicaVariantView), new(OnItemsSourcePropertyChanged));
-        public static readonly DependencyProperty SelectedIndexProperty = DependencyProperty.Register(nameof(SelectedIndex), typeof(int),
-            typeof(ReplicaVariantView), new(OnSelectedIndexPropertyChanged));
-
+        public static readonly DependencyProperty VariantProperty = DependencyProperty.Register(nameof(Variant), typeof(ProjectStringVariant),
+            typeof(ReplicaVariantView), new(OnVariantChanged));
 
         #endregion
+
+
     }
 }

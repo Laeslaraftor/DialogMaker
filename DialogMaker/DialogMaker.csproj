@@ -21,8 +21,4 @@
     <ProjectReference Include="..\DialogMaker.Core\DialogMaker.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Lib\Collections\" />
-  </ItemGroup>
-
 </Project>

@@ -1,17 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectReference : ISavable
+    public class DialogProjectReference : Disposable, ISavable
     {
-        public DialogProjectReference()
-        {
-            Project = null;
-            ItemId = Guid.Empty;
-            ResourcesPath = string.Empty;
-        }
         protected DialogProjectReference(DialogProject project, Guid id, string path, DialogResourceType type)
         {
             Project = project;
@@ -19,11 +12,26 @@ namespace DialogMaker.Core.Editor
             ResourcesPath = path;
             ResourceType = type;
             _type = DialogProjectResourceObject.GetType(type, true);
+
+            project.ResourceItemPathChanged += OnProjectResourceItemPathChanged;
+            project.Disposed += OnProjectDisposed;
         }
 
-        public DialogProject? Project { get; }
+        public DialogProject Project { get; }
         public Guid ItemId { get; }
-        public string ResourcesPath { get; }
+        public string ResourcesPath
+        {
+            get => field;
+            private set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(ResourcesPath));
+                    field = value;
+                    InvokePropertyChanged(nameof(ResourcesPath));
+                }
+            }
+        }
         public DialogResourceType ResourceType { get; }
 
         private readonly Type? _type;
@@ -77,6 +85,8 @@ namespace DialogMaker.Core.Editor
 
         public DialogProjectReferenceSavedState Save()
         {
+            CheckHelper.CheckIsDisposed(this);
+
             string? itemPath = null;
 
             if (ItemId != null && ResourcesPath != null)
@@ -129,6 +139,34 @@ namespace DialogMaker.Core.Editor
             return $"{ResourceType}:{ItemId}:{ResourcesPath}";
         }
 
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+
+            Project.ResourceItemPathChanged -= OnProjectResourceItemPathChanged;
+            Project.Disposed -= OnProjectDisposed;
+        }
+
+        #endregion
+
+        #region События
+
+        private void OnProjectDisposed(object sender, EventArgs e)
+        {
+            Dispose();
+        }
+        private void OnProjectResourceItemPathChanged(object sender, ResourceItemPathChangedEventArgs e)
+        {
+            if (e.Item.ProjectId != ItemId ||
+                e.OldPath != ResourcesPath)
+            {
+                return;
+            }
+
+            ResourcesPath = e.NewPath;
+            _item ??= e.Item;
+        }
+
         #endregion
 
         #region Операторы
@@ -148,14 +186,13 @@ namespace DialogMaker.Core.Editor
 
         public static DialogProjectReference Create(DialogProjectResourceObject obj)
         {
-            var path = GetPath(obj);
-            return CreateGeneric(obj.Resources.Owner.Project, obj.ProjectId, path, obj.ResourceType);
+            return CreateGeneric(obj.Resources.Owner.Project, obj.ProjectId, obj.Path, obj.ResourceType);
         }
         public static DialogProjectReference Restore(DialogProject project, DialogProjectReferenceSavedState savedState)
         {
             if (savedState.ItemPath == null)
             {
-                return new();
+                throw new ArgumentException("Путь к объекту не указан", nameof(savedState));
             }
 
             string[] parts = savedState.ItemPath.Split(':');
@@ -172,38 +209,6 @@ namespace DialogMaker.Core.Editor
             return CreateGeneric(project, Guid.Parse(parts[1]), parts[2], resourceType);
         }
 
-        private static string GetPath(DialogProjectResourceObject obj)
-        {
-            List<string> pathParts = [];
-            IProjectResourcesOwner? current = obj.Resources.Owner;
-
-            while (current != null)
-            {
-                string id = ".";
-
-                if (current is not DialogProject)
-                {
-                    id = current.Id;
-                }
-
-                pathParts.Add(id);
-                current = current.Parent;
-            }
-
-            string path = string.Empty;
-
-            for (int i = pathParts.Count - 1; i >= 0; i--)
-            {
-                path += pathParts[i];
-
-                if (i > 0)
-                {
-                    path += '/';
-                }
-            }
-
-            return path;
-        }
         private static DialogProjectReference CreateGeneric(DialogProject project, Guid id, string path, DialogResourceType type)
         {
             var resourceType = DialogProjectResourceObject.GetType(type, true);

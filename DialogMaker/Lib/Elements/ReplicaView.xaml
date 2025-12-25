@@ -57,11 +57,8 @@
                 </ListView.Template>
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <local:ReplicaVariantView Text="{Binding Text, Mode=TwoWay}"
-                                                  ItemsSource="{Binding String.Project.Languages}"
-                                                  SelectedIndex="{Binding LanguageIndex, Mode=TwoWay}"
-                                                  Background="Transparent"
-                                                  ContextMenu="{Binding ContextMenu}"/>
+                        <local:ReplicaVariantView Variant="{Binding}"
+                                                  Background="Transparent"/>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>

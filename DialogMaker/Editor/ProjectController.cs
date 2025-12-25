@@ -9,6 +9,7 @@ using System.Collections.Specialized;
 using DialogMaker.Editor.Nodes;
 using System.Diagnostics.CodeAnalysis;
 using DialogMaker.Editor.Filters;
+using DialogMaker.Lib.Controllers;
 
 namespace DialogMaker.Editor
 {
@@ -90,6 +91,7 @@ namespace DialogMaker.Editor
         public ProjectStringConverter StringConverter { get; }
         public ProjectNodesFabric NodesViewFabric { get; } = new();
         public ProjectResourcesFilter ResourcesFilter { get; } = new();
+        public DialogTabsController TabsController { get; } = new();
         public ICommand CreatePackCommand { get; }
         public ICommand CreateLanguageCommand { get; }
         public ICommand SaveCommand { get; }
@@ -105,6 +107,11 @@ namespace DialogMaker.Editor
 
         public void Save()
         {
+            if (IsDisposed)
+            {
+                return;
+            }
+
             try
             {
                 Project.Save();
@@ -123,6 +130,7 @@ namespace DialogMaker.Editor
             Languages.CollectionChanged -= OnLanguagesCollectionChanged;
             Project.Languages.ItemChanged -= OnProjectLanguagesItemChanged;
 
+            TabsController.Dispose();
             Resources.Dispose();
             _languages.Dispose();
             _languagesName.Dispose();
@@ -130,6 +138,7 @@ namespace DialogMaker.Editor
             _packs.Dispose();
 
             _controllers.Remove(this);
+            Project.Dispose();
         }
 
         private void UpdateDefaultLanguage()

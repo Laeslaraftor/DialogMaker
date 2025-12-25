@@ -9,12 +9,21 @@ namespace DialogMaker.Editor.Menus
         }
         public StringContextMenu(ProjectString item) : base(item)
         {
+            _moveActions = new(item);
         }
+
+        private readonly MoveResourceItemActions? _moveActions;
 
         protected override IEnumerable<IContextMenuModifier> GetItems()
         {
             yield return new ContextMenuAction("Добавить вариант",
                 CanAddVariant, AddVariant, Icons.Add);
+
+            if (_moveActions != null)
+            {
+                yield return _moveActions.GetModifier();
+            }
+
             yield return ContextMenuSeparator.Instance;
             yield return new ContextMenuAction("Удалить строку",
                 CanExecute, RemoveString, Icons.Delete);

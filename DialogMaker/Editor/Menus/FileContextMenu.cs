@@ -10,7 +10,10 @@ namespace DialogMaker.Editor.Menus
         }
         public FileContextMenu(ProjectFile item) : base(item)
         {
+            _moveActions = new(item);
         }
+
+        private readonly MoveResourceItemActions? _moveActions;
 
         protected override IEnumerable<IContextMenuModifier> GetItems()
         {
@@ -18,6 +21,12 @@ namespace DialogMaker.Editor.Menus
                 CanExecute, Open, Icons.OpenFile);
             yield return new ContextMenuAction("Показать в проводнике",
                 CanExecute, OpenInExplorer, Icons.OpenFolder);
+
+            if (_moveActions != null)
+            {
+                yield return _moveActions.GetModifier();
+            }
+
             yield return ContextMenuSeparator.Instance;
             yield return new ContextMenuAction("Удалить",
                 CanExecute, RemoveFile, Icons.Delete);

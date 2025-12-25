@@ -6,7 +6,7 @@ namespace DialogMaker.Core
     {
         ~Disposable()
         {
-            Dispose(false);
+            StartDisposing(false);
         }
 
         public event EventHandler? Disposed;
@@ -32,14 +32,33 @@ namespace DialogMaker.Core
                 return;
             }
 
-            Disposed?.Invoke(this, EventArgs.Empty);
-
-            Dispose(true);
+            StartDisposing(true);
             GC.SuppressFinalize(this);
         }
 
         protected virtual void Dispose(bool isDisposing)
         {
+            IsDisposed = true;
+
+            Disposed?.Invoke(this, EventArgs.Empty);
         }
+
+        private void StartDisposing(bool isDisposing)
+        {
+            if (Dispatcher == null || Dispatcher.CurrentThreadIsMain)
+            {
+                Dispose(isDisposing);
+            }
+            else
+            {
+                Dispatcher.Execute(() => Dispose(isDisposing));
+            } 
+        }
+
+        #region Статика
+
+        public static IThreadDispatcher? Dispatcher { get; set; }
+
+        #endregion
     }
 }

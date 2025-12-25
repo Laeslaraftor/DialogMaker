@@ -1,7 +1,6 @@
 ﻿using DialogMaker.Core.Attributes;
 using System;
 using System.Collections.Generic;
-using System.Data;
 
 namespace DialogMaker.Core.Editor
 {
@@ -11,6 +10,9 @@ namespace DialogMaker.Core.Editor
         {
             ProjectId = id;
             Resources = resources;
+            Path = CreatePath(this);
+
+            resources.Owner.Project.Register(this);
         }
         protected DialogProjectResourceObject(DialogProjectResources resources)
             : this(resources, Guid.NewGuid())
@@ -22,7 +24,21 @@ namespace DialogMaker.Core.Editor
             Id = savedState.Id;
         }
 
-        public DialogProjectResources Resources { get; }
+        public event EventHandler<ResourceItemPathChangedEventArgs>? PathChanged;
+
+        public DialogProjectResources Resources
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(Resources));
+                    field = value;
+                    InvokePropertyChanged(nameof(Resources));
+                }
+            }
+        }
         public abstract DialogResourceType ResourceType { get; }
         public Guid ProjectId { get; }
         public string Id
@@ -39,15 +55,60 @@ namespace DialogMaker.Core.Editor
 
                 if (_id != value)
                 {
+                    InvokePropertyChanging(nameof(Id));
                     _id = value;
                     InvokePropertyChanged(nameof(Id));
                 }
+            }
+        }
+        public string Path
+        {
+            get => field;
+            private set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(Path)); 
+                    field = value;
+                    InvokePropertyChanged(nameof(Path));
+                } 
             }
         }
 
         private string _id = DefaultId;
 
         #region Управление
+
+        public void MoveTo(IProjectResourcesOwner resourcesOwner)
+        {
+            MoveTo(resourcesOwner.Resources);
+        }
+        public void MoveTo(DialogProjectResources resources)
+        {
+            if (resources == null)
+            {
+                throw new ArgumentNullException(nameof(resources));
+            }
+            if (resources == Resources)
+            {
+                return;
+            }
+
+            var currentResources = Resources;
+            var currentPath = Path;
+
+            if (!currentResources.RemoveItem(this))
+            {
+                throw new InvalidOperationException($"Не удалось удалить ресурс \"{this}\" из {currentResources}");
+            }
+
+            Resources = resources;
+            Path = CreatePath(this);
+
+            resources.AddItem(this);
+
+            PathChanged?.Invoke(this, new(this, currentResources, currentPath));
+        }
 
         public ISavedState Save()
         {
@@ -56,6 +117,12 @@ namespace DialogMaker.Core.Editor
             savedState.Id = Id?.Trim() ?? DefaultId;
 
             return savedState;
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+            Resources.Owner.Project.Unregister(this);
         }
 
         protected abstract DialogProjectResourceObjectSavedState CreateSavedState();
@@ -93,6 +160,38 @@ namespace DialogMaker.Core.Editor
             }
 
             throw new ArgumentException("Не удалось получить тип ресурса", nameof(type));
+        }
+        private static string CreatePath(DialogProjectResourceObject obj)
+        {
+            List<string> pathParts = [];
+            IProjectResourcesOwner? current = obj.Resources.Owner;
+
+            while (current != null)
+            {
+                string id = ".";
+
+                if (current is not DialogProject)
+                {
+                    id = current.Id;
+                }
+
+                pathParts.Add(id);
+                current = current.Parent;
+            }
+
+            string path = string.Empty;
+
+            for (int i = pathParts.Count - 1; i >= 0; i--)
+            {
+                path += pathParts[i];
+
+                if (i > 0)
+                {
+                    path += '/';
+                }
+            }
+
+            return path;
         }
 
         #endregion

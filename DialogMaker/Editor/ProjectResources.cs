@@ -5,6 +5,7 @@ using DialogMaker.Editor.Filters;
 using DialogMaker.Editor.Menus;
 using DialogMaker.Lib;
 using Microsoft.Win32;
+using System.Diagnostics.CodeAnalysis;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -63,10 +64,10 @@ namespace DialogMaker.Editor
         public ReferenceReadOnlyList<ProjectCharacter> Characters { get; }
         public ReferenceReadOnlyList<ProjectVariable> Variables { get; }
         public ReferenceReadOnlyList<ProjectFile> Files { get; }
-        public UnitedCollection<ReferenceReadOnlyList<ProjectString>, ProjectString> InheritedStrings { get; }
-        public UnitedCollection<ReferenceReadOnlyList<ProjectCharacter>, ProjectCharacter> InheritedCharacters { get; }
-        public UnitedCollection<ReferenceReadOnlyList<ProjectVariable>, ProjectVariable> InheritedVariables { get; }
-        public UnitedCollection<ReferenceReadOnlyList<ProjectFile>, ProjectFile> InheritedFiles { get; }
+        public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectString>, ProjectString> InheritedStrings { get; }
+        public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectCharacter>, ProjectCharacter> InheritedCharacters { get; }
+        public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectVariable>, ProjectVariable> InheritedVariables { get; }
+        public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectFile>, ProjectFile> InheritedFiles { get; }
         public ContextMenu CreateVariablesContextMenu { get; }
         public ICommand CreateStringCommand { get; }
         public ICommand CreateCharacterCommand { get; }
@@ -79,6 +80,29 @@ namespace DialogMaker.Editor
         private readonly CollectionSynchronizer<DialogProjectItem, ProjectFile> _files;
 
         #region Управление
+
+        public bool TryFindByFlags(DialogResourcesFlags flags, [NotNullWhen(true)] out ProjectResources? result)
+        {
+            result = null;
+            ProjectResources? parent = this;
+            long lastFlagsValue = long.MaxValue;
+
+            while (parent != null)
+            {
+                long value = (long)parent.Flags;
+
+                if (parent.Flags.HasFlag(flags) &&
+                    lastFlagsValue > value)
+                {
+                    result = parent;
+                    lastFlagsValue = value;
+                }
+
+                parent = parent.Parent;
+            }
+
+            return result != null;
+        }
 
         public void AddFile()
         {

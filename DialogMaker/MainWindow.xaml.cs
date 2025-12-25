@@ -2,6 +2,7 @@
 using DialogMaker.Editor;
 using DialogMaker.Lib;
 using DialogMaker.Lib.Controllers;
+using DialogMaker.Lib.Elements;
 using DialogMaker.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
@@ -19,10 +20,17 @@ namespace DialogMaker
             _model.OpenProjectCommand = new RelayCommand(ExecuteOpenProject);
             _model.CloseProjectCommand = new RelayCommand(ExecuteCloseProject);
             _resourcesDragAndDrop = new(this);
-            _tabsController = new(_dialogsTabs);
 
             DataContext = _model;
             Instance = this;
+
+            ModalWindow modal = new()
+            {
+                MainButtonContent = "То самое",
+                SecondaryButtonContent = "Отмена",
+                Buttons = ModalWindowButtons.All
+            };
+            modal.Show();
         }
 
         private readonly MainWindowViewModel _model = new()
@@ -30,7 +38,6 @@ namespace DialogMaker
             DefaultLanguageVisibility = Visibility.Collapsed
         };
         private readonly ResourcesDragAndDropController _resourcesDragAndDrop;
-        private readonly DialogTabsController _tabsController;
 
         #region Управление
 
@@ -60,6 +67,7 @@ namespace DialogMaker
             _model.CreatePackCommand = controller?.CreatePackCommand;
             _model.Languages = controller?.Languages;
             _model.GlobalResources = controller?.Resources;
+            _dialogsTabsContainer.Child = controller?.TabsController.TabControl;
 
             if (project == null)
             {
@@ -173,7 +181,7 @@ namespace DialogMaker
         {
             if (e.NewValue is ProjectStructureItem item)
             {
-                _tabsController.AddItem(item);
+                item.Project.TabsController.AddItem(item);
             }
         }
 

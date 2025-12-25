@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectResources : ObservableObject
+    public class DialogProjectResources : Disposable
     {
         public DialogProjectResources(IProjectResourcesOwner owner, DialogResourcesFlags flags)
         {
@@ -96,6 +96,8 @@ namespace DialogMaker.Core.Editor
 
         public void Save()
         {
+            CheckHelper.CheckIsDisposed(this);
+
             if (Owner.Project.IsDisposed || !Directory.Exists(Folder))
             {
                 Directory.CreateDirectory(Folder);
@@ -177,6 +179,27 @@ namespace DialogMaker.Core.Editor
 
             return false;
         }
+        public IEditableList GetObjectsCollection(DialogProjectResourceObject obj)
+        {
+            if (obj is DialogProjectString)
+            {
+                return Strings;
+            }
+            else if (obj is DialogProjectItem)
+            {
+                return Items;
+            }
+            else if (obj is DialogProjectCharacter)
+            {
+                return Characters;
+            }
+            else if (obj is DialogProjectVariable)
+            {
+                return Variables;
+            }
+
+            throw new ArgumentException($"Неизвестный тип ресурса");
+        }
 
         public DialogProjectItem AddItem(string filePath, bool overwrite = false)
         {
@@ -240,6 +263,53 @@ namespace DialogMaker.Core.Editor
         public bool RemoveVariable(DialogProjectVariable variable)
         {
             return Variables.Remove(variable);
+        }
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+
+            static void Dispose<T>(IList<T> items) where T : DialogProjectResourceObject
+            {
+                foreach (var item in items)
+                {
+                    item.Dispose();
+                }
+
+                items.Clear();
+            }
+
+            Dispose(Strings);
+            Dispose(Items);
+            Dispose(Characters);
+            Dispose(Variables);
+        }
+
+        #endregion
+
+        #region Перемещение
+
+        internal bool RemoveItem(DialogProjectResourceObject obj)
+        {
+            if (obj.Resources != this)
+            {
+                return false;
+            }
+
+            GetObjectsCollection(obj).Remove(obj);
+
+            return true;
+        }
+        internal bool AddItem(DialogProjectResourceObject obj)
+        {
+            if (obj.Resources != this)
+            {
+                return false;
+            }
+
+            GetObjectsCollection(obj).AddNew(obj);
+
+            return true;
         }
 
         #endregion

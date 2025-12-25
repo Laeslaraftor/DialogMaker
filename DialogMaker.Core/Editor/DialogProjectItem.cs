@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using SysPath = System.IO.Path;
 
 namespace DialogMaker.Core.Editor
 {
@@ -15,7 +16,7 @@ namespace DialogMaker.Core.Editor
         {
         }
         public DialogProjectItem(DialogProjectResources resources, DialogProjectResourceItemSavedState savedState)
-            : this(resources, Guid.Parse(savedState.ProjectId), savedState.ResourceType, Path.Combine(resources.Folder, savedState.FileName))
+            : this(resources, Guid.Parse(savedState.ProjectId), savedState.ResourceType, SysPath.Combine(resources.Folder, savedState.FileName))
         {
             Id = savedState.Id;
         }
@@ -33,7 +34,7 @@ namespace DialogMaker.Core.Editor
 
             filePath = filePath.Replace("/", @"\");
             string fileName = filePath.GetFileName(false);
-            string expectedPath = Path.Combine(resources.Folder, fileName);
+            string expectedPath = SysPath.Combine(resources.Folder, fileName);
 
             if (filePath != expectedPath)
             {
