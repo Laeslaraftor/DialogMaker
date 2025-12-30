@@ -30,6 +30,8 @@ namespace DialogMaker.Lib
         }
         public static void Show(Exception error)
         {
+            ExceptionAlertView.Show(error);
+            return;
             StringBuilder builder = new();
             builder.AppendLine(error.Message);
             builder.AppendLine(error.StackTrace);

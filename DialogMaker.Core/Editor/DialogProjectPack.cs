@@ -79,6 +79,9 @@ namespace DialogMaker.Core.Editor
         public DialogProjectResources Resources { get; }
 
         IProjectResourcesOwner? IProjectResourcesOwner.Parent => Project;
+        IResourcesOwner? IResourcesOwner.Parent => Project;
+        IResourcesOwner IResourcesOwner.Root => Project;
+        IResourcesContainer IResourcesOwner.Resources => Resources;
 
         private string _name = string.Empty;
 
@@ -110,7 +113,7 @@ namespace DialogMaker.Core.Editor
         {
             return Dialogs.TryGetValue(d => d.Id == id, out result);
         }
-        bool IProjectResourcesOwner.TryGetChild(string id, [NotNullWhen(true)] out IProjectResourcesOwner? result)
+        bool IResourcesOwner.TryFindChild(string id, [NotNullWhen(true)] out IResourcesOwner? result)
         {
             return Dialogs.TryGetValue(d => d.Id == id, out result);
         }

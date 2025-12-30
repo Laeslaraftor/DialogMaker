@@ -1,17 +1,15 @@
 ﻿using System;
-using System.Data;
 
 namespace DialogMaker.Core.Editor
 {
     public class DialogProjectReference : Disposable, ISavable
     {
-        protected DialogProjectReference(DialogProject project, Guid id, string path, DialogResourceType type)
+        protected DialogProjectReference(DialogProject project, Guid id, ResourcePath path)
         {
             Project = project;
             ItemId = id;
             ResourcesPath = path;
-            ResourceType = type;
-            _type = DialogProjectResourceObject.GetType(type, true);
+            _type = DialogProjectResourceObject.GetType(path.ResourceType, true);
 
             project.ResourceItemPathChanged += OnProjectResourceItemPathChanged;
             project.Disposed += OnProjectDisposed;
@@ -19,7 +17,7 @@ namespace DialogMaker.Core.Editor
 
         public DialogProject Project { get; }
         public Guid ItemId { get; }
-        public string ResourcesPath
+        public ResourcePath ResourcesPath
         {
             get => field;
             private set
@@ -32,7 +30,7 @@ namespace DialogMaker.Core.Editor
                 }
             }
         }
-        public DialogResourceType ResourceType { get; }
+        public DialogResourceType ResourceType => ResourcesPath.ResourceType;
 
         private readonly Type? _type;
         private DialogProjectResourceObject? _item;
@@ -53,34 +51,16 @@ namespace DialogMaker.Core.Editor
                 throw new InvalidOperationException("Проект, путь или идентификатор объекта пуст. Видимо, ссылка была создана неверно.");
             }
 
-            string[] pathParts = ResourcesPath.Split('/');
-            IProjectResourcesOwner? currentOwner = Project;
-            int index = 0;
+            var item = IResourcesOwner.FindResource(Project, ResourcesPath);
 
-            if (pathParts[index] == ".")
+            if (item is not DialogProjectResourceObject obj)
             {
-                index++;
+                throw new InvalidCastException($"Получен ресурс недопустимого типа: {item.GetType().FullName}");
             }
 
-            while (index < pathParts.Length &&
-                   currentOwner.TryGetChild(pathParts[index], out var childOwner))
-            {
-                currentOwner = childOwner;
-                index++;
-            }
+            _item = obj;
 
-            if (index + 1 < pathParts.Length || currentOwner == null)
-            {
-                throw new ArgumentException($"Не удалось получить владельца ресурсов с идентификатором {pathParts[index]} в {currentOwner?.Id}");
-            }
-
-            if (currentOwner.Resources.TryGetObject(ItemId, _type, out var result))
-            {
-                _item = result;
-                return result;
-            }
-
-            throw new DataException($"Не удалось получить объект типа {_type.FullName} с идентификатором {ItemId}");
+            return obj;
         }
 
         public DialogProjectReferenceSavedState Save()
@@ -186,7 +166,7 @@ namespace DialogMaker.Core.Editor
 
         public static DialogProjectReference Create(DialogProjectResourceObject obj)
         {
-            return CreateGeneric(obj.Resources.Owner.Project, obj.ProjectId, obj.Path, obj.ResourceType);
+            return CreateGeneric(obj.Resources.Owner.Project, obj.ProjectId, obj.Path);
         }
         public static DialogProjectReference Restore(DialogProject project, DialogProjectReferenceSavedState savedState)
         {
@@ -195,27 +175,18 @@ namespace DialogMaker.Core.Editor
                 throw new ArgumentException("Путь к объекту не указан", nameof(savedState));
             }
 
-            string[] parts = savedState.ItemPath.Split(':');
+            var path = ResourcePath.Parse(savedState.ItemPath);
 
-            if (parts.Length != 3)
-            {
-                throw new ArgumentException($"Недопустимый путь к ресурсу: {savedState.ItemPath}", nameof(savedState));
-            }
-            if (!Enum.TryParse<DialogResourceType>(parts[0], out var resourceType))
-            {
-                throw new ArgumentException($"Не удалось получить тип ресурса. Недопустимый путь к ресурсу: {savedState.ItemPath}", nameof(savedState));
-            }
-
-            return CreateGeneric(project, Guid.Parse(parts[1]), parts[2], resourceType);
+            return CreateGeneric(project, Guid.Parse(path.Id), path);
         }
 
-        private static DialogProjectReference CreateGeneric(DialogProject project, Guid id, string path, DialogResourceType type)
+        private static DialogProjectReference CreateGeneric(DialogProject project, Guid id, ResourcePath path)
         {
-            var resourceType = DialogProjectResourceObject.GetType(type, true);
+            var resourceType = DialogProjectResourceObject.GetType(path.ResourceType, true);
             var openReference = typeof(DialogProjectReference<>);
             var closedReference = openReference.MakeGenericType(resourceType);
 
-            return (DialogProjectReference)Activator.CreateInstance(closedReference, project, id, path, type);
+            return (DialogProjectReference)Activator.CreateInstance(closedReference, project, id, path);
         }
 
         #endregion

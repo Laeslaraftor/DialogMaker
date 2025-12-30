@@ -4,13 +4,13 @@ using System.Collections.Generic;
 
 namespace DialogMaker.Core.Editor
 {
-    public abstract class DialogProjectResourceObject : Disposable
+    public abstract class DialogProjectResourceObject : Disposable, IResource
     {
         protected DialogProjectResourceObject(DialogProjectResources resources, Guid id)
         {
             ProjectId = id;
             Resources = resources;
-            Path = CreatePath(this);
+            Path = ResourcePath.CreatePath(this);
 
             resources.Owner.Project.Register(this);
         }
@@ -61,7 +61,7 @@ namespace DialogMaker.Core.Editor
                 }
             }
         }
-        public string Path
+        public ResourcePath Path
         {
             get => field;
             private set
@@ -74,6 +74,9 @@ namespace DialogMaker.Core.Editor
                 } 
             }
         }
+
+        string IResource.Id => ProjectId.ToString();
+        IResourcesContainer IResource.Container => Resources;
 
         private string _id = DefaultId;
 
@@ -103,7 +106,7 @@ namespace DialogMaker.Core.Editor
             }
 
             Resources = resources;
-            Path = CreatePath(this);
+            Path = ResourcePath.CreatePath(this);
 
             resources.AddItem(this);
 
@@ -160,38 +163,6 @@ namespace DialogMaker.Core.Editor
             }
 
             throw new ArgumentException("Не удалось получить тип ресурса", nameof(type));
-        }
-        private static string CreatePath(DialogProjectResourceObject obj)
-        {
-            List<string> pathParts = [];
-            IProjectResourcesOwner? current = obj.Resources.Owner;
-
-            while (current != null)
-            {
-                string id = ".";
-
-                if (current is not DialogProject)
-                {
-                    id = current.Id;
-                }
-
-                pathParts.Add(id);
-                current = current.Parent;
-            }
-
-            string path = string.Empty;
-
-            for (int i = pathParts.Count - 1; i >= 0; i--)
-            {
-                path += pathParts[i];
-
-                if (i > 0)
-                {
-                    path += '/';
-                }
-            }
-
-            return path;
         }
 
         #endregion

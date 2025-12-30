@@ -1,0 +1,32 @@
+﻿<UserControl x:Class="DialogMaker.Lib.Elements.ExceptionAlertView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:DialogMaker.Lib.Elements"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <StackPanel Margin="18">
+        <TextBlock x:Name="_typeName" FontSize="26"
+                   FontWeight="Medium" TextWrapping="Wrap"/>
+        <TextBlock x:Name="_message" FontSize="16" 
+                   TextWrapping="Wrap" Margin="0,8"/>
+        <Border x:Name="_stackTraceContainer" Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
+                CornerRadius="4" Padding="8,6"
+                Visibility="Collapsed">
+            <TextBlock x:Name="_stackTrace" TextWrapping="Wrap"/>
+        </Border>
+        <Grid Cursor="Hand" 
+              HorizontalAlignment="Left">
+            <TextBlock x:Name="_stackTraceButtonText" 
+                       Text="Стек вызовов" FontSize="16"
+                       HorizontalAlignment="Left"
+                       Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                       TextDecorations="Underline"/>
+            <Button Padding="0" Opacity="0"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    Click="OnShowStackTraceButtonClicked"/>
+        </Grid>
+    </StackPanel>
+</UserControl>

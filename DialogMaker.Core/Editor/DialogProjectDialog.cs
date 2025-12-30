@@ -7,7 +7,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Xml.Linq;
 
 namespace DialogMaker.Core.Editor
 {
@@ -78,6 +77,9 @@ namespace DialogMaker.Core.Editor
         public DialogProjectResources Resources { get; }
 
         IProjectResourcesOwner? IProjectResourcesOwner.Parent => Pack;
+        IResourcesOwner IResourcesOwner.Root => Project;
+        IResourcesOwner? IResourcesOwner.Parent => Pack;
+        IResourcesContainer IResourcesOwner.Resources => Resources;
 
         private string _name = string.Empty;
 
@@ -106,7 +108,7 @@ namespace DialogMaker.Core.Editor
         {
             return Nodes.TryGetValue(n => n.Id == id, out result);
         }
-        bool IProjectResourcesOwner.TryGetChild(string id, [NotNullWhen(true)] out IProjectResourcesOwner? result)
+        bool IResourcesOwner.TryFindChild(string id, [NotNullWhen(true)] out IResourcesOwner? result)
         {
             result = null;
             return false;

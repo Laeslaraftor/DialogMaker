@@ -76,7 +76,7 @@ namespace DialogMaker.Core.Editor
 
         private DialogProjectLanguage? _language;
         private string _text = string.Empty;
-        public DialogProjectReference<DialogProjectItem>? _voice;
+        private DialogProjectReference<DialogProjectItem>? _voice;
 
         #region Управление
 

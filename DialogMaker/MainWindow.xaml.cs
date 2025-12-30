@@ -23,14 +23,6 @@ namespace DialogMaker
 
             DataContext = _model;
             Instance = this;
-
-            ModalWindow modal = new()
-            {
-                MainButtonContent = "То самое",
-                SecondaryButtonContent = "Отмена",
-                Buttons = ModalWindowButtons.All
-            };
-            modal.Show();
         }
 
         private readonly MainWindowViewModel _model = new()

@@ -27,11 +27,11 @@
             </Grid.ColumnDefinitions>
             <Button x:Name="_mainButton" Grid.ColumnSpan="3"
                     Style="{DynamicResource AccentButtonStyle}" 
-                    HorizontalAlignment="Stretch"
+                    HorizontalAlignment="Stretch" Padding="0,7,0,8"
                     Click="OnMainButtonClick"/>
             <Button x:Name="_secondaryButton" Grid.Column="2"
                     HorizontalAlignment="Stretch" Visibility="Collapsed"
-                    Click="OnSecondaryButtonClick"/>
+                    Click="OnSecondaryButtonClick" Padding="0,7,0,8"/>
         </Grid>
     </Grid>
 </Window>

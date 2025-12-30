@@ -1,4 +1,5 @@
 ﻿using Acly;
+using DialogMaker.Core.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -9,7 +10,7 @@ using System.Linq;
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectResources : Disposable
+    public class DialogProjectResources : Disposable, IResourcesContainer
     {
         public DialogProjectResources(IProjectResourcesOwner owner, DialogResourcesFlags flags)
         {
@@ -91,6 +92,8 @@ namespace DialogMaker.Core.Editor
         public EditableCollection<DialogProjectCharacter> Characters { get; }
         public EditableCollection<DialogProjectVariable> Variables { get; }
         public ReadOnlyCollection<DialogProjectResources> InheritedResources { get; }
+
+        IResourcesOwner IResourcesContainer.Owner => Owner;
 
         #region Управление
 
@@ -199,6 +202,26 @@ namespace DialogMaker.Core.Editor
             }
 
             throw new ArgumentException($"Неизвестный тип ресурса");
+        }
+
+        bool IResourcesContainer.TryGetResource(DialogResourceType type, string id, [NotNullWhen(true)] out IResource? result)
+        {
+            result = null;
+
+            if (!Guid.TryParse(id, out var guidId))
+            {
+                return false;
+            }
+
+            var resourceType = DialogProjectResourceObject.GetType(type, true);
+
+            if (TryGetObject(guidId, resourceType, out var resource))
+            {
+                result = resource;
+                return true;
+            }
+
+            return false;
         }
 
         public DialogProjectItem AddItem(string filePath, bool overwrite = false)

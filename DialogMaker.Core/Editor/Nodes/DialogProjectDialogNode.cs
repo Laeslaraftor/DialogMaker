@@ -76,6 +76,27 @@ namespace DialogMaker.Core.Editor.Nodes
 
         #region Управление
 
+        public IEnumerable<DialogProjectNodePort> GetPorts(Predicate<DialogProjectNodePort> predicate)
+        {
+            foreach (var port in GetInputs().Keys)
+            {
+                if (predicate(port))
+                {
+                    yield return port;
+                }
+            }
+            foreach (var port in GetOutputs().Keys)
+            {
+                if (predicate(port))
+                {
+                    yield return port;
+                }
+            }
+        }
+        public IEnumerable<DialogProjectNodePort> GetPorts()
+        {
+            return GetPorts(p => true);
+        }
         public ReadOnlyDictionary<DialogProjectNodeInput, DialogProjectNodeMetadata> GetInputs()
         {
             if (_inputs == null)
@@ -133,7 +154,7 @@ namespace DialogMaker.Core.Editor.Nodes
             savedState.Id = Id;
             savedState.NodeType = NodeType;
             savedState.Position = Position;
-            
+
             foreach (var port in GetInputs().Keys)
             {
                 savedState.Inputs.Add(port.Id, port.Save());

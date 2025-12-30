@@ -104,9 +104,12 @@ namespace DialogMaker.Core.Editor
         public DialogProjectResources Resources { get; }
 
         IProjectResourcesOwner? IProjectResourcesOwner.Parent => null;
+        IResourcesOwner? IResourcesOwner.Parent => null;
         DialogProject IProjectResourcesOwner.Project => this;
         string IProjectResourcesOwner.Folder => ProjectPath;
+        IResourcesOwner IResourcesOwner.Root => this;
 
+        IResourcesContainer IResourcesOwner.Resources => Resources;
 
         private readonly List<DialogProjectResourceObject> _registeredResources = [];
         private string _name = string.Empty;
@@ -150,7 +153,7 @@ namespace DialogMaker.Core.Editor
         {
             return Languages.TryGetValue(l => l.ProjectId == id, out result);
         }
-        bool IProjectResourcesOwner.TryGetChild(string id, [NotNullWhen(true)] out IProjectResourcesOwner? result)
+        bool IResourcesOwner.TryFindChild(string id, [NotNullWhen(true)] out IResourcesOwner? result)
         {
             return Packs.TryGetValue(p => p.Id == id, out result);
         }
