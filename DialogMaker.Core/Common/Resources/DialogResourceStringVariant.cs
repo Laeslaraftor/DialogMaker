@@ -14,16 +14,10 @@ namespace DialogMaker.Core.Common
             {
                 Language = str.Resources.Package.Languages[variant.Language.Id];
             }
-            if (variant.Voice == null)
+            if (variant.Voice != null)
             {
-                return;
-            }
-
-            var item = variant.Voice.Resolve();
-
-            if (str.Resources.Files.TryGetValue(item.Id, out var file))
-            {
-                Voice = file;
+                var item = variant.Voice.Resolve();
+                _voicePath = new(variant.Voice.ResourcesPath, item.Id);
             }
         }
         public DialogResourceStringVariant(DialogResourceString str, DialogResourceStringVariantSavedState savedState)
@@ -35,28 +29,52 @@ namespace DialogMaker.Core.Common
             {
                 Language = str.Resources.Package.Languages[savedState.Language];
             }
-            if (savedState.VoiceId != null &&
-                str.Resources.Files.TryGetValue(savedState.VoiceId, out var file))
+            if (savedState.Voice != null && ResourcePath.TryParse(savedState.Voice, out var voicePath))
             {
-                Voice = file;
+                _voicePath = voicePath;
             }
         }
 
         public DialogResourceString String { get; }
         public DialogLanguage? Language { get; }
         public string Value { get; }
-        public DialogResourceFile? Voice { get; }
+        public DialogResourceFile? Voice
+        {
+            get
+            {
+                if (field != null)
+                {
+                    return field;
+                }
+                if (_voicePath.IsEmpty)
+                {
+                    return null;
+                }
+
+                field ??= String.Resources.Package.GetResource<DialogResourceFile>(_voicePath);
+
+                return field;
+            }
+        }
+
+        private readonly ResourcePath _voicePath;
 
         #region Управление
 
         public DialogResourceStringVariantSavedState Save()
         {
-            return new()
+            DialogResourceStringVariantSavedState result = new()
             {
                 Language = Language?.Id,
-                VoiceId = Voice?.Id,
                 Value = Value
             };
+
+            if (!_voicePath.IsEmpty)
+            {
+                result.Voice = _voicePath;
+            }
+
+            return result;
         }
 
         #endregion

@@ -61,17 +61,18 @@ namespace DialogMaker.Editor
 
         private DiagramNodePort? _view;
         private DiagramNodePortController? _viewController;
+        private bool _isDisposing;
 
         #region Управление
 
         public void Dispose()
         {
-            if (IsDisposed)
+            if (IsDisposed || _isDisposing)
             {
                 return;
             }
 
-            IsDisposed = true;
+            _isDisposing = true;
             _viewController?.Dispose();
             _viewController = null;
 
@@ -82,6 +83,8 @@ namespace DialogMaker.Editor
             }
 
             Original.PropertyChanged -= OnPortPropertyChanged;
+
+            IsDisposed = true;
 
             GC.SuppressFinalize(this);
         }

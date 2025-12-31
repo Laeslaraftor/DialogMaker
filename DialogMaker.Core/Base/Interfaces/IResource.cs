@@ -1,9 +1,9 @@
-﻿namespace DialogMaker.Core
+﻿using DialogMaker.Core.Common;
+
+namespace DialogMaker.Core
 {
-    public interface IResource
+    public interface IResource : IResourceItem
     {
         public IResourcesContainer Container { get; }
-        public string Id { get; }
-        public DialogResourceType ResourceType { get; }
     }
 }

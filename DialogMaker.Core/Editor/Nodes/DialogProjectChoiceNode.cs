@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -34,7 +33,14 @@ namespace DialogMaker.Core.Editor.Nodes
             }
         }
         [Name("Варианты ответа"), ItemName("Вариант ответа"), Reference(DialogResourceType.String)]
-        public EditableCollection<DialogProjectReference<DialogProjectString>> Variants { get; } = [];
+        public EditableCollection<DialogProjectReference<DialogProjectString>> Variants
+        {
+            get
+            {
+                field ??= new(() => new(Dialog.Project));
+                return field;
+            }
+        }
         [NodeInput("Вход"), Description("Вход в узел")]
         public DialogProjectNodeInputAction Input
         {

@@ -10,6 +10,6 @@ namespace DialogMaker.Core.Common.SavedStates
         [Key(1)]
         public string Value { get; set; } = string.Empty;
         [Key(2)]
-        public string? VoiceId { get; set; }
+        public string? Voice { get; set; }
     }
 }

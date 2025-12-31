@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Attributes;
+using DialogMaker.Core.Common;
 using System;
 using System.Collections.Generic;
 
@@ -75,8 +76,8 @@ namespace DialogMaker.Core.Editor
             }
         }
 
-        string IResource.Id => ProjectId.ToString();
         IResourcesContainer IResource.Container => Resources;
+        string IResourceItem.Id => ProjectId.ToString();
 
         private string _id = DefaultId;
 

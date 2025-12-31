@@ -8,7 +8,7 @@ using System.Windows;
 
 namespace DialogMaker.Lib.Controllers
 {
-    public class DiagramNodePortController : IDisposable
+    public class DiagramNodePortController : Disposable
     {
         public DiagramNodePortController(DialogProjectNodePortProxy port)
         {
@@ -25,10 +25,6 @@ namespace DialogMaker.Lib.Controllers
 
             Update();
         }
-        ~DiagramNodePortController()
-        {
-            Dispose();
-        }
 
         public DialogProjectNodePortProxy Port { get; }
         public PropertyEditorController? PresetValueEditor { get; }
@@ -36,8 +32,10 @@ namespace DialogMaker.Lib.Controllers
 
         #region Управление
 
-        public void Dispose()
+        protected override void Dispose(bool isDisposing)
         {
+            base.Dispose(isDisposing);
+
             if (PresetValueEditor != null)
             {
                 if (View.ExtraControl == PresetValueEditor.View)
@@ -50,8 +48,6 @@ namespace DialogMaker.Lib.Controllers
 
             Port.PropertyChanged -= OnPortPropertyChanged;
             Port.Original.PropertyChanged -= OnPortPropertyChanged;
-
-            GC.SuppressFinalize(this);
         }
 
         private void Update()

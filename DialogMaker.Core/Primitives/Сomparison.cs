@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core.Editor.Nodes
+﻿using DialogMaker.Core.Editor.Nodes;
+
+namespace DialogMaker.Core
 {
     public enum Comparison
     {

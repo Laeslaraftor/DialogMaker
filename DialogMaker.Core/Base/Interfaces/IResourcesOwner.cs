@@ -16,6 +16,11 @@ namespace DialogMaker.Core
 
         public static IResource FindResource(IResourcesOwner owner, ResourcePath path)
         {
+            if (path.IsEmpty)
+            {
+                throw new ArgumentException($"Не возможно получить ресурс по пустому пути: {path}", nameof(path));
+            }
+
             return FindResource(owner, path.ResourceType, path.Id, path.OwnerPath);
         }
         public static IResource FindResource(IResourcesOwner owner, DialogResourceType type, string itemId, string path)

@@ -4,6 +4,10 @@ namespace DialogMaker.Core.Editor
 {
     public class DialogProjectReference : Disposable, ISavable
     {
+        protected DialogProjectReference(DialogProject project)
+        {
+            Project = project;
+        }
         protected DialogProjectReference(DialogProject project, Guid id, ResourcePath path)
         {
             Project = project;
@@ -69,9 +73,9 @@ namespace DialogMaker.Core.Editor
 
             string? itemPath = null;
 
-            if (ItemId != null && ResourcesPath != null)
+            if (!ResourcesPath.IsEmpty)
             {
-                itemPath = ToString();
+                itemPath = ResourcesPath;
             }
 
             return new()
@@ -116,7 +120,7 @@ namespace DialogMaker.Core.Editor
         }
         public override string ToString()
         {
-            return $"{ResourceType}:{ItemId}:{ResourcesPath}";
+            return ResourcesPath;
         }
 
         protected override void Dispose(bool isDisposing)

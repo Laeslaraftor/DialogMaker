@@ -53,6 +53,11 @@ namespace DialogMaker.Editor
             else if (projectItem is DialogProjectReference reference &&
                 ProjectController.TryFindController(reference.Project, out controller))
             {
+                if (reference.ResourcesPath.IsEmpty)
+                {
+                    return null;
+                }
+
                 try
                 {
                     return ProjectResourceItem.Create(controller, reference.Resolve());

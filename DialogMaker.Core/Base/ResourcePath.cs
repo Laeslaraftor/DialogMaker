@@ -4,12 +4,23 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core
 {
-    public readonly struct ResourcePath(DialogResourceType type, string id, string ownerPath) 
-        : IEquatable<ResourcePath>
+    public readonly struct ResourcePath : IEquatable<ResourcePath>
     {
-        public DialogResourceType ResourceType { get; } = type;
-        public string Id { get; } = id;
-        public string OwnerPath { get; } = ownerPath;
+        public ResourcePath(DialogResourceType type, string id, string ownerPath)
+        {
+            ResourceType = type;
+            Id = id;
+            OwnerPath = ownerPath;
+        }
+        public ResourcePath(ResourcePath path, string id)
+            : this(path.ResourceType, id, path.OwnerPath)
+        {
+        }
+
+        public DialogResourceType ResourceType { get; }
+        public string Id { get; }
+        public string OwnerPath { get; }
+        public bool IsEmpty => string.IsNullOrEmpty(Id) || string.IsNullOrEmpty(OwnerPath);
 
         #region Управление
 
@@ -22,7 +33,8 @@ namespace DialogMaker.Core
         {
             return ResourceType == other.ResourceType &&
                    Id == other.Id &&
-                   OwnerPath == other.OwnerPath;
+                   OwnerPath == other.OwnerPath &&
+                   IsEmpty == other.IsEmpty;
         }
         public override string ToString()
         {
@@ -52,6 +64,8 @@ namespace DialogMaker.Core
         #endregion
 
         #region Статика
+
+        public static readonly ResourcePath Empty = new();
 
         public static ResourcePath Parse(string path)
         {
@@ -87,6 +101,10 @@ namespace DialogMaker.Core
 
         public static ResourcePath CreatePath(IResource resource)
         {
+            return CreatePath(resource, o => o.Id);
+        }
+        public static ResourcePath CreatePath(IResource resource, Func<IResourcesOwner, string> idSelector)
+        {
             List<string> pathParts = [];
             IResourcesOwner? current = resource.Container.Owner;
 
@@ -96,7 +114,7 @@ namespace DialogMaker.Core
 
                 if (current != resource.Container.Owner.Root)
                 {
-                    id = current.Id;
+                    id = idSelector(current);
                 }
 
                 pathParts.Add(id);
