@@ -6,17 +6,15 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Executioning.Builders
 {
-    public class DialogExecutionContextBuilder : IDialogExecutionContext
+    public class DialogExecutionContextBuilder : IDialogExecutionResources
     {
         public DialogExecutionContextBuilder()
         {
             Resources = new(_resources);
-            Strings = new(_strings);
             Variables = new(_variables);
         }
 
         public ReferenceReadOnlyDictionary<int, IResourceItem> Resources { get; }
-        public ReferenceReadOnlyDictionary<int, IResourceString> Strings { get; }
         public ReferenceReadOnlyDictionary<int, IVariable> Variables { get; }
 
         private readonly ObservableDictionary<int, IResourceItem> _resources = [];
@@ -42,18 +40,6 @@ namespace DialogMaker.Core.Executioning.Builders
 
             return index;
         }
-        public int AddString(IResourceString text)
-        {
-            if (TryFindItemIndex(_strings, text, out var index))
-            {
-                return index;
-            }
-
-            index = GetNextIndex();
-            _strings.Add(index, text);
-
-            return index;
-        }
         public int AddVariable(IVariable variable)
         {
             if (TryFindItemIndex(_variables, variable, out var index))
@@ -70,10 +56,6 @@ namespace DialogMaker.Core.Executioning.Builders
         public void SetResource(int index, IResourceItem resource)
         {
             _resources[index] = resource;
-        }
-        public void SetString(int index, IResourceString text)
-        {
-            _strings[index] = text;
         }
         public void SetVariable(int index, IVariable variable)
         {
@@ -95,10 +77,6 @@ namespace DialogMaker.Core.Executioning.Builders
         public IResourceItem GetResource(int index)
         {
             return _resources[index];
-        }
-        public string GetString(int index)
-        {
-            return _strings[index].Text;
         }
         public OperandValue GetVariable(int index)
         {
