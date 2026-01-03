@@ -5,20 +5,80 @@ using System.IO;
 
 namespace DialogMaker.Core.Executioning
 {
-    public struct Operation
+    public struct Operation : IEquatable<Operation>
     {
         public Operation(DialogByteCode code)
         {
             Code = code;
-
-            var argsCount = CodeArguments[code];
-            Arguments = argsCount > 0 ? new int[argsCount] : [];
+            Arguments = CreateArguments<int>(code);
         }
 
         public DialogByteCode Code { get; }
         public int[] Arguments { get; }
 
+        #region Управление
+
+        public readonly bool Equals(Operation other)
+        {
+            if (Code != other.Code || Arguments.Length != other.Arguments.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < Arguments.Length; i++)
+            {
+                if (Arguments[i] != other.Arguments[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        public readonly override bool Equals(object obj)
+        {
+            return obj is Operation other &&
+                   Equals(other);
+        }
+        public readonly override int GetHashCode()
+        {
+            return HashCode.Combine(Code, Arguments);
+        }
+        public readonly override string ToString()
+        {
+            if (Arguments.Length == 0)
+            {
+                return Code.ToString();
+            }
+
+            string args = string.Empty;
+
+            foreach (var arg in Arguments)
+            {
+                if (args != string.Empty)
+                {
+                    args += ", ";
+                }
+
+                args += arg;
+            }
+
+            return $"{Code}({args})";
+        }
+
+        #endregion
+
+        #region Операторы
+
+        public static bool operator ==(Operation o1, Operation o2) => o1.Equals(o2);
+        public static bool operator !=(Operation o1, Operation o2) => !o1.Equals(o2);
+
+        #endregion
+
         #region Статика
+
+        public const int ArgumentSize = sizeof(int);
+        public const int InstructionSize = sizeof(DialogByteCode);
 
         private static ReadOnlyDictionary<DialogByteCode, int> CodeArguments
         {
@@ -49,9 +109,15 @@ namespace DialogMaker.Core.Executioning
         }
         private static readonly Dictionary<DialogByteCode, OpCode> _opCodeInstances = [];
 
+        public static T[] CreateArguments<T>(DialogByteCode code)
+        {
+            int length = CodeArguments[code];
+
+            return length > 0 ? new T[length] : [];
+        }
         public static OpCode GetImplementation(DialogByteCode code)
         {
-            if (_opCodeInstances.TryGetValue(code, out var instance))
+            if (!_opCodeInstances.TryGetValue(code, out var instance))
             {
                 var attr = code.GetEnumAttribute<ImplementationAttribute>();
 
@@ -77,7 +143,13 @@ namespace DialogMaker.Core.Executioning
 
             var opCode = (DialogByteCode)opcodeValue;
             Operation result = new(opCode);
-            Span<byte> buffer = stackalloc byte[sizeof(int)];
+
+            if (result.Arguments.Length == 0)
+            {
+                return result;
+            }
+
+            Span<byte> buffer = stackalloc byte[ArgumentSize];
 
             for (int i = 0; i < result.Arguments.Length; i++)
             {

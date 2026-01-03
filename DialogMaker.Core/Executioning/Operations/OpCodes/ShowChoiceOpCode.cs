@@ -1,5 +1,4 @@
 using DialogMaker.Core.Common;
-using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 
 namespace DialogMaker.Core.Executioning
@@ -13,26 +12,26 @@ namespace DialogMaker.Core.Executioning
             CheckArgs(context, args, 3);
 
             var character = context.Resources.GetResource(args[0]) as ICharacter;
-            var variants = _emptyStrings;
 
-            if (context.Resources.GetResource(args[1]) is IStringCollection strings)
+            if (context.Resources.GetResource(args[1]) is not IStringCollection strings)
             {
-                variants = strings.Strings;
+                throw new DialogExecutionException($"Не удалось получить список строк для отображения вариантов ответа");
             }
 
-            var answer = await context.Handler.ShowChoice(character, variants);
+            var answer = await context.Handler.ShowChoice(character, strings, context.CancellationToken);
 
-            context.Resources.SetVariable(args[2], answer);
+            if (!context.CancellationToken.IsCancellationRequested)
+            {
+                context.Resources.SetVariable(args[2], answer);
+            }
         }
 
         #endregion
-		
-		#region Статика
-		
-		public static readonly ShowChoiceOpCode Instance = new();
 
-        private static readonly ReadOnlyCollection<string> _emptyStrings = new([]);
+        #region Статика
 
-		#endregion
+        public static readonly ShowChoiceOpCode Instance = new();
+
+        #endregion
     }
 }

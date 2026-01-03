@@ -18,14 +18,13 @@ namespace DialogMaker.Core.Executioning.Builders
         public ReferenceReadOnlyDictionary<int, IVariable> Variables { get; }
 
         private readonly ObservableDictionary<int, IResourceItem> _resources = [];
-        private readonly ObservableDictionary<int, IResourceString> _strings = [];
         private readonly ObservableDictionary<int, IVariable> _variables = [];
 
         #region Управление
 
         public int GetNextIndex()
         {
-            return FindFreeIndex(_resources.Keys, _strings.Keys, _variables.Keys);
+            return FindFreeIndex(_resources.Keys, _variables.Keys);
         }
 
         public int AddResource(IResourceItem resource)
@@ -65,7 +64,6 @@ namespace DialogMaker.Core.Executioning.Builders
         public bool Remove(int index)
         {
             if (_resources.Remove(index) ||
-                _strings.Remove(index) || 
                 _variables.Remove(index))
             {
                 return true;

@@ -1,4 +1,5 @@
 using DialogMaker.Core.Common;
+using DialogMaker.Core.Executioning.Internal;
 using System.Threading.Tasks;
 
 namespace DialogMaker.Core.Executioning
@@ -14,8 +15,9 @@ namespace DialogMaker.Core.Executioning
             var character = context.Resources.GetResource(args[0]) as ICharacter;
             var replica = context.Resources.GetVariable(args[1]).ToString();
             var background = context.Resources.GetResource(args[2]);
+            ResourceString text = new(args[1], replica);
 
-            await context.Handler.ShowFullscreenReplica(character, background, replica);
+            await context.Handler.ShowFullscreenReplica(character, background, text, context.CancellationToken);
         }
 
         #endregion

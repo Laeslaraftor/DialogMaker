@@ -12,7 +12,7 @@ namespace DialogMaker.Core.Executioning
 
             var triggerId = context.Resources.GetVariable(args[0]).ToString();
 
-            await context.Handler.HandleTrigger(triggerId);
+            await context.Handler.HandleTrigger(triggerId, context.CancellationToken);
         }
 
         #endregion

@@ -4,23 +4,42 @@
     {
         /// <summary>
         /// Показать реплику персонажа.
-        /// 1 аргумент - персонаж, 2 - текст
+        /// 1 аргумент - персонаж, 2 - текст (переменная)
         /// </summary>
         [ArgsCount(2), Implementation(typeof(ShowReplicaOpCode))]
         ShowReplica,
         /// <summary>
+        /// Показать реплику персонажа.
+        /// 1 аргумент - персонаж, 2 - текст (ресурс)
+        /// </summary>
+        [ArgsCount(2), Implementation(typeof(ShowResourceReplicaOpCode))]
+        ShowResourceReplica,
+        /// <summary>
         /// Показать полноэкранную реплику персонажа. 
-        /// 1 аргумент - персонаж, 2 - текст, 3 - фон.
+        /// 1 аргумент - персонаж, 2 - текст (переменная), 3 - фон.
         /// Фоном реплики может быть картинка, видео или цвет
         /// </summary>
         [ArgsCount(3), Implementation(typeof(ShowFullScreenReplicaOpCode))]
         ShowFullScreenReplica,
         /// <summary>
+        /// Показать полноэкранную реплику персонажа. 
+        /// 1 аргумент - персонаж, 2 - текст (ресурс), 3 - фон.
+        /// Фоном реплики может быть картинка, видео или цвет
+        /// </summary>
+        [ArgsCount(3), Implementation(typeof(ShowResourceFullScreenReplicaOpCode))]
+        ShowResourceFullScreenReplica,
+        /// <summary>
         /// Показать реплику персонажа на весь экран - текст по центру.
-        /// 1 аргумент - персонаж, 2 - текст, 3 - цвет фона, 4 - цвет текста
+        /// 1 аргумент - персонаж, 2 - текст (переменная), 3 - цвет фона, 4 - цвет текста
         /// </summary>
         [ArgsCount(4), Implementation(typeof(ShowColorReplicaOpCode))]
         ShowColorReplica,
+        /// <summary>
+        /// Показать реплику персонажа на весь экран - текст по центру.
+        /// 1 аргумент - персонаж, 2 - текст (ресурс), 3 - цвет фона, 4 - цвет текста
+        /// </summary>
+        [ArgsCount(4), Implementation(typeof(ShowResourceColorReplicaOpCode))]
+        ShowResourceColorReplica,
         /// <summary>
         /// Дать выбор ответа.
         /// 1 аргумент - персонаж, 2 - варианты ответа, 3 - переменная в которую будет записан ответ
