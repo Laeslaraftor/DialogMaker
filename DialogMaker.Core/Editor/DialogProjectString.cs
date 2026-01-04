@@ -1,4 +1,5 @@
 ﻿using Acly;
+using DialogMaker.Core.Common;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -7,7 +8,7 @@ using System.Linq;
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectString : DialogProjectResourceObject
+    public class DialogProjectString : DialogProjectResourceObject, IResourceString
     {
         public DialogProjectString(DialogProjectResources resources)
             : this(resources, Guid.NewGuid())
@@ -65,6 +66,25 @@ namespace DialogMaker.Core.Editor
             }
         }
         public EditableCollection<DialogProjectStringVariant> Variants { get; }
+
+        string IResourceString.Text => Preview;
+        IResourceFile? IResourceString.Voice
+        {
+            get
+            {
+                if (Variants.Count == 0)
+                {
+                    return null;
+                }
+                if (Resources.Owner.Project.DefaultLanguage != null &&
+                    TryGetVariant(Resources.Owner.Project.DefaultLanguage, out var variant))
+                {
+                    return variant.Voice?.Resolve();
+                }
+
+                return Variants[0].Voice?.Resolve();
+            }
+        }
 
         #region Управление
 

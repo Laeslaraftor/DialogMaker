@@ -1,4 +1,10 @@
-﻿namespace DialogMaker.Core.Editor.Nodes
+﻿using DialogMaker.Core.Common;
+using DialogMaker.Core.Executioning;
+using DialogMaker.Core.Executioning.Builders;
+using MessagePack;
+using System.Diagnostics.CodeAnalysis;
+
+namespace DialogMaker.Core.Editor.Nodes
 {
     public class DialogProjectVariableNode : DialogProjectDialogNode
     {
@@ -45,6 +51,33 @@
         }
 
         #region Управление
+
+        public override void Compile(DialogCompilerContext context)
+        {
+            if (Variable == null)
+            {
+                return;
+            }
+
+            var resource = Variable.Resolve();
+            DialogExecutionParameter parameter = new(resource);
+
+            context.Resources.CreateVariable(Input, parameter);
+            var output = context.Compiler.RecursiveCompileConnections(context, Input);
+
+            context.Resources.CreateVariable(Output, output);
+        }
+
+        public override bool TryGetResourceValue(DialogProjectNodeOutput port, [NotNullWhen(true)] out IResourceItem? resource)
+        {
+            if (port == Output)
+            {
+                resource = Variable?.Resolve();
+                return resource != null;
+            }
+
+            return base.TryGetResourceValue(port, out resource);
+        }
 
         protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)
         {

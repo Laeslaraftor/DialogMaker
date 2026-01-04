@@ -1,4 +1,7 @@
 ﻿using Acly;
+using DialogMaker.Core.Common;
+using DialogMaker.Core.Executioning;
+using DialogMaker.Core.Executioning.Internal;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -70,6 +73,26 @@ namespace DialogMaker.Core.Editor.Nodes
         }
 
         #region Управление
+
+        public override void Compile(DialogCompilerContext context)
+        {
+            IResourceItem? character = Character?.Resolve();
+            LocalStringCollection variants = new(Id.ToString(), [.. Variants.Select(v => (IResourceString)v.Resolve())]);
+
+            var outputIndex = context.Resources.GetOrCreateVariable(SelectedVarianIndex);
+            var choiceOpCode = context.Section.CreateOperation(DialogByteCode.ShowChoice);
+            
+            if (character != null)
+            {
+                choiceOpCode.Arguments[0] = new(character);
+            }
+
+            choiceOpCode.Arguments[1] = new(variants);
+            choiceOpCode.Arguments[2] = outputIndex;
+
+            context.Compiler.CompileOutputs(context, Output);
+            context.Compiler.CompileOutputs(context, SelectedVarianIndex);
+        }
 
         protected override DialogProjectDialogNodeSavedState CreateSavedState()
         {

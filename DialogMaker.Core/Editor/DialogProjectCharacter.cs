@@ -1,9 +1,10 @@
-﻿using System;
+﻿using DialogMaker.Core.Common;
+using System;
 using System.Diagnostics;
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectCharacter : DialogProjectResourceObject
+    public class DialogProjectCharacter : DialogProjectResourceObject, ICharacter
     {
         public DialogProjectCharacter(DialogProjectResources resources)
             : base(resources)
@@ -38,6 +39,7 @@ namespace DialogMaker.Core.Editor
                 }
             }
         }
+        string ICharacter.Name => ToString();
 
         private DialogProjectReference<DialogProjectString>? _name;
 

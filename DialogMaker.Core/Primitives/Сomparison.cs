@@ -1,20 +1,21 @@
 ﻿using DialogMaker.Core.Editor.Nodes;
+using DialogMaker.Core.Executioning;
 
 namespace DialogMaker.Core
 {
     public enum Comparison
     {
         [Name("Равно")]
-        Equals,
+        Equals = DialogByteCode.Equals,
         [Name("Не равно")]
-        NotEquals,
+        NotEquals = DialogByteCode.NotEquals,
         [Name("Больше")]
-        Greater,
+        Greater = DialogByteCode.Above,
         [Name("Больше или равно")]
-        GreaterOrEquals,
+        GreaterOrEquals = DialogByteCode.AboveOrEquals,
         [Name("Меньше")]
-        Less,
+        Less = DialogByteCode.Less,
         [Name("Меньше или равно")]
-        LessOrEquals
+        LessOrEquals = DialogByteCode.LessOrEquals,
     }
 }

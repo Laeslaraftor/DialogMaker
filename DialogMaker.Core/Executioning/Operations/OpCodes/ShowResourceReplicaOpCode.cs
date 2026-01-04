@@ -11,7 +11,7 @@ namespace DialogMaker.Core.Executioning
         {
             CheckArgs(context, args, 2);
 
-            var character = context.Resources.GetResource(args[0]) as ICharacter;
+            var character = ShowReplicaOpCode.GetCharacter(context, args[0]);
             var replica = GetString(context, args[1]);
 
             await context.Handler.ShowReplica(character, replica, context.CancellationToken);

@@ -94,6 +94,10 @@ namespace DialogMaker.Core.Editor
             {
                 return default;
             }
+            if (typeof(T).IsEnum && value is int intValue)
+            {
+                return (T)Convert.ChangeType(intValue, typeof(T));
+            }
             if (value is T typedValue)
             {
                 return typedValue;

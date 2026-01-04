@@ -1,17 +1,35 @@
 ﻿using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
+using DialogMaker.Core.Executioning.Builders;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace DialogMaker.Core.Executioning
 {
-    public class DialogActionsMap(ReadOnlyCollection<DialogProjectDialogNode> entries, ReadOnlyCollection<DialogProjectDialogNode> actions)
+    public class DialogActionsMap
     {
-        public ReadOnlyCollection<DialogProjectDialogNode> EntryNodes { get; } = entries;
-        public ReadOnlyCollection<DialogProjectDialogNode> ActionNodes { get; } = actions;
+        public DialogActionsMap(ReadOnlyCollection<DialogProjectDialogNode> entries, ReadOnlyCollection<DialogProjectDialogNode> actions)
+        {
+            EntryNodes = entries;
+            ActionNodes = actions;
+
+            Dictionary<DialogProjectDialogNode, DialogSectionBuilder> sections = [];
+
+            foreach (var action in actions)
+            {
+                sections.Add(action, _codeBuilder.CreateSection());
+            }
+
+            NodeSections = new(sections);
+        }
+
+        public ReadOnlyCollection<DialogProjectDialogNode> EntryNodes { get; }
+        public ReadOnlyCollection<DialogProjectDialogNode> ActionNodes { get; }
+        public ReadOnlyDictionary<DialogProjectDialogNode, DialogSectionBuilder> NodeSections { get; }
 
         private readonly Dictionary<DialogProjectDialogNode, ReadOnlyCollection<DialogProjectDialogNode>> _nextNodes = [];
         private readonly Dictionary<DialogProjectDialogNode, ReadOnlyCollection<DialogProjectDialogNode>> _previousNodes = [];
+        private readonly DialogCodeBuilder _codeBuilder = new();
 
         #region Управление
 

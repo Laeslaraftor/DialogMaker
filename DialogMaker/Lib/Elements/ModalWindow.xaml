@@ -8,7 +8,7 @@
         Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
         Height="300" Width="450">
     <WindowChrome.WindowChrome>
-        <WindowChrome CaptionHeight="0"/>
+        <WindowChrome CaptionHeight="0" GlassFrameThickness="20"/>
     </WindowChrome.WindowChrome>
     <Grid>
         <Grid.RowDefinitions>

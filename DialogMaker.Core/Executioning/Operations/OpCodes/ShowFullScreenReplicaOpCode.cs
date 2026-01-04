@@ -12,7 +12,7 @@ namespace DialogMaker.Core.Executioning
         {
             CheckArgs(context, args, 3);
 
-            var character = context.Resources.GetResource(args[0]) as ICharacter;
+            var character = ShowReplicaOpCode.GetCharacter(context, args[0]);
             var replica = context.Resources.GetVariable(args[1]).ToString();
             var background = context.Resources.GetResource(args[2]);
             ResourceString text = new(args[1], replica);

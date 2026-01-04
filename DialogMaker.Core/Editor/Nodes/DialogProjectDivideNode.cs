@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DialogMaker.Core.Executioning;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -51,5 +52,14 @@ namespace DialogMaker.Core.Editor.Nodes
                 return field;
             }
         }
+
+        #region Управление
+
+        public override void Compile(DialogCompilerContext context)
+        {
+            CompileMath(context, DialogByteCode.Divide, FirstValue, SecondValue, Output);
+        }
+
+        #endregion
     }
 }

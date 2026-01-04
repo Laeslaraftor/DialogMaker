@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core.Common;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -11,7 +10,7 @@ namespace DialogMaker.Core.Executioning
         {
             CheckArgs(context, args, 3);
 
-            var character = context.Resources.GetResource(args[0]) as ICharacter;
+            var character = ShowReplicaOpCode.GetCharacter(context, args[0]);
             var replica = ShowResourceReplicaOpCode.GetString(context, args[1]);
             var background = context.Resources.GetResource(args[2]);
 

@@ -1,11 +1,12 @@
-﻿using System;
+﻿using DialogMaker.Core.Common;
+using System;
 using System.IO;
 using System.Linq;
 using SysPath = System.IO.Path;
 
 namespace DialogMaker.Core.Editor
 {
-    public class DialogProjectItem : DialogProjectResourceObject, ISavable
+    public class DialogProjectItem : DialogProjectResourceObject, ISavable, IResourceFile
     {
         public DialogProjectItem(DialogProjectResources resources, string filePath)
             : this(resources, GetResourceType(filePath), filePath)

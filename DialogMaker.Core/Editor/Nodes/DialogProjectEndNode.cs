@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core.Editor.Nodes
+﻿using DialogMaker.Core.Executioning;
+
+namespace DialogMaker.Core.Editor.Nodes
 {
     public class DialogProjectEndNode : DialogProjectDialogNode
     {
@@ -19,5 +21,14 @@
                 return field;
             }
         }
+
+        #region Управление
+
+        public override void Compile(DialogCompilerContext context)
+        {
+            context.Section.CreateOperation(DialogByteCode.End);
+        }
+
+        #endregion
     }
 }

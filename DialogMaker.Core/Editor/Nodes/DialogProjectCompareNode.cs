@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core.Editor.Nodes
+﻿using DialogMaker.Core.Executioning;
+
+namespace DialogMaker.Core.Editor.Nodes
 {
     public class DialogProjectCompareNode : DialogProjectDialogNode
     {
@@ -63,6 +65,22 @@
         }
 
         #region Управление
+
+        public override void Compile(DialogCompilerContext context)
+        {
+            var value1 = context.Compiler.RecursiveCompileConnections(context, FirstValue);
+            var value2 = context.Compiler.RecursiveCompileConnections(context, SecondValue);
+            var output = context.Resources.GetOrCreateVariable(Output);
+
+            var comparison = context.Section.CreateOperation((DialogByteCode)Comparison);
+            comparison.Arguments[0] = value1;
+            comparison.Arguments[1] = value2;
+
+            var stackToVariable = context.Section.CreateOperation(DialogByteCode.StackToVariable);
+            stackToVariable.Arguments[0] = output;
+
+            context.Compiler.CompileOutputs(context, Output);
+        }
 
         protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)
         {

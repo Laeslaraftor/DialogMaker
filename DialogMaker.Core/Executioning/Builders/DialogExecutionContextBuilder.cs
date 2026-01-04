@@ -107,14 +107,17 @@ namespace DialogMaker.Core.Executioning.Builders
         }
         private static int FindFreeIndex(params ICollection<int>[] indexes)
         {
-            int max = 0;
+            int max = -1;
 
             foreach (var indexesCollection in indexes)
             {
-                max = Math.Max(max, FindFreeIndex(indexesCollection));
+                foreach (var value in indexesCollection)
+                {
+                    max = Math.Max(max, value);
+                }
             }
 
-            return max;
+            return max + 1;
         }
         private static bool TryFindItemIndex<T>(IDictionary<int, T> items, T item, [NotNullWhen(true)] out int index)
             where T : notnull

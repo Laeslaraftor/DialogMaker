@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core.Editor.Nodes
+﻿using DialogMaker.Core.Executioning;
+
+namespace DialogMaker.Core.Editor.Nodes
 {
     public class DialogProjectReplaceNode : DialogProjectDialogNode
     {
@@ -21,7 +23,7 @@
             }
         }
         [NodeInput("Значение")]
-        public DialogProjectNodeInputValue Value
+        public DialogProjectNodeInputString Value
         {
             get
             {
@@ -30,7 +32,16 @@
             }
         }
         [NodeInput("Заменяемое")]
-        public DialogProjectNodeInputValue ReplaceValue
+        public DialogProjectNodeInputString SearchValue
+        {
+            get
+            {
+                field ??= new(this, 4);
+                return field;
+            }
+        }
+        [NodeInput("Новое значение")]
+        public DialogProjectNodeInputString NewValue
         {
             get
             {
@@ -47,5 +58,26 @@
                 return field;
             }
         }
+
+        #region Управление
+
+        public override void Compile(DialogCompilerContext context)
+        {
+            var value = context.Compiler.RecursiveCompileConnections(context, Value);
+            var searchValue = context.Compiler.RecursiveCompileConnections(context, SearchValue);
+            var newValue = context.Compiler.RecursiveCompileConnections(context, NewValue);
+            var output = context.Resources.GetOrCreateVariable(Output);
+
+            var replaceOpCode = context.Section.CreateOperation(DialogByteCode.Replace);
+            replaceOpCode.Arguments[0] = value;
+            replaceOpCode.Arguments[1] = searchValue;
+            replaceOpCode.Arguments[2] = newValue;
+
+            var setOpCode = context.Section.CreateOperation(DialogByteCode.Set);
+            setOpCode.Arguments[0] = output;
+            setOpCode.Arguments[1] = value;
+        }
+
+        #endregion
     }
 }

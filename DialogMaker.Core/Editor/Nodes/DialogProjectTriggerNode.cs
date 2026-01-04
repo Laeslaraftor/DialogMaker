@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using DialogMaker.Core.Executioning;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -36,8 +36,30 @@ namespace DialogMaker.Core.Editor.Nodes
                 return field;
             }
         }
+        [NodeOutput("Выход")]
+        public DialogProjectNodeOutputAction Output
+        {
+            get
+            {
+                field ??= new(this, 1);
+                return field;
+            }
+        }
 
         #region Управление
+
+        public override void Compile(DialogCompilerContext context)
+        {
+            var triggerId = TriggerId;
+
+            if (!string.IsNullOrEmpty(triggerId))
+            {
+                var opcode = context.Section.CreateOperation(DialogByteCode.Trigger);
+                opcode.Arguments[0] = new(triggerId);
+            }
+
+            context.Compiler.CompileOutputs(context, Output);
+        }
 
         protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)
         {

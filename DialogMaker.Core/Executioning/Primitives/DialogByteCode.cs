@@ -97,6 +97,18 @@
         LessOrEquals,
 
         /// <summary>
+        /// Задать первой переменной значение второй.
+        /// 1 аргумент - первая переменная, 2 - вторая переменная
+        /// </summary>
+        [ArgsCount(2), Implementation(typeof(SetOpCode))]
+        Set,
+        /// <summary>
+        /// Задать переменной последнее значение из стека.
+        /// 1 аргумент - переменная
+        /// </summary>
+        [ArgsCount(1), Implementation(typeof(StackToVariableOpCode))]
+        StackToVariable,
+        /// <summary>
         /// Добавить к первой переменной значение второй.
         /// 1 аргумент - первая переменная, 2 - вторая переменная
         /// </summary>
@@ -126,6 +138,13 @@
         /// </summary>
         [ArgsCount(3), Implementation(typeof(ReplaceOpCode))]
         Replace,
+        /// <summary>
+        /// Получить случайное число в определённом диапазоне.
+        /// 1 аргумент - минимальное значение, 2 - максимальное значение, 
+        /// 3 - целое число, 4 - переменная в которую будет записано число
+        /// </summary>
+        [ArgsCount(4), Implementation(typeof(RandomNumberOpCode))]
+        RandomNumber,
 
         /// <summary>
         /// Начать немедленное выполнение секции.
@@ -173,5 +192,10 @@
         /// </summary>
         [ArgsCount(1), Implementation(typeof(GotoIfTrueOpCode))]
         GotoIfTrue,
+        /// <summary>
+        /// Пустая инструкция, которая ничего не делает
+        /// </summary>
+        [ArgsCount(0), Implementation(typeof(EmptyOpCode))]
+        Empty
     }
 }

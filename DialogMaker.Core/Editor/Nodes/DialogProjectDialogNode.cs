@@ -1,4 +1,6 @@
-﻿using System;
+﻿using DialogMaker.Core.Common;
+using DialogMaker.Core.Executioning;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -76,6 +78,8 @@ namespace DialogMaker.Core.Editor.Nodes
 
         #region Управление
 
+        public abstract void Compile(DialogCompilerContext context);
+
         public IEnumerable<DialogProjectNodePort> GetPorts(Predicate<DialogProjectNodePort> predicate)
         {
             foreach (var port in GetInputs().Keys)
@@ -141,6 +145,11 @@ namespace DialogMaker.Core.Editor.Nodes
                 return true;
             }
 
+            return false;
+        }
+        public virtual bool TryGetResourceValue(DialogProjectNodeOutput port, [NotNullWhen(true)] out IResourceItem? resource)
+        {
+            resource = null;
             return false;
         }
 
@@ -293,6 +302,21 @@ namespace DialogMaker.Core.Editor.Nodes
             }
 
             return result;
+        }
+
+        internal static void CompileMath(DialogCompilerContext context, DialogByteCode code, DialogProjectNodeInputValue firstValue, DialogProjectNodeInputValue secondValue, DialogProjectNodeOutputObject outputPort)
+        {
+            var value1 = context.Compiler.RecursiveCompileConnections(context, firstValue);
+            var value2 = context.Compiler.RecursiveCompileConnections(context, secondValue);
+            var output = context.Resources.GetOrCreateVariable(outputPort);
+
+            var mathOpCode = context.Section.CreateOperation(code);
+            mathOpCode.Arguments[0] = value1;
+            mathOpCode.Arguments[1] = value2;
+
+            var setToOutput = context.Section.CreateOperation(DialogByteCode.Set);
+            setToOutput.Arguments[0] = output;
+            setToOutput.Arguments[1] = value1;
         }
 
         #endregion

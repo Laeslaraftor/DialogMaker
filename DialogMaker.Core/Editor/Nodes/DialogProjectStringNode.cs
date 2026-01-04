@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core.Editor.Nodes
+﻿using DialogMaker.Core.Executioning;
+
+namespace DialogMaker.Core.Editor.Nodes
 {
     public class DialogProjectStringNode : DialogProjectDialogNode
     {
@@ -36,6 +38,12 @@
         }
 
         #region Управление
+
+        public override void Compile(DialogCompilerContext context)
+        {
+            string value = Value ?? string.Empty;
+            context.Resources.CreateVariable(Output, new(value));
+        }
 
         protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)
         {

@@ -1,4 +1,7 @@
-﻿namespace DialogMaker.Core.Editor.Nodes
+﻿using DialogMaker.Core.Executioning;
+using DialogMaker.Core.Executioning.Builders;
+
+namespace DialogMaker.Core.Editor.Nodes
 {
     public class DialogProjectSelectIfNode : DialogProjectDialogNode
     {
@@ -47,5 +50,41 @@
                 return field;
             }
         }
+
+        #region Управление
+
+        public override void Compile(DialogCompilerContext context)
+        {
+            var value1 = context.Compiler.RecursiveCompileConnections(context, FirstValue);
+            var value2 = context.Compiler.RecursiveCompileConnections(context, SecondValue);
+            var expressionResult = context.Compiler.RecursiveCompileConnections(context, CompareValue);
+            var output = context.Resources.GetOrCreateVariable(Output);
+
+            var comparison = context.Section.CreateOperation(DialogByteCode.Equals);
+            comparison.Arguments[0] = expressionResult;
+            comparison.Arguments[1] = new(true);
+
+            OperationBuilder CreateSetValue(DialogExecutionParameter value)
+            {
+                var opCode = context.Section.CreateOperation(DialogByteCode.Set);
+                opCode.Arguments[0] = output;
+                opCode.Arguments[1] = value;
+
+                return opCode;
+            }
+
+            var gotoValue1 = context.Section.CreateOperation(DialogByteCode.GotoIfTrue);
+            var gotoValue2 = context.Section.CreateOperation(DialogByteCode.Goto);
+            var setValue1 = CreateSetValue(value1);
+            var gotoEnd = context.Section.CreateOperation(DialogByteCode.Goto);
+            var setValue2 = CreateSetValue(value2);
+            var ending = context.Section.CreateOperation(DialogByteCode.Empty);
+
+            gotoValue1.Arguments[0] = new(setValue1);
+            gotoValue2.Arguments[0] = new(setValue2);
+            gotoEnd.Arguments[0] = new(ending);
+        }
+
+        #endregion
     }
 }

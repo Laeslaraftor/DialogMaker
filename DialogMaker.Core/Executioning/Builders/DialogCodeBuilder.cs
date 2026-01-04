@@ -31,6 +31,11 @@ namespace DialogMaker.Core.Executioning.Builders
             return _sections.Remove(section);
         }
 
+        public void Clear()
+        {
+            _sections.Clear();
+        }
+
         public CompiledCodeInfo Compile()
         {
             using MemoryStream codeStream = new();

@@ -37,6 +37,7 @@ namespace DialogMaker.Lib.Elements
 
         private Point _startDragWindowPosition;
         private Point _startDragMousePosition;
+        private bool _ignoreDrag;
 
         #region Управление
 
@@ -85,15 +86,22 @@ namespace DialogMaker.Lib.Elements
             OnButtonClicked(new(ModalWindowButtons.Secondary, e));
         }
 
-        protected override void OnMouseDown(MouseButtonEventArgs e)
+        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
         {
-            base.OnMouseDown(e);
+            base.OnRenderSizeChanged(sizeInfo);
+            _ignoreDrag = true;
+        }
+
+        protected override void OnPreviewMouseDown(MouseButtonEventArgs e)
+        {
+            base.OnPreviewMouseDown(e);
 
             if (e.LeftButton != MouseButtonState.Pressed)
             {
                 return;
             }
 
+            _ignoreDrag = false;
             _startDragWindowPosition = new(Left, Top);
             _startDragMousePosition = PointToScreen(e.GetPosition(this));
         }
@@ -101,7 +109,7 @@ namespace DialogMaker.Lib.Elements
         {
             base.OnMouseMove(e);
 
-            if (e.LeftButton != MouseButtonState.Pressed)
+            if (e.LeftButton != MouseButtonState.Pressed || _ignoreDrag || e.Handled)
             {
                 return;
             }

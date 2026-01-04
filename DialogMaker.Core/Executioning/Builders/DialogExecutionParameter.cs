@@ -27,12 +27,16 @@ namespace DialogMaker.Core.Executioning.Builders
             Value = section;
         }
 
-        public object Value { get; }
+        public object? Value { get; }
 
         #region Управление
 
         public readonly int AddToContext(DialogExecutionContextBuilder contextBuilder)
         {
+            if (Value == null)
+            {
+                return -1;
+            }
             if (Value is OperandValue value)
             {
                 return contextBuilder.AddVariable(new LocalVariable(value));
@@ -67,7 +71,7 @@ namespace DialogMaker.Core.Executioning.Builders
 
         public bool Equals(DialogExecutionParameter other)
         {
-            return Value.Equals(other.Value);
+            return Value?.Equals(other.Value) == true;
         }
         public override bool Equals(object obj)
         {
@@ -80,8 +84,21 @@ namespace DialogMaker.Core.Executioning.Builders
         }
         public override string ToString()
         {
-            return Value.ToString();
+            return Value?.ToString() ?? string.Empty;
         }
+
+        #endregion
+
+        #region Операторы
+
+        public static bool operator ==(DialogExecutionParameter p1, DialogExecutionParameter p2) => p1.Equals(p2);
+        public static bool operator !=(DialogExecutionParameter p1, DialogExecutionParameter p2) => !p1.Equals(p2);
+
+        #endregion
+
+        #region Статика
+
+        public static readonly DialogExecutionParameter Empty = new(0);
 
         #endregion
     }

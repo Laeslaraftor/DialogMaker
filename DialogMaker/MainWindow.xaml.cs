@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Editor;
+using DialogMaker.Core.Executioning;
 using DialogMaker.Editor;
 using DialogMaker.Lib;
 using DialogMaker.Lib.Controllers;
@@ -186,5 +187,51 @@ namespace DialogMaker
 #nullable enable
 
         #endregion
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                CompileCurrentDialog();
+            }
+            catch (Exception error)
+            {
+                error.Alert();
+            }
+        }
+        private void CompileCurrentDialog()
+        {
+            if (_model.Project?.TabsController.CurrentItem is not ProjectDialog dialog)
+            {
+                return;
+            }
+
+            var compiler = DialogCompiler.Create(dialog.Original);
+            var result = compiler.Compile();
+
+            DialogCompilerView view = new()
+            {
+                Builder = compiler.CodeBuilder
+            };
+            ModalWindow window = new()
+            {
+                Child = view,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                Buttons = ModalWindowButtons.Main,
+                MainButtonContent = "Закрыть",
+                SizeToContent = SizeToContent.WidthAndHeight
+            };
+
+            window.ButtonClick += OnWindowButtonClick;
+
+            void OnWindowButtonClick(object? sender, ClickValueEventArgs<ModalWindowButtons> e)
+            {
+                window.ButtonClick -= OnWindowButtonClick;
+                window.Child = null;
+                window.Close();
+            }
+
+            window.Show();
+        }
     }
 }

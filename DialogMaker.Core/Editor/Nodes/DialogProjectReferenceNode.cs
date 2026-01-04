@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using DialogMaker.Core.Executioning;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -40,6 +38,17 @@ namespace DialogMaker.Core.Editor.Nodes
         }
 
         #region Управление
+
+        public override void Compile(DialogCompilerContext context)
+        {
+            if (Reference == null)
+            {
+                return;
+            }
+
+            var resource = Reference.Resolve();
+            context.Resources.CreateVariable(Output, new(resource));
+        }
 
         protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)
         {

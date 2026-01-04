@@ -20,6 +20,28 @@
             return SectionBuilder.GetOperationByteCodeIndex(this);
         }
 
+        public override string ToString()
+        {
+            if (Arguments.Length == 0)
+            {
+                return Code.ToString();
+            }
+
+            string args = string.Empty;
+
+            foreach (var arg in Arguments)
+            {
+                if (args != string.Empty)
+                {
+                    args += ", ";
+                }
+
+                args += arg.ToString();
+            }
+
+            return $"{Code}({args})";
+        }
+
         #endregion
     }
 }

@@ -12,7 +12,11 @@ namespace DialogMaker.Core.Executioning.Builders
         }
 
         public DialogCodeBuilder CodeBuilder { get; }
-        public int Index => CodeBuilder.IndexOf(this);
+        public int Index
+        {
+            get => CodeBuilder.IndexOf(this);
+            set { }
+        }
         public ReferenceReadOnlyList<OperationBuilder> Operations { get; }
 
         private readonly ObservableList<OperationBuilder> _operations = [];
@@ -54,6 +58,16 @@ namespace DialogMaker.Core.Executioning.Builders
             }
 
             throw new ArgumentException($"Не удалось получить позицию кода для {operation}");
+        }
+
+        public void Clear()
+        {
+            _operations.Clear();
+        }
+
+        public override string ToString()
+        {
+            return $"Сегмент {Index}";
         }
 
         internal void Compile(CodeCompileContext context)

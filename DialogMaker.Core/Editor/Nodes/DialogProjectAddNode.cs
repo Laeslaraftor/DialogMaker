@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core.Editor.Nodes
+﻿using DialogMaker.Core.Executioning;
+
+namespace DialogMaker.Core.Editor.Nodes
 {
     public class DialogProjectAddNode : DialogProjectDialogNode
     {
@@ -47,5 +49,14 @@
                 return field;
             }
         }
+
+        #region Управление
+
+        public override void Compile(DialogCompilerContext context)
+        {
+            CompileMath(context, DialogByteCode.Multiply, FirstValue, SecondValue, Output);
+        }
+
+        #endregion
     }
 }

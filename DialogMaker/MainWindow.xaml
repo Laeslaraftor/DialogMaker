@@ -33,6 +33,9 @@
                           Command="{Binding CloseProjectCommand}"/>
             </MenuItem>
         </Menu>
+        <Button Content="Собрать" Grid.ColumnSpan="2"
+                HorizontalAlignment="Center"
+                Click="Button_Click"/>
         <TabControl Grid.Row="1">
             <TabItem IsSelected="True">
                 <TabItem.Header>
