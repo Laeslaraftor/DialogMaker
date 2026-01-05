@@ -12,6 +12,9 @@ namespace DialogMaker.Core.Editor.Nodes
         public Guid Id { get; }
         public DialogNodeType NodeType { get; }
         public IPortDataConverter DataConverter { get; }
+        public bool IsImmediate { get; }
+        public bool IsUserHandleNode { get; }
+        public bool CanBeEntryPoint { get; }
 
         public void Compile(DialogCompilerContext context);
         public bool TryGetResourceValue(DialogProjectNodeOutput port, [NotNullWhen(true)] out IResourceItem? resource);

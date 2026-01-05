@@ -27,6 +27,7 @@ namespace DialogMaker.Core.Executioning.Builders
             Value = section;
         }
 
+        public Guid Id { get; } = Guid.NewGuid();
         public object? Value { get; }
 
         #region Управление
@@ -51,8 +52,8 @@ namespace DialogMaker.Core.Executioning.Builders
             }
             else if (Value is OperationBuilder operation)
             {
-                int operationIndex = operation.GetCodeIndex();
-                return contextBuilder.AddVariable(new LocalVariable(operationIndex));
+                return operation.GetCodeIndex();
+                //return contextBuilder.AddVariable(new LocalVariable(operationIndex));
             }
             else if (Value is DialogSectionBuilder section)
             {
@@ -63,7 +64,8 @@ namespace DialogMaker.Core.Executioning.Builders
                     throw new InvalidOperationException($"Недопустимый индекс сегмента кода ({sectionIndex}). Возможно, этот сегмент был удалён");
                 }
 
-                return contextBuilder.AddVariable(new LocalVariable(sectionIndex));
+                return sectionIndex;
+                //return contextBuilder.AddVariable(new LocalVariable(sectionIndex));
             }
 
             throw new InvalidOperationException($"Невозможно добавить значение в контекст, так как оно либо пустое, либо имеет недопустимый тип. Значение: {Value}");
@@ -80,10 +82,20 @@ namespace DialogMaker.Core.Executioning.Builders
         }
         public override int GetHashCode()
         {
-            return HashCode.Combine(Value);
+            return HashCode.Combine(Id, Value);
         }
         public override string ToString()
         {
+            if (Value is OperationBuilder operation)
+            {
+                return $"i:{operation.Index}";
+            }
+            if (Value is OperandValue operand && 
+                operand.Type == DialogVariableType.String)
+            {
+                return $"\"{operand}\"";
+            }
+
             return Value?.ToString() ?? string.Empty;
         }
 

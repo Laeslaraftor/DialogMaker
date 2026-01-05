@@ -14,9 +14,23 @@ namespace DialogMaker.Core.Executioning
             CodeBuilder = new();
             Map = map;
 
-            foreach (var action in map.ActionNodes)
+            if (map.EntryNodes.Count > 1)
             {
-                _sections.Add(action, CodeBuilder.CreateSection());
+                EntrySection = CodeBuilder.CreateSection();
+            }
+
+            //foreach (var action in map.ActionNodes)
+            //{
+            //    _sections.Add(action, CodeBuilder.CreateSection());
+            //}
+            foreach (var group in map.ActionGroups)
+            {
+                var section = CodeBuilder.CreateSection();
+
+                foreach (var node in group)
+                {
+                    _sections.Add(node, section);
+                }
             }
 
             Sections = new(_sections);
@@ -25,6 +39,7 @@ namespace DialogMaker.Core.Executioning
         public DialogCodeBuilder CodeBuilder { get; }
         public DialogActionsMap Map { get; }
         public ReferenceReadOnlyDictionary<DialogProjectDialogNode, DialogSectionBuilder> Sections { get; }
+        public DialogSectionBuilder? EntrySection { get; }
 
         private readonly ObservableDictionary<DialogProjectDialogNode, DialogSectionBuilder> _sections = [];
 
@@ -76,27 +91,55 @@ namespace DialogMaker.Core.Executioning
                     return;
                 }
 
+                if (section == context.Section)
+                {
+                    if (context.IsCompiled(nextNode))
+                    {
+                        var index = context.GetNodeIndex(nextNode);
+
+                        if (index == -1 || context.GetNodeIndex(output.Node) + 1 == index)
+                        {
+                            return;
+                        }
+
+                        var gotoOpCode = context.Section.CreateOperation(DialogByteCode.Goto);
+                        gotoOpCode.Arguments[0] = new(section.Operations[index]);
+
+                        return;
+                    }
+
+                    context.Compile(nextNode);
+                    return;
+                }
+
                 var jump = context.Section.CreateOperation(DialogByteCode.Jump);
                 jump.Arguments[0] = new(section);
 
                 return;
             }
 
+            int count = 0;
+
             foreach (var connection in output)
             {
                 if (connection.Node is not DialogProjectDialogNode node ||
                     !_sections.TryGetValue(node, out var section))
                 {
+                    count++;
                     continue;
                 }
 
-                var threadStart = context.Section.CreateOperation(DialogByteCode.StartThread);
+                var opCode = count + 1 >= output.ConnectionsCount ? DialogByteCode.Jump : DialogByteCode.StartThread;
+                var threadStart = context.Section.CreateOperation(opCode);
                 threadStart.Arguments[0] = new(section);
+                count++;
             }
         }
 
         public CompiledCodeInfo Compile()
         {
+            EntrySection?.Clear();
+
             foreach (var section in _sections.Values)
             {
                 section.Clear();
@@ -104,10 +147,29 @@ namespace DialogMaker.Core.Executioning
 
             DialogCompilerResources resources = new();
             HashSet<INode> compiledNodes = [];
+            Dictionary<INode, int> nodeIndexes = [];
+
+            if (EntrySection != null)
+            {
+                int count = 0;
+
+                foreach (var entry in Map.EntryNodes)
+                {
+                    if (!_sections.TryGetValue(entry, out var entrySection))
+                    {
+                        continue;
+                    }
+
+                    var opCode = count + 1 >= Map.EntryNodes.Count ? DialogByteCode.Jump : DialogByteCode.StartThread;
+                    var startThread = EntrySection.CreateOperation(opCode);
+                    startThread.Arguments[0] = new(entrySection);
+                    count++;
+                }
+            }
 
             foreach (var info in _sections)
             {
-                DialogCompilerContext context = new(this, info.Value, resources, compiledNodes);
+                DialogCompilerContext context = new(this, info.Value, resources, compiledNodes, nodeIndexes);
                 context.Compile(info.Key);
             }
 

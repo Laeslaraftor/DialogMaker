@@ -23,6 +23,19 @@ namespace DialogMaker.Core.Executioning.Builders
 
         #region Управление
 
+        public int IndexOf(OperationBuilder operation)
+        {
+            for (int i = 0; i < _operations.Count; i++)
+            {
+                if (_operations[i] == operation)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
         public OperationBuilder CreateOperation(DialogByteCode code)
         {
             OperationBuilder result = new(this, code);
@@ -54,7 +67,7 @@ namespace DialogMaker.Core.Executioning.Builders
                 }
 
                 // Количество аргументов * размер аргумента + размер инструкции
-                count = (argumentSize * builder.Arguments.Length) + instructionSize;
+                count += (argumentSize * builder.Arguments.Length) + instructionSize;
             }
 
             throw new ArgumentException($"Не удалось получить позицию кода для {operation}");

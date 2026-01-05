@@ -62,10 +62,29 @@ namespace DialogMaker.Core.Editor.Nodes
             var resource = Variable.Resolve();
             DialogExecutionParameter parameter = new(resource);
 
-            context.Resources.CreateVariable(Input, parameter);
-            var output = context.Compiler.RecursiveCompileConnections(context, Input);
+            if (Input.ConnectionsCount > 0)
+            {
+                var newValueVariable = context.RecursiveCompileConnections(Input);
 
-            context.Resources.CreateVariable(Output, output);
+                var setOpCode = context.Section.CreateOperation(DialogByteCode.Set);
+                setOpCode.Arguments[0] = parameter;
+                setOpCode.Arguments[1] = newValueVariable;
+            }
+            if (Output.ConnectionsCount > 0)
+            {
+                var output = context.Resources.GetOrCreateVariable(Output);
+
+                if (output.Value?.Equals(parameter.Value) == true)
+                {
+                    return;
+                }
+
+                var setOpCode = context.Section.CreateOperation(DialogByteCode.Set);
+                setOpCode.Arguments[0] = output;
+                setOpCode.Arguments[1] = parameter;
+
+                context.CompileOutputs(Output);
+            }
         }
 
         public override bool TryGetResourceValue(DialogProjectNodeOutput port, [NotNullWhen(true)] out IResourceItem? resource)

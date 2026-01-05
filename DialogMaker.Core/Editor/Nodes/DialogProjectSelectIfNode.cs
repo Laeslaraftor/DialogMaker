@@ -83,6 +83,8 @@ namespace DialogMaker.Core.Editor.Nodes
             gotoValue1.Arguments[0] = new(setValue1);
             gotoValue2.Arguments[0] = new(setValue2);
             gotoEnd.Arguments[0] = new(ending);
+
+            context.CompileOutputs(Output);
         }
 
         #endregion

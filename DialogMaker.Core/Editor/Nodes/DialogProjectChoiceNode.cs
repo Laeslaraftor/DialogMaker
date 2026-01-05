@@ -71,6 +71,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 return field;
             }
         }
+        public override bool IsUserHandleNode => true;
 
         #region Управление
 
@@ -90,8 +91,8 @@ namespace DialogMaker.Core.Editor.Nodes
             choiceOpCode.Arguments[1] = new(variants);
             choiceOpCode.Arguments[2] = outputIndex;
 
-            context.Compiler.CompileOutputs(context, Output);
-            context.Compiler.CompileOutputs(context, SelectedVarianIndex);
+            context.CompileOutputs(Output);
+            context.CompileOutputs(SelectedVarianIndex);
         }
 
         protected override DialogProjectDialogNodeSavedState CreateSavedState()

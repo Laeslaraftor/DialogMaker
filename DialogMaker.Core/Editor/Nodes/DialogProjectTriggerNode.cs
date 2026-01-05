@@ -45,6 +45,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 return field;
             }
         }
+        public override bool IsUserHandleNode => true;
 
         #region Управление
 
@@ -58,7 +59,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 opcode.Arguments[0] = new(triggerId);
             }
 
-            context.Compiler.CompileOutputs(context, Output);
+            context.CompileOutputs(Output);
         }
 
         protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)

@@ -72,6 +72,48 @@ namespace DialogMaker.Core.Editor.Nodes
             }
         }
         public IPortDataConverter DataConverter => DialogProjectPortDataConverter.Instance;
+        public virtual bool IsUserHandleNode { get; }
+        public bool IsImmediate
+        {
+            get
+            {
+                foreach (var input in GetInputs().Keys)
+                {
+                    if (input.ConnectionsCount > 0 && 
+                        input.ConnectionType == DialogNodeConnectionType.Action)
+                    {
+                        return false;
+                    }
+                    foreach (var connection in input)
+                    {
+                        if (!connection.Node.IsImmediate)
+                        {
+                            return false;
+                        }
+                    }
+                }
+
+                return true;
+            }
+        }
+        public bool CanBeEntryPoint
+        {
+            get
+            {
+                foreach (var input in GetInputs().Keys)
+                {
+                    foreach (var connection in input.Connections)
+                    {
+                        if (connection.Node.IsUserHandleNode)
+                        {
+                            return false;
+                        }
+                    }
+                }
+
+                return true;
+            }
+        }
 
         private ReadOnlyDictionary<DialogProjectNodeInput, DialogProjectNodeMetadata>? _inputs;
         private ReadOnlyDictionary<DialogProjectNodeOutput, DialogProjectNodeMetadata>? _outputs;
@@ -310,13 +352,16 @@ namespace DialogMaker.Core.Editor.Nodes
             var value2 = context.Compiler.RecursiveCompileConnections(context, secondValue);
             var output = context.Resources.GetOrCreateVariable(outputPort);
 
-            var mathOpCode = context.Section.CreateOperation(code);
-            mathOpCode.Arguments[0] = value1;
-            mathOpCode.Arguments[1] = value2;
-
             var setToOutput = context.Section.CreateOperation(DialogByteCode.Set);
             setToOutput.Arguments[0] = output;
             setToOutput.Arguments[1] = value1;
+
+            var mathOpCode = context.Section.CreateOperation(code);
+            mathOpCode.Arguments[0] = output;
+            mathOpCode.Arguments[1] = value2;
+
+
+            context.CompileOutputs(outputPort);
         }
 
         #endregion

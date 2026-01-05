@@ -39,14 +39,17 @@ namespace DialogMaker.Core.Executioning.Builders
         public CompiledCodeInfo Compile()
         {
             using MemoryStream codeStream = new();
-            Dictionary<int, int> sections = [];
+            Dictionary<int, CodeSection> sections = [];
             DialogExecutionContextBuilder contextBuilder = new();
             CodeCompileContext context = new(codeStream, contextBuilder);
 
             for (int i = 0; i < _sections.Count; i++)
             {
-                sections.Add(i, (int)codeStream.Length);
+                int position = (int)codeStream.Length;
                 _sections[i].Compile(context);
+
+                int length = (int)codeStream.Length - position;
+                sections.Add(i, new(position, length));
             }
 
             return new(codeStream.ToArray(), contextBuilder, sections);

@@ -211,7 +211,8 @@ namespace DialogMaker
 
             DialogCompilerView view = new()
             {
-                Builder = compiler.CodeBuilder
+                Builder = compiler.CodeBuilder,
+                Code = result
             };
             ModalWindow window = new()
             {

@@ -155,7 +155,7 @@ namespace DialogMaker.Core.Executioning
             {
                 int bytesRead = 0;
 
-                for (int v = 0; v < buffer.Length; i++)
+                for (int v = 0; v < buffer.Length; v++)
                 {
                     var value = codeStream.ReadByte();
 

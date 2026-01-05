@@ -57,6 +57,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 return field;
             }
         }
+        public override bool IsUserHandleNode => true;
 
         #region Управление
 
@@ -66,7 +67,7 @@ namespace DialogMaker.Core.Editor.Nodes
             var character = Character?.Resolve();
 
             CreateOperation(context, character, text, DialogByteCode.ShowReplica, DialogByteCode.ShowResourceReplica);
-            context.Compiler.CompileOutputs(context, Output);
+            context.CompileOutputs(Output);
         }
 
         protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)

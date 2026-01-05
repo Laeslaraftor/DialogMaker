@@ -10,6 +10,7 @@
         }
 
         public DialogSectionBuilder SectionBuilder { get; }
+        public int Index => SectionBuilder.IndexOf(this);
         public DialogByteCode Code { get; }
         public DialogExecutionParameter[] Arguments { get; }
 
@@ -24,7 +25,7 @@
         {
             if (Arguments.Length == 0)
             {
-                return Code.ToString();
+                return $"{Index}: {Code}";
             }
 
             string args = string.Empty;
@@ -39,7 +40,7 @@
                 args += arg.ToString();
             }
 
-            return $"{Code}({args})";
+            return $"{Index}: {Code}({args})";
         }
 
         #endregion

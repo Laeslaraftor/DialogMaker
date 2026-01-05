@@ -1,121 +1,152 @@
 ﻿using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Core.Executioning.Builders;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Xml.Schema;
 
 namespace DialogMaker.Core.Executioning
 {
     public class DialogActionsMap
     {
-        public DialogActionsMap(ReadOnlyCollection<DialogProjectDialogNode> entries, ReadOnlyCollection<DialogProjectDialogNode> actions)
+        public DialogActionsMap(ReadOnlyCollection<DialogProjectDialogNode> entries, ReadOnlyCollection<ReadOnlyCollection<DialogProjectDialogNode>> groups)
         {
             EntryNodes = entries;
-            ActionNodes = actions;
-
-            Dictionary<DialogProjectDialogNode, DialogSectionBuilder> sections = [];
-
-            foreach (var action in actions)
-            {
-                sections.Add(action, _codeBuilder.CreateSection());
-            }
-
-            NodeSections = new(sections);
+            ActionGroups = groups;
         }
 
         public ReadOnlyCollection<DialogProjectDialogNode> EntryNodes { get; }
-        public ReadOnlyCollection<DialogProjectDialogNode> ActionNodes { get; }
-        public ReadOnlyDictionary<DialogProjectDialogNode, DialogSectionBuilder> NodeSections { get; }
-
-        private readonly Dictionary<DialogProjectDialogNode, ReadOnlyCollection<DialogProjectDialogNode>> _nextNodes = [];
-        private readonly Dictionary<DialogProjectDialogNode, ReadOnlyCollection<DialogProjectDialogNode>> _previousNodes = [];
-        private readonly DialogCodeBuilder _codeBuilder = new();
-
-        #region Управление
-
-        public ReadOnlyCollection<DialogProjectDialogNode> GetNextNodes(DialogProjectDialogNode node)
-        {
-            if (_nextNodes.TryGetValue(node, out var nextNodes))
-            {
-                return nextNodes;
-            }
-
-            List<DialogProjectDialogNode> nodes = [];
-
-            foreach (var output in node.GetOutputs().Keys)
-            {
-                foreach (var connection in output.Connections)
-                {
-                    if (connection.Node is DialogProjectDialogNode dialogNode)
-                    {
-                        nodes.Add(dialogNode);
-                    }
-                }
-            }
-
-            nextNodes = new(nodes);
-            _nextNodes.Add(node, nextNodes);
-
-            return nextNodes;
-        }
-        public ReadOnlyCollection<DialogProjectDialogNode> GetPreviousNodes(DialogProjectDialogNode node)
-        {
-            if (_previousNodes.TryGetValue(node, out var previousNodes))
-            {
-                return previousNodes;
-            }
-
-            List<DialogProjectDialogNode> nodes = [];
-
-            foreach (var input in node.GetInputs().Keys)
-            {
-                foreach (var connection in input.Connections)
-                {
-                    if (connection.Node is DialogProjectDialogNode dialogNode)
-                    {
-                        nodes.Add(dialogNode);
-                    }
-                }
-            }
-
-            previousNodes = new(nodes);
-            _previousNodes.Add(node, previousNodes);
-
-            return previousNodes;
-        }
-
-        #endregion
+        public ReadOnlyCollection<ReadOnlyCollection<DialogProjectDialogNode>> ActionGroups { get; }
 
         #region Статика
 
         public static DialogActionsMap Create(DialogProjectDialog dialog)
         {
             List<DialogProjectDialogNode> entryNodes = [];
-            List<DialogProjectDialogNode> actionNodes = [];
+            List<List<DialogProjectDialogNode>> actionGroups = [[]];
 
             foreach (var node in dialog.Nodes)
             {
-                int actionPortsCount = 0;
+                bool canBeEntryPoint = node.CanBeEntryPoint;
+                bool isImmediate = node.IsImmediate;
 
-                foreach (var actionPort in node.GetPorts(p => p.DataType == DialogNodePortType.Action))
+                if (canBeEntryPoint && isImmediate && node.IsUserHandleNode)
                 {
-                    actionPortsCount++;
-
-                    if (actionPort is DialogProjectNodeInput &&
-                        actionPort.ConnectionsCount == 0)
-                    {
-                        entryNodes.Add(node);
-                        break;
-                    }
-                }
-
-                if (actionPortsCount != 0)
-                {
-                    actionNodes.Add(node);
+                    entryNodes.Add(node);
                 }
             }
 
-            return new(new(entryNodes), new(actionNodes));
+            bool AlreadyInGroup(DialogProjectDialogNode node)
+            {
+                foreach (var group in actionGroups)
+                {
+                    foreach (var value in group)
+                    {
+                        if (value == node)
+                        {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+
+            void CheckConnections(List<DialogProjectDialogNode> group, ICollection<DialogProjectNodeOutput> outputs, bool forceNextGroups = false)
+            {
+                bool isEmpty = true;
+
+                foreach (var output in outputs)
+                {
+                    if (forceNextGroups || output.ConnectionsCount > 1)
+                    {
+                        foreach (var connection in output)
+                        {
+                            isEmpty = false;
+
+                            if (connection.Node is not DialogProjectDialogNode dialogNode)
+                            {
+                                continue;
+                            }
+
+                            List<DialogProjectDialogNode> nextGroup = [];
+                            actionGroups.Add(nextGroup);
+                            CheckGroups(nextGroup, dialogNode);
+                        }
+
+                        continue;
+                    }
+
+                    foreach (var connection in output)
+                    {
+                        isEmpty = false;
+
+                        if (connection.Node is DialogProjectDialogNode dialogNode)
+                        {
+                            CheckGroups(group, dialogNode);
+                        }
+                    }
+                }
+
+                if (outputs.Count > 0 && isEmpty)
+                {
+                    actionGroups.Add([]);
+                }
+            }
+            void CheckGroups(List<DialogProjectDialogNode> group, DialogProjectDialogNode node)
+            {
+                if (AlreadyInGroup(node))
+                {
+                    return;
+                }
+
+                group.Add(node);
+
+                var outputs = node.GetOutputs().Keys;
+
+                if (outputs.Count == 1)
+                {
+                    CheckConnections(group, outputs);
+                }
+                else if (outputs.Count > 1)
+                {
+                    bool manyConnections = false;
+                    int lastConnectionCount = 0;
+
+                    foreach (var output in outputs)
+                    {
+                        if (output.ConnectionsCount > 0 && lastConnectionCount > 0)
+                        {
+                            manyConnections = true;
+                            break;
+                        }
+
+                        lastConnectionCount = Math.Max(output.ConnectionsCount, lastConnectionCount);
+                    }
+
+                    if (manyConnections)
+                    {
+                        //List<DialogProjectDialogNode> newGroup = [];
+                        //actionGroups.Add(newGroup);
+                        CheckConnections(group, outputs, true);
+                    }
+                    else
+                    {
+                        CheckConnections(group, outputs);
+                    }
+                }
+            }
+
+            foreach (var node in dialog.Nodes)
+            {
+                CheckGroups(actionGroups[^1], node);
+            }
+
+            actionGroups.RemoveAll(g => g.Count == 0);
+
+            return new(new(entryNodes), new([.. actionGroups.Select(c => new ReadOnlyCollection<DialogProjectDialogNode>(c))]));
         }
 
         #endregion

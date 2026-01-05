@@ -76,6 +76,8 @@ namespace DialogMaker.Core.Editor.Nodes
             var setOpCode = context.Section.CreateOperation(DialogByteCode.Set);
             setOpCode.Arguments[0] = output;
             setOpCode.Arguments[1] = value;
+
+            context.CompileOutputs(Output);
         }
 
         #endregion
