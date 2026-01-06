@@ -72,6 +72,22 @@ namespace DialogMaker.Editor
             }
         }
 
+        public override object? GetPreview()
+        {
+            var preview = _viewersPool.GetElement();
+            preview.MediaFile = Original;
+
+            return preview;
+        }
+        public override void FreePreview(object? preview)
+        {
+            if (preview is MediaViewer view && view.MediaFile?.Equals(Original) == true)
+            {
+                view.MediaFile = null;
+                _viewersPool.Free(preview);
+            }
+        }
+
         public override ItemContextMenu CreateContextMenu()
         {
             return new FileContextMenu(this);
@@ -103,6 +119,7 @@ namespace DialogMaker.Editor
 
         private readonly ElementsPool<Image> _imagesPool = new();
         private readonly ElementsPool<FileView> _viewsPool = new();
+        private readonly ElementsPool<MediaViewer> _viewersPool = new();
 
         #endregion
     }

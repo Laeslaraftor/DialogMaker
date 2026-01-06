@@ -36,11 +36,17 @@ namespace DialogMaker.Lib.Controllers
             Dictionary<MouseButton, DragHitTest> result = [];
             bool shouldRemoveLeftButton = false;
             int skipCount = 0;
+            bool isMouseMoveControlHit = false;
 
             await ElementsContainer.Fetch(mouse, target =>
             {
                 if (target is not FrameworkElement element)
                 {
+                    return;
+                }
+                if (isMouseMoveControlHit || IsMouseMoveControl(target))
+                {
+                    isMouseMoveControlHit = true;
                     return;
                 }
 
@@ -67,7 +73,7 @@ namespace DialogMaker.Lib.Controllers
                 }
             }, callback =>
             {
-                if (skipCount > 1)
+                if (skipCount > 1 || isMouseMoveControlHit)
                 {
                     return true;
                 }
@@ -77,6 +83,11 @@ namespace DialogMaker.Lib.Controllers
                 return false;
             });
 
+            if (isMouseMoveControlHit)
+            {
+                result.Clear();
+                return result;
+            }
             if (shouldRemoveLeftButton)
             {
                 result.Remove(MouseButton.Left);

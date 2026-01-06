@@ -67,6 +67,7 @@ namespace DialogMaker.Editor
         public virtual object? GetPreview()
         {
             var block = _previewBlocks.GetElement();
+            block.HorizontalAlignment = HorizontalAlignment.Left;
             block.MaxWidth = 200;
             block.Margin = new(5, 0, 5, 0);
             block.TextWrapping = TextWrapping.Wrap;

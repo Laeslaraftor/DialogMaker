@@ -72,6 +72,7 @@ namespace DialogMaker.Lib.Controllers
         };
         private bool _isSelecting;
         private ISelectable? _lastForceSelectable;
+        private bool _lastMouseDownPositionIsMouseMoveControl;
 
         #region Управление
 
@@ -133,6 +134,31 @@ namespace DialogMaker.Lib.Controllers
             }
 
             EmptyClick?.Invoke(this, EventArgs.Empty);
+        }
+        private async void CheckPosition(MouseEventArgs mouse)
+        {
+            int skipCount = 0;
+            bool isMouseMoveControl = false;
+
+            await Container.Fetch(mouse, obj =>
+            {
+                if (isMouseMoveControl || IsMouseMoveControl(obj))
+                {
+                    isMouseMoveControl = true;
+                }
+            }, callback =>
+            {
+                if (skipCount > 1 || isMouseMoveControl)
+                {
+                    return true;
+                }
+
+                skipCount++;
+
+                return false;
+            });
+
+            _lastMouseDownPositionIsMouseMoveControl = isMouseMoveControl;
         }
 
         private void StopSelecting()
@@ -198,10 +224,10 @@ namespace DialogMaker.Lib.Controllers
         {
             base.OnMouseDown(sender, e);
 
+            _lastMouseDownPositionIsMouseMoveControl = false;
             var position = e.GetPosition(Container);
             bool multiselectButtonPressed = e.IsPressed(MultiselectMouseButton);
             bool extraButtonPressed = e.IsPressed(ExtraMouseButton);
-
 
             if ((!e.Handled && multiselectButtonPressed) ||
                 extraButtonPressed)
@@ -213,6 +239,8 @@ namespace DialogMaker.Lib.Controllers
                 return;
             }
 
+            CheckPosition(e);
+
             _isSelecting = true;
             _selection.Visibility = Visibility.Visible;
             _selection.StartPoint = position;
@@ -222,7 +250,8 @@ namespace DialogMaker.Lib.Controllers
         {
             base.OnMouseMove(sender, e);
 
-            if (!e.IsPressed(MultiselectMouseButton))
+            if (_lastMouseDownPositionIsMouseMoveControl || 
+                !e.IsPressed(MultiselectMouseButton))
             {
                 return;
             }

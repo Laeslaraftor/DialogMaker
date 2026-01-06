@@ -1,6 +1,8 @@
 ﻿using DialogMaker.Core;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
 namespace DialogMaker.Lib.Controllers
@@ -80,6 +82,14 @@ namespace DialogMaker.Lib.Controllers
             OnValidateClickElement(this, validate);
 
             return validate.IsValid;
+        }
+        protected bool IsMouseMoveControl(DependencyObject obj)
+        {
+            return obj is Track ||
+                   obj is ScrollBar ||
+                   obj is Slider ||
+                   obj is TextBox ||
+                   obj is RichTextBox;
         }
 
         private async Task<UIElement?> Fetch(MouseEventArgs mouse)

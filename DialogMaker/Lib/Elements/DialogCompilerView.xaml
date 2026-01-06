@@ -36,32 +36,46 @@
             </ListView>
         </TabItem>
         <TabItem Header="Код">
-            <ListView x:Name="_codeView">
-                <ListView.ItemTemplate>
-                    <DataTemplate>
-                        <Grid IsHitTestVisible="False">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition/>
-                            </Grid.RowDefinitions>
-                            <TextBlock FontSize="18" FontWeight="Medium">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <ListView x:Name="_codeView">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid IsHitTestVisible="False">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <TextBlock FontSize="18" FontWeight="Medium">
                             <Run Text="Сегмент "/>
                             <Run Text="{Binding Index, Mode=OneWay}"/>
-                            </TextBlock>
-                            <ListView Grid.Row="1" ItemsSource="{Binding Operations}">
-                                <ListView.ItemContainerStyle>
-                                    <Style TargetType="ListViewItem"/>
-                                </ListView.ItemContainerStyle>
-                                <ListView.ItemTemplate>
-                                    <DataTemplate>
-                                        <Label Content="{Binding}" Padding="0"/>
-                                    </DataTemplate>
-                                </ListView.ItemTemplate>
-                            </ListView>
-                        </Grid>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
+                                </TextBlock>
+                                <ListView Grid.Row="1" ItemsSource="{Binding Operations}">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem"/>
+                                    </ListView.ItemContainerStyle>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Label Content="{Binding}" Padding="0"/>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+                <StackPanel Grid.Column="1">
+                    <TextBlock Text="Ресурсы" FontSize="18"
+                               FontWeight="Medium"/>
+                    <ListView x:Name="_resourcesList"/>
+                    <TextBlock Text="Переменные" FontSize="18"
+                               FontWeight="Medium"/>
+                    <ListView x:Name="_variablesList"/>
+                </StackPanel>
+            </Grid>
         </TabItem>
     </TabControl>
 </UserControl>

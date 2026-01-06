@@ -17,7 +17,8 @@
             <RowDefinition/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition MinWidth="200" MaxWidth="400" Width="0.4*"/>
+            <ColumnDefinition MinWidth="250" Width="350"/>
+            <ColumnDefinition Width="Auto"/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
         <Menu Grid.ColumnSpan="3">
@@ -33,7 +34,7 @@
                           Command="{Binding CloseProjectCommand}"/>
             </MenuItem>
         </Menu>
-        <Button Content="Собрать" Grid.ColumnSpan="2"
+        <Button Content="Собрать" Grid.ColumnSpan="3"
                 HorizontalAlignment="Center"
                 Click="Button_Click"/>
         <TabControl Grid.Row="1">
@@ -139,6 +140,7 @@
             </TabItem>
         </TabControl>
         <Border x:Name="_dialogsTabsContainer"
-                Grid.Row="1" Grid.Column="1"/>
+                Grid.Row="1" Grid.Column="2"/>
+        <GridSplitter Grid.RowSpan="2" Grid.Column="1"/>
     </Grid>
 </Window>

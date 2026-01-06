@@ -9,13 +9,15 @@
     <Grid x:Name="_mainGrid">
         <Grid.RowDefinitions>
             <RowDefinition/>
-            <RowDefinition Height="400"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="400" MinHeight="50"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
-            <ColumnDefinition MinWidth="400" MaxWidth="500" Width="0.4*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition MinWidth="350" MaxWidth="600" Width="0.4*"/>
         </Grid.ColumnDefinitions>
-        <ScrollViewer Grid.RowSpan="2" Grid.Column="1"
+        <ScrollViewer Grid.RowSpan="3" Grid.Column="2"
                       HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto"
                       Margin="4,0">
@@ -133,13 +135,13 @@
         <local:DiagramView ClipToBounds="True"
                            CurvesThickness="6" CurvesOffset="5" CurvesResolution="24"
                            Dialog="{Binding Dialog}"/>
-        <Border Grid.RowSpan="2"
+        <Border Grid.RowSpan="3"
                 BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
                 BorderThickness="1,0,1,0"/>
         <Border Grid.Row="1" VerticalAlignment="Top"
                 Background="{DynamicResource DividerStrokeColorDefaultBrush}"
                 Height="1"/>
-        <Grid Grid.Row="1" Margin="8,2">
+        <Grid Grid.Row="2" Margin="8,2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition/>
@@ -174,5 +176,7 @@
                 </ListView.ItemTemplate>
             </ListView>
         </Grid>
+        <GridSplitter Grid.Row="1"/>
+        <GridSplitter Grid.RowSpan="3" Grid.Column="1"/>
     </Grid>
 </UserControl>

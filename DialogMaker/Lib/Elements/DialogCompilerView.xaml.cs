@@ -31,6 +31,9 @@ namespace DialogMaker.Lib.Elements
         }
         private void SetCode(CompiledCodeInfo oldValue, CompiledCodeInfo newValue)
         {
+            _resourcesList.ItemsSource = newValue.Context?.Resources;
+            _variablesList.ItemsSource = newValue.Context?.Variables;
+
             if (newValue.ByteCode == null)
             {
                 return;

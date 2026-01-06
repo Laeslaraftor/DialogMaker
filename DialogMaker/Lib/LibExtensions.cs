@@ -3,6 +3,8 @@ using DialogMaker.Lib;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using System.Reflection;
+using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -50,6 +52,36 @@ namespace DialogMaker
                     yield return (T)enumValue;
                 }
             }
+        }
+
+        public static TimeSpan ToTimeSpan(this Duration duration)
+        {
+            if (duration.HasTimeSpan)
+            {
+                return duration.TimeSpan;
+            }
+
+            return TimeSpan.Zero;
+        }
+        public static MediaState GetState(this MediaElement media)
+        {
+            var helperField = typeof(MediaElement).GetField("_helper", BindingFlags.NonPublic | BindingFlags.Instance);
+
+            if (helperField == null)
+            {
+                return MediaState.Stop;
+            }
+
+            var helperObject = helperField.GetValue(media);
+            var stateField = helperObject?.GetType().GetField("_currentState", BindingFlags.NonPublic | BindingFlags.Instance);
+            var value = stateField?.GetValue(helperObject);
+
+            if (value == null)
+            {
+                return MediaState.Stop;
+            }
+
+            return (MediaState)value;
         }
 
         public static Point ToPoint(this Vector vector)
