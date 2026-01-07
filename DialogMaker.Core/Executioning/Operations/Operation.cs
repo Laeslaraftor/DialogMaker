@@ -15,6 +15,21 @@ namespace DialogMaker.Core.Executioning
 
         public DialogByteCode Code { get; }
         public int[] Arguments { get; }
+        public bool IsValid
+        {
+            get
+            {
+                foreach (var arg in Arguments)
+                {
+                    if (0 > arg)
+                    {
+                        return false;
+                    }
+                }
+
+                return false;
+            }
+        }
 
         #region Управление
 

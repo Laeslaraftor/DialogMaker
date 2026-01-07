@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Acly.Serialize;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -8,10 +9,11 @@ namespace DialogMaker.Core.Executioning
 {
     public class DialogThread : Disposable, IDialogExecutionThread
     {
-        internal DialogThread(DialogExecutor executor, byte[] code)
+        internal DialogThread(DialogExecutor executor, IDialogExecutingHandler handler, DialogByteCodeData data)
         {
             DialogExecutor = executor;
-            _code = new MemoryStream(code);
+            _handler = handler;
+            _data = data;
         }
 
         public bool IsRunning
@@ -23,7 +25,7 @@ namespace DialogMaker.Core.Executioning
                 {
                     InvokePropertyChanging(nameof(IsRunning));
                     field = value;
-                    InvokePropertyChanged(nameof(IsRunning));   
+                    InvokePropertyChanged(nameof(IsRunning));
                 }
             }
         }
@@ -41,34 +43,22 @@ namespace DialogMaker.Core.Executioning
                 }
             }
         }
-        public int CurrentSectionPosition
+        public int CurrentOperation
         {
             get => field;
             private set
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(CurrentSectionPosition));
+                    InvokePropertyChanging(nameof(CurrentOperation));
                     field = value;
-                    InvokePropertyChanged(nameof(CurrentSectionPosition));
-                }
-            }
-        }
-        public int CurrentSectionLength
-        {
-            get => field;
-            private set
-            {
-                if (field != value)
-                {
-                    InvokePropertyChanging(nameof(CurrentSectionLength));
-                    field = value;
-                    InvokePropertyChanged(nameof(CurrentSectionLength));
+                    InvokePropertyChanged(nameof(CurrentOperation));
                 }
             }
         }
 
-        private readonly Stream _code;
+        private readonly IDialogExecutingHandler _handler;
+        private readonly DialogByteCodeData _data;
         private CancellationTokenRegistration? _currentCancellationTokenRegistration;
 
         #region Управление
@@ -82,7 +72,7 @@ namespace DialogMaker.Core.Executioning
 
             JumpTo(sectionId);
 
-            if (0 >= CurrentSectionLength)
+            if (0 >= _data.Sections[CurrentSection].Operations.Count)
             {
                 return;
             }
@@ -103,17 +93,26 @@ namespace DialogMaker.Core.Executioning
         }
         private async Task Start(CancellationToken token)
         {
-            DialogExecutionContext context = new(this, DialogExecutor.Resources, DialogExecutor.Handler, token);
-            var codeStream = _code;
+            DialogExecutionContext context = new(this, DialogExecutor.Resources, _handler, token);
 
-            while (IsRunning &&
-                   _code.Position >= CurrentSectionPosition &&
-                   _code.Position < CurrentSectionPosition + CurrentSectionLength)
+            while (CurrentOperation < _data.Sections[CurrentSection].Operations.Count)
             {
-                Operation operation = Operation.Read(codeStream);
+                int operationIndex = CurrentOperation;
+                int sectionIndex = CurrentSection;
+
+                var operation = _data.Sections[sectionIndex].Operations[operationIndex];
                 var opCode = Operation.GetImplementation(operation.Code);
 
                 await opCode.Execute(context, operation.Arguments);
+
+                if (token.IsCancellationRequested)
+                {
+                    break;
+                }
+                if (sectionIndex == CurrentSection && operationIndex == CurrentOperation)
+                {
+                    CurrentOperation++;
+                }
             }
         }
 
@@ -122,23 +121,13 @@ namespace DialogMaker.Core.Executioning
             if (CurrentSection != sectionId)
             {
                 CurrentSection = sectionId;
-                CurrentSectionPosition = DialogExecutor.Sections[sectionId];
-
-                if (DialogExecutor.Sections.TryGetValue(sectionId + 1, out var nextPosition))
-                {
-                    CurrentSectionLength = nextPosition - CurrentSectionPosition;
-                }
-                else
-                {
-                    CurrentSectionLength = (int)_code.Length - CurrentSectionPosition;
-                }
             }
 
             Goto(0);
         }
         public void Goto(int instructionPosition)
         {
-            _code.Position = CurrentSectionPosition + instructionPosition;
+            CurrentOperation = instructionPosition;
         }
         public async void StartThread(int sectionId)
         {
@@ -157,6 +146,7 @@ namespace DialogMaker.Core.Executioning
 
             _currentCancellationTokenRegistration.Value.Dispose();
             _currentCancellationTokenRegistration = null;
+            IsRunning = false;
         }
         public void StopExecuting()
         {
@@ -192,8 +182,6 @@ namespace DialogMaker.Core.Executioning
                     Debug.WriteLine(error);
                 }
             }
-
-            _code.Dispose();
         }
 
         #endregion

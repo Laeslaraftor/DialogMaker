@@ -1,9 +1,10 @@
-﻿using DialogMaker.Core.Editor.Nodes;
+﻿using DialogMaker.Core.Common;
+using DialogMaker.Core.Editor.Nodes;
 using System;
 
 namespace DialogMaker.Core.Editor
 {
-    public abstract class DialogProjectVariable : DialogProjectResourceObject
+    public abstract class DialogProjectVariable : DialogProjectResourceObject, IVariable
     {
         public DialogProjectVariable(DialogProjectResources resources)
             : base(resources)
@@ -44,6 +45,13 @@ namespace DialogMaker.Core.Editor
                     InvokePropertyChanged(nameof(Value));
                 }
             }
+        }
+        public bool IsReadOnly => false;
+
+        OperandValue IVariable.Value
+        {
+            get => new(Value);
+            set => Value = value.Value;
         }
 
         #region Управление

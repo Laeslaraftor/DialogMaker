@@ -1,4 +1,5 @@
 ﻿using Acly;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -39,20 +40,23 @@ namespace DialogMaker.Core.Executioning.Builders
         public CompiledCodeInfo Compile()
         {
             using MemoryStream codeStream = new();
-            Dictionary<int, CodeSection> sections = [];
+            using MemoryStream tempCode = new();
             DialogExecutionContextBuilder contextBuilder = new();
-            CodeCompileContext context = new(codeStream, contextBuilder);
+            CodeCompileContext context = new(tempCode, contextBuilder);
 
             for (int i = 0; i < _sections.Count; i++)
             {
-                int position = (int)codeStream.Length;
+                tempCode.SetLength(0);
                 _sections[i].Compile(context);
 
-                int length = (int)codeStream.Length - position;
-                sections.Add(i, new(position, length));
+                var lengthData = BitConverter.GetBytes((int)tempCode.Length);
+                codeStream.Write(lengthData);
+
+                tempCode.Position = 0;
+                tempCode.CopyTo(codeStream);
             }
 
-            return new(codeStream.ToArray(), contextBuilder, sections);
+            return new(codeStream.ToArray(), contextBuilder);
         }
 
         #endregion

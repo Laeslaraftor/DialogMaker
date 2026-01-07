@@ -48,8 +48,9 @@ namespace DialogMaker.Lib.Elements
 
             try
             {
-                var code = DialogByteCodeParser.Read(newValue.ByteCode, newValue.SectionPosition);
+                var code = DialogByteCodeData.Read(newValue.ByteCode);
                 _codeView.ItemsSource = code.Sections;
+                _dialogPlayer.DialogExecutor = new(newValue.ByteCode, newValue.Context);
             }
             catch (Exception error)
             {

@@ -1,23 +1,30 @@
-﻿using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using Acly;
+using DialogMaker.Core.Common;
 using System;
-using System.Threading.Tasks;
-using Acly;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DialogMaker.Core.Executioning
 {
     public class DialogExecutor : Disposable
     {
-        public DialogExecutor(byte[] code, ReadOnlyDictionary<int, int> sections, IDialogExecutionResources resources, IDialogExecutingHandler handler)
+        public DialogExecutor(byte[] code, IDialogExecutionResources resources)
+            : this(DialogByteCodeData.Read(code), resources)
+        {
+        }
+        public DialogExecutor(DialogByteCodeData data, IDialogExecutionResources resources)
         {
             Resources = resources;
-            Handler = handler;
-            Sections = sections;
-            _code = code;
+            _data = data;
+            _internalHandler = new(this);
 
             _threads.ItemChanged += OnThreadsItemChanged;
         }
+
+        public event EventHandler<DialogExecutorHandleEventArgs>? DialogHandled;
 
         public bool IsRunning
         {
@@ -31,11 +38,11 @@ namespace DialogMaker.Core.Executioning
 
                     if (value)
                     {
-                        Handler.OnDialogExecutingStarted(this, EventArgs.Empty);
+                        _internalHandler.OnDialogExecutingStarted(this, EventArgs.Empty);
                     }
                     else
                     {
-                        Handler.OnDialogExecutingEnded(this, EventArgs.Empty);
+                        _internalHandler.OnDialogExecutingEnded(this, EventArgs.Empty);
                     }
 
                     InvokePropertyChanged(nameof(IsRunning));
@@ -43,12 +50,24 @@ namespace DialogMaker.Core.Executioning
             }
         }
         public IDialogExecutionResources Resources { get; }
-        public IDialogExecutingHandler Handler { get; }
-        public ReadOnlyDictionary<int, int> Sections { get; }
+        public IDialogExecutingHandler? Handler
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(Handler));
+                    field = value;
+                    InvokePropertyChanged(nameof(Handler));
+                }
+            }
+        }
         internal Stack<OperandValue> Stack { get; } = [];
 
         private readonly EditableCollection<DialogThread> _threads = [];
-        private byte[] _code;
+        private readonly InternalHandler _internalHandler;
+        private readonly DialogByteCodeData _data;
 
         #region Управление
 
@@ -100,8 +119,6 @@ namespace DialogMaker.Core.Executioning
             base.Dispose(isDisposing);
             Stop();
 
-            _code = [];
-
             foreach (var thread in _threads)
             {
                 thread.Dispose();
@@ -109,7 +126,7 @@ namespace DialogMaker.Core.Executioning
 
             Stack.Clear();
             _threads.Clear();
-            _threads.ItemChanged += OnThreadsItemChanged;
+            _threads.ItemChanged -= OnThreadsItemChanged;
         }
 
         private DialogThread GetOrCreateThread()
@@ -122,7 +139,7 @@ namespace DialogMaker.Core.Executioning
                 }
             }
 
-            DialogThread newThread = new(this, _code);
+            DialogThread newThread = new(this, _internalHandler, _data);
             _threads.Add(newThread);
 
             return newThread;
@@ -161,9 +178,116 @@ namespace DialogMaker.Core.Executioning
                 if (t.IsRunning)
                 {
                     IsRunning = true;
-                    break;
+                    return;
                 }
             }
+
+            IsRunning = false;
+        }
+
+        private async Task HandleDialog(Func<IDialogExecutingHandler, Task> handler, CancellationToken cancellationToken)
+        {
+            bool isCompleted = false;
+
+            InvokeDialogHandled(async h =>
+            {
+                await handler(h);
+                isCompleted = true;
+            });
+
+            while (!isCompleted && !cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(50, cancellationToken);
+            }
+        }
+        private async Task<T?> HandleDialog<T>(Func<IDialogExecutingHandler, Task<T>> handler, CancellationToken cancellationToken, T? defaultValue = default)
+        {
+            bool isCompleted = false;
+            T? result = defaultValue;
+
+            InvokeDialogHandled(async h =>
+            {
+                result = await handler(h);
+                isCompleted = true;
+            });
+
+            while (!isCompleted && !cancellationToken.IsCancellationRequested)
+            {
+                await Task.Delay(50, cancellationToken);
+            }
+
+            return result;
+        }
+        private void InvokeDialogHandled(Action<IDialogExecutingHandler> handler)
+        {
+            var mainHandler = Handler;
+
+            if (mainHandler != null)
+            {
+                handler(mainHandler);
+            }
+
+            DialogHandled?.Invoke(this, new(this, handler));
+        }
+
+        #endregion
+
+        #region Классы
+
+        private class InternalHandler(DialogExecutor executor) : IDialogExecutingHandler
+        {
+            private readonly DialogExecutor _executor = executor;
+
+            public async Task HandleTrigger(string name, CancellationToken cancellationToken)
+            {
+                await _executor.HandleDialog(async h =>
+                {
+                    await h.HandleTrigger(name, cancellationToken);
+                }, cancellationToken);
+            }
+
+            public async Task ShowColorReplica(ICharacter? character, Color backgroundColor, Color textColor, IResourceString text, CancellationToken cancellationToken)
+            {
+                await _executor.HandleDialog(async h =>
+                {
+                    await h.ShowColorReplica(character, backgroundColor, textColor, text, cancellationToken);
+                }, cancellationToken);
+            }
+            public async Task ShowFullscreenReplica(ICharacter? character, IResourceItem? background, IResourceString text, CancellationToken cancellationToken)
+            {
+                await _executor.HandleDialog(async h =>
+                {
+                    await h.ShowFullscreenReplica(character, background, text, cancellationToken);
+                }, cancellationToken);
+            }
+            public async Task ShowReplica(ICharacter? character, IResourceString text, CancellationToken cancellationToken)
+            {
+                await _executor.HandleDialog(async h =>
+                {
+                    await h.ShowReplica(character, text, cancellationToken);
+                }, cancellationToken);
+            }
+
+            public async Task<int> ShowChoice(ICharacter? character, IStringCollection variants, CancellationToken cancellationToken)
+            {
+                return await _executor.HandleDialog(async h =>
+                {
+                    return await h.ShowChoice(character, variants, cancellationToken);
+                }, cancellationToken);
+            }
+
+            #region События
+
+            public void OnDialogExecutingEnded(object? sender, EventArgs e)
+            {
+                _executor.InvokeDialogHandled(h => h.OnDialogExecutingEnded(sender, e));
+            }
+            public void OnDialogExecutingStarted(object? sender, EventArgs e)
+            {
+                _executor.InvokeDialogHandled(h => h.OnDialogExecutingStarted(sender, e));
+            }
+
+            #endregion
         }
 
         #endregion

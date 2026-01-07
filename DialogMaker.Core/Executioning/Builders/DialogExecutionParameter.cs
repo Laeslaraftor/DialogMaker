@@ -52,7 +52,7 @@ namespace DialogMaker.Core.Executioning.Builders
             }
             else if (Value is OperationBuilder operation)
             {
-                return operation.GetCodeIndex();
+                return operation.Index;
                 //return contextBuilder.AddVariable(new LocalVariable(operationIndex));
             }
             else if (Value is DialogSectionBuilder section)

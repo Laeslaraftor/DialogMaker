@@ -100,15 +100,42 @@ namespace DialogMaker.Core.Executioning.Builders
 
         public IResourceItem GetResource(int index)
         {
-            return _resources[index];
+            if (_resources.TryGetValue(index, out var resource))
+            {
+                return resource;
+            }
+            if (_variables.TryGetValue(index, out var variable))
+            {
+                return variable;
+            }
+
+            throw new ArgumentException($"Ресурс с индексом {index} не найден");
         }
         public OperandValue GetVariable(int index)
         {
-            return _variables[index].Value;
+            if (_variables.TryGetValue(index, out var variable))
+            {
+                return variable.Value;
+            }
+            if (_resources.TryGetValue(index, out var resource) &&
+                resource is IVariable resourceVariable)
+            {
+                return resourceVariable.Value;
+            }
+
+            throw new ArgumentException($"Переменная с индексом {index} не найден");
         }
         public void SetVariable(int index, OperandValue value)
         {
-            _variables[index].Value = value;
+            if (_variables.TryGetValue(index, out var variable))
+            {
+                variable.Value = value;
+            }
+            if (_resources.TryGetValue(index, out var resource) &&
+                resource is IVariable resourceVariable)
+            {
+                resourceVariable.Value = value;
+            }
         }
 
         #endregion
