@@ -20,24 +20,24 @@
         <ScrollViewer Grid.RowSpan="3" Grid.Column="2"
                       HorizontalScrollBarVisibility="Disabled"
                       VerticalScrollBarVisibility="Auto"
-                      Margin="4,0">
-            <StackPanel>
+                      Margin="4,0,0,0">
+            <StackPanel Margin="0,0,10,0">
                 <local:FlagsViewer Enum="{Binding Project.ResourcesFilter.Flags}"
                                    SelectedValues="{Binding Project.ResourcesFilter.Flags, Mode=TwoWay}"
                                    ExcludeValues="{Binding Resources.UnsettedFlags}"
-                                   Margin="2.5,5" Spacing="2.5,0">
+                                   Margin="2.5,5,0,5" Spacing="2.5,0">
                     <local:FlagsViewer.ItemsPanelTemplate>
                         <ItemsPanelTemplate>
                             <WrapPanel/>
                         </ItemsPanelTemplate>
                     </local:FlagsViewer.ItemsPanelTemplate>
                 </local:FlagsViewer>
-                <local:Entry Placeholder="Поиск..." Margin="5,0"
+                <local:Entry Placeholder="Поиск..." Margin="5,0,0,0"
                              Text="{Binding Project.ResourcesFilter.SearchValue}"
                              ConfirmCommand="{Binding Project.ResourcesFilter.SearchCommand}"/>
                 <local:MinimizableView Margin="0,8,0,0">
                     <local:MinimizableView.Header>
-                        <Grid Margin="6,0">
+                        <Grid Margin="6,0,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition/>
                                 <ColumnDefinition Width="Auto"/>
@@ -70,7 +70,7 @@
                 </local:MinimizableView>
                 <local:MinimizableView Margin="0,8,0,0">
                     <local:MinimizableView.Header>
-                        <Grid Margin="6,0">
+                        <Grid Margin="6,0,0,0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition/>
                                 <ColumnDefinition Width="Auto"/>
@@ -163,7 +163,8 @@
                         HorizontalAlignment="Right"/>
             </Grid>
             <ListView Grid.Row="1" SelectionMode="Single"
-                      ItemsSource="{Binding Resources.InheritedFiles}">
+                      ItemsSource="{Binding Resources.InheritedFiles}"
+                      Style="{StaticResource NoSelectionListView}">
                 <ListView.ItemsPanel>
                     <ItemsPanelTemplate>
                         <WrapPanel/>
@@ -171,7 +172,7 @@
                 </ListView.ItemsPanel>
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <local:FileView File="{Binding}"/>
+                        <local:FileView File="{Binding}" Margin="4"/>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>

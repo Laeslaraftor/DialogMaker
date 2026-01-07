@@ -20,7 +20,7 @@
                       MediaEnded="OnMediaEnded"
                       LoadedBehavior="Manual"
                       UnloadedBehavior="Manual"
-                      ScrubbingEnabled="True"/>
+                      ScrubbingEnabled="True" Grid.RowSpan="2"/>
         <local:PlayerView x:Name="_controls" Grid.Row="2"
                           PositionChanged="OnControlsPositionChanged"
                           ControlButtonClicked="OnControlsControlButtonClicked"

@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Common.SavedStates;
 using DialogMaker.Core.Editor;
+using DialogMaker.Core.Executioning;
 
 namespace DialogMaker.Core.Common
 {
@@ -19,10 +20,20 @@ namespace DialogMaker.Core.Common
         public abstract DialogResourceType ResourceType { get; }
         public string Id { get; }
         public DialogResources Resources { get; }
+        public bool IsSeparated => false;
 
         IResourcesContainer IResource.Container => Resources;
 
         #region Управление
+
+        public DialogItemReference CreateReference()
+        {
+            return DialogItemReference.CreateUnknown(this);
+        }
+        public ResourcePath GetPath()
+        {
+            return ResourcePath.CreatePath(this);
+        }
 
         public DialogResourceObjectSavedState Save()
         {

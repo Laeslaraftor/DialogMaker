@@ -201,7 +201,8 @@ namespace DialogMaker
         }
         private void CompileCurrentDialog()
         {
-            if (_model.Project?.TabsController.CurrentItem is not ProjectDialog dialog)
+            if (_model.Project == null || 
+                _model.Project?.TabsController.CurrentItem is not ProjectDialog dialog)
             {
                 return;
             }
@@ -212,7 +213,8 @@ namespace DialogMaker
             DialogCompilerView view = new()
             {
                 Builder = compiler.CodeBuilder,
-                Code = result
+                Code = result,
+                ResourcesController = new(new(_model.Project.Project, result.Context.Build()))
             };
             ModalWindow window = new()
             {

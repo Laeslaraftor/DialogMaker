@@ -16,6 +16,16 @@
             <ColumnDefinition/>
             <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
+        <Border Grid.ColumnSpan="3" Grid.RowSpan="2"
+                x:Name="_darkGradient" Visibility="Collapsed">
+            <Border.Background>
+                <RadialGradientBrush Center="0.5,1" GradientOrigin="0.5,1"
+                                     RadiusX="0.5" RadiusY="1">
+                    <GradientStop Color="#AF000000" Offset="0"/>
+                    <GradientStop Color="#00000000" Offset="1"/>
+                </RadialGradientBrush>
+            </Border.Background>
+        </Border>
         <Slider x:Name="_timeline" ValueChanged="OnTimelineValueChanged"
                 Grid.ColumnSpan="3"/>
         <StackPanel Grid.Row="1" Orientation="Horizontal"

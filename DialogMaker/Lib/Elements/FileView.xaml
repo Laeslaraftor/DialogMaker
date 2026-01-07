@@ -8,23 +8,27 @@
              d:DesignHeight="450" d:DesignWidth="800">
     <Border Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
             BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}"
-            BorderThickness="1" CornerRadius="4" Width="100">
+            BorderThickness="1" CornerRadius="4" Padding="4">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="80"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="100"/>
             </Grid.RowDefinitions>
-            <local:EnumValueView x:Name="_flagsView"
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <local:EnumValueView x:Name="_flagsView" Grid.Column="2"
                                  HorizontalAlignment="Stretch"
-                                 VerticalAlignment="Center" Margin="4,4,4,0"/>
-            <Label x:Name="_preview" Grid.Row="1"
-                   FontFamily="{StaticResource SymbolThemeFontFamily}" 
-                   HorizontalAlignment="Center" VerticalAlignment="Center" 
-                   FontSize="40"/>
-            <local:EditableTextBlock x:Name="_idEditor" Grid.Row="2" 
+                                 VerticalAlignment="Center"/>
+            <local:EnumValueView x:Name="_fileTypeView" Grid.Column="1"
+                                 VerticalAlignment="Center" Margin="4,0"
+                                 IsSelected="True"/>
+            <local:MediaViewer x:Name="_preview" Margin="0,4,0,0"
+                               Grid.Row="1" Grid.ColumnSpan="3"/>
+            <local:EditableTextBlock x:Name="_idEditor" 
                                      FontSize="16" TextWrapping="Wrap"
-                                     TextAlignment="Center"
                                      Text="{Binding Id}" Margin="2,0,2,6"/>
         </Grid>
     </Border>

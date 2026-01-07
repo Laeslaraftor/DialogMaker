@@ -3,17 +3,24 @@ using System;
 
 namespace DialogMaker.Core.Executioning.Internal
 {
-    internal struct LocalVariable : IVariable
+    internal struct LocalVariable(OperandValue value) : IVariable
     {
-        public LocalVariable(OperandValue value)
-        {
-            Value = value;
-        }
-
+        public readonly DialogResourceType ResourceType => DialogResourceType.Variable;
+        public string Id { get; } = Guid.NewGuid().ToString();
         public bool IsReadOnly { get; }
-        public OperandValue Value { get; set; }
+        public readonly bool IsSeparated => true;
+        public OperandValue Value { get; set; } = value;
 
         #region Управление
+
+        public ResourcePath GetPath()
+        {
+            throw new InvalidOperationException(IResourceItem.GetPathExceptionMessage);
+        }
+        public readonly DialogItemReference CreateReference()
+        {
+            return DialogItemReference.Create(this);
+        }
 
         public readonly override bool Equals(object obj)
         {
@@ -23,7 +30,7 @@ namespace DialogMaker.Core.Executioning.Internal
         }
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine(IsReadOnly, Value);
+            return HashCode.Combine(Id, IsReadOnly, Value);
         }
         public readonly override string ToString()
         {

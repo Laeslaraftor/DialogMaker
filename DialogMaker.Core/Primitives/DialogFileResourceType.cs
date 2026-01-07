@@ -1,12 +1,14 @@
-﻿namespace DialogMaker.Core
+﻿using DialogMaker.Core.Editor.Nodes;
+
+namespace DialogMaker.Core
 {
     public enum DialogFileResourceType
     {
-        [Icon("\uE8D6")]
+        [Name("Аудио"), Icon("\uE8D6")]
         Audio,
-        [Icon("\uE8B2")]
+        [Name("Видео"), Icon("\uE8B2")]
         Video,
-        [Icon("\uE91B")]
+        [Name("Изображение"), Icon("\uE91B")]
         Image
     }
 }

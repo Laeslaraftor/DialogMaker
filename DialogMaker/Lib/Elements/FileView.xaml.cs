@@ -25,17 +25,6 @@ namespace DialogMaker.Lib.Elements
 
         #region Управление
 
-        private void ClearPreview(ProjectFile? file)
-        {
-            if (file == null)
-            {
-                return;
-            }
-
-            file.FreeFilePreview(_preview.Content);
-            _preview.Content = null;
-        }
-
         private void SetFile(ProjectFile? oldValue, ProjectFile? newValue)
         {
             if (oldValue == newValue)
@@ -43,12 +32,11 @@ namespace DialogMaker.Lib.Elements
                 return;
             }
 
-            ClearPreview(oldValue);
-
-            _preview.Content = newValue?.GetFilePreview();
+            _preview.MediaFile = newValue?.Original;
             _idEditor.DataContext = newValue;
             _idEditor.EditCommandParameter = newValue;
             _flagsView.Value = newValue?.Original.Resources.Flags;
+            _fileTypeView.Value = newValue?.Type;
             ContextMenu = newValue?.ContextMenu;
         }
 

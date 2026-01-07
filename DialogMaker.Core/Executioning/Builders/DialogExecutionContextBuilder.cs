@@ -3,6 +3,7 @@ using DialogMaker.Core.Common;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 namespace DialogMaker.Core.Executioning.Builders
 {
@@ -22,6 +23,27 @@ namespace DialogMaker.Core.Executioning.Builders
 
         #region Управление
 
+        public IDictionary<int, DialogItemReference> Build()
+        {
+            SortedDictionary<int, DialogItemReference> result = [];
+
+            foreach (var info in _resources)
+            {
+                result.Add(info.Key, info.Value.CreateReference());
+            }
+            foreach (var info in _variables)
+            {
+                result.Add(info.Key, info.Value.CreateReference());
+            }
+
+            return result;
+        }
+        public DialogRuntimeResources Build(IResourcesOwner resourcesOwner)
+        {
+            var references = Build();
+            return new(resourcesOwner, references);
+        }
+
         public int GetNextIndex()
         {
             return FindFreeIndex(_resources.Keys, _variables.Keys);
@@ -29,6 +51,10 @@ namespace DialogMaker.Core.Executioning.Builders
 
         public int AddResource(IResourceItem resource)
         {
+            if (resource is IVariable variable)
+            {
+                return AddVariable(variable);
+            }
             if (TryFindItemIndex(_resources, resource, out var index))
             {
                 return index;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 
 namespace DialogMaker.Core
 {
@@ -327,6 +328,26 @@ namespace DialogMaker.Core
                 DialogVariableType.String => value == null ? string.Empty : value.ToString(),
                 _ => 0f,
             };
+        }
+        public static object StringToNumber(object? value)
+        {
+            if (value is float f)
+            {
+                return f;
+            }
+            else if (value is int i)
+            {
+                return (float)i;
+            }
+            else if (value is string str)
+            {
+                if (float.TryParse(str, NumberStyles.Any, CultureInfo.InvariantCulture, out var number))
+                {
+                    return number;
+                }
+            }
+
+            return 0f;
         }
 
         #endregion

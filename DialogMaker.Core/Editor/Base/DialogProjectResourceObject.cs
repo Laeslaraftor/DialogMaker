@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Attributes;
 using DialogMaker.Core.Common;
+using DialogMaker.Core.Executioning;
 using System;
 using System.Collections.Generic;
 
@@ -75,6 +76,7 @@ namespace DialogMaker.Core.Editor
                 } 
             }
         }
+        public bool IsSeparated => false;
 
         IResourcesContainer IResource.Container => Resources;
         string IResourceItem.Id => ProjectId.ToString();
@@ -82,6 +84,12 @@ namespace DialogMaker.Core.Editor
         private string _id = DefaultId;
 
         #region Управление
+
+        public DialogItemReference CreateReference()
+        {
+            return DialogItemReference.Create(this);
+        }
+        ResourcePath IResourceItem.GetPath() => Path;
 
         public void MoveTo(IProjectResourcesOwner resourcesOwner)
         {

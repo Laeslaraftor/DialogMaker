@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Executioning;
 using DialogMaker.Core.Executioning.Builders;
+using DialogMaker.Editor.Runtime;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -22,18 +23,24 @@ namespace DialogMaker.Lib.Elements
             get => (CompiledCodeInfo)GetValue(CodeProperty);
             set => SetValue(CodeProperty, value);
         }
+        public DialogRuntimeResourcesController? ResourcesController
+        {
+            get => GetValue(ResourcesControllerProperty) as DialogRuntimeResourcesController;
+            set => SetValue(ResourcesControllerProperty, value);
+        }
 
         #region Управление
 
+        private void SetResourcesController(DialogRuntimeResourcesController? oldValue, DialogRuntimeResourcesController? newValue)
+        {
+            _resourcesList.ItemsSource = newValue?.Items;
+        }
         private void SetBuilder(DialogCodeBuilder? oldValue, DialogCodeBuilder? newValue)
         {
             _sectionView.ItemsSource = newValue?.Sections;
         }
         private void SetCode(CompiledCodeInfo oldValue, CompiledCodeInfo newValue)
         {
-            _resourcesList.ItemsSource = newValue.Context?.Resources;
-            _variablesList.ItemsSource = newValue.Context?.Variables;
-
             if (newValue.ByteCode == null)
             {
                 return;
@@ -68,6 +75,13 @@ namespace DialogMaker.Lib.Elements
                 view.SetCode((CompiledCodeInfo)e.OldValue, (CompiledCodeInfo)e.NewValue);
             }
         }
+        private static void OnResourcesControllerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is DialogCompilerView view)
+            {
+                view.SetResourcesController(e.OldValue as DialogRuntimeResourcesController, e.NewValue as DialogRuntimeResourcesController);
+            }
+        }
 
         #endregion
 
@@ -77,6 +91,8 @@ namespace DialogMaker.Lib.Elements
             typeof(DialogCompilerView), new(OnBuilderChanged));
         public static readonly DependencyProperty CodeProperty = DependencyProperty.Register(nameof(Code), typeof(CompiledCodeInfo),
             typeof(DialogCompilerView), new(OnCodeChanged));
+        public static readonly DependencyProperty ResourcesControllerProperty = DependencyProperty.Register(nameof(ResourcesController), typeof(DialogRuntimeResourcesController),
+            typeof(DialogCompilerView), new(OnResourcesControllerChanged));
 
         #endregion
     }

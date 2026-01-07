@@ -38,6 +38,11 @@ namespace DialogMaker.Lib.Elements
             get => (double)GetValue(VolumeProperty);
             set => SetValue(VolumeProperty, value);
         }
+        public bool DarkShadow
+        {
+            get => (bool)GetValue(DarkShadowProperty);
+            set => SetValue(DarkShadowProperty, value);
+        }
 
         private bool _disablePositionEvent;
 
@@ -121,6 +126,13 @@ namespace DialogMaker.Lib.Elements
                 view.VolumeChanged?.Invoke(view, new(e));
             }
         }
+        private static void OnDarkShadowChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is PlayerView view && e.NewValue is bool value)
+            {
+                view._darkGradient.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
 
         #endregion
 
@@ -134,6 +146,8 @@ namespace DialogMaker.Lib.Elements
             typeof(PlayerView), new(TimeSpan.Zero, OnDurationChanged));
         public static readonly DependencyProperty VolumeProperty = DependencyProperty.Register(nameof(Volume), typeof(double),
             typeof(PlayerView), new(1d, OnVolumeChanged));
+        public static readonly DependencyProperty DarkShadowProperty = DependencyProperty.Register(nameof(DarkShadow), typeof(bool),
+            typeof(PlayerView), new(false, OnDarkShadowChanged));
 
         #endregion
 

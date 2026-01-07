@@ -10,8 +10,18 @@ namespace DialogMaker.Core.Executioning.Internal
         public string Id { get; } = id;
         public DialogResourceType ResourceType { get; } = DialogResourceType.String;
         public ReadOnlyCollection<IResourceString> Strings { get; } = new(strings);
+        public bool IsSeparated => true;
 
         #region Управление
+
+        public DialogItemReference CreateReference()
+        {
+            return DialogItemReference.Create(this);
+        }
+        public ResourcePath GetPath()
+        {
+            throw new InvalidOperationException(IResourceItem.GetPathExceptionMessage);
+        }
 
         public readonly override bool Equals(object obj)
         {

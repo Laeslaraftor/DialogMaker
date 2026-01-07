@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Attributes;
 using DialogMaker.Core.Editor;
+using DialogMaker.Core.Editor.Nodes;
 
 namespace DialogMaker.Core
 {

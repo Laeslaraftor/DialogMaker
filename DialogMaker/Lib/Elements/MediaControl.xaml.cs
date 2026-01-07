@@ -1,10 +1,11 @@
 ﻿using Acly.Player;
+using System.Diagnostics;
 using System.IO;
+using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
-using System.Timers;
+using System.Windows.Threading;
 using Timer = System.Timers.Timer;
-using System.Threading.Tasks;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -17,7 +18,7 @@ namespace DialogMaker.Lib.Elements
         }
         ~MediaControl()
         {
-            Dispose();
+            Dispatcher.Invoke(Dispose);
         }
 
         public event EventHandler<ValueChangedEventArgs<TimeSpan>>? PositionChanged;
@@ -109,12 +110,6 @@ namespace DialogMaker.Lib.Elements
             }
 
             SourceSetted = true;
-
-            if (AutoPlay)
-            {
-                Play();
-            }
-
             SourceChanged?.Invoke(this);
         }
 
@@ -216,10 +211,17 @@ namespace DialogMaker.Lib.Elements
 
         private async void OnTimerElapsed(object? sender, ElapsedEventArgs e)
         {
-            await Dispatcher.InvokeAsync(() =>
+            try
             {
-                OnDispatchedTimerElapsed(sender, e);
-            });
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    OnDispatchedTimerElapsed(sender, e);
+                });
+            }
+            catch (Exception error)
+            {
+                Debug.WriteLine(error);
+            }
         }
         private void OnDispatchedTimerElapsed(object? sender, ElapsedEventArgs e)
         {
@@ -258,6 +260,13 @@ namespace DialogMaker.Lib.Elements
         private void OnMediaOpened(object sender, RoutedEventArgs e)
         {
             _errorView.Visibility = Visibility.Collapsed;
+
+            if (AutoPlay)
+            {
+                Play();
+            }
+
+            _controls.DarkShadow = _media.HasVideo;
         }
         private void OnMediaFailed(object sender, ExceptionRoutedEventArgs e)
         {
