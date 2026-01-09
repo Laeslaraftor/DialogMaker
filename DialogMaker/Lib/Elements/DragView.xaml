@@ -9,6 +9,7 @@
     <Border Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
             BorderBrush="{DynamicResource CircleElevationBorderBrush}"
             CornerRadius="4" BorderThickness="1" Padding="6">
-        <Label x:Name="_preview" Padding="0"/>
+        <Label x:Name="_preview" Padding="0"
+               HorizontalContentAlignment="Stretch"/>
     </Border>
 </UserControl>

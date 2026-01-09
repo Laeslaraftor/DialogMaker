@@ -40,7 +40,7 @@ namespace DialogMaker.Core.Executioning.Builders
             }
             if (Value is OperandValue value)
             {
-                return contextBuilder.AddVariable(new LocalVariable(value));
+                return contextBuilder.AddVariable(new LocalVariable(Id.ToString(), value));
             }
             if (Value is IVariable variable)
             {

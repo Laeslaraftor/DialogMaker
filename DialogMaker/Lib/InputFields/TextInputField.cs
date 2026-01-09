@@ -8,7 +8,10 @@ namespace DialogMaker.Lib.InputFields
     {
         public TextInputField()
         {
-            _view = new();
+            _view = new()
+            {
+                TextWrapping = TextWrapping.Wrap
+            };
             _view.ConfirmedText += OnViewConfirmedText;
         }
 

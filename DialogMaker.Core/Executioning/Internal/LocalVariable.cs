@@ -5,6 +5,12 @@ namespace DialogMaker.Core.Executioning.Internal
 {
     internal struct LocalVariable(OperandValue value) : IVariable
     {
+        public LocalVariable(string id, OperandValue value)
+            : this(value)
+        {
+            Id = id;
+        }
+
         public readonly DialogResourceType ResourceType => DialogResourceType.Variable;
         public string Id { get; } = Guid.NewGuid().ToString();
         public bool IsReadOnly { get; }
@@ -21,10 +27,12 @@ namespace DialogMaker.Core.Executioning.Internal
         {
             return DialogItemReference.Create(this);
         }
+        public readonly IVariable ToVariable() => this;
 
         public readonly override bool Equals(object obj)
         {
             return obj is IVariable other &&
+                   Id == other.Id &&
                    IsReadOnly == other.IsReadOnly &&
                    Value == other.Value;
         }

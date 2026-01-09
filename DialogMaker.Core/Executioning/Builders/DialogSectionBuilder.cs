@@ -36,9 +36,12 @@ namespace DialogMaker.Core.Executioning.Builders
             return -1;
         }
 
+        private DialogByteCode _lastCode;
+
         public OperationBuilder CreateOperation(DialogByteCode code)
         {
             OperationBuilder result = new(this, code);
+            _lastCode = code;
             _operations.Add(result);
 
             return result;

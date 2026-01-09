@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Common;
+using DialogMaker.Core.Executioning.Internal;
 using System;
 using System.Diagnostics;
 
@@ -39,15 +40,40 @@ namespace DialogMaker.Core.Editor
                 }
             }
         }
-        string ICharacter.Name => ToString();
+        string ICharacter.Name
+        {
+            get
+            {
+                var nameReference = Name;
+
+                if (nameReference != null)
+                {
+                    return nameReference.Resolve().Preview;
+                }
+
+                return NamelessCharacter;
+            }
+        }
 
         private DialogProjectReference<DialogProjectString>? _name;
 
         #region Управление
 
+        public override IVariable ToVariable()
+        {
+            var name = Name;
+
+            if (name != null)
+            {
+                return name.Resolve().ToVariable();
+            }
+
+            return new LocalVariable(Id, NamelessCharacter);
+        }
+
         public override string ToString()
         {
-            string name = "Безымянный персонаж";
+            string name = NamelessCharacter;
 
             if (Name != null)
             {
@@ -64,6 +90,12 @@ namespace DialogMaker.Core.Editor
                 Name = Name?.Save()
             };
         }
+
+        #endregion
+
+        #region Константы
+
+        public const string NamelessCharacter = "Безымянный персонаж";
 
         #endregion
     }

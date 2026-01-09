@@ -11,7 +11,18 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <TextBlock x:Name="_character"/>
-        <ListBox x:Name="_variants" SelectionChanged="OnVariantsSelectionChanged"/>
+        <TextBlock x:Name="_character" Margin="0,0,0,4"
+                   FontWeight="Medium"/>
+        <ListBox x:Name="_variants" Grid.Row="1"
+                 SelectionChanged="OnVariantsSelectionChanged"
+                 HorizontalContentAlignment="Stretch"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding}" TextWrapping="Wrap"
+                               TextAlignment="Center"/>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
     </Grid>
 </UserControl>

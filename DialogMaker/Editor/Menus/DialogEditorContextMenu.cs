@@ -52,6 +52,8 @@ namespace DialogMaker.Editor.Menus
 
             foreach (var info in folders)
             {
+                info.Value.Sort();
+
                 foreach (var modifier in CreateFolder(info))
                 {
                     yield return modifier;
@@ -172,11 +174,21 @@ namespace DialogMaker.Editor.Menus
 
         #region Классы
 
-        private readonly struct NodeInfo(string name, DialogNodeType nodeType, Type type)
+        private readonly struct NodeInfo(string name, DialogNodeType nodeType, Type type) : IComparable
         {
             public string Name { get; } = name;
             public DialogNodeType NodeType { get; } = nodeType;
             public Type Type { get; } = type;
+
+            public int CompareTo(object? obj)
+            {
+                if (obj is NodeInfo other)
+                {
+                    return Name.CompareTo(other.Name);
+                }
+
+                return -1;
+            }
         }
 
         #endregion

@@ -22,6 +22,22 @@ namespace DialogMaker.Core.Executioning.Internal
         {
             throw new InvalidOperationException(IResourceItem.GetPathExceptionMessage);
         }
+        public IVariable ToVariable()
+        {
+            string value = string.Empty;
+
+           foreach (var str in Strings)
+            {
+                if (value != string.Empty)
+                {
+                    value += ", ";
+                }
+
+                value += str;
+            }
+
+            return new LocalVariable(Id, value);
+        }
 
         public readonly override bool Equals(object obj)
         {

@@ -59,7 +59,7 @@ namespace DialogMaker.Core.Executioning
 
         private readonly IDialogExecutingHandler _handler;
         private readonly DialogByteCodeData _data;
-        private CancellationTokenRegistration? _currentCancellationTokenRegistration;
+        private CancellationTokenSource? _currentCancellationTokenSource;
 
         #region Управление
 
@@ -77,19 +77,25 @@ namespace DialogMaker.Core.Executioning
                 return;
             }
 
-            CancellationTokenRegistration cancellationTokenRegistration = new();
-            cancellationTokenRegistration.Token.Register(() =>
+            CancellationTokenSource cancellationTokenSource = new();
+            var cancelRegistration = cancellationTokenSource.Token.Register(() =>
             {
                 IsRunning = false;
             });
-            _currentCancellationTokenRegistration = cancellationTokenRegistration;
+            _currentCancellationTokenSource = cancellationTokenSource;
             IsRunning = true;
 
-            await Start(cancellationTokenRegistration.Token);
-            await cancellationTokenRegistration.DisposeAsync();
+            await Start(cancellationTokenSource.Token);
+
+            if (_currentCancellationTokenSource == cancellationTokenSource)
+            {
+                cancellationTokenSource.Cancel();
+                await cancelRegistration.DisposeAsync();
+                cancellationTokenSource.Dispose();
+            }
 
             IsRunning = false;
-            _currentCancellationTokenRegistration = null;
+            _currentCancellationTokenSource = null;
         }
         private async Task Start(CancellationToken token)
         {
@@ -139,13 +145,14 @@ namespace DialogMaker.Core.Executioning
             {
                 return;
             }
-            if (_currentCancellationTokenRegistration == null)
+            if (_currentCancellationTokenSource == null)
             {
-                throw new InvalidOperationException("Регистрационный узел токенов отмены отсутствует");
+                throw new InvalidOperationException("Источник токенов отмены отсутствует");
             }
 
-            _currentCancellationTokenRegistration.Value.Dispose();
-            _currentCancellationTokenRegistration = null;
+            _currentCancellationTokenSource.Cancel();
+            _currentCancellationTokenSource.Dispose();
+            _currentCancellationTokenSource = null;
             IsRunning = false;
         }
         public void StopExecuting()

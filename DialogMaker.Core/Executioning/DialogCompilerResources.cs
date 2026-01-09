@@ -33,12 +33,24 @@ namespace DialogMaker.Core.Executioning
 
             static DialogExecutionParameter GetValue(DialogProjectNodePort port)
             {
-                if (port is DialogProjectNodeOutput output &&
-                    port.Node.TryGetResourceValue(output, out var resource))
+                if (port is DialogProjectNodeOutput output)
                 {
-                    return new(resource);
+                    if (port.Node.TryGetResourceValue(output, out var resource))
+                    {
+                        return new(resource);
+                    }
+                    if (port.DataType == DialogNodePortType.Action)
+                    {
+                        return DialogExecutionParameter.Empty;
+                    }
+                    else if (port.DataType == DialogNodePortType.String)
+                    {
+                        return new(string.Empty);
+                    }
+
+                    return new(0);
                 }
-                if (port is IValuePort valuePort && 
+                if (port is IValuePort valuePort &&
                     valuePort.CanPresetValue)
                 {
                     return new(new OperandValue(valuePort.Value));
@@ -61,7 +73,7 @@ namespace DialogMaker.Core.Executioning
 
             if (variable == DialogExecutionParameter.Empty)
             {
-                variable = GetValue(port); 
+                variable = GetValue(port);
             }
 
             _variables.TryAdd(port, variable);

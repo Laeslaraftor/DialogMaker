@@ -12,9 +12,17 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <local:DialogViewer x:Name="_viewer"/>
-        <Button x:Name="_controlButton" Grid.Row="1"
-                HorizontalAlignment="Center"
-                FontFamily="{StaticResource SymbolThemeFontFamily}"
-                Click="OnControlButtonClick"/>
+        <Grid Grid.Row="1" Margin="0,4">
+            <Button x:Name="_controlButton"
+                    HorizontalAlignment="Left"
+                    FontFamily="{StaticResource SymbolThemeFontFamily}"
+                    Click="OnControlButtonClick"/>
+            <Button HorizontalAlignment="Right"
+                    FontFamily="{StaticResource SymbolThemeFontFamily}"
+                    Click="OnClearButtonClicked">
+                <TextBlock Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                           Text="&#xE74D;"/>
+            </Button>
+        </Grid>
     </Grid>
 </UserControl>

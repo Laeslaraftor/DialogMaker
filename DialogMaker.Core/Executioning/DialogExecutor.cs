@@ -197,7 +197,7 @@ namespace DialogMaker.Core.Executioning
 
             while (!isCompleted && !cancellationToken.IsCancellationRequested)
             {
-                await Task.Delay(50, cancellationToken);
+                await Task.DelaySafe(50, cancellationToken);
             }
         }
         private async Task<T?> HandleDialog<T>(Func<IDialogExecutingHandler, Task<T>> handler, CancellationToken cancellationToken, T? defaultValue = default)
@@ -213,7 +213,7 @@ namespace DialogMaker.Core.Executioning
 
             while (!isCompleted && !cancellationToken.IsCancellationRequested)
             {
-                await Task.Delay(50, cancellationToken);
+                await Task.DelaySafe(50, cancellationToken);
             }
 
             return result;

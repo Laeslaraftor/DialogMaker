@@ -1,4 +1,6 @@
 ﻿using DialogMaker.Core.Executioning;
+using DialogMaker.Core.Executioning.Builders;
+using DialogMaker.Core.Executioning.Internal;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -67,15 +69,19 @@ namespace DialogMaker.Core.Editor.Nodes
             var searchValue = context.Compiler.RecursiveCompileConnections(context, SearchValue);
             var newValue = context.Compiler.RecursiveCompileConnections(context, NewValue);
             var output = context.Resources.GetOrCreateVariable(Output);
+            DialogExecutionParameter tempVariable = new(string.Empty);
 
-            var replaceOpCode = context.Section.CreateOperation(DialogByteCode.Replace);
-            replaceOpCode.Arguments[0] = value;
-            replaceOpCode.Arguments[1] = searchValue;
-            replaceOpCode.Arguments[2] = newValue;
+            var setTempValueOperation = context.Section.CreateOperation(DialogByteCode.Set);
+            setTempValueOperation.Arguments[0] = tempVariable;
+            setTempValueOperation.Arguments[1] = value;
 
-            var setOpCode = context.Section.CreateOperation(DialogByteCode.Set);
-            setOpCode.Arguments[0] = output;
-            setOpCode.Arguments[1] = value;
+            var replaceOperation = context.Section.CreateOperation(DialogByteCode.Replace);
+            replaceOperation.Arguments[0] = tempVariable;
+            replaceOperation.Arguments[1] = searchValue;
+            replaceOperation.Arguments[2] = newValue;
+
+            var stackToOutputOperation = context.Section.CreateOperation(DialogByteCode.StackToVariable);
+            stackToOutputOperation.Arguments[0] = output;
 
             context.CompileOutputs(Output);
         }

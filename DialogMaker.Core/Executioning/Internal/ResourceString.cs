@@ -76,6 +76,10 @@ namespace DialogMaker.Core.Executioning.Internal
         {
             throw new InvalidOperationException(IResourceItem.GetPathExceptionMessage);
         }
+        public IVariable ToVariable()
+        {
+            return new LocalVariable(Id, Text);
+        }
 
         public override string ToString()
         {

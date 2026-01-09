@@ -94,9 +94,12 @@ namespace DialogMaker.Core.Editor
             {
                 return default;
             }
-            if (typeof(T).IsEnum && value is int intValue)
+
+            var typeInfo = typeof(T);
+
+            if (typeInfo.IsEnum && (value is int || value is long))
             {
-                return (T)Convert.ChangeType(intValue, typeof(T));
+                return (T?)GetEnumValue(typeInfo, Convert.ToInt32((long)value));
             }
             if (value is T typedValue)
             {
@@ -139,6 +142,25 @@ namespace DialogMaker.Core.Editor
             }
 
             return null;
+        }
+
+        private object? GetEnumValue(Type enumType, int intValue)
+        {
+            var values = Enum.GetValues(enumType);
+
+            if (values.Length == 0)
+            {
+                return null;
+            }
+            foreach (var value in values)
+            {
+                if ((int)value == intValue)
+                {
+                    return value;
+                }
+            }
+
+            return values.GetValue(0);
         }
 
         #endregion

@@ -12,8 +12,8 @@ namespace DialogMaker.Core
         [Path("Диалог")]
         SimpleReplica,
 
-        [Name("Вариант ответа"), Node(typeof(DialogProjectChoiceNode))]
-        [Description("Выбор ответа.")]
+        [Name("Вариант ответа (ресурсы)"), Node(typeof(DialogProjectResourceChoiceNode))]
+        [Description("Выбор ответа. В качестве вариантов ответа задаются строковые ресурсы.")]
         [Path("Диалог")]
         Choice,
 
@@ -102,5 +102,10 @@ namespace DialogMaker.Core
         [Description("Любое число.")]
         [Path("Данные")]
         Number,
+
+        [Name("Вариант ответа"), Node(typeof(DialogProjectSimpleChoiceNode))]
+        [Description("Выбор ответа.")]
+        [Path("Диалог")]
+        SimpleChoice,
     }
 }

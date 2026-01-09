@@ -50,113 +50,98 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             var trueSections = context.Compiler.GetConnectedSections(TrueOutput);
             var falseSections = context.Compiler.GetConnectedSections(FalseOutput);
+            var value = context.RecursiveCompileConnections(CompareValue);
+
+            void CreateManySections(List<DialogSectionBuilder> sections)
+            {
+                for (int i = 0; i < sections.Count; i++)
+                {
+                    var code = i + 1 >= sections.Count ? DialogByteCode.Jump : DialogByteCode.StartThread;
+                    var jumpIfTrue = context.Section.CreateOperation(code);
+                    jumpIfTrue.Arguments[0] = new(sections[i]);
+                }
+            }
 
             if (trueSections.Count == 0 && falseSections.Count == 0)
             {
                 return;
             }
-
-            OperationBuilder CreateSectionsInvoke(List<DialogSectionBuilder> sections)
+            if (trueSections.Count == 1 && falseSections.Count == 0)
             {
-                if (sections.Count == 1)
-                {
-                    var jumpOpCode = context.Section.CreateOperation(DialogByteCode.Jump);
-                    jumpOpCode.Arguments[0] = new(sections[0]);
-                    return jumpOpCode;
-                }
+                //var checkFalse = context.Section.CreateOperation(DialogByteCode.Equals);
+                //checkFalse.Arguments[0] = value;
+                //checkFalse.Arguments[1] = new(true);
 
-                OperationBuilder? firstBuilder = null;
-
-                foreach (var section in sections)
-                {
-                    var startThread = context.Section.CreateOperation(DialogByteCode.StartThread);
-                    startThread.Arguments[0] = new(section);
-                    firstBuilder ??= startThread;
-                }
-
-                return firstBuilder!;
+                context.JumpOrGotoOrSkip(TrueOutput[0].Node, value, false);
+                
+                //var jumpIfTrue = context.Section.CreateOperation(DialogByteCode.JumpIfTrue);
+                //jumpIfTrue.Arguments[0] = new(trueSections[0]);
             }
-
-            var comparisonResult = context.Compiler.RecursiveCompileConnections(context, CompareValue);
-            var comparison = context.Section.CreateOperation(DialogByteCode.Equals);
-            comparison.Arguments[0] = comparisonResult;
-
-            /*
-             
-            cmp result, true
-            gotoIfTrue 1
-            goto 2
-
-            1: 
-            запуск true потоков
-            goto 3
-            2: 
-            запуск false потоков
-            3:
-            empty
-             
-             */
-
-            void CreateSingle(bool value, List<DialogSectionBuilder> sections, List<DialogSectionBuilder>? sections2 = null)
+            else if (trueSections.Count > 1 && falseSections.Count == 0)
             {
-                comparison.Arguments[1] = new(value);
-                var gotoIfTrue = context.Section.CreateOperation(DialogByteCode.GotoIfTrue);
-                var gotoIfFalse = context.Section.CreateOperation(DialogByteCode.Goto);
-                var firstSectionOperator = CreateSectionsInvoke(sections);
-                var gotoEnd = context.Section.CreateOperation(DialogByteCode.Goto);
-                OperationBuilder? secondSectionOperator = null;
+                var checkFalse = context.Section.CreateOperation(DialogByteCode.NotEquals);
+                checkFalse.Arguments[0] = value;
+                checkFalse.Arguments[1] = new(true);
 
-                if (sections2 != null)
-                {
-                    secondSectionOperator = CreateSectionsInvoke(sections2);
-                }
+                var skipIfFalse = context.Section.CreateOperation(DialogByteCode.GotoIfTrue);
 
-                var endOperator = context.Section.CreateOperation(DialogByteCode.Empty);
+                CreateManySections(trueSections);
 
-                gotoIfTrue.Arguments[0] = new(firstSectionOperator);
-                gotoIfFalse.Arguments[0] = secondSectionOperator != null ? new(secondSectionOperator) : new(endOperator);
-                gotoEnd.Arguments[0] = new(endOperator);
+                var empty = context.Section.CreateOperation(DialogByteCode.Empty);
+                skipIfFalse.Arguments[0] = new(empty);
             }
-
-            if (trueSections.Count > 0 && falseSections.Count > 0)
+            else if (trueSections.Count == 0 && falseSections.Count == 1)
             {
-                CreateSingle(true, trueSections, falseSections);
+                //var checkFalse = context.Section.CreateOperation(DialogByteCode.NotEquals);
+                //checkFalse.Arguments[0] = value;
+                //checkFalse.Arguments[1] = new(true);
+
+                context.JumpOrGotoOrSkip(TrueOutput[0].Node, value, true);
+                //context.JumpOrGoto(FalseOutput[0].Node, true);
+
+                //var jumpIfTrue = context.Section.CreateOperation(DialogByteCode.JumpIfTrue);
+                //jumpIfTrue.Arguments[0] = new(falseSections[0]);
             }
-
-            /*
-             
-            cmp result, true
-            gotoIfTrue 1
-            goto 2
-
-            1: 
-            запуск true потоков
-            2:
-            empty
-             
-             */
-
-            else if (trueSections.Count > 0)
+            else if (trueSections.Count == 0 && falseSections.Count > 1)
             {
-                CreateSingle(true, trueSections);
+                var checkFalse = context.Section.CreateOperation(DialogByteCode.Equals);
+                checkFalse.Arguments[0] = value;
+                checkFalse.Arguments[1] = new(true);
+
+                var skipIfFalse = context.Section.CreateOperation(DialogByteCode.JumpIfTrue);
+
+                CreateManySections(falseSections);
+
+                var empty = context.Section.CreateOperation(DialogByteCode.Empty);
+                skipIfFalse.Arguments[0] = new(empty);
             }
-
-            /*
-             
-            cmp result, false
-            gotoIfTrue 1
-            goto 2
-
-            1: 
-            запуск false потоков
-            2:
-            empty
-             
-             */
-
-            else if (falseSections.Count > 0)
+            else if (trueSections.Count == 1 && falseSections.Count == 1)
             {
-                CreateSingle(false, falseSections);
+                var checkFalse = context.Section.CreateOperation(DialogByteCode.Equals);
+                checkFalse.Arguments[0] = value;
+                checkFalse.Arguments[1] = new(false);
+
+                var gotoIfFalse = context.Section.CreateOperation(DialogByteCode.GotoIfTrue);
+
+                context.JumpOrGoto(TrueOutput[0].Node);
+                var falseAction = context.JumpOrGoto(FalseOutput[0].Node);
+
+                gotoIfFalse.Arguments[0] = new(falseAction);
+            }
+            else
+            {
+                var checkTrue = context.Section.CreateOperation(DialogByteCode.NotEquals);
+                checkTrue.Arguments[0] = value;
+                checkTrue.Arguments[1] = new(true);
+
+                var skipTrue = context.Section.CreateOperation(DialogByteCode.GotoIfTrue);
+
+                CreateManySections(trueSections);
+
+                var startFalseSections = context.Section.CreateOperation(DialogByteCode.Empty);
+                skipTrue.Arguments[0] = new(startFalseSections);
+
+                CreateManySections(falseSections);
             }
         }
 

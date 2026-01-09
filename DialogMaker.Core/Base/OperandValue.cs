@@ -300,7 +300,7 @@ namespace DialogMaker.Core
                 return (value1 == null && value2 == null) ||
                        value1?.Equals(value2) == true;
             }
-            else if (comparison != Comparison.NotEquals)
+            else if (comparison == Comparison.NotEquals)
             {
                 return (value1 == null && value2 != null) ||
                        (value1 != null && value2 == null) ||

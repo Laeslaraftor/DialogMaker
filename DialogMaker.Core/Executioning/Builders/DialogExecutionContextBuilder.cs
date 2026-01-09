@@ -117,10 +117,9 @@ namespace DialogMaker.Core.Executioning.Builders
             {
                 return variable.Value;
             }
-            if (_resources.TryGetValue(index, out var resource) &&
-                resource is IVariable resourceVariable)
+            if (_resources.TryGetValue(index, out var resource))
             {
-                return resourceVariable.Value;
+                return resource.ToVariable().Value;
             }
 
             throw new ArgumentException($"Переменная с индексом {index} не найден");

@@ -1,4 +1,5 @@
 ﻿using Acly;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -40,6 +41,30 @@ namespace DialogMaker.Core.Editor.Nodes
         public DialogNodePortType DataType { get; }
         public Color Color { get; }
         public abstract int ConnectionsCount { get; }
+        public DialogProjectNodePort this[int index]
+        {
+            get
+            {
+                if (0 > index || index >= ConnectionsCount)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(index));
+                }
+
+                int i = 0;
+
+                foreach (var port in this)
+                {
+                    if (i == index)
+                    {
+                        return port;
+                    }
+
+                    i++;
+                }
+
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+        }
 
         protected abstract IEditableList ConnectionsList { get; }
 

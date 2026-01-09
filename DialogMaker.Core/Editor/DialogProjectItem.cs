@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Common;
+using DialogMaker.Core.Executioning.Internal;
 using System;
 using System.IO;
 using System.Linq;
@@ -54,6 +55,15 @@ namespace DialogMaker.Core.Editor
 
         #region Управление
 
+        public override IVariable ToVariable()
+        {
+            return new LocalVariable(Id, FileName);
+        }
+        public override string ToString()
+        {
+            return $"[Файл {Type}] {Id}";
+        }
+
         protected override DialogProjectResourceObjectSavedState CreateSavedState()
         {
             return new DialogProjectResourceItemSavedState
@@ -61,11 +71,6 @@ namespace DialogMaker.Core.Editor
                 FileName = FileName,
                 ResourceType = Type
             };
-        }
-
-        public override string ToString()
-        {
-            return $"[Файл {Type}] {Id}";
         }
 
         #endregion

@@ -4,6 +4,7 @@ using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor;
 using DialogMaker.Lib.InputFields;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -139,6 +140,7 @@ namespace DialogMaker.Lib.Controllers
             {
                 var resourceType = t?.GetCustomAttribute<ReferenceAttribute>()?.Type;
                 var itemName = t?.GetCustomAttribute<ItemNameAttribute>()?.Name ?? string.Empty;
+                var textSettings = t?.GetCustomAttribute<TextAttribute>();
 
                 return new EditableListInputField()
                 {
@@ -149,6 +151,10 @@ namespace DialogMaker.Lib.Controllers
                         if (field is ReferenceInputField referenceField)
                         {
                             referenceField.ResourceType = resourceType;
+                        }
+                        if (textSettings != null && field is TextInputField textField)
+                        {
+                            textField.Multiline = textSettings.AllowMultiline;
                         }
                     }
                 };
@@ -241,8 +247,26 @@ namespace DialogMaker.Lib.Controllers
         public static List<PropertyEditorController> CreateForAllProperties(ObservableObject instance)
         {
             List<PropertyEditorController> result = [];
+            SortedDictionary<SortAttribute, PropertyInfo> sortedProperties = [];
+            List<PropertyInfo> otherProperties = [];
 
             foreach (var property in instance.GetType().GetProperties())
+            {
+                var sortAttribute = property.GetCustomAttribute<SortAttribute>();
+
+                if (sortAttribute != null)
+                {
+                    sortedProperties.Add(sortAttribute, property);
+                    continue;
+                }
+
+                otherProperties.Add(property);
+            }
+
+            List<PropertyInfo> totalProperties = [.. sortedProperties.Values];
+            totalProperties.AddRange(otherProperties);
+
+            foreach (var property in totalProperties)
             {
                 if (TryCreate(instance, property, out var controller))
                 {

@@ -1,5 +1,6 @@
 ﻿using Acly;
 using DialogMaker.Core.Common;
+using DialogMaker.Core.Executioning.Internal;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -87,6 +88,11 @@ namespace DialogMaker.Core.Editor
         }
 
         #region Управление
+
+        public override IVariable ToVariable()
+        {
+            return new LocalVariable(Id, Preview);
+        }
 
         public bool TryGetVariant(DialogProjectLanguage language, [NotNullWhen(true)] out DialogProjectStringVariant? result)
         {

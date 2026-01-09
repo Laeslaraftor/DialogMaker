@@ -43,54 +43,77 @@
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
                 <local:DialogPlayer x:Name="_dialogPlayer"/>
-                <ListView x:Name="_codeView" Grid.Column="1">
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <Grid IsHitTestVisible="False">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition/>
-                                </Grid.RowDefinitions>
-                                <TextBlock FontSize="18" FontWeight="Medium">
-                            <Run Text="Сегмент "/>
-                            <Run Text="{Binding Index, Mode=OneWay}"/>
-                                </TextBlock>
-                                <ListView Grid.Row="1" ItemsSource="{Binding Operations}">
-                                    <ListView.ItemContainerStyle>
-                                        <Style TargetType="ListViewItem"/>
-                                    </ListView.ItemContainerStyle>
-                                    <ListView.ItemTemplate>
-                                        <DataTemplate>
-                                            <Label Content="{Binding}" Padding="0"/>
-                                        </DataTemplate>
-                                    </ListView.ItemTemplate>
-                                </ListView>
-                            </Grid>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto"
+                              Grid.Column="1">
+                    <ListView x:Name="_codeView"
+                              ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                        <ListView.Template>
+                            <ControlTemplate>
+                                <ItemsPresenter/>
+                            </ControlTemplate>
+                        </ListView.Template>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid IsHitTestVisible="False">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock FontSize="18" FontWeight="Medium">
+                                        <Run Text="Сегмент "/>
+                                        <Run Text="{Binding Index, Mode=OneWay}"/>
+                                    </TextBlock>
+                                    <ListView Grid.Row="1" ItemsSource="{Binding}">
+                                        <ListView.ItemContainerStyle>
+                                            <Style TargetType="ListViewItem"/>
+                                        </ListView.ItemContainerStyle>
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition/>
+                                                        <ColumnDefinition/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Label Content="{Binding Key}"/>
+                                                    <Label Grid.Column="1" ContentStringFormat=": {0}" Content="{Binding Value}" Padding="0"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </ScrollViewer>
                 <ListView x:Name="_resourcesList"
                               Grid.Column="2">
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition/>
-                                </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition />
-                                </Grid.ColumnDefinitions>
-                                <Label ContentStringFormat="№{0}" Content="{Binding Index, Mode=OneWay}"
-                                       FontWeight="Medium" FontSize="16" VerticalAlignment="Center"
-                                       Margin="0,0,4,0"/>
-                                <local:EnumValueView Grid.Column="1"
-                                                     Value="{Binding Reference.Type}"
-                                                     HorizontalAlignment="Left"/>
-                                <Label Grid.Row="1" Grid.ColumnSpan="2"
-                                       Content="{Binding ResourceItem}"/>
-                            </Grid>
+                            <Border Background="{DynamicResource LayerFillColorDefaultBrush}"
+                                    BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}"
+                                    CornerRadius="4" BorderThickness="1" Padding="4">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition/>
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
+                                    <Label ContentStringFormat="№{0}" Content="{Binding Index, Mode=OneWay}"
+                                           FontWeight="Medium" FontSize="20" VerticalAlignment="Center"
+                                           Grid.RowSpan="2" Margin="0,0,4,0"/>
+                                    <StackPanel Orientation="Horizontal" Grid.Column="1">
+                                        <local:EnumValueView Value="{Binding Reference.Type}"
+                                                             HorizontalAlignment="Left"/>
+                                        <local:ChipView Text="{Binding ResourceItem.Id}"/>
+                                    </StackPanel>
+                                    <Label Grid.Row="1" Grid.Column="1" MaxWidth="300"
+                                           Content="{Binding ResourceItem}" HorizontalAlignment="Left"/>
+                                </Grid>
+                            </Border>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>

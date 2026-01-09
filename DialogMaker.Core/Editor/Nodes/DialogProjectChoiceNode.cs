@@ -10,8 +10,7 @@ using System.Linq;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
-    [Name("Вариант ответа")]
-    public class DialogProjectChoiceNode : DialogProjectDialogNode
+    public abstract class DialogProjectChoiceNode : DialogProjectDialogNode
     {
         public DialogProjectChoiceNode(DialogProjectDialog dialog) : base(dialog)
         {
@@ -20,8 +19,7 @@ namespace DialogMaker.Core.Editor.Nodes
         {
         }
 
-        public override DialogNodeType NodeType => DialogNodeType.Choice;
-        [Name("Персонаж"), Reference(DialogResourceType.Character)]
+        [Name("Персонаж"), Reference(DialogResourceType.Character), Sort(0)]
         public DialogProjectReference<DialogProjectCharacter>? Character
         {
             get => field;
@@ -35,15 +33,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 }
             }
         }
-        [Name("Варианты ответа"), ItemName("Вариант ответа"), Reference(DialogResourceType.String)]
-        public EditableCollection<DialogProjectReference<DialogProjectString>> Variants
-        {
-            get
-            {
-                field ??= new(() => new(Dialog.Project));
-                return field;
-            }
-        }
+        
         [NodeInput("Вход"), Description("Вход в узел")]
         public DialogProjectNodeInputAction Input
         {
@@ -78,7 +68,7 @@ namespace DialogMaker.Core.Editor.Nodes
         public override void Compile(DialogCompilerContext context)
         {
             IResourceItem? character = Character?.Resolve();
-            LocalStringCollection variants = new(Id.ToString(), [.. Variants.Select(v => (IResourceString)v.Resolve())]);
+            var variants = GetChoiceVariants();
 
             var outputIndex = context.Resources.GetOrCreateVariable(SelectedVarianIndex);
             var choiceOpCode = context.Section.CreateOperation(DialogByteCode.ShowChoice);
@@ -95,13 +85,12 @@ namespace DialogMaker.Core.Editor.Nodes
             context.CompileOutputs(SelectedVarianIndex);
         }
 
+        protected abstract IStringCollection GetChoiceVariants();
+
         protected override DialogProjectDialogNodeSavedState CreateSavedState()
         {
             var savedState = base.CreateSavedState();
-            var variants = Variants.Select(v => v.Save()).ToList();
-
             savedState.Properties.TryAdd(nameof(Character), Character?.Save());
-            savedState.Properties.TryAdd(nameof(Variants), variants);
 
             return savedState;
         }
@@ -110,30 +99,6 @@ namespace DialogMaker.Core.Editor.Nodes
             base.Restore(savedState);
 
             Character = savedState.RestoreReference<DialogProjectCharacter>(Project, nameof(Character));
-
-            var variants = savedState.GetProperty<IEnumerable<DialogProjectReferenceSavedState>>(nameof(Variants));
-
-            if (variants == null)
-            {
-                return;
-            }
-
-            foreach (var variant in variants)
-            {
-                DialogProjectReference<DialogProjectString> reference;
-
-                try
-                {
-                    reference = DialogProjectReference<DialogProjectString>.Restore(Project, variant);
-                }
-                catch (Exception error)
-                {
-                    Debug.WriteLine(error);
-                    continue;
-                }
-
-                Variants.Add(reference);
-            }
         }
 
         #endregion

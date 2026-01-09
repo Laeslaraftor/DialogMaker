@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning;
+using DialogMaker.Core;
 using System.Windows;
 using System.Windows.Controls;
 using SystemColor = System.Drawing.Color;
@@ -13,6 +14,7 @@ namespace DialogMaker.Lib.Elements
             InitializeComponent();
         }
 
+        private readonly ElementsPool<DragView> _blocksPool = new();
         private readonly ElementsPool<TextBlock> _textPool = new();
         private readonly ElementsPool<DialogChoice> _dialogChoice = new();
 
@@ -23,11 +25,13 @@ namespace DialogMaker.Lib.Elements
             _history.Children.Clear();
             _textPool.Clear();
             _dialogChoice.Clear();
+            _blocksPool.Clear();
         }
 
         public async Task ShowReplica(ICharacter? character, IResourceString text, CancellationToken cancellationToken)
         {
             AddElement(character, text.Text);
+            await Task.DelaySafe(200, cancellationToken);
         }
         public async Task ShowColorReplica(ICharacter? character, SystemColor backgroundColor, SystemColor textColor, IResourceString text, CancellationToken cancellationToken)
         {
@@ -61,11 +65,12 @@ namespace DialogMaker.Lib.Elements
             block.ChoiceChanged -= OnBlockChoiceChanged;
             block.ChoiceChanged += OnBlockChoiceChanged;
 
-            _history.Children.Add(block);
+            var container = GetNewBlock();
+            container.Preview = block;
 
             while (!isCompleted && !cancellationToken.IsCancellationRequested)
             {
-                await Task.Delay(50, cancellationToken);
+                await Task.DelaySafe(50, cancellationToken);
             }
 
             block.ChoiceChanged -= OnBlockChoiceChanged;
@@ -85,7 +90,11 @@ namespace DialogMaker.Lib.Elements
         private void AddElement(ICharacter? character, string text)
         {
             var block = _textPool.GetElement();
+            block.TextWrapping = TextWrapping.Wrap;
             block.RemoveFromParent();
+                
+            var container = GetNewBlock();
+            container.Preview = block;
 
             if (character != null)
             {
@@ -98,7 +107,15 @@ namespace DialogMaker.Lib.Elements
                 block.Opacity = 0.5;
             }
 
-            AddElement(block);
+            container.BringIntoView();
+        }
+        private DragView GetNewBlock()
+        {
+            var result = _blocksPool.GetElement();
+            result.RemoveFromParent();
+            _history.Children.Add(result);
+
+            return result;
         }
 
         #endregion

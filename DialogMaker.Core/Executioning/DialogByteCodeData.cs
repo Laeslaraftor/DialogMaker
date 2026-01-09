@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -79,11 +80,27 @@ namespace DialogMaker.Core.Executioning
 
         #region Классы
 
-        public readonly struct Section(int index, int position, List<Operation> operations)
+        public readonly struct Section(int index, int position, List<Operation> operations) : IEnumerable<KeyValuePair<int, Operation>>
         {
             public int Index { get; } = index;
             public int Position { get; } = position;
             public ReadOnlyCollection<Operation> Operations { get; } = new(operations);
+
+            public IEnumerator<KeyValuePair<int, Operation>> GetEnumerator()
+            {
+                int index = 0;
+
+                foreach (var operation in Operations)
+                {
+                    yield return new(index, operation);
+                    index++;
+                }
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return GetEnumerator();
+            }
         }
 
         #endregion

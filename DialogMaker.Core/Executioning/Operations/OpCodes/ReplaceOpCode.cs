@@ -19,10 +19,10 @@ namespace DialogMaker.Core.Executioning
             }
 
             var searchValue = context.Resources.GetVariable(args[1]).ToString();
-            var newValue = context.Resources.GetVariable(args[2]).ToString();
+            var newValue = context.Resources.GetResource(args[2]).ToString();
 
             string newStringValue = value1.ToString().Replace(searchValue, newValue);
-            context.Resources.SetVariable(args[0], newStringValue);
+            context.CurrentThread.Push(newStringValue);
         }
 
         #endregion

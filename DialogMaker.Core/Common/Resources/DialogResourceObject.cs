@@ -34,6 +34,10 @@ namespace DialogMaker.Core.Common
         {
             return ResourcePath.CreatePath(this);
         }
+        public IVariable ToVariable()
+        {
+            throw new System.NotImplementedException();
+        }
 
         public DialogResourceObjectSavedState Save()
         {

@@ -85,6 +85,10 @@ namespace DialogMaker.Lib.Elements
 
             executor.Start();
         }
+        private void OnClearButtonClicked(object sender, RoutedEventArgs e)
+        {
+            _viewer.Clear();
+        }
 
         private static void OnDialogExecutorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {

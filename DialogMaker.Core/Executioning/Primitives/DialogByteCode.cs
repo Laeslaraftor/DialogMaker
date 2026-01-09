@@ -133,7 +133,7 @@
         [ArgsCount(2), Implementation(typeof(DivideOpCode))]
         Divide,
         /// <summary>
-        /// Заменить в первой переменной одно значение на другое.
+        /// Заменить в первой переменной одно значение на другое. Новое значение будет помещено в стек
         /// 1 аргумент - переменная, 2 - искомое значение, 3 - новое значение
         /// </summary>
         [ArgsCount(3), Implementation(typeof(ReplaceOpCode))]

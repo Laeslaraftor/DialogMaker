@@ -56,6 +56,7 @@ namespace DialogMaker.Core.Editor
 
         #region Управление
 
+        public override IVariable ToVariable() => this;
         public override string ToString()
         {
             return $"[{Id}] {Type}: {Value}";

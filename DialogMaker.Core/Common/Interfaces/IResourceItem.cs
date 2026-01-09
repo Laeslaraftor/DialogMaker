@@ -8,8 +8,13 @@ namespace DialogMaker.Core.Common
         public string Id { get; }
         public bool IsSeparated { get; }
 
+        #region Управление
+
         public DialogItemReference CreateReference();
         public ResourcePath GetPath();
+        public IVariable ToVariable();
+
+        #endregion
 
         #region Константы
 

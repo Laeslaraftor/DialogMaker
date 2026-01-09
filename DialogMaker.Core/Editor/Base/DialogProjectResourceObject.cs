@@ -90,6 +90,7 @@ namespace DialogMaker.Core.Editor
             return DialogItemReference.Create(this);
         }
         ResourcePath IResourceItem.GetPath() => Path;
+        public abstract IVariable ToVariable();
 
         public void MoveTo(IProjectResourcesOwner resourcesOwner)
         {
