@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
 
 namespace DialogMaker.Core
 {
@@ -6,6 +7,23 @@ namespace DialogMaker.Core
     {
         public event PropertyChangedEventHandler? PropertyChanged;
         public event PropertyChangingEventHandler? PropertyChanging;
+
+        #region Управление
+
+        protected void Dispatch(Action action)
+        {
+            var dispatcher = Dispatcher;
+
+            if (dispatcher != null)
+            {
+                dispatcher.Execute(action);
+                return;
+            }
+
+            action();
+        }
+
+        #endregion
 
         #region События
 
@@ -22,8 +40,11 @@ namespace DialogMaker.Core
         }
         protected void InvokePropertyChanging(PropertyChangingEventArgs args)
         {
-            OnPropertyChanging(args.PropertyName);
-            PropertyChanging?.Invoke(this, args);
+            Dispatch(() =>
+            {
+                OnPropertyChanging(args.PropertyName);
+                PropertyChanging?.Invoke(this, args);
+            });
         }
         protected void InvokePropertyChanged(string propertyName)
         {
@@ -31,9 +52,18 @@ namespace DialogMaker.Core
         }
         protected void InvokePropertyChanged(PropertyChangedEventArgs args)
         {
-            OnPropertyChanged(args.PropertyName);
-            PropertyChanged?.Invoke(this, args);
+            Dispatch(() =>
+            {
+                OnPropertyChanged(args.PropertyName);
+                PropertyChanged?.Invoke(this, args);
+            });
         }
+
+        #endregion
+
+        #region Статика
+
+        public static IThreadDispatcher? Dispatcher { get; set; }
 
         #endregion
     }

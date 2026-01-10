@@ -14,6 +14,8 @@ namespace DialogMaker.Lib.Elements
             InitializeComponent();
         }
 
+        IThreadDispatcher? IDialogExecutingHandler.Dispatcher => Disposable.Dispatcher;
+
         private readonly ElementsPool<DragView> _blocksPool = new();
         private readonly ElementsPool<TextBlock> _textPool = new();
         private readonly ElementsPool<DialogChoice> _dialogChoice = new();

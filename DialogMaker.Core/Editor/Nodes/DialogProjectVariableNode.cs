@@ -87,6 +87,18 @@ namespace DialogMaker.Core.Editor.Nodes
             }
         }
 
+        public override string ToString()
+        {
+            var variable = Variable;
+
+            if (variable == null)
+            {
+                return "Переменная не указана";
+            }
+
+            return $"{variable.Resolve()} = {Input.GetPreview()}";
+        }
+
         public override bool TryGetResourceValue(DialogProjectNodeOutput port, [NotNullWhen(true)] out IResourceItem? resource)
         {
             if (port == Output)

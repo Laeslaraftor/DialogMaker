@@ -8,6 +8,8 @@ namespace DialogMaker.Core.Executioning
 {
     public interface IDialogExecutingHandler
     {
+        public IThreadDispatcher? Dispatcher { get; }
+
         public Task ShowReplica(ICharacter? character, IResourceString text, CancellationToken cancellationToken);
         public Task ShowFullscreenReplica(ICharacter? character, IResourceItem? background, IResourceString text, CancellationToken cancellationToken);
         public Task ShowColorReplica(ICharacter? character, Color backgroundColor, Color textColor, IResourceString text, CancellationToken cancellationToken);

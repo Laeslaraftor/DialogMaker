@@ -1,4 +1,5 @@
 ﻿using Acly;
+using DialogMaker.Core.Editor.Nodes;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -37,12 +38,12 @@ namespace DialogMaker.Core.Executioning.Builders
             _sections.Clear();
         }
 
-        public CompiledCodeInfo Compile()
+        public CompiledCodeInfo Compile(Dictionary<INode, DialogCompilerNodeInfo> nodesInfo)
         {
             using MemoryStream codeStream = new();
             using MemoryStream tempCode = new();
             DialogExecutionContextBuilder contextBuilder = new();
-            CodeCompileContext context = new(tempCode, contextBuilder);
+            CodeCompileContext context = new(nodesInfo, tempCode, contextBuilder);
 
             for (int i = 0; i < _sections.Count; i++)
             {

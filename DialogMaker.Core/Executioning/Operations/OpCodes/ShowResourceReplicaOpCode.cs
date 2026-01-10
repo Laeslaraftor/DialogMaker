@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Common;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -14,7 +15,7 @@ namespace DialogMaker.Core.Executioning
             var character = ShowReplicaOpCode.GetCharacter(context, args[0]);
             var replica = GetString(context, args[1]);
 
-            await context.Handler.ShowReplica(character, replica, context.CancellationToken);
+            await DispatchHandler(context, h => h.ShowReplica(character, replica, context.CancellationToken));
         }
 
         #endregion

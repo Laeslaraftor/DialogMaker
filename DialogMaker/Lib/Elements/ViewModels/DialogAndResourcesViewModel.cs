@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core;
+using DialogMaker.Core.Executioning.Debugging;
 using DialogMaker.Editor;
 
 namespace DialogMaker.Lib.Elements
@@ -41,6 +42,19 @@ namespace DialogMaker.Lib.Elements
                     InvokePropertyChanging(nameof(Resources));
                     field = value;
                     InvokePropertyChanged(nameof(Resources));
+                }
+            }
+        }
+        public DialogCodeStructure? Structure
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(Structure));
+                    field = value;
+                    InvokePropertyChanged(nameof(Structure));
                 }
             }
         }

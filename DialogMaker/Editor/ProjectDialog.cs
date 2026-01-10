@@ -76,6 +76,21 @@ namespace DialogMaker.Editor
         public EditableCollection<DialogProjectNode> Nodes { get; } = [];
         public EditableCollection<DialogProjectNode> SelectedNodes { get; } = [];
         public ProjectNodesClipboard Clipboard { get; }
+        public DialogProjectNode this[INode originalNode]
+        {
+            get
+            {
+                foreach (var node in Nodes)
+                {
+                    if (node.Original == originalNode)
+                    {
+                        return node;
+                    }
+                }
+
+                throw new ArgumentException($"Не удалось найти узел для {originalNode}", nameof(originalNode));
+            }
+        }
 
         private readonly ProjectNodeConverter _nodesConverter;
         private readonly CollectionSynchronizer<DialogProjectDialogNode, DialogProjectNode> _nodesSync;

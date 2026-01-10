@@ -17,7 +17,7 @@ namespace DialogMaker.Core.Executioning
             var background = context.Resources.GetResource(args[2]);
             ResourceString text = new(args[1], replica);
 
-            await context.Handler.ShowFullscreenReplica(character, background, text, context.CancellationToken);
+            await DispatchHandler(context, h => h.ShowFullscreenReplica(character, background, text, context.CancellationToken));
         }
 
         #endregion

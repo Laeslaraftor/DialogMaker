@@ -17,5 +17,19 @@
         : DialogProjectNodeInput(node, portId, dataType)
     {
         public override bool CanPresetValue => true;
+
+        #region Управление
+
+        public string GetPreview()
+        {
+            foreach (var connection in this)
+            {
+                return connection.Node.ToString();
+            }
+
+            return Value?.ToString() ?? "null";
+        }
+
+        #endregion
     }
 }

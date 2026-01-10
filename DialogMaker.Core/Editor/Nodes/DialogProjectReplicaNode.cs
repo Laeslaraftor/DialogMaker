@@ -70,6 +70,19 @@ namespace DialogMaker.Core.Editor.Nodes
             context.CompileOutputs(Output);
         }
 
+        public override string ToString()
+        {
+            string characterName = string.Empty;
+            var character = Character;
+
+            if (character != null)
+            {
+                characterName = $"{character.Resolve()}: ";
+            }
+
+            return $"{characterName}{Text.GetPreview()}";
+        }
+
         protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)
         {
             base.ModifySavedState(savedState);

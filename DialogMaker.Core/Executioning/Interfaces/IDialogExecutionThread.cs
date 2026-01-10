@@ -6,7 +6,7 @@
 
         public void JumpTo(int sectionId);
         public void Goto(int instructionPosition);
-        public void StartThread(int sectionId);
+        public void StartThread(int sectionId, int instructionPosition);
         public void StopThread();
         public void StopExecuting();
 

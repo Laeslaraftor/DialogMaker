@@ -1,5 +1,7 @@
 ﻿using DialogMaker.Core.Executioning;
 using DialogMaker.Core.Executioning.Builders;
+using System;
+using System.Text;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -85,6 +87,49 @@ namespace DialogMaker.Core.Editor.Nodes
             gotoEnd.Arguments[0] = new(ending);
 
             context.CompileOutputs(Output);
+        }
+
+        public override string ToString()
+        {
+            if (FirstValue.ConnectionsCount == 0 && SecondValue.ConnectionsCount == 0)
+            {
+                return "Пусто";
+            }
+
+            StringBuilder builder = new();
+
+            void AddConnections(DialogProjectNodePort port)
+            {
+                foreach (var connection in port)
+                {
+                    builder.AppendLine($"    return {connection.Node.ToString().Replace(Environment.NewLine, Environment.NewLine + "    ")};");
+                }
+            }
+
+            if (FirstValue.ConnectionsCount > 0)
+            {
+                builder.AppendLine("if (input)");
+                builder.AppendLine("{");
+                AddConnections(FirstValue);
+                builder.AppendLine("}");
+            }
+            if (SecondValue.ConnectionsCount > 0)
+            {
+                if (SecondValue.ConnectionsCount == 0)
+                {
+                    builder.AppendLine("if (input == false)");
+                }
+                else
+                {
+                    builder.AppendLine("else");
+                }
+
+                builder.AppendLine("{");
+                AddConnections(SecondValue);
+                builder.AppendLine("}");
+            }
+
+            return builder.ToString();
         }
 
         #endregion

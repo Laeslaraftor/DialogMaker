@@ -63,7 +63,7 @@ namespace DialogMaker.Core.Executioning
 
         #region Управление
 
-        public async Task Start(int sectionId)
+        public async Task Start(int sectionId, int instructionPosition)
         {
             if (IsRunning)
             {
@@ -71,6 +71,7 @@ namespace DialogMaker.Core.Executioning
             }
 
             JumpTo(sectionId);
+            Goto(instructionPosition);
 
             if (0 >= _data.Sections[CurrentSection].Operations.Count)
             {
@@ -135,9 +136,9 @@ namespace DialogMaker.Core.Executioning
         {
             CurrentOperation = instructionPosition;
         }
-        public async void StartThread(int sectionId)
+        public async void StartThread(int sectionId, int instructionPosition)
         {
-            await DialogExecutor.StartThread(sectionId);
+            await DialogExecutor.StartThread(sectionId, instructionPosition);
         }
         public void StopThread()
         {

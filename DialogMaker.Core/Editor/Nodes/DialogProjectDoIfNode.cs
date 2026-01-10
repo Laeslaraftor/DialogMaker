@@ -1,7 +1,9 @@
 ﻿using DialogMaker.Core.Executioning;
 using DialogMaker.Core.Executioning.Builders;
+using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -73,7 +75,8 @@ namespace DialogMaker.Core.Editor.Nodes
                 //checkFalse.Arguments[1] = new(true);
 
                 context.JumpOrGotoOrSkip(TrueOutput[0].Node, value, false);
-                
+                context.Section.CreateOperation(DialogByteCode.EndThread);
+
                 //var jumpIfTrue = context.Section.CreateOperation(DialogByteCode.JumpIfTrue);
                 //jumpIfTrue.Arguments[0] = new(trueSections[0]);
             }
@@ -97,6 +100,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 //checkFalse.Arguments[1] = new(true);
 
                 context.JumpOrGotoOrSkip(TrueOutput[0].Node, value, true);
+                context.Section.CreateOperation(DialogByteCode.EndThread);
                 //context.JumpOrGoto(FalseOutput[0].Node, true);
 
                 //var jumpIfTrue = context.Section.CreateOperation(DialogByteCode.JumpIfTrue);
@@ -143,6 +147,49 @@ namespace DialogMaker.Core.Editor.Nodes
 
                 CreateManySections(falseSections);
             }
+        }
+
+        public override string ToString()
+        {
+            if (TrueOutput.ConnectionsCount == 0 && FalseOutput.ConnectionsCount == 0)
+            {
+                return "Пусто";
+            }
+
+            StringBuilder builder = new();
+
+            void AddConnections(DialogProjectNodePort port)
+            {
+                foreach (var connection in port)
+                {
+                    builder.AppendLine("    " + connection.Node.ToString().Replace(Environment.NewLine, Environment.NewLine + "    "));
+                }
+            }
+
+            if (TrueOutput.ConnectionsCount > 0)
+            {
+                builder.AppendLine("if (input)");
+                builder.AppendLine("{");
+                AddConnections(TrueOutput);
+                builder.AppendLine("}");
+            }
+            if (FalseOutput.ConnectionsCount > 0)
+            {
+                if (TrueOutput.ConnectionsCount == 0)
+                {
+                    builder.AppendLine("if (input == false)");
+                }
+                else
+                {
+                    builder.AppendLine("else");
+                }
+
+                builder.AppendLine("{");
+                AddConnections(FalseOutput);
+                builder.AppendLine("}");
+            }
+
+            return builder.ToString();
         }
 
         #endregion

@@ -22,7 +22,7 @@ namespace DialogMaker.Core.Executioning
             Color textColor = ToColor(textColorVariable, Color.White);
             ResourceString text = new(args[1], replica);
 
-            await context.Handler.ShowColorReplica(character, backgroundColor, textColor, text, context.CancellationToken);
+            await DispatchHandler(context, h => h.ShowColorReplica(character, backgroundColor, textColor, text, context.CancellationToken));
         }
 
         #endregion

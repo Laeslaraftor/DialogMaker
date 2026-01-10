@@ -57,6 +57,11 @@ namespace DialogMaker.Core.Editor.Nodes
             CompileMath(context, DialogByteCode.Multiply, FirstValue, SecondValue, Output);
         }
 
+        public override string ToString()
+        {
+            return $"{FirstValue.GetPreview()} + {SecondValue.GetPreview()}";
+        }
+
         #endregion
     }
 }

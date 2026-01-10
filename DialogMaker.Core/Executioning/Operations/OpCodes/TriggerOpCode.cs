@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using DialogMaker.Core.Common;
+using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -12,7 +14,7 @@ namespace DialogMaker.Core.Executioning
 
             var triggerId = context.Resources.GetVariable(args[0]).ToString();
 
-            await context.Handler.HandleTrigger(triggerId, context.CancellationToken);
+            await DispatchHandler(context, h => h.HandleTrigger(triggerId, context.CancellationToken));
         }
 
         #endregion

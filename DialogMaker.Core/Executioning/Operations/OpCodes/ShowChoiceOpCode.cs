@@ -1,5 +1,6 @@
 using DialogMaker.Core.Common;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -18,7 +19,7 @@ namespace DialogMaker.Core.Executioning
                 throw new DialogExecutionException($"Не удалось получить список строк для отображения вариантов ответа");
             }
 
-            var answer = await context.Handler.ShowChoice(character, strings, context.CancellationToken);
+            var answer = await DispatchHandler(context, h => h.ShowChoice(character, strings, context.CancellationToken));
 
             if (!context.CancellationToken.IsCancellationRequested)
             {

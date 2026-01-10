@@ -61,6 +61,17 @@ namespace DialogMaker.Core.Editor.Nodes
 
             context.CompileOutputs(Output);
         }
+        public override string ToString()
+        {
+            var id = TriggerId;
+
+            if (string.IsNullOrEmpty(id))
+            {
+                return "Пустой идентификатор";
+            }
+
+            return $"Идентификатор: {id}";
+        }
 
         protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)
         {

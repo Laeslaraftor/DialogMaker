@@ -1,6 +1,5 @@
 ﻿using DialogMaker.Core.Executioning;
 using DialogMaker.Core.Executioning.Builders;
-using DialogMaker.Core.Executioning.Internal;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -84,6 +83,11 @@ namespace DialogMaker.Core.Editor.Nodes
             stackToOutputOperation.Arguments[0] = output;
 
             context.CompileOutputs(Output);
+        }
+
+        public override string ToString()
+        {
+            return $"{Value.GetPreview()}.Replace({SearchValue.GetPreview()}, {NewValue.GetPreview()})";
         }
 
         #endregion

@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -83,7 +84,7 @@ namespace DialogMaker.Core.Executioning
             }
 
             Stack.Clear();
-            await StartThread(0);
+            await StartThread(0, 0);
         }
 
         public async Task StopAsync()
@@ -108,10 +109,10 @@ namespace DialogMaker.Core.Executioning
             await StopAsync();
         }
 
-        internal async Task StartThread(int section)
+        internal async Task StartThread(int section, int instructionPosition)
         {
             var thread = GetOrCreateThread();
-            await thread.Start(section);
+            await thread.Start(section, instructionPosition);
         }
 
         protected override void Dispose(bool isDisposing)
@@ -191,7 +192,11 @@ namespace DialogMaker.Core.Executioning
 
             InvokeDialogHandled(async h =>
             {
-                await handler(h);
+                await DispatchHandler<object?>(h, async h2 =>
+                {
+                    await handler(h2);
+                    return null;
+                });
                 isCompleted = true;
             });
 
@@ -207,7 +212,7 @@ namespace DialogMaker.Core.Executioning
 
             InvokeDialogHandled(async h =>
             {
-                result = await handler(h);
+                result = await DispatchHandler(h, handler);
                 isCompleted = true;
             });
 
@@ -232,10 +237,50 @@ namespace DialogMaker.Core.Executioning
 
         #endregion
 
+        #region Статика
+
+        internal static async Task DispatchHandler(IDialogExecutingHandler dialogHandler, Func<IDialogExecutingHandler, Task> handler)
+        {
+            await DispatchHandler<object?>(dialogHandler, async h =>
+            {
+                await handler(h);
+                return null;
+            });
+        }
+        internal static async Task<T?> DispatchHandler<T>(IDialogExecutingHandler dialogHandler, Func<IDialogExecutingHandler, Task<T>> handler)
+        {
+            var dispatcher = dialogHandler.Dispatcher;
+
+            if (dispatcher == null)
+            {
+                return await handler(dialogHandler);
+            }
+
+            bool isCompleted = false;
+            T? result = default;
+
+            dispatcher.Execute(async () =>
+            {
+                result = await handler(dialogHandler);
+                isCompleted = true;
+            });
+
+            while (!isCompleted)
+            {
+                await Task.Delay(10);
+            }
+
+            return result;
+        }
+
+        #endregion
+
         #region Классы
 
         private class InternalHandler(DialogExecutor executor) : IDialogExecutingHandler
         {
+            public IThreadDispatcher? Dispatcher { get; }
+
             private readonly DialogExecutor _executor = executor;
 
             public async Task HandleTrigger(string name, CancellationToken cancellationToken)
@@ -278,13 +323,35 @@ namespace DialogMaker.Core.Executioning
 
             #region События
 
+            private void InvokeDispatched(Action<IDialogExecutingHandler> action)
+            {
+                _executor.InvokeDialogHandled(h =>
+                {
+                    var dispatcher = h.Dispatcher;
+
+                    if (dispatcher == null)
+                    {
+                        action(h);
+                        return;
+                    }
+
+                    dispatcher.Execute(() => action(h));
+                });
+            }
+
             public void OnDialogExecutingEnded(object? sender, EventArgs e)
             {
-                _executor.InvokeDialogHandled(h => h.OnDialogExecutingEnded(sender, e));
+                InvokeDispatched(h =>
+                {
+                    h.OnDialogExecutingEnded(sender, e);
+                });
             }
             public void OnDialogExecutingStarted(object? sender, EventArgs e)
             {
-                _executor.InvokeDialogHandled(h => h.OnDialogExecutingStarted(sender, e));
+                InvokeDispatched(h =>
+                {
+                    h.OnDialogExecutingStarted(sender, e);
+                });
             }
 
             #endregion

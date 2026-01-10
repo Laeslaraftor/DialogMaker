@@ -6,6 +6,16 @@ namespace DialogMaker.Core
 {
     public static class ListExtensions
     {
+        public static void Invert<T>(this IList<T> list)
+        {
+            List<T> copy = [.. list];
+            int count = list.Count - 1;
+
+            for (int i = 0; i < count + 1; i++)
+            {
+                copy[i] = list[count - i];
+            }
+        }
         public static bool TryGetValue<T>(this IEnumerable<T> enumerable, Predicate<T> predicate, [NotNullWhen(true)] out T? result)
         {
             result = default;

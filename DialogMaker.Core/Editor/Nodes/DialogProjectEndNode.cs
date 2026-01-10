@@ -29,6 +29,11 @@ namespace DialogMaker.Core.Editor.Nodes
             context.Section.CreateOperation(DialogByteCode.End);
         }
 
+        public override string ToString()
+        {
+            return string.Empty;
+        }
+
         #endregion
     }
 }

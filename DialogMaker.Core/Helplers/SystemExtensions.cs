@@ -20,6 +20,28 @@ namespace DialogMaker.Core
                     Debug.WriteLine(error);
                 }
             }
+            public static async Task RunSafe(Action action, CancellationToken cancellationToken)
+            {
+                try
+                {
+                    await Task.Run(action, cancellationToken);
+                }
+                catch (Exception error)
+                {
+                    Debug.WriteLine(error);
+                }
+            }
+            public static async Task RunSafe(Func<Task> action, CancellationToken cancellationToken)
+            {
+                try
+                {
+                    await Task.Run(action, cancellationToken);
+                }
+                catch (Exception error)
+                {
+                    Debug.WriteLine(error);
+                }
+            }
         }
     }
 }

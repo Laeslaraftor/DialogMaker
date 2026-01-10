@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -14,7 +15,7 @@ namespace DialogMaker.Core.Executioning
             var replica = ShowResourceReplicaOpCode.GetString(context, args[1]);
             var background = context.Resources.GetResource(args[2]);
 
-            await context.Handler.ShowFullscreenReplica(character, background, replica, context.CancellationToken);
+            await DispatchHandler(context, h => h.ShowFullscreenReplica(character, background, replica, context.CancellationToken));
         }
 
         #endregion

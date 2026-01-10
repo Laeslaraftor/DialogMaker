@@ -267,6 +267,8 @@ namespace DialogMaker.Core.Editor
                     e.Item.Dispose();
                 }
             }
+
+            InvokePropertyChanged(nameof(Nodes));
         }
 
         private void OnNodePropertyChanged(object sender, PropertyChangedEventArgs e)

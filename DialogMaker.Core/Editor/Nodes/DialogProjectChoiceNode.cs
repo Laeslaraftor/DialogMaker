@@ -1,12 +1,7 @@
-﻿using Acly;
-using DialogMaker.Core.Common;
+﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning;
-using DialogMaker.Core.Executioning.Internal;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.Linq;
+using System.Text;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -83,6 +78,33 @@ namespace DialogMaker.Core.Editor.Nodes
 
             context.CompileOutputs(Output);
             context.CompileOutputs(SelectedVarianIndex);
+        }
+
+        public override string ToString()
+        {
+            var variants = GetChoiceVariants();
+            var characterReference = Character;
+            StringBuilder builder = new();
+            
+            if (characterReference != null)
+            {
+                builder.AppendLine($"{characterReference.Resolve()}:");
+            }
+            if (variants.Strings.Count == 0)
+            {
+                builder.AppendLine("Пустой выбор");
+                return builder.ToString();
+            }
+
+            int index = 0;
+
+            foreach (var variant in variants.Strings)
+            {
+                builder.AppendLine($"[{index}] {variant.Text}");
+                index++;
+            }
+
+            return builder.ToString();
         }
 
         protected abstract IStringCollection GetChoiceVariants();

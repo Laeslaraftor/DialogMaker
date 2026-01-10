@@ -58,8 +58,6 @@ namespace DialogMaker.Core
 
         #region Статика
 
-        public static IThreadDispatcher? Dispatcher { get; set; }
-
         public static void DisposeAll(IEnumerable<IDisposable> disposables)
         {
             foreach (var disposable in disposables)

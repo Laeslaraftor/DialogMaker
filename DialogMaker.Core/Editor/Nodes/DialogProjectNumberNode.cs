@@ -36,12 +36,18 @@ namespace DialogMaker.Core.Editor.Nodes
                 return field;
             }
         }
+        public override bool IsCodeGenerator => false;
 
         #region Управление
 
         public override void Compile(DialogCompilerContext context)
         {
             context.Resources.CreateVariable(Output, new(Value));
+        }
+
+        public override string ToString()
+        {
+            return Value.ToString().Replace(",", ".");
         }
 
         protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)

@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Common;
+using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Core.Executioning.Internal;
 using System;
 
@@ -26,19 +27,33 @@ namespace DialogMaker.Core.Executioning.Builders
         {
             Value = section;
         }
+        public DialogExecutionParameter(INode node)
+        {
+            Value = node;
+        }
+        public DialogExecutionParameter(int value)
+        {
+            Value = value;
+        }
 
         public Guid Id { get; } = Guid.NewGuid();
         public object? Value { get; }
 
         #region Управление
 
-        public readonly int AddToContext(DialogExecutionContextBuilder contextBuilder)
+        public readonly int AddToContext(CodeCompileContext context)
         {
+            var contextBuilder = context.ContextBuilder;
+
             if (Value == null)
             {
                 return -1;
             }
-            if (Value is OperandValue value)
+            if (Value is int number)
+            {
+                return number;
+            }
+            else if (Value is OperandValue value)
             {
                 return contextBuilder.AddVariable(new LocalVariable(Id.ToString(), value));
             }
@@ -49,6 +64,15 @@ namespace DialogMaker.Core.Executioning.Builders
             else if (Value is IResourceItem item)
             {
                 return contextBuilder.AddResource(item);
+            }
+            else if (Value is INode node)
+            {
+                if (context.NodesInfo.TryGetValue(node, out var nodeInfo))
+                {
+                    return nodeInfo.Index;
+                }
+
+                throw new ArgumentException($"Контекст компиляции не содержит информации об узле {node}", nameof(context));
             }
             else if (Value is OperationBuilder operation)
             {

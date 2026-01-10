@@ -73,6 +73,48 @@ namespace DialogMaker.Core.Editor.Nodes
         }
         public IPortDataConverter DataConverter => DialogProjectPortDataConverter.Instance;
         public virtual bool IsUserHandleNode { get; }
+        public virtual bool IsCodeGenerator => true;
+        public bool IsSeparator
+        {
+            get
+            {
+                if (!IsCodeGenerator)
+                {
+                    return false;
+                }
+
+                int connectedNodes = 0;
+
+                foreach (var output in GetOutputs().Keys)
+                {
+                    connectedNodes += output.ConnectionsCount;
+                }
+
+                return connectedNodes > 1;
+            }
+        }
+        public bool IsFunction
+        {
+            get
+            {
+                foreach (var input in GetInputs().Keys)
+                {
+                    if (input.ConnectionsCount > 1)
+                    {
+                        return true;
+                    }
+                    foreach (var connection in input)
+                    {
+                        if (connection.Node.IsSeparator)
+                        {
+                            return true;
+                        }
+                    } 
+                }
+
+                return false;
+            }
+        }
         public bool IsImmediate
         {
             get
@@ -119,6 +161,62 @@ namespace DialogMaker.Core.Editor.Nodes
         private ReadOnlyDictionary<DialogProjectNodeOutput, DialogProjectNodeMetadata>? _outputs;
 
         #region Управление
+
+        public IEnumerable<INode> GetLocalGroup(Predicate<INode> ignorePredicate)
+        {
+            if (IsFunction && !IsSeparator)
+            {
+                yield return this;
+
+                foreach (var output in GetOutputs().Keys)
+                {
+                    foreach (var connection in output)
+                    {
+                        if (ignorePredicate(connection.Node) ||
+                            connection.Node.IsFunction)
+                        {
+                            continue;
+                        }
+
+                        var nextGroup = connection.Node.GetLocalGroup(n =>
+                        {
+                            return n == this || ignorePredicate(n);
+                        });
+
+                        foreach (var groupNode in nextGroup)
+                        {
+                            yield return groupNode;
+                        }
+                    }
+                }
+
+                yield break;
+            }
+
+            foreach (var input in GetInputs().Keys)
+            {
+                foreach (var connection in input)
+                {
+                    if (ignorePredicate(connection.Node) || 
+                        connection.Node.IsSeparator)
+                    {
+                        continue;
+                    }
+
+                    var subGroup = connection.Node.GetLocalGroup(n =>
+                    {
+                        return n == this || ignorePredicate(n);
+                    });
+
+                    foreach (var subNode in subGroup)
+                    {
+                        yield return subNode;
+                    } 
+                }
+            }
+
+            yield return this;
+        }
 
         public abstract void Compile(DialogCompilerContext context);
 

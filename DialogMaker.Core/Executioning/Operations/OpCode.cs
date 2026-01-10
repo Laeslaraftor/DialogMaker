@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -16,6 +17,14 @@ namespace DialogMaker.Core.Executioning
             {
                 throw new DialogExecutionException($"Не удалось выполнить операцию {Code} в секции {context.CurrentThread.CurrentSection}. Требуется аргументов: {requestedLength}, получено: {requestedLength}");
             }
+        }
+        internal static async Task DispatchHandler(DialogExecutionContext context, Func<IDialogExecutingHandler, Task> handler)
+        {
+            await DialogExecutor.DispatchHandler(context.Handler, handler);
+        }
+        internal static async Task<T?> DispatchHandler<T>(DialogExecutionContext context, Func<IDialogExecutingHandler, Task<T>> handler)
+        {
+            return await DialogExecutor.DispatchHandler(context.Handler, handler);
         }
 
         #endregion

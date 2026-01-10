@@ -9,7 +9,7 @@ namespace DialogMaker.Core.Executioning
         public override async Task Execute(DialogExecutionContext context, params int[] args)
         {
             CheckArgs(context, args, 1);
-            context.CurrentThread.StartThread(args[0]);
+            context.CurrentThread.StartThread(args[0], 0);
         }
 
         #endregion

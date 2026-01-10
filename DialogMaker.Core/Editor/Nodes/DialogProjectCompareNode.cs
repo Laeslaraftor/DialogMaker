@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Executioning;
+using System.ComponentModel;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -25,7 +26,15 @@ namespace DialogMaker.Core.Editor.Nodes
         [Name("Тип сравнения")]
         public Comparison Comparison
         {
-            get => field;
+            get
+            {
+                if (field == 0)
+                {
+                    field = Comparison.Equals;
+                }
+
+                return field;
+            }
             set
             {
                 if (field != value)
@@ -79,9 +88,16 @@ namespace DialogMaker.Core.Editor.Nodes
             var stackToVariable = context.Section.CreateOperation(DialogByteCode.StackToVariable);
             stackToVariable.Arguments[0] = output;
 
-            context.Compiler.CompileOutputs(context, Output);
+            context.CompileOutputs(Output);
         }
 
+        public override string ToString()
+        {
+            var operation = Comparison.GetEnumAttribute<DescriptionAttribute>()?.Description;
+            operation ??= "?";
+
+            return $"{FirstValue.GetPreview()} {operation} {SecondValue.GetPreview()}";
+        }
         protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)
         {
             base.ModifySavedState(savedState);

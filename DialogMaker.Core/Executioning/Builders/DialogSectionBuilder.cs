@@ -10,18 +10,51 @@ namespace DialogMaker.Core.Executioning.Builders
             CodeBuilder = codeBuilder;
             Operations = new(_operations);
         }
+        internal DialogSectionBuilder()
+        {
+            Operations = new(_operations);
+        }
 
-        public DialogCodeBuilder CodeBuilder { get; }
+        public DialogCodeBuilder? CodeBuilder { get; }
         public int Index
         {
-            get => CodeBuilder.IndexOf(this);
-            set { }
+            get
+            {
+                if (CodeBuilder != null)
+                {
+                    return CodeBuilder.IndexOf(this);
+                }
+
+                return -1;
+            }
         }
         public ReferenceReadOnlyList<OperationBuilder> Operations { get; }
 
         private readonly ObservableList<OperationBuilder> _operations = [];
 
         #region Управление
+
+        public void CopyTo(DialogSectionBuilder section)
+        {
+            int startPosition = section.Operations.Count;
+
+            foreach (var operation in _operations)
+            {
+                var newOperation = section.CreateOperation(operation.Code);
+
+                for (int i = 0; i < newOperation.Arguments.Length; i++)
+                {
+                    var arg = operation.Arguments[i];
+
+                    if (arg.Value is OperationBuilder builder)
+                    {
+                        arg = new(builder.Index + startPosition);
+                    }
+
+                    newOperation.Arguments[i] = arg;
+                }
+            }
+        }
 
         public int IndexOf(OperationBuilder operation)
         {
@@ -36,12 +69,9 @@ namespace DialogMaker.Core.Executioning.Builders
             return -1;
         }
 
-        private DialogByteCode _lastCode;
-
         public OperationBuilder CreateOperation(DialogByteCode code)
         {
             OperationBuilder result = new(this, code);
-            _lastCode = code;
             _operations.Add(result);
 
             return result;
@@ -86,7 +116,7 @@ namespace DialogMaker.Core.Executioning.Builders
             return $"Сегмент {Index}";
         }
 
-        internal void Compile(CodeCompileContext context)
+        public void Compile(CodeCompileContext context)
         {
             foreach (var operation in _operations)
             {
@@ -94,7 +124,7 @@ namespace DialogMaker.Core.Executioning.Builders
 
                 foreach (var arg in operation.Arguments)
                 {
-                    int value = arg.AddToContext(context.ContextBuilder);
+                    int value = arg.AddToContext(context);
                     var data = BitConverter.GetBytes(value);
 
                     context.CodeStream.Write(data, 0, data.Length);

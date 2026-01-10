@@ -196,6 +196,20 @@
         /// Пустая инструкция, которая ничего не делает
         /// </summary>
         [ArgsCount(0), Implementation(typeof(EmptyOpCode))]
-        Empty
+        Empty,
+        /// <summary>
+        /// Начать поток. 
+        /// Аргумент 1 - индекс секции с которой начнётся новый поток,
+        /// аргумент 2 - индекс операции в секции с которой начнётся новый поток
+        /// </summary>
+        [ArgsCount(2), Implementation(typeof(StartThread2OpCode))]
+        StartThread2,
+        /// <summary>
+        /// Начать немедленное выполнение секции.
+        /// Аргумент 1 - индекс секции,
+        /// аргумент 2 - индекс операции в секции с которой начнётся новый поток
+        /// </summary>
+        [ArgsCount(2), Implementation(typeof(JumpToOpCode))]
+        JumpTo,
     }
 }

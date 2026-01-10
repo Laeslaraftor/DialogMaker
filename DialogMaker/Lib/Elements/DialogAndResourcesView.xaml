@@ -10,7 +10,7 @@
         <Grid.RowDefinitions>
             <RowDefinition/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="400" MinHeight="50"/>
+            <RowDefinition Height="400" MinHeight="30"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
@@ -141,42 +141,50 @@
         <Border Grid.Row="1" VerticalAlignment="Top"
                 Background="{DynamicResource DividerStrokeColorDefaultBrush}"
                 Height="1"/>
-        <Grid Grid.Row="2" Margin="8,2">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition/>
-            </Grid.RowDefinitions>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Text="Файлы" FontSize="28"
-                           FontWeight="Medium" Margin="0,0,0,8"/>
-                <local:Entry MaxWidth="300" Grid.Column="1" Placeholder="Поиск..."
-                             VerticalAlignment="Center" Margin="5,0"
-                             Text="{Binding Project.ResourcesFilter.SearchValue}"
-                             ConfirmCommand="{Binding Project.ResourcesFilter.SearchCommand}"/>
-                <Button Content="Добавить" Grid.Column="2" VerticalAlignment="Center"
-                        Command="{Binding Resources.AddFileCommand}"
-                        HorizontalAlignment="Right"/>
-            </Grid>
-            <ListView Grid.Row="1" SelectionMode="Single"
-                      ItemsSource="{Binding Resources.InheritedFiles}"
-                      Style="{StaticResource NoSelectionListView}">
-                <ListView.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel/>
-                    </ItemsPanelTemplate>
-                </ListView.ItemsPanel>
-                <ListView.ItemTemplate>
-                    <DataTemplate>
-                        <local:FileView File="{Binding}" Margin="4"/>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
-        </Grid>
+        <TabControl Grid.Row="2" Margin="8,0">
+            <TabItem Header="Файлы">
+                <Grid Grid.Row="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Файлы" FontSize="28"
+                                   FontWeight="Medium" Margin="0,0,0,8"/>
+                        <local:Entry MaxWidth="300" Grid.Column="1" Placeholder="Поиск..."
+                                     VerticalAlignment="Center" Margin="5,0"
+                                     Text="{Binding Project.ResourcesFilter.SearchValue}"
+                                     ConfirmCommand="{Binding Project.ResourcesFilter.SearchCommand}"/>
+                        <Button Content="Добавить" Grid.Column="2" VerticalAlignment="Center"
+                                Command="{Binding Resources.AddFileCommand}"
+                                HorizontalAlignment="Right"/>
+                    </Grid>
+                    <ListView Grid.Row="1" SelectionMode="Single"
+                              ItemsSource="{Binding Resources.InheritedFiles}"
+                              Style="{StaticResource NoSelectionListView}">
+                        <ListView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </ListView.ItemsPanel>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <local:FileView File="{Binding}" Margin="4"/>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Иерархия вызовов">
+                <local:DiagramStructureView Dialog="{Binding Dialog}"
+                                            Structure="{Binding Structure}"/>
+            </TabItem>
+        </TabControl>
         <GridSplitter Grid.Row="1"/>
         <GridSplitter Grid.RowSpan="3" Grid.Column="1"/>
     </Grid>

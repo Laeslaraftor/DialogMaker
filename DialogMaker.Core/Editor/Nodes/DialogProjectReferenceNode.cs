@@ -36,6 +36,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 return field;
             }
         }
+        public override bool IsCodeGenerator => false;
 
         #region Управление
 
@@ -48,6 +49,17 @@ namespace DialogMaker.Core.Editor.Nodes
 
             var resource = Reference.Resolve();
             context.Resources.CreateVariable(Output, new(resource));
+        }
+        public override string ToString()
+        {
+            var reference = Reference;
+
+            if (reference == null)
+            {
+                return "null";
+            }
+
+            return reference.Resolve().ToString();
         }
 
         protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)
