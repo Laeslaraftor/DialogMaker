@@ -6,7 +6,16 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Lib\Images\EmptyBackgroundPlaceholder.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Lib\Images\EmptyBackgroundPlaceholder.jpg" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Acly" Version="1.12.2" />

@@ -20,7 +20,7 @@ namespace DialogMaker.Core.Executioning
 
             if (isInt)
             {
-                result = RandomInstance.Next((int)minValue, (int)maxValue);
+                result = RandomInstance.Next((int)minValue, (int)maxValue + 1);
             }
             else
             {

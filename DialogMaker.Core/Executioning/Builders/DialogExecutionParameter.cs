@@ -31,9 +31,16 @@ namespace DialogMaker.Core.Executioning.Builders
         {
             Value = node;
         }
-        public DialogExecutionParameter(int value)
+        public DialogExecutionParameter(int value, bool isRawNumber)
         {
-            Value = value;
+            if (isRawNumber)
+            {
+                Value = value;
+            }
+            else
+            {
+                Value = new OperandValue(value);
+            }
         }
 
         public Guid Id { get; } = Guid.NewGuid();
@@ -134,7 +141,7 @@ namespace DialogMaker.Core.Executioning.Builders
 
         #region Статика
 
-        public static readonly DialogExecutionParameter Empty = new(0);
+        public static readonly DialogExecutionParameter Empty = new(new OperandValue(0));
 
         #endregion
     }

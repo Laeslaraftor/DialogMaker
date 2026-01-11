@@ -48,7 +48,7 @@ namespace DialogMaker.Core.Executioning.Builders
 
                     if (arg.Value is OperationBuilder builder)
                     {
-                        arg = new(builder.Index + startPosition);
+                        arg = new(builder.Index + startPosition, true);
                     }
 
                     newOperation.Arguments[i] = arg;

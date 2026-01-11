@@ -107,5 +107,10 @@ namespace DialogMaker.Core
         [Description("Выбор ответа.")]
         [Path("Диалог")]
         SimpleChoice,
+
+        [Name("Случайное число"), Node(typeof(DialogProjectRandomNode))]
+        [Description("Случайное число в указанном диапазоне.")]
+        [Path("Данные")]
+        RandomNumber,
     }
 }

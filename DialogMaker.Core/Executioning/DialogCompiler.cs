@@ -19,10 +19,6 @@ namespace DialogMaker.Core.Executioning
                 EntrySection = CodeBuilder.CreateSection();
             }
 
-            //foreach (var action in map.ActionNodes)
-            //{
-            //    _sections.Add(action, CodeBuilder.CreateSection());
-            //}
             foreach (var group in map.ActionGroups)
             {
                 var section = CodeBuilder.CreateSection();

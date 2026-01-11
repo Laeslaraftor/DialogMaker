@@ -53,6 +53,15 @@ namespace DialogMaker
                 }
             }
         }
+        public static WColor Lerp(this WColor color, WColor color2, float value)
+        {
+            float r = Helper.Lerp(color.ScR, color2.ScR, value);
+            float g = Helper.Lerp(color.ScG, color2.ScG, value);
+            float b = Helper.Lerp(color.ScB, color2.ScB, value);
+            float a = Helper.Lerp(color.ScA, color2.ScA, value);
+
+            return WColor.FromScRgb(a, r, g, b);
+        }
 
         public static TimeSpan ToTimeSpan(this Duration duration)
         {

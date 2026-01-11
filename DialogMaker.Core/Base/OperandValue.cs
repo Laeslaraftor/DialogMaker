@@ -293,18 +293,48 @@ namespace DialogMaker.Core
 
             return 0f;
         }
+        public static bool Compare(object? value, string str)
+        {
+            if (value is string str2)
+            {
+                return str2 == str;
+            }
+
+            float number = AsNumber(value);
+            string strNumber = number.ToString();
+
+            return (number == 0 && (str == "0" || str == "null" || str.Equals("False", StringComparison.InvariantCultureIgnoreCase))) ||
+                   (number > 0 && (str == strNumber || str == strNumber.Replace(",", ".") || str.Equals("True", StringComparison.InvariantCultureIgnoreCase)));
+        }
         public static bool Compare(object? value1, object? value2, Comparison comparison)
         {
             if (comparison == Comparison.Equals)
             {
-                return (value1 == null && value2 == null) ||
-                       value1?.Equals(value2) == true;
+                if (value1 == null && value2 == null)
+                {
+                    return true;
+                }
+                if (value1 is string str1 && value2 is string str2)
+                {
+                    return str1 == str2;
+                }
+                else if (value1 is string str11)
+                {
+                    return Compare(value2, str11);
+                }
+                else if (value2 is string str22)
+                {
+                    return Compare(value1, str22);
+                }
+
+                var n1 = AsNumber(value1);
+                var n2 = AsNumber(value2);
+
+                return n1 == n2;
             }
             else if (comparison == Comparison.NotEquals)
             {
-                return (value1 == null && value2 != null) ||
-                       (value1 != null && value2 == null) ||
-                       value1?.Equals(value2) != true;
+                return !Compare(value1, value2, Comparison.Equals);
             }
 
             float number1 = AsNumber(value1);

@@ -2,7 +2,6 @@
 using DialogMaker.Core.Executioning.Builders;
 using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Text;
 
 namespace DialogMaker.Core.Editor.Nodes
@@ -70,15 +69,8 @@ namespace DialogMaker.Core.Editor.Nodes
             }
             if (trueSections.Count == 1 && falseSections.Count == 0)
             {
-                //var checkFalse = context.Section.CreateOperation(DialogByteCode.Equals);
-                //checkFalse.Arguments[0] = value;
-                //checkFalse.Arguments[1] = new(true);
-
                 context.JumpOrGotoOrSkip(TrueOutput[0].Node, value, false);
                 context.Section.CreateOperation(DialogByteCode.EndThread);
-
-                //var jumpIfTrue = context.Section.CreateOperation(DialogByteCode.JumpIfTrue);
-                //jumpIfTrue.Arguments[0] = new(trueSections[0]);
             }
             else if (trueSections.Count > 1 && falseSections.Count == 0)
             {
@@ -95,16 +87,8 @@ namespace DialogMaker.Core.Editor.Nodes
             }
             else if (trueSections.Count == 0 && falseSections.Count == 1)
             {
-                //var checkFalse = context.Section.CreateOperation(DialogByteCode.NotEquals);
-                //checkFalse.Arguments[0] = value;
-                //checkFalse.Arguments[1] = new(true);
-
                 context.JumpOrGotoOrSkip(TrueOutput[0].Node, value, true);
                 context.Section.CreateOperation(DialogByteCode.EndThread);
-                //context.JumpOrGoto(FalseOutput[0].Node, true);
-
-                //var jumpIfTrue = context.Section.CreateOperation(DialogByteCode.JumpIfTrue);
-                //jumpIfTrue.Arguments[0] = new(falseSections[0]);
             }
             else if (trueSections.Count == 0 && falseSections.Count > 1)
             {

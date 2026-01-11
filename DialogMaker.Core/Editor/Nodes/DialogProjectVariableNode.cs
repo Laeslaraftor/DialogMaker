@@ -1,7 +1,6 @@
 ﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning;
 using DialogMaker.Core.Executioning.Builders;
-using MessagePack;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Editor.Nodes
@@ -31,6 +30,15 @@ namespace DialogMaker.Core.Editor.Nodes
                 }
             }
         }
+        [NodeInput("Действие")]
+        public DialogProjectNodeInputAction Action
+        {
+            get
+            {
+                field ??= new(this, 2);
+                return field;
+            }
+        }
         [NodeInput("Ввод")]
         public DialogProjectNodeInputValue Input
         {
@@ -54,12 +62,25 @@ namespace DialogMaker.Core.Editor.Nodes
 
         public override void Compile(DialogCompilerContext context)
         {
-            if (Variable == null)
+            var variable = Variable;
+
+            if (variable == null)
             {
+                if (Input.ConnectionsCount > 0 &&
+                    Output.ConnectionsCount > 0)
+                {
+                    var input = context.RecursiveCompileConnections(Input);
+                    var output = context.Resources.GetOrCreateVariable(Output);
+
+                    var setOpCode = context.Section.CreateOperation(DialogByteCode.Set);
+                    setOpCode.Arguments[0] = output;
+                    setOpCode.Arguments[1] = input;
+                }
+
                 return;
             }
 
-            var resource = Variable.Resolve();
+            var resource = variable.Resolve();
             DialogExecutionParameter parameter = new(resource);
 
             if (Input.ConnectionsCount > 0)
@@ -93,7 +114,7 @@ namespace DialogMaker.Core.Editor.Nodes
 
             if (variable == null)
             {
-                return "Переменная не указана";
+                return "Локальная переменная";
             }
 
             return $"{variable.Resolve()} = {Input.GetPreview()}";
