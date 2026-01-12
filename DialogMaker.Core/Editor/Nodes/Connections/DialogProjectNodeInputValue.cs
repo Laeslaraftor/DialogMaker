@@ -1,11 +1,13 @@
-﻿namespace DialogMaker.Core.Editor.Nodes
+﻿using System;
+
+namespace DialogMaker.Core.Editor.Nodes
 {
     public class DialogProjectNodeInputValue<T>(INode node, int portId, DialogNodePortType dataType)
         : DialogProjectNodeInputValue(node, portId, dataType), IValuePort<T>
     {
         public new T Value
         {
-            get => (T)base.Value;
+            get => (T)Convert.ChangeType(base.Value, typeof(T));
             set
             {
                 value ??= (T)DataType.GetDefaultValue();

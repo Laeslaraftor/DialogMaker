@@ -8,7 +8,7 @@ namespace DialogMaker.Core.Executioning
 
         public override async Task Execute(DialogExecutionContext context, params int[] args)
         {
-            context.CurrentThread.StopExecuting();
+            context.ThreadManager.Stop();
         }
 
         #endregion

@@ -112,5 +112,25 @@ namespace DialogMaker.Core
         [Description("Случайное число в указанном диапазоне.")]
         [Path("Данные")]
         RandomNumber,
+
+        [Name("Состояние диалога"), Node(typeof(DialogProjectEventNode))]
+        [Description("Выполнить действия при вызове определённого события диалога.")]
+        [Path("Диалог")]
+        Event,
+
+        [Name("Ждать"), Node(typeof(DialogProjectWaitNode))]
+        [Description("Подождать определённое количество времени.")]
+        [Path("Поток")]
+        Wait,
+
+        [Name("Объединить"), Node(typeof(DialogProjectJoinNode))]
+        [Description("Ожидать завершение всех входящих потоков, а затем объединить их в один.")]
+        [Path("Поток")]
+        Join,
+
+        [Name("Только первый вход"), Node(typeof(DialogProjectIntersectNode))]
+        [Description("Принять первый поток и продолжить его выполнение, завершая все последующие входящие потоки.")]
+        [Path("Поток")]
+        Intersect,
     }
 }

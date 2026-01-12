@@ -39,6 +39,21 @@ namespace DialogMaker.Core.Executioning
         public ReferenceReadOnlyDictionary<DialogProjectDialogNode, DialogSectionBuilder> Sections { get; }
         public ReferenceReadOnlyDictionary<DialogProjectDialogNode, DialogSectionBuilder> IndividualSections { get; }
         public DialogSectionBuilder? EntrySection { get; }
+        public DialogSectionBuilder this[INode node]
+        {
+            get
+            {
+                foreach (var info in _sections)
+                {
+                    if (info.Key == node)
+                    {
+                        return info.Value;
+                    }
+                }
+
+                throw new ArgumentException($"Не удалось найти сегмент для узла {node}", nameof(node));
+            }
+        }
 
         private readonly ObservableDictionary<DialogProjectDialogNode, DialogSectionBuilder> _sections = [];
         private readonly ObservableDictionary<DialogProjectDialogNode, DialogSectionBuilder> _individualSections = [];
@@ -155,11 +170,6 @@ namespace DialogMaker.Core.Executioning
                     }
                 }
             }
-            //foreach (var info in _sections)
-            //{
-            //    DialogCompilerContext context = new(this, info.Value, resources, compiledNodes, nodesInfo);
-            //    context.Compile(info.Key);
-            //}
 
             return CodeBuilder.Compile(realNodesPositions);
         }

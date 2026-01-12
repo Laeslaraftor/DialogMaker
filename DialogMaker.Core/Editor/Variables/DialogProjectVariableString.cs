@@ -15,13 +15,17 @@
 
         protected override bool CanConvertValue(object? value)
         {
-            return value == null || value is string;
+            return value == null || value is string || value is OperandValue;
         }
         protected override object? ConvertValue(object? value)
         {
             if (value is string s)
             {
                 return s;
+            }
+            else if (value is OperandValue operand)
+            {
+                return operand.ToString();
             }
 
             return string.Empty;

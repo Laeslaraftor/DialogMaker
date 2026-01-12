@@ -74,6 +74,7 @@ namespace DialogMaker.Core.Editor.Nodes
         public IPortDataConverter DataConverter => DialogProjectPortDataConverter.Instance;
         public virtual bool IsUserHandleNode { get; }
         public virtual bool IsCodeGenerator => true;
+        public virtual bool IsSystem => false;
         public bool IsSeparator
         {
             get

@@ -88,12 +88,15 @@ namespace DialogMaker.Core.Editor.Nodes
         }
         public bool CanConnect(DialogProjectNodePort? port)
         {
+            bool canConvert = Node.DataConverter.CanConvert(this, port);
+            bool validate = Validate(port);
+
             return port != null &&
                    port != this &&
                    Node != port.Node &&
                    ConnectionType == port.ConnectionType &&
-                   Node.DataConverter.CanConvert(this, port) &&
-                   Validate(port);
+                   canConvert &&
+                   validate;
         }
         public void Connect(DialogProjectNodePort? port)
         {
@@ -212,10 +215,14 @@ namespace DialogMaker.Core.Editor.Nodes
 
         protected virtual void OnConnectionChanged(CollectionItemAction action, DialogProjectNodePort port)
         {
-            if (!CanConnect(port))
-            {
-                throw new InvalidDataException($"Невозможно установить связь для {port}");
-            }
+            //if (action == CollectionItemAction.Add && port.IsConnected(this))
+            //{
+            //    return;
+            //}
+            //if (!CanConnect(port))
+            //{
+            //    throw new InvalidDataException($"Невозможно установить связь для {port}");
+            //}
             if (action == CollectionItemAction.Add)
             {
                 port.Connect(this);

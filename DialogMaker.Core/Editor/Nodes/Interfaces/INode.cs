@@ -16,6 +16,7 @@ namespace DialogMaker.Core.Editor.Nodes
         public IPortDataConverter DataConverter { get; }
         public bool IsImmediate { get; }
         public bool IsCodeGenerator { get; }
+        public bool IsSystem { get; }
         public bool IsSeparator { get; }
         public bool IsFunction { get; }
         public bool IsUserHandleNode { get; }

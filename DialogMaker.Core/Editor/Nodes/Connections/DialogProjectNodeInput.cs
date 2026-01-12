@@ -112,7 +112,8 @@ namespace DialogMaker.Core.Editor.Nodes
         protected override bool Validate(DialogProjectNodePort? port)
         {
             if (port is not DialogProjectNodeOutput output ||
-                (Multiconnection && Connections.Count > 1 && !Connections.Contains(output)))
+                (!Multiconnection && Connections.Count > 1) ||
+                Connections.Contains(output))
             {
                 return false;
             }

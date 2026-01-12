@@ -21,7 +21,7 @@ namespace DialogMaker.Core.Executioning.Builders
         }
         public DialogExecutionParameter(IVariable variable)
         {
-            Value = variable; 
+            Value = variable;
         }
         public DialogExecutionParameter(DialogSectionBuilder section)
         {
@@ -30,6 +30,10 @@ namespace DialogMaker.Core.Executioning.Builders
         public DialogExecutionParameter(INode node)
         {
             Value = node;
+        }
+        public DialogExecutionParameter(JoinOperationInfoBuilder joinBuilder)
+        {
+            Value = joinBuilder;
         }
         public DialogExecutionParameter(int value, bool isRawNumber)
         {
@@ -84,7 +88,6 @@ namespace DialogMaker.Core.Executioning.Builders
             else if (Value is OperationBuilder operation)
             {
                 return operation.Index;
-                //return contextBuilder.AddVariable(new LocalVariable(operationIndex));
             }
             else if (Value is DialogSectionBuilder section)
             {
@@ -96,7 +99,11 @@ namespace DialogMaker.Core.Executioning.Builders
                 }
 
                 return sectionIndex;
-                //return contextBuilder.AddVariable(new LocalVariable(sectionIndex));
+            }
+            else if (Value is JoinOperationInfoBuilder joinBuilder)
+            {
+                var info = joinBuilder.Compile(context);
+                return contextBuilder.AddResource(info);
             }
 
             throw new InvalidOperationException($"Невозможно добавить значение в контекст, так как оно либо пустое, либо имеет недопустимый тип. Значение: {Value}");
@@ -121,7 +128,7 @@ namespace DialogMaker.Core.Executioning.Builders
             {
                 return $"i:{operation.Index}";
             }
-            if (Value is OperandValue operand && 
+            if (Value is OperandValue operand &&
                 operand.Type == DialogVariableType.String)
             {
                 return $"\"{operand}\"";

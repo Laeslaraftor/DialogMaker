@@ -15,7 +15,7 @@
 
         protected override bool CanConvertValue(object? value)
         {
-            return value == null || value is int || value is float || value is double;
+            return value == null || value is int || value is float || value is double || value is OperandValue;
         }
         protected override object? ConvertValue(object? value)
         {
@@ -34,6 +34,10 @@
             else if(value is int i)
             {
                 return i;
+            }
+            else if (value is OperandValue operand)
+            {
+                return operand.ToNumber();
             }
 
             return 0f;

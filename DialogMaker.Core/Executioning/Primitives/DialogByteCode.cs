@@ -211,5 +211,17 @@
         /// </summary>
         [ArgsCount(2), Implementation(typeof(JumpToOpCode))]
         JumpTo,
+        /// <summary>
+        /// Ожидать входа всех потоков для объединения в один.
+        /// Аргумент 1 - информация о входимых потоках и выходе
+        /// </summary>
+        [ArgsCount(1), Implementation(typeof(JoinOpCode))]
+        Join,
+        /// <summary>
+        /// Пропустить только первый входящий поток, остальные будут автоматически завершены.
+        /// Аргумент 1 - информация о входимых потоках и выходе
+        /// </summary>
+        [ArgsCount(1), Implementation(typeof(IntersectOpCode))]
+        Intersect,
     }
 }

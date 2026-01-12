@@ -3,6 +3,7 @@ using DialogMaker.Core.Executioning.Internal;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -102,6 +103,52 @@ namespace DialogMaker.Core.Executioning
                 AddLastValue();
 
                 return new LocalStringCollection(id, stringsCollection);
+            }
+            else if (Type == DialogItemType.JoinInfo)
+            {
+                List<string> parts = [];
+                string currentPart = string.Empty;
+
+                foreach (var symbol in Value.ToString())
+                {
+                    if (symbol == '|' && parts.Count < 2)
+                    {
+                        parts.Add(currentPart);
+                        currentPart = string.Empty;
+                        continue;
+                    }
+
+                    currentPart += symbol;
+                }
+
+                if (parts.Count != 3)
+                {
+                    return new JoinOperationInfo([], []);
+                }
+
+                parts.Add(currentPart);
+                
+                var inputParts = parts[1].Split(',');
+                var outputParts = parts[0].Split(';');
+                List<int> inputs = [.. inputParts.Select(int.Parse)];
+                List<DialogPosition> outputs = [];
+
+                foreach (var output in outputParts)
+                {
+                    var outParts = output.Split(',');
+
+                    if (outParts.Length != 2)
+                    {
+                        continue;
+                    }
+
+                    int section = int.Parse(outParts[0]);
+                    int operation = int.Parse(outParts[1]);
+
+                    outputs.Add(new(section, operation));
+                }
+
+                return new JoinOperationInfo(parts[2], inputs, outputs);
             }
             if (!ResourcePath.TryParse(Value.ToString(), out var path))
             {
@@ -260,6 +307,37 @@ namespace DialogMaker.Core.Executioning
 
             return new(DialogItemType.StringCollection, $"{item.Id}:{values}");
         }
+        public static DialogItemReference Create(IJoinOperationInfo info)
+        {
+            if (!info.IsSeparated)
+            {
+                return Create((IResourceItem)info);
+            }
+
+            string inputs = string.Empty;
+            string outputs = string.Empty;
+
+            foreach (var input in info.InputSections)
+            {
+                if (inputs != string.Empty)
+                {
+                    inputs += ",";
+                }
+
+                inputs += input;
+            }
+            foreach (var output in info.Outputs)
+            {
+                if (outputs != string.Empty)
+                {
+                    outputs += ";";
+                }
+
+                outputs += $"{output.Section},{output.Operation}";
+            }
+
+            return new(DialogItemType.JoinInfo, $"{info.Id}|{inputs}|{outputs}");
+        }
 
         public static DialogItemReference CreateUnknown(object? item)
         {
@@ -279,11 +357,15 @@ namespace DialogMaker.Core.Executioning
             {
                 return Create(collection);
             }
+            else if (item is IJoinOperationInfo info)
+            {
+                return Create(info);
+            }
             else if (item is IResourceItem resource)
             {
                 return Create(resource);
             }
-            else if (item is string || 
+            else if (item is string ||
                      item is float ||
                      item is int ||
                      item is bool)

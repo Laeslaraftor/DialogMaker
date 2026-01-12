@@ -5,6 +5,7 @@
         Resource,
         Variable,
         String,
-        StringCollection
+        StringCollection,
+        JoinInfo
     }
 }

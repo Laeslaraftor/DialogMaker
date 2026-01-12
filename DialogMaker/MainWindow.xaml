@@ -37,9 +37,6 @@
         <Button Content="Собрать" Grid.ColumnSpan="3"
                 HorizontalAlignment="Center"
                 Click="Button_Click"/>
-        <lib:ColorPicker Grid.Column="2"
-                         Width="100" Height="20" BorderRadius="4"
-                         Color="#AB00FF"/>
         <TabControl Grid.Row="1">
             <TabItem IsSelected="True">
                 <TabItem.Header>
