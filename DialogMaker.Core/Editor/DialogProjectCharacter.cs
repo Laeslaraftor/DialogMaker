@@ -77,7 +77,14 @@ namespace DialogMaker.Core.Editor
 
             if (Name != null)
             {
-                name = Name.Resolve().Preview;
+                try
+                {
+                    name = Name.Resolve().Preview;
+                }
+                catch (Exception error)
+                {
+                    Debug.WriteLine(error);
+                }
             }
 
             return $"[{Id}] {name}";

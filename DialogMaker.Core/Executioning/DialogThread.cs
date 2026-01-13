@@ -76,8 +76,8 @@ namespace DialogMaker.Core.Executioning
                 }
             }
         }
+        internal IDialogExecutionResources Resources { get; } = resources;
 
-        private readonly IDialogExecutionResources _resources = resources;
         private readonly IDialogExecutingHandler _handler = handler;
         private readonly Stack<OperandValue> _stack = stack;
         private readonly DialogByteCodeData _data =data;
@@ -193,7 +193,7 @@ namespace DialogMaker.Core.Executioning
 
         private async Task Start(CancellationToken token)
         {
-            DialogExecutionContext context = new(this, ThreadManager, _resources, _handler, token);
+            DialogExecutionContext context = new(this, ThreadManager, Resources, _handler, token);
 
             while (CurrentOperation < _data.Sections[CurrentSection].Operations.Count)
             {

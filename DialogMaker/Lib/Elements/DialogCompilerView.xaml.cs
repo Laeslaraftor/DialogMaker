@@ -18,9 +18,9 @@ namespace DialogMaker.Lib.Elements
             get => GetValue(BuilderProperty) as DialogCodeBuilder;
             set => SetValue(BuilderProperty, value);
         }
-        public CompiledCodeInfo Code
+        public DialogCompilerOutput Code
         {
-            get => (CompiledCodeInfo)GetValue(CodeProperty);
+            get => (DialogCompilerOutput)GetValue(CodeProperty);
             set => SetValue(CodeProperty, value);
         }
         public DialogRuntimeResourcesController? ResourcesController
@@ -39,18 +39,18 @@ namespace DialogMaker.Lib.Elements
         {
             _sectionView.ItemsSource = newValue?.Sections;
         }
-        private void SetCode(CompiledCodeInfo oldValue, CompiledCodeInfo newValue)
+        private void SetCode(DialogCompilerOutput oldValue, DialogCompilerOutput newValue)
         {
-            if (newValue.ByteCode == null)
+            if (newValue.Code == null)
             {
                 return;
             }
 
             try
             {
-                var code = DialogByteCodeData.Read(newValue.ByteCode);
+                var code = DialogByteCodeData.Read(newValue.Write());
                 _codeView.ItemsSource = code.Sections;
-                _dialogPlayer.DialogExecutor = new(newValue.ByteCode, newValue.Context);
+                _dialogPlayer.DialogExecutor = new(code, newValue.Context);
             }
             catch (Exception error)
             {
@@ -73,7 +73,7 @@ namespace DialogMaker.Lib.Elements
         {
             if (d is DialogCompilerView view)
             {
-                view.SetCode((CompiledCodeInfo)e.OldValue, (CompiledCodeInfo)e.NewValue);
+                view.SetCode((DialogCompilerOutput)e.OldValue, (DialogCompilerOutput)e.NewValue);
             }
         }
         private static void OnResourcesControllerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -90,7 +90,7 @@ namespace DialogMaker.Lib.Elements
 
         public static readonly DependencyProperty BuilderProperty = DependencyProperty.Register(nameof(Builder), typeof(DialogCodeBuilder),
             typeof(DialogCompilerView), new(OnBuilderChanged));
-        public static readonly DependencyProperty CodeProperty = DependencyProperty.Register(nameof(Code), typeof(CompiledCodeInfo),
+        public static readonly DependencyProperty CodeProperty = DependencyProperty.Register(nameof(Code), typeof(DialogCompilerOutput),
             typeof(DialogCompilerView), new(OnCodeChanged));
         public static readonly DependencyProperty ResourcesControllerProperty = DependencyProperty.Register(nameof(ResourcesController), typeof(DialogRuntimeResourcesController),
             typeof(DialogCompilerView), new(OnResourcesControllerChanged));

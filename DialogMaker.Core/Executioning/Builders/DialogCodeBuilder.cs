@@ -38,7 +38,7 @@ namespace DialogMaker.Core.Executioning.Builders
             _sections.Clear();
         }
 
-        public CompiledCodeInfo Compile(Dictionary<INode, DialogCompilerNodeInfo> nodesInfo)
+        public DialogCodeBuilderOutput Compile(Dictionary<INode, DialogCompilerNodeInfo> nodesInfo)
         {
             using MemoryStream codeStream = new();
             using MemoryStream tempCode = new();

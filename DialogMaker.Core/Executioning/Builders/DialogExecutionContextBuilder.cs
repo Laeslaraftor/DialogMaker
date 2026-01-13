@@ -3,7 +3,6 @@ using DialogMaker.Core.Common;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 
 namespace DialogMaker.Core.Executioning.Builders
 {
@@ -43,6 +42,9 @@ namespace DialogMaker.Core.Executioning.Builders
             var references = Build();
             return new(resourcesOwner, references);
         }
+
+        public Dictionary<int, DialogItemReference> GetGlobalValues() => GetValues(false);
+        public Dictionary<int, DialogItemReference> GetLocalValues() => GetValues(true);
 
         public int GetNextIndex()
         {
@@ -135,6 +137,27 @@ namespace DialogMaker.Core.Executioning.Builders
             {
                 resourceVariable.Value = value;
             }
+        }
+
+        private Dictionary<int, DialogItemReference> GetValues(bool isSeparated)
+        {
+            Dictionary<int, DialogItemReference> result = [];
+
+            void AddItems<T>(ObservableDictionary<int, T> items) where T : IResourceItem
+            {
+                foreach (var info in items)
+                {
+                    if (info.Value.IsSeparated == isSeparated)
+                    {
+                        result.Add(info.Key, info.Value.CreateReference());
+                    }
+                }
+            }
+
+            AddItems(_resources);
+            AddItems(_variables);
+
+            return result;
         }
 
         #endregion

@@ -121,15 +121,15 @@ namespace DialogMaker.Core.Executioning
                     currentPart += symbol;
                 }
 
+                parts.Add(currentPart);
+
                 if (parts.Count != 3)
                 {
                     return new JoinOperationInfo([], []);
                 }
-
-                parts.Add(currentPart);
                 
                 var inputParts = parts[1].Split(',');
-                var outputParts = parts[0].Split(';');
+                var outputParts = parts[2].Split(';');
                 List<int> inputs = [.. inputParts.Select(int.Parse)];
                 List<DialogPosition> outputs = [];
 
@@ -148,7 +148,7 @@ namespace DialogMaker.Core.Executioning
                     outputs.Add(new(section, operation));
                 }
 
-                return new JoinOperationInfo(parts[2], inputs, outputs);
+                return new JoinOperationInfo(parts[0], inputs, outputs);
             }
             if (!ResourcePath.TryParse(Value.ToString(), out var path))
             {

@@ -83,7 +83,7 @@ namespace DialogMaker.Lib.Elements
                 return;
             }
 
-            executor.Start();
+            executor.Start(true);
         }
         private void OnClearButtonClicked(object sender, RoutedEventArgs e)
         {

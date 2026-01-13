@@ -98,6 +98,11 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             get
             {
+                if (IsSystem)
+                {
+                    return true;
+                }
+
                 foreach (var input in GetInputs().Keys)
                 {
                     if (input.ConnectionsCount > 1)

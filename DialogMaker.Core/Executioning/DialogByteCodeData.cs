@@ -6,8 +6,9 @@ using System.IO;
 
 namespace DialogMaker.Core.Executioning
 {
-    public readonly struct DialogByteCodeData(ReadOnlyCollection<DialogByteCodeData.Section> sections)
+    public readonly struct DialogByteCodeData(DialogMetadata metadata, ReadOnlyCollection<DialogByteCodeData.Section> sections)
     {
+        public DialogMetadata Metadata { get; } = metadata;
         public ReadOnlyCollection<Section> Sections { get; } = new(sections);
 
         #region Статика
@@ -15,6 +16,11 @@ namespace DialogMaker.Core.Executioning
         public static DialogByteCodeData Read(byte[] code)
         {
             using MemoryStream stream = new(code);
+            return Read(stream);
+        }
+        public static DialogByteCodeData Read(Stream stream)
+        {
+            var metadata = DialogMetadata.Read(stream);
 
             List<Section> sectionsCode = [];
             int lastSectionEndPosition = 0;
@@ -73,7 +79,7 @@ namespace DialogMaker.Core.Executioning
                 sectionsCode.Add(new(sectionIndex, sectionPosition, currentOperations));
             }
 
-            return new(new(sectionsCode));
+            return new(metadata, new(sectionsCode));
         }
 
         #endregion
@@ -96,7 +102,6 @@ namespace DialogMaker.Core.Executioning
                     index++;
                 }
             }
-
             IEnumerator IEnumerable.GetEnumerator()
             {
                 return GetEnumerator();

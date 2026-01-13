@@ -1,11 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core
 {
     public static class ListExtensions
     {
+        public static ReadOnlyDictionary<TKey, ReadOnlyCollection<TValue>> ToReadonly<TKey, TValue>(this IDictionary<TKey, IList<TValue>> dictionary) 
+            where TKey : notnull
+        {
+            Dictionary<TKey, ReadOnlyCollection<TValue>> result = [];
+
+            foreach (var info in dictionary)
+            {
+                result.Add(info.Key, new(info.Value));
+            }
+
+            return new(result);
+        }
+
         public static void Invert<T>(this IList<T> list)
         {
             List<T> copy = [.. list];

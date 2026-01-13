@@ -152,9 +152,21 @@ namespace DialogMaker.Core.Editor
             {
                 return null;
             }
+
+            var underlyingType = enumType.GetEnumUnderlyingType();
+            Func<object, bool> predicate = value =>
+            {
+                return (int)value == intValue;
+            };
+
+            if (underlyingType == typeof(byte))
+            {
+                predicate = value => (byte)value == intValue;
+            }
+
             foreach (var value in values)
             {
-                if ((int)value == intValue)
+                if (predicate(value))
                 {
                     return value;
                 }

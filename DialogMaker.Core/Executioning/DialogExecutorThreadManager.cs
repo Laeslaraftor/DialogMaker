@@ -10,9 +10,10 @@ namespace DialogMaker.Core.Executioning
 {
     internal class DialogExecutorThreadManager : Disposable, IDialogExecutingThreadManager, IInternalDialogExecutor
     {
-        public DialogExecutorThreadManager(DialogExecutor executor, DialogByteCodeData data)
+        public DialogExecutorThreadManager(DialogExecutor executor, IDialogExecutionResources resources, DialogByteCodeData data)
         {
             DialogExecutor = executor;
+            Resources = resources;
             _data = data;
             _dialogHandler = new InternalDialogHandler(this);
 
@@ -22,6 +23,7 @@ namespace DialogMaker.Core.Executioning
         public event EventHandler<DialogExecutorHandleEventArgs>? DialogHandled;
 
         public DialogExecutor DialogExecutor { get; }
+        public IDialogExecutionResources Resources { get; }
         public bool IsRunning
         {
             get => field;
@@ -59,12 +61,28 @@ namespace DialogMaker.Core.Executioning
             }
         }
 
+        private IDialogExecutionResources CurrentResources
+        {
+            get
+            {
+                if (_specialResources == null)
+                {
+                    return Resources;
+                }
+
+                return _specialResources;
+            }
+        }
+
         private readonly Dictionary<string, List<DialogExecutionJoinController>> _joinControllers = [];
         private readonly Dictionary<string, List<DialogExecutionIntersectController>> _intersectControllers = [];
         private readonly IDialogExecutingHandler _dialogHandler;
         private readonly EditableCollection<DialogThread> _threads = [];
         private readonly DialogByteCodeData _data;
         private readonly Stack<OperandValue> _stack = [];
+        private IDialogExecutionResources? _specialResources;
+        private HashSet<DialogThread>? _completingThreads;
+        private bool _isStopping;
 
         #region Управление
 
@@ -83,17 +101,33 @@ namespace DialogMaker.Core.Executioning
             {
                 throw new InvalidOperationException($"Невозможно получить контроллер пересечения потоков, так как менеджер потоков был очищен");
             }
-            
+
             return GetFreeController(_intersectControllers, context, joinInfo, () => new(this, joinInfo));
         }
 
         public void StartThread(DialogPosition position)
         {
-            StartThread(position, null);
+            if (_isStopping &&
+                _completingThreads != null &&
+                _completingThreads.Count > 0)
+            {
+                return;
+            }
+
+            StartThreadWithEvent(position, null);
         }
         public void StartThread(IDialogExecutionThread source, DialogPosition position)
         {
-            StartThread(position, source);
+            if (_isStopping && !IsCompletingThread(source))
+            {
+                return;
+            }
+            if (source is DialogThread dialogThread)
+            {
+                _completingThreads?.Add(dialogThread);
+            }
+
+            StartThreadWithEvent(position, source);
         }
         public async void Stop()
         {
@@ -101,6 +135,46 @@ namespace DialogMaker.Core.Executioning
         }
         public async Task StopAsync()
         {
+            if (_isStopping || _threads.Count == 0)
+            {
+                return;
+            }
+
+            _isStopping = true;
+
+            if (!IsDisposed)
+            {
+                var completingEventThread = StartEventSections(DialogExecutionEvent.Completing);
+
+                if (completingEventThread != null && completingEventThread.Count > 0)
+                {
+                    _completingThreads = completingEventThread;
+
+                    await Task.Run(() =>
+                    {
+                        while (true)
+                        {
+                            bool allCompleted = true;
+
+                            foreach (var thread in completingEventThread)
+                            {
+                                if (thread.IsRunning)
+                                {
+                                    allCompleted = false;
+                                }
+                            }
+
+                            if (allCompleted)
+                            {
+                                break;
+                            }
+                        }
+                    });
+                }
+
+                _completingThreads = null;
+            }
+
             foreach (var thread in _threads)
             {
                 if (!thread.IsRunning)
@@ -118,17 +192,38 @@ namespace DialogMaker.Core.Executioning
             }
 
             IsPaused = false;
+            IsRunning = false;
+            _isStopping = false;
         }
-        public void Pause() => SetIsPauseValue(true);
-        public void Resume() => SetIsPauseValue(false);
+        public void Pause()
+        {
+            if (IsPaused || _isStopping)
+            {
+                return;
+            }
 
-        public async Task Reset()
+            SetIsPauseValue(true);
+            StartEventSections(DialogExecutionEvent.Paused);
+        }
+        public void Resume()
+        {
+            if (!IsPaused || _isStopping)
+            {
+                return;
+            }
+
+            SetIsPauseValue(false);
+            StartEventSections(DialogExecutionEvent.Resumed);
+        }
+
+        public async Task Reset(IDialogExecutionResources? newResources = null)
         {
             if (IsRunning)
             {
                 await StopAsync();
             }
 
+            _specialResources = newResources;
             _stack.Clear();
         }
 
@@ -159,15 +254,17 @@ namespace DialogMaker.Core.Executioning
 
         private DialogThread GetOrCreateThread()
         {
+            var resources = CurrentResources;
+
             foreach (var thread in _threads)
             {
-                if (!thread.IsRunning)
+                if (!thread.IsRunning && thread.Resources == resources)
                 {
                     return thread;
                 }
             }
 
-            DialogThread newThread = new(this, _stack, DialogExecutor.Resources, _dialogHandler, _data);
+            DialogThread newThread = new(this, _stack, resources, _dialogHandler, _data);
             _threads.Add(newThread);
 
             return newThread;
@@ -181,15 +278,68 @@ namespace DialogMaker.Core.Executioning
 
             IsPaused = value;
         }
-        private async void StartThread(DialogPosition position, IDialogExecutionThread? source)
+
+        private async void StartThreadWithEvent(DialogPosition position, IDialogExecutionThread? source)
+        {
+            if (!IsRunning)
+            {
+                StartEventSections(DialogExecutionEvent.Started);
+            }
+
+            StartThread(position, source);
+        }
+        private DialogThread StartThread(DialogPosition position, IDialogExecutionThread? source)
         {
             if (IsDisposed)
             {
-                return;
+                throw new InvalidOperationException("Невозможно запустить поток, так менеджер потоков был очищен");
             }
 
             var thread = GetOrCreateThread();
+            StartThreadSync(thread, position, source);
+
+            return thread;
+        }
+        private HashSet<DialogThread>? StartEventSections(DialogExecutionEvent executionEvent, IDialogExecutionThread? source = null)
+        {
+            HashSet<DialogThread>? startedThreads = null;
+
+            if (_data.Metadata.EventSections.TryGetValue(executionEvent, out var sections))
+            {
+                startedThreads = new(sections.Count);
+
+                foreach (var section in sections)
+                {
+                    var thread = StartThread(new(section), source);
+                    startedThreads.Add(thread);
+                }
+            }
+
+            return startedThreads;
+        }
+
+        private async void StartThreadSync(DialogThread thread, DialogPosition position, IDialogExecutionThread? source)
+        {
             await thread.Start(position.Section, position.Operation, source);
+        }
+        private bool IsCompletingThread(IDialogExecutionThread thread)
+        {
+            var threads = _completingThreads;
+
+            if (threads == null)
+            {
+                return false;
+            }
+
+            foreach (var t in threads)
+            {
+                if (t == thread)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         #endregion
@@ -282,7 +432,7 @@ namespace DialogMaker.Core.Executioning
                 }
             }
 
-            IsRunning = false;
+            Stop();
         }
 
         #endregion

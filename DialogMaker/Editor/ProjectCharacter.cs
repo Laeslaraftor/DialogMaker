@@ -11,7 +11,14 @@ namespace DialogMaker.Editor
         {
             if (character.Name != null)
             {
-                Name = new(controller, character.Name);
+                try
+                {
+                    Name = new(controller, character.Name);
+                }
+                catch (Exception error)
+                {
+                    error.Alert();
+                }
             }
         }
 

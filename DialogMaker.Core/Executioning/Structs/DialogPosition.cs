@@ -4,6 +4,11 @@ namespace DialogMaker.Core.Executioning
 {
     public readonly struct DialogPosition(int section, int operation) : IEquatable<DialogPosition>, IComparable, IComparable<DialogPosition>
     {
+        public DialogPosition(int section)
+            : this(section, 0)
+        {
+        }
+
         public int Section { get; } = section;
         public int Operation { get; } = operation;
 

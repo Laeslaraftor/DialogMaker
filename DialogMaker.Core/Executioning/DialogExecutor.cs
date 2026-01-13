@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DialogMaker.Core.Executioning.Internal;
+using System;
 using System.ComponentModel;
 using System.Threading.Tasks;
 
@@ -13,7 +14,9 @@ namespace DialogMaker.Core.Executioning
         public DialogExecutor(DialogByteCodeData data, IDialogExecutionResources resources)
         {
             Resources = resources;
-            _threadManager = new(this, data);
+            _resources = new(data, resources);
+            _isolatedResources = new(data, resources);
+            _threadManager = new(this, _resources, data);
 
             _threadManager.DialogHandled += OnThreadManagerDialogHandled;
             _threadManager.PropertyChanged += OnThreadManagerPropertyChanged;
@@ -63,10 +66,18 @@ namespace DialogMaker.Core.Executioning
         }
 
         private readonly DialogExecutorThreadManager _threadManager;
+        private readonly InternalDialogResources _resources;
+        private readonly IsolatedDialogResources _isolatedResources;
+
 
         #region Управление
 
-        public async void Start()
+        public void PushIsolatedVariablesToResources()
+        {
+            _isolatedResources.PushGlobalVariables();
+        }
+
+        public async void Start(bool isolated)
         {
             if (IsDisposed)
             {
@@ -77,7 +88,15 @@ namespace DialogMaker.Core.Executioning
                 return;
             }
 
-            await _threadManager.Reset();
+            IDialogExecutionResources? newResources = null;
+
+            if (isolated)
+            {
+                newResources = _isolatedResources;
+                _isolatedResources.Clear();
+            }
+
+            await _threadManager.Reset(newResources);
             _threadManager.StartThread(new(0, 0));
         }
 
@@ -87,8 +106,13 @@ namespace DialogMaker.Core.Executioning
         {
             base.Dispose(isDisposing);
 
-            _threadManager.DialogHandled += OnThreadManagerDialogHandled;
-            _threadManager.PropertyChanged += OnThreadManagerPropertyChanged;
+            if (_threadManager == null)
+            {
+                return;
+            }
+
+            _threadManager.DialogHandled -= OnThreadManagerDialogHandled;
+            _threadManager.PropertyChanged -= OnThreadManagerPropertyChanged;
             _threadManager.Dispose();
         }
 
