@@ -1,7 +1,5 @@
-﻿using DialogMaker.Core.Common;
-using System.Drawing;
+﻿using System.Drawing;
 using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -13,6 +11,8 @@ namespace DialogMaker.Core.Executioning
         {
             CheckArgs(context, args, 4);
 
+            throw new DialogExecutionException($"{nameof(ShowResourceColorReplicaOpCode)} не реализован!");
+
             var character = ShowReplicaOpCode.GetCharacter(context, args[0]);
             var replica = ShowResourceReplicaOpCode.GetString(context, args[1]);
             var backgroundColorVariable = context.Resources.GetVariable(args[2]);
@@ -21,7 +21,7 @@ namespace DialogMaker.Core.Executioning
             Color backgroundColor = ToColor(backgroundColorVariable, Color.Black);
             Color textColor = ToColor(textColorVariable, Color.White);
 
-            await DispatchHandler(context, h => h.ShowColorReplica(character, backgroundColor, textColor, replica, context.CancellationToken));
+            //await DispatchHandler(context, h => h.ShowColorReplica(character, backgroundColor, textColor, replica, context.CancellationToken));
         }
 
         #endregion

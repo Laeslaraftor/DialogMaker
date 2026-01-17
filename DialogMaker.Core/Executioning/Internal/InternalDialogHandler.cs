@@ -20,20 +20,20 @@ namespace DialogMaker.Core.Executioning.Internal
             }, cancellationToken);
         }
 
-        public async Task ShowColorReplica(ICharacter? character, Color backgroundColor, Color textColor, IResourceString text, CancellationToken cancellationToken)
-        {
-            await _executor.HandleDialog(async h =>
-            {
-                await h.ShowColorReplica(character, backgroundColor, textColor, text, cancellationToken);
-            }, cancellationToken);
-        }
-        public async Task ShowFullscreenReplica(ICharacter? character, IResourceItem? background, IResourceString text, CancellationToken cancellationToken)
-        {
-            await _executor.HandleDialog(async h =>
-            {
-                await h.ShowFullscreenReplica(character, background, text, cancellationToken);
-            }, cancellationToken);
-        }
+        //public async Task ShowColorReplica(ICharacter? character, Color backgroundColor, Color textColor, IResourceString text, CancellationToken cancellationToken)
+        //{
+        //    await _executor.HandleDialog(async h =>
+        //    {
+        //        await h.ShowColorReplica(character, backgroundColor, textColor, text, cancellationToken);
+        //    }, cancellationToken);
+        //}
+        //public async Task ShowFullscreenReplica(ICharacter? character, IResourceItem? background, IResourceString text, CancellationToken cancellationToken)
+        //{
+        //    await _executor.HandleDialog(async h =>
+        //    {
+        //        await h.ShowFullscreenReplica(character, background, text, cancellationToken);
+        //    }, cancellationToken);
+        //}
         public async Task ShowReplica(ICharacter? character, IResourceString text, CancellationToken cancellationToken)
         {
             await _executor.HandleDialog(async h =>

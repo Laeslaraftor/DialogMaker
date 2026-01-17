@@ -2,11 +2,32 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 
 namespace DialogMaker.Core
 {
     public static class ListExtensions
     {
+        public static async Task<T> AsTask<T>(this Func<IEnumerable<ProgressResult<T>>> func)
+        {
+            return await Task.Run(() =>
+            {
+                T? result = default;
+
+                foreach (var item in func())
+                {
+                    result = item.Value;
+                }
+
+                if (result == null)
+                {
+                    throw new ArgumentException("Пустой результат");
+                }
+
+                return result;
+            });
+        }
+
         public static ReadOnlyDictionary<TKey, ReadOnlyCollection<TValue>> ToReadonly<TKey, TValue>(this IDictionary<TKey, IList<TValue>> dictionary) 
             where TKey : notnull
         {

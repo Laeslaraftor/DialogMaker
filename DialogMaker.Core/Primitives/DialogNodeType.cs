@@ -132,5 +132,15 @@ namespace DialogMaker.Core
         [Description("Принять первый поток и продолжить его выполнение, завершая все последующие входящие потоки.")]
         [Path("Поток")]
         Intersect,
+
+        [Name("Минимум"), Node(typeof(DialogProjectMinimumNode))]
+        [Description("Выбрать минимальное из двух входящих значений.")]
+        [Path("Вычисления")]
+        Minimum,
+
+        [Name("Максимум"), Node(typeof(DialogProjectMaximumNode))]
+        [Description("Выбрать максимальное из двух входящих значений.")]
+        [Path("Вычисления")]
+        Maximum,
     }
 }

@@ -3,7 +3,6 @@ using DialogMaker.Core.Executioning;
 using DialogMaker.Core;
 using System.Windows;
 using System.Windows.Controls;
-using SystemColor = System.Drawing.Color;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -14,7 +13,7 @@ namespace DialogMaker.Lib.Elements
             InitializeComponent();
         }
 
-        IThreadDispatcher? IDialogExecutingHandler.Dispatcher => Disposable.Dispatcher;
+        IThreadDispatcher? IDialogExecutingHandler.Dispatcher => ObservableObject.Dispatcher;
 
         private readonly ElementsPool<DragView> _blocksPool = new();
         private readonly ElementsPool<TextBlock> _textPool = new();
@@ -35,14 +34,14 @@ namespace DialogMaker.Lib.Elements
             AddElement(character, text.Text);
             await Task.DelaySafe(200, cancellationToken);
         }
-        public async Task ShowColorReplica(ICharacter? character, SystemColor backgroundColor, SystemColor textColor, IResourceString text, CancellationToken cancellationToken)
-        {
-            await ShowReplica(character, text, cancellationToken);
-        }
-        public async Task ShowFullscreenReplica(ICharacter? character, IResourceItem? background, IResourceString text, CancellationToken cancellationToken)
-        {
-            await ShowReplica(character, text, cancellationToken);
-        }
+        //public async Task ShowColorReplica(ICharacter? character, SystemColor backgroundColor, SystemColor textColor, IResourceString text, CancellationToken cancellationToken)
+        //{
+        //    await ShowReplica(character, text, cancellationToken);
+        //}
+        //public async Task ShowFullscreenReplica(ICharacter? character, IResourceItem? background, IResourceString text, CancellationToken cancellationToken)
+        //{
+        //    await ShowReplica(character, text, cancellationToken);
+        //}
 
         public async Task<int> ShowChoice(ICharacter? character, IStringCollection variants, CancellationToken cancellationToken)
         {

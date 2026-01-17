@@ -24,6 +24,15 @@ namespace DialogMaker.Core.Common
 
         #region Управление
 
+        public DialogLanguageSavedState Save()
+        {
+            return new()
+            {
+                Id = Id,
+                Name = Name
+            };
+        }
+
         public override string ToString()
         {
             return Name;

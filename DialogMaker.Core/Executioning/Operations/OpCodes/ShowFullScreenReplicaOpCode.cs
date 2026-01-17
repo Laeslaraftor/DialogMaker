@@ -12,12 +12,14 @@ namespace DialogMaker.Core.Executioning
         {
             CheckArgs(context, args, 3);
 
+            throw new DialogExecutionException($"{nameof(ShowFullScreenReplicaOpCode)} не реализован!");
+
             var character = ShowReplicaOpCode.GetCharacter(context, args[0]);
             var replica = context.Resources.GetVariable(args[1]).ToString();
             var background = context.Resources.GetResource(args[2]);
             ResourceString text = new(args[1], replica);
 
-            await DispatchHandler(context, h => h.ShowFullscreenReplica(character, background, text, context.CancellationToken));
+            //await DispatchHandler(context, h => h.ShowFullscreenReplica(character, background, text, context.CancellationToken));
         }
 
         #endregion
