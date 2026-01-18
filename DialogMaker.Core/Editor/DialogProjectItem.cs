@@ -49,8 +49,45 @@ namespace DialogMaker.Core.Editor
         }
 
         public override DialogResourceType ResourceType => DialogResourceType.File;
-        public string FilePath { get; }
-        public string FileName { get; }
+        public string FilePath
+        {
+            get => field;
+            private set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(FilePath));
+                    field = value;
+                    InvokePropertyChanged(nameof(FilePath));
+                }
+            }
+        }
+        public string FileName
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    value = value.Trim();
+
+                    if (string.IsNullOrEmpty(value))
+                    {
+                        throw new ArgumentNullException($"Недопустимое название файла!", nameof(value));
+                    }
+                        
+                    InvokePropertyChanging(nameof(FileName));
+
+                    if (field != null)
+                    {
+                        value = RenameFile(field, value);
+                    }
+
+                    field = value;
+                    InvokePropertyChanged(nameof(FileName));
+                }
+            }
+        }
         public DialogFileResourceType Type { get; }
 
         #region Управление
@@ -71,6 +108,39 @@ namespace DialogMaker.Core.Editor
                 FileName = FileName,
                 ResourceType = Type
             };
+        }
+        protected override bool HandleResourceMoving(DialogProjectResources from, DialogProjectResources to)
+        {
+            string newFilePath = SysPath.Combine(to.Folder, FileName);
+
+            if (File.Exists(newFilePath))
+            {
+                throw new InvalidOperationException($"Невозможно переместить ресурс {this} из {from} в {to}, так как папка назначения ({to.Folder}) содержит файл с таким же названием что и перемещаемый ресурс - {FileName}");
+            }
+
+            File.Move(FilePath, newFilePath);
+            FilePath = newFilePath;
+
+            return true;
+        }
+
+        private string RenameFile(string oldName, string newName)
+        {
+            string currentPath = FilePath;
+            string currentExtension = "." + oldName.GetFileExtension();
+
+            if (!newName.EndsWith(currentExtension))
+            {
+                newName += currentExtension;
+            }
+
+            string newPath = SysPath.Combine(currentPath.GetFileDirectory(), newName);
+
+            File.Move(currentPath, newPath);
+
+            FilePath = newPath;
+
+            return newName;
         }
 
         #endregion

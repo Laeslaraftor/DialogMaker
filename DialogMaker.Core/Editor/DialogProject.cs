@@ -17,7 +17,7 @@ namespace DialogMaker.Core.Editor
         public DialogProject(string projectPath, DialogProjectSavedState savedState) 
             : this(projectPath, savedState.Id, false)
         {
-            _name = savedState.Name;
+            Name = savedState.Name;
 
             foreach (var pack in savedState.Packs)
             {
@@ -72,29 +72,31 @@ namespace DialogMaker.Core.Editor
         public string Id { get; }
         public string Name
         {
-            get => _name;
+            get => field ?? string.Empty;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    InvokePropertyChanging(nameof(Name));
+                    field = value;
                     InvokePropertyChanged(nameof(Name));
                 }
             }
         }
         public DialogProjectLanguage? DefaultLanguage
         {
-            get => _defaultLanguage;
+            get => field;
             set
             {
-                if (_defaultLanguage != value)
+                if (field != value)
                 {
                     if (value != null && value.Project != this)
                     {
                         throw new ArgumentException($"Невозможно задать язык по умолчанию, так как его владельцем является другой проект.", nameof(value));
                     }
 
-                    _defaultLanguage = value;
+                    InvokePropertyChanging(nameof(DefaultLanguage));
+                    field = value;
                     InvokePropertyChanged(nameof(DefaultLanguage));
                 }
             }
@@ -112,7 +114,6 @@ namespace DialogMaker.Core.Editor
         IResourcesContainer IResourcesOwner.Resources => Resources;
 
         private readonly List<DialogProjectResourceObject> _registeredResources = [];
-        private string _name = string.Empty;
         private DialogProjectLanguage? _defaultLanguage;
 
         #region Управление

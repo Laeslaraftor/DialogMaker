@@ -1,10 +1,15 @@
-﻿using DialogMaker.Core.Editor;
+﻿using DialogMaker.Core.Common;
+using DialogMaker.Core.Editor;
 using DialogMaker.Core.Executioning;
 using DialogMaker.Editor;
 using DialogMaker.Lib;
 using DialogMaker.Lib.Controllers;
 using DialogMaker.Lib.Elements;
 using DialogMaker.ViewModels;
+using Microsoft.Win32;
+using System.Diagnostics;
+using System.Drawing.Printing;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -20,6 +25,7 @@ namespace DialogMaker
             _model.CreateProjectCommand = new RelayCommand(ExecuteCreateProject);
             _model.OpenProjectCommand = new RelayCommand(ExecuteOpenProject);
             _model.CloseProjectCommand = new RelayCommand(ExecuteCloseProject);
+            _model.ExportProjectCommand = new RelayCommand(ExecuteExportProject);
             _resourcesDragAndDrop = new(this);
 
             DataContext = _model;
@@ -93,6 +99,42 @@ namespace DialogMaker
         private void ExecuteCloseProject(object? parameter)
         {
             SetProject(null);
+        }
+        private async void ExecuteExportProject(object? parameter)
+        {
+            var project = _model.Project;
+
+            if (project == null)
+            {
+                return;
+            }
+
+            OpenFolderDialog folderDialog = new()
+            {
+                Title = "Выберите папку для экспорта проекта",
+                Multiselect = false
+            };
+
+            if (folderDialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            var builder = DialogPackage.CreateWithProgress(project.Project, folderDialog.FolderName);
+            var package = await Task.Run(() =>
+            {
+                DialogPackage? package = null;
+
+                foreach (var result in builder)
+                {
+                    package = result.Value;
+                    Debug.WriteLine(result.Progress);
+                }
+
+                return package;
+            });
+
+            package?.Save();
         }
 
         #endregion

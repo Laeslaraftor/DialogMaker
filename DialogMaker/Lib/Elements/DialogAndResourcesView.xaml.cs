@@ -1,7 +1,4 @@
-﻿using DialogMaker.Core.Editor;
-using DialogMaker.Core.Executioning;
-using DialogMaker.Editor;
-using System.ComponentModel;
+﻿using DialogMaker.Editor;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -29,59 +26,12 @@ namespace DialogMaker.Lib.Elements
         private ProjectDialog? Dialog
         {
             get => _viewModel.Dialog;
-            set
-            {
-                if (_viewModel.Dialog != value)
-                {
-                    if (_viewModel.Dialog != null)
-                    {
-                        _viewModel.Dialog.Original.PropertyChanged -= OnOriginalDialogPropertyChanged;
-                    }
-
-                    _viewModel.Dialog = value;
-
-                    if (value == null)
-                    {
-                        _viewModel.Structure = null;
-                    }
-                    else
-                    {
-                        value.Original.PropertyChanged += OnOriginalDialogPropertyChanged;
-                        UpdateStructure(value.Original);
-                    }
-                }
-            }
+            set => _viewModel.Dialog = value;
         }
-
-        
 
         private readonly DialogAndResourcesViewModel _viewModel = new();
 
-        #region Управление
-
-        private void UpdateStructure(DialogProjectDialog dialog)
-        {
-            try
-            {
-                _viewModel.Structure = DialogActionsMap.CreateStructure(dialog);
-            }
-            catch (Exception error)
-            {
-                error.Alert();
-            }
-        }
-
-        #endregion
-
         #region События
-
-        private void OnOriginalDialogPropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == "Nodes" && sender is DialogProjectDialog dialog)
-            {
-                UpdateStructure(dialog);
-            }
-        }
 
         private static void OnItemChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {

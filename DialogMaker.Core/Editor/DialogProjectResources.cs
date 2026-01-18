@@ -12,11 +12,11 @@ namespace DialogMaker.Core.Editor
 {
     public class DialogProjectResources : Disposable, IResourcesContainer
     {
-        public DialogProjectResources(IProjectResourcesOwner owner, DialogResourcesFlags flags)
+        public DialogProjectResources(IProjectResourcesOwner owner, DialogResourcesFlags flags, string folderName = ResourcesFolder)
         {
             Owner = owner;
             Flags = flags;
-            Folder = Path.Combine(owner.Folder, ResourcesFolder);
+            Folder = Path.Combine(owner.Folder, folderName);
             Strings = [];
             Characters = [];
             Variables = [];
@@ -35,8 +35,8 @@ namespace DialogMaker.Core.Editor
 
             FileExtensions.CreateDirectory(Folder);
         }
-        public DialogProjectResources(IProjectResourcesOwner owner, DialogProjectResourcesSavedState savedState, DialogResourcesFlags flags)
-            : this(owner, flags)
+        public DialogProjectResources(IProjectResourcesOwner owner, DialogProjectResourcesSavedState savedState, DialogResourcesFlags flags, string folderName = ResourcesFolder)
+            : this(owner, flags, folderName)
         {
             foreach (var item in savedState.Items)
             {
@@ -342,25 +342,25 @@ namespace DialogMaker.Core.Editor
         public const string ResourcesFolder = "Resources";
         public const string ResourcesFileName = $"Resources.{JsonData.FileExtension}";
 
-        public static DialogProjectResources Open(IProjectResourcesOwner owner, DialogResourcesFlags flags)
+        public static DialogProjectResources Open(IProjectResourcesOwner owner, DialogResourcesFlags flags, string folderName = ResourcesFolder)
         {
-            string filePath = Path.Combine(owner.Folder, ResourcesFolder, ResourcesFileName);
+            string filePath = Path.Combine(owner.Folder, folderName, ResourcesFileName);
             var savedState = SavedState.Restore<DialogProjectResourcesSavedState>(filePath);
 
-            return new(owner, savedState, flags);
+            return new(owner, savedState, flags, folderName);
         }
-        public static DialogProjectResources OpenOrCreate(IProjectResourcesOwner owner, DialogResourcesFlags flags)
+        public static DialogProjectResources OpenOrCreate(IProjectResourcesOwner owner, DialogResourcesFlags flags, string folderName = ResourcesFolder)
         {
             try
             {
-                return Open(owner, flags);
+                return Open(owner, flags, folderName);
             }
             catch (Exception error)
             {
                 Debug.WriteLine(error);
             }
 
-            return new(owner, flags);
+            return new(owner, flags, folderName);
         }
 
         #endregion

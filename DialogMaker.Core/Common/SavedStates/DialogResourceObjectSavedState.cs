@@ -9,6 +9,8 @@ namespace DialogMaker.Core.Common.SavedStates
     [Union(3, typeof(DialogResourceVariableSavedState))]
     public abstract class DialogResourceObjectSavedState
     {
+        [Key(-1)]
+        public bool IsSeparated { get; set; }
         [Key(0)]
         public string Id { get; set; } = string.Empty;
     }

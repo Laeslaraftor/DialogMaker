@@ -6,27 +6,40 @@
              xmlns:local="clr-namespace:DialogMaker.Lib.Elements"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <ScrollViewer VerticalScrollBarVisibility="Disabled"
-                  HorizontalScrollBarVisibility="Auto">
-        <ListView x:Name="_segmentsList"
-                  ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                  Style="{StaticResource NoSelectionListView}">
-            <ListView.Template>
-                <ControlTemplate>
-                    <ItemsPresenter/>
-                </ControlTemplate>
-            </ListView.Template>
-            <ListView.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <StackPanel Orientation="Horizontal"/>
-                </ItemsPanelTemplate>
-            </ListView.ItemsPanel>
-            <ListView.ItemTemplate>
-                <DataTemplate>
-                    <local:DiagramStructureSegmentView Section="{Binding}"
-                                                       Margin="4,0"/>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
-    </ScrollViewer>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <StackPanel Margin="0,6">
+            <Button x:Name="_updateStructureButton" 
+                    FontFamily="{StaticResource SymbolThemeFontFamily}"
+                    Content="&#xE72C;" Padding="8" ToolTip="Обновить структуру"
+                    Click="OnUpdateStructureButtonClicked"/>
+        </StackPanel>
+        <ScrollViewer Grid.Column="1"
+                      VerticalScrollBarVisibility="Disabled"
+                      HorizontalScrollBarVisibility="Auto">
+            <ListView x:Name="_segmentsList"
+                      ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                      Style="{StaticResource NoSelectionListView}">
+                <ListView.Template>
+                    <ControlTemplate>
+                        <ItemsPresenter/>
+                    </ControlTemplate>
+                </ListView.Template>
+                <ListView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ListView.ItemsPanel>
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <local:DiagramStructureSegmentView Section="{Binding}"
+                                                           Margin="4,0"/>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </ScrollViewer>
+    </Grid>
 </UserControl>

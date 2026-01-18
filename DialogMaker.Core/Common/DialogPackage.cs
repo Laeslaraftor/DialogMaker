@@ -4,13 +4,14 @@ using MessagePack;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 
 namespace DialogMaker.Core.Common
 {
-    public class DialogPackage : Disposable, IDialogResourcesContainer
+    public class DialogPackage : ResourcesContainer, IDialogResourcesContainer
     {
         public DialogPackage(DialogPackageSavedState savedState, string folder)
         {
@@ -89,7 +90,7 @@ namespace DialogMaker.Core.Common
             }
         }
         public IDialogResourcesContainer? Parent => null;
-        public DialogResources Resources { get; }
+        public override DialogResources Resources { get; }
         public ReadOnlyCollection<string> Folders { get; }
         public DialogFolder this[string id]
         {
@@ -131,6 +132,10 @@ namespace DialogMaker.Core.Common
             {
                 languages.Add(info.Key, info.Value.Save());
             }
+            foreach (var folder in _folders.Values)
+            {
+                folder?.Save();
+            }
 
             DialogPackageSavedState savedState = new()
             {
@@ -161,7 +166,8 @@ namespace DialogMaker.Core.Common
 
             return true;
         }
-        bool IResourcesOwner.TryFindChild(string id, [NotNullWhen(true)] out IResourcesOwner? result)
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public override bool TryFindChild(string id, [NotNullWhen(true)] out IResourcesOwner? result)
         {
             result = null;
 
@@ -206,6 +212,13 @@ namespace DialogMaker.Core.Common
 
             _folders.Clear();
             Resources.Dispose();
+        }
+        protected override IEnumerable<DialogResources> GetChildResources()
+        {
+            foreach (var folderId in Folders)
+            {
+                yield return this[folderId].Resources;
+            }
         }
 
         #endregion

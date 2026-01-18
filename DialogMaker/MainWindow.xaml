@@ -30,6 +30,9 @@
                 <MenuItem Header="Сохранить"
                           Command="{Binding Project.SaveCommand}"/>
                 <Separator/>
+                <MenuItem Header="Экспорт"
+                          Command="{Binding ExportProjectCommand}"/>
+                <Separator/>
                 <MenuItem Header="Закрыть"
                           Command="{Binding CloseProjectCommand}"/>
             </MenuItem>

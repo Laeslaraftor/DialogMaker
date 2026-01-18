@@ -20,24 +20,7 @@ namespace DialogMaker.Core.Editor
             : this(pack, savedState.Id, false)
         {
             Name = savedState.Name;
-
-            Dictionary<DialogProjectDialogNode, DialogProjectDialogNodeSavedState> nodeStates = [];
-
-            foreach (var node in savedState.Nodes)
-            {
-                try
-                {
-                    var restoredNode = DialogProjectDialogNode.Restore(this, node);
-                    nodeStates.Add(restoredNode, node);
-                    Nodes.Add(restoredNode);
-                }
-                catch (Exception error)
-                {
-                    Debug.WriteLine(error);
-                }
-            }
-
-            RestoreConnections(nodeStates);
+            _savedNodes = savedState.Nodes;
         }
         private DialogProjectDialog(DialogProjectPack pack, string id, bool createResources)
         {
@@ -47,14 +30,12 @@ namespace DialogMaker.Core.Editor
 
             if (createResources)
             {
-                Resources = new(this, DialogResourcesFlags.Dialog);
+                Resources = new(this, DialogResourcesFlags.Dialog, id);
             }
             else
             {
-                Resources = DialogProjectResources.OpenOrCreate(this, DialogResourcesFlags.Dialog);
+                Resources = DialogProjectResources.OpenOrCreate(this, DialogResourcesFlags.Dialog, id);
             }
-
-            Nodes.ItemChanged += OnNodesItemChanged;
         }
 
         public DialogProject Project => Pack.Project;
@@ -63,17 +44,52 @@ namespace DialogMaker.Core.Editor
         public string Id { get; }
         public string Name
         {
-            get => _name;
+            get => field ?? string.Empty;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    InvokePropertyChanging(nameof(Name));
+                    field = value;
                     InvokePropertyChanged(nameof(Name));
                 }
             }
         }
-        public EditableCollection<DialogProjectDialogNode> Nodes { get; } = [];
+        public EditableCollection<DialogProjectDialogNode> Nodes
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = [];
+
+                    if (_savedNodes != null)
+                    {
+                        Dictionary<DialogProjectDialogNode, DialogProjectDialogNodeSavedState> nodeStates = [];
+
+                        foreach (var node in _savedNodes)
+                        {
+                            try
+                            {
+                                var restoredNode = DialogProjectDialogNode.Restore(this, node);
+                                nodeStates.Add(restoredNode, node);
+                                field.Add(restoredNode);
+                            }
+                            catch (Exception error)
+                            {
+                                Debug.WriteLine(error);
+                            }
+                        }
+
+                        RestoreConnections(nodeStates);
+                    }
+
+                    field.ItemChanged += OnNodesItemChanged;
+                }
+
+                return field;
+            }
+        }
         public DialogProjectResources Resources { get; }
 
         IProjectResourcesOwner? IProjectResourcesOwner.Parent => Pack;
@@ -81,7 +97,7 @@ namespace DialogMaker.Core.Editor
         IResourcesOwner? IResourcesOwner.Parent => Pack;
         IResourcesContainer IResourcesOwner.Resources => Resources;
 
-        private string _name = string.Empty;
+        private readonly DialogProjectDialogNodeSavedState[]? _savedNodes;
 
         #region Управление
 

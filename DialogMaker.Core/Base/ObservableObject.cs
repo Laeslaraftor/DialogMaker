@@ -14,7 +14,7 @@ namespace DialogMaker.Core
         {
             var dispatcher = Dispatcher;
 
-            if (dispatcher != null)
+            if (dispatcher != null && !dispatcher.CurrentThreadIsMain)
             {
                 dispatcher.Execute(action);
                 return;

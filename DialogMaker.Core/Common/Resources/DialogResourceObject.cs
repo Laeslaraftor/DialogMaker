@@ -1,6 +1,7 @@
 ﻿using DialogMaker.Core.Common.SavedStates;
 using DialogMaker.Core.Editor;
 using DialogMaker.Core.Executioning;
+using System;
 
 namespace DialogMaker.Core.Common
 {
@@ -10,17 +11,19 @@ namespace DialogMaker.Core.Common
         {
             Id = resourceObject.Id;
             Resources = resources;
+            IsSeparated = resourceObject.IsSeparated;
         }
         public DialogResourceObject(DialogResources resources, DialogResourceObjectSavedState savedState)
         {
             Id = savedState.Id;
             Resources = resources;
+            IsSeparated = savedState.IsSeparated;
         }
 
         public abstract DialogResourceType ResourceType { get; }
         public string Id { get; }
         public DialogResources Resources { get; }
-        public bool IsSeparated => false;
+        public bool IsSeparated { get; }
 
         IResourcesContainer IResource.Container => Resources;
 
@@ -32,6 +35,11 @@ namespace DialogMaker.Core.Common
         }
         public ResourcePath GetPath()
         {
+            if (IsSeparated)
+            {
+                throw new InvalidOperationException(IResourceItem.GetPathExceptionMessage);
+            }
+
             return ResourcePath.CreatePath(this);
         }
         public IVariable ToVariable()
@@ -43,6 +51,7 @@ namespace DialogMaker.Core.Common
         {
             DialogResourceObjectSavedState result = CreateSavedState();
             result.Id = Id;
+            result.IsSeparated = IsSeparated;
 
             return result;
         }

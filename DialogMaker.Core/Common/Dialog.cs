@@ -4,13 +4,12 @@ using DialogMaker.Core.Executioning;
 using System;
 using MessagePack;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
 namespace DialogMaker.Core.Common
 {
-    public class Dialog : Disposable, IDialogResourcesContainer
+    public class Dialog : ResourcesContainer, IDialogResourcesContainer
     {
         public Dialog(DialogFolder folder, DialogSavedState savedState)
         {
@@ -27,7 +26,7 @@ namespace DialogMaker.Core.Common
                 resourcesIndex.Add(info.Key, DialogItemReference.Parse(info.Value));
             }
 
-            _resourcesIndex = new(resourcesIndex);
+            _indexedResources = new(this, new(resourcesIndex));
             _bytecode = savedState.Bytecode;
         }
         private Dialog(DialogFolder folder, DialogProjectDialog dialog, DialogCompilerOutput compiledDialog)
@@ -38,8 +37,12 @@ namespace DialogMaker.Core.Common
             Folder = Path.Combine(folder.Folder, dialog.Id);
             Resources = new(this, dialog.Resources);
 
-            _resourcesIndex = new(compiledDialog.Context.GetGlobalValues());
-            _bytecode = compiledDialog.Code;
+            _indexedResources = new(this, new(compiledDialog.Context.GetGlobalValues()));
+
+            using MemoryStream codeStream = new();
+            compiledDialog.Write(codeStream);
+
+            _bytecode = codeStream.ToArray();
         }
 
         public DialogPackage Package => Parent.Package;
@@ -47,16 +50,26 @@ namespace DialogMaker.Core.Common
         public string Id { get; }
         public string Name { get; }
         public string Folder { get; }
-        public DialogResources Resources { get; }
+        public override DialogResources Resources { get; }
 
         IResourcesOwner IResourcesOwner.Root => Package;
         IResourcesOwner? IResourcesOwner.Parent => Parent;
         IResourcesContainer IResourcesOwner.Resources => Resources;
 
-        private readonly ReadOnlyDictionary<int, DialogItemReference> _resourcesIndex;
+        private readonly DialogIndexedResources _indexedResources;
+        private readonly List<DialogExecutor> _executors = [];
         private readonly byte[] _bytecode;
 
         #region Управление
+
+        public DialogExecutor CreateExecutor()
+        {
+            DialogExecutor executor = new(_bytecode, _indexedResources);
+            executor.Disposed += OnExecutorDisposed;
+            _executors.Add(executor);
+
+            return executor;
+        }
 
         public void Save()
         {
@@ -66,9 +79,9 @@ namespace DialogMaker.Core.Common
             } 
 
             var filePath = Path.Combine(Folder, $"{Id}.{FileExtension}");
-            Dictionary<int, string> resourcesIndexes = new(_resourcesIndex.Count);
+            Dictionary<int, string> resourcesIndexes = new(_indexedResources.Indexes.Count);
 
-            foreach (var info in _resourcesIndex)
+            foreach (var info in _indexedResources.Indexes)
             {
                 resourcesIndexes.Add(info.Key, info.Value.ToString());
             }
@@ -87,7 +100,7 @@ namespace DialogMaker.Core.Common
             savedState.Save(filePath);
         }
 
-        bool IResourcesOwner.TryFindChild(string id, [NotNullWhen(true)] out IResourcesOwner? result)
+        public override bool TryFindChild(string id, [NotNullWhen(true)] out IResourcesOwner? result)
         {
             result = null;
             return false;
@@ -101,7 +114,30 @@ namespace DialogMaker.Core.Common
         protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);
+
+            foreach (var executor in _executors)
+            {
+                executor.Disposed -= OnExecutorDisposed;
+                executor.Dispose();
+            }
+
+            _executors.Clear();
             Resources.Dispose();
+        }
+
+        #endregion
+
+        #region События
+
+        private void OnExecutorDisposed(object sender, EventArgs e)
+        {
+            if (sender is not DialogExecutor executor)
+            {
+                return;
+            }
+
+            executor.Disposed -= OnExecutorDisposed;
+            _executors.Remove(executor);
         }
 
         #endregion

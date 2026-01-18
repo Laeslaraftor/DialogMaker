@@ -1,4 +1,5 @@
 ﻿using Acly;
+using DialogMaker.Core.Common;
 using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor.Menus;
@@ -19,9 +20,6 @@ namespace DialogMaker.Editor
             Original = dialog;
             Pack = pack;
             Clipboard = new(this);
-
-            _nodesConverter = new(this);
-            _nodesSync = new(dialog.Nodes, Nodes, _nodesConverter);
 
             dialog.PropertyChanged += OnDialogPropertyChanged;
             SelectedNodes.ItemChanged += OnSelectedNodesItemChanged;
@@ -72,8 +70,21 @@ namespace DialogMaker.Editor
                 return field;
             }
         }
-        public override IEnumerable? Children => Nodes;
-        public EditableCollection<DialogProjectNode> Nodes { get; } = [];
+        public override IEnumerable? Children => null;
+        public EditableCollection<DialogProjectNode> Nodes
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = [];
+                    _nodesConverter = new(this);
+                    _nodesSync = new(Original.Nodes, field, _nodesConverter);
+                }
+
+                return field;
+            }
+        }
         public EditableCollection<DialogProjectNode> SelectedNodes { get; } = [];
         public ProjectNodesClipboard Clipboard { get; }
         public DialogProjectNode this[INode originalNode]
@@ -92,8 +103,8 @@ namespace DialogMaker.Editor
             }
         }
 
-        private readonly ProjectNodeConverter _nodesConverter;
-        private readonly CollectionSynchronizer<DialogProjectDialogNode, DialogProjectNode> _nodesSync;
+        private ProjectNodeConverter? _nodesConverter;
+        private CollectionSynchronizer<DialogProjectDialogNode, DialogProjectNode>? _nodesSync;
         private ProjectResources? _resources;
 
         #region Управление
@@ -249,7 +260,7 @@ namespace DialogMaker.Editor
         {
             base.Dispose(isDisposing);
 
-            _nodesSync.Dispose();
+            _nodesSync?.Dispose();
             _resources?.Dispose();
             _resources = null;
 

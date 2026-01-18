@@ -181,8 +181,7 @@
                 </Grid>
             </TabItem>
             <TabItem Header="Иерархия вызовов">
-                <local:DiagramStructureView Dialog="{Binding Dialog}"
-                                            Structure="{Binding Structure}"/>
+                <local:DiagramStructureView Dialog="{Binding Dialog}"/>
             </TabItem>
         </TabControl>
         <GridSplitter Grid.Row="1"/>

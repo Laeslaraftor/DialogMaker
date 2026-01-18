@@ -1,4 +1,4 @@
-﻿using DialogMaker.Core.Executioning.Debugging;
+﻿using DialogMaker.Core.Executioning;
 using DialogMaker.Editor;
 using DialogMaker.Lib.Data;
 using System.Collections.ObjectModel;
@@ -13,31 +13,44 @@ namespace DialogMaker.Lib.Elements
         {
             InitializeComponent();
             _segmentsList.ItemsSource = _sections;
+            CanUpdateStructure = true;
         }
 
-        public DialogCodeStructure? Structure
-        {
-            get => GetValue(StructureProperty) as DialogCodeStructure;
-            set => SetValue(StructureProperty, value);
-        }
         public ProjectDialog? Dialog
         {
             get => GetValue(DialogProperty) as ProjectDialog;
             set => SetValue(DialogProperty, value);
         }
 
+        private bool CanUpdateStructure
+        {
+            get => Dialog != null && field;
+            set
+            {
+                field = value;
+                _updateStructureButton.IsEnabled = CanUpdateStructure;
+            }
+        }
+
         private readonly ObservableCollection<DialogStructureSection> _sections = [];
 
         #region Управление
 
-        private void UpdateStructure(DialogCodeStructure? structure, ProjectDialog? dialog)
+        private async Task UpdateStructure()
         {
+            var dialog = Dialog;
+
             _sections.Clear();
 
-            if (structure == null || dialog == null)
+            if (dialog == null)
             {
                 return;
             }
+
+            var structure = await Task.Run(() =>
+            {
+                return DialogActionsMap.CreateStructure(dialog.Original);
+            });
 
             foreach (var section in structure.Sections)
             {
@@ -49,18 +62,27 @@ namespace DialogMaker.Lib.Elements
 
         #region События
 
-        private static void OnStructureChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private async void OnUpdateStructureButtonClicked(object sender, RoutedEventArgs e)
         {
-            if (d is DiagramStructureView view)
+            CanUpdateStructure = false;
+
+            try
             {
-                view.UpdateStructure(e.NewValue as DialogCodeStructure, view.Dialog);
+                await UpdateStructure();
             }
+            catch (Exception error)
+            {
+                error.Alert();
+            }
+
+            CanUpdateStructure = true;
         }
+
         private static void OnDialogChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is DiagramStructureView view)
             {
-                view.UpdateStructure(view.Structure, e.NewValue as ProjectDialog);
+                view.CanUpdateStructure = view.CanUpdateStructure;
             }
         }
 
@@ -68,8 +90,6 @@ namespace DialogMaker.Lib.Elements
 
         #region Dependency
 
-        public static readonly DependencyProperty StructureProperty = DependencyProperty.Register(nameof(Structure), typeof(DialogCodeStructure),
-            typeof(DiagramStructureView), new(OnStructureChanged));
         public static readonly DependencyProperty DialogProperty = DependencyProperty.Register(nameof(Dialog), typeof(ProjectDialog),
             typeof(DiagramStructureView), new(OnDialogChanged));
 

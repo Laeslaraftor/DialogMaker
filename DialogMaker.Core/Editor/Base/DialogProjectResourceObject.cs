@@ -114,6 +114,10 @@ namespace DialogMaker.Core.Editor
             {
                 throw new InvalidOperationException($"Не удалось удалить ресурс \"{this}\" из {currentResources}");
             }
+            if (!HandleResourceMoving(currentResources, resources))
+            {
+                throw new InvalidOperationException($"Не удалось обработать перемещение ресурса \"{this}\" из {currentResources} в {resources}");
+            }
 
             Resources = resources;
             Path = ResourcePath.CreatePath(this);
@@ -139,6 +143,11 @@ namespace DialogMaker.Core.Editor
         }
 
         protected abstract DialogProjectResourceObjectSavedState CreateSavedState();
+
+        protected virtual bool HandleResourceMoving(DialogProjectResources from, DialogProjectResources to)
+        {
+            return true;
+        }
 
         #endregion
 

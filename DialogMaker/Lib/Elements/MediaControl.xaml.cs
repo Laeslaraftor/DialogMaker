@@ -213,7 +213,7 @@ namespace DialogMaker.Lib.Elements
         {
             try
             {
-                await Dispatcher.InvokeAsync(() =>
+                Dispatcher.Invoke(() =>
                 {
                     OnDispatchedTimerElapsed(sender, e);
                 });

@@ -41,19 +41,15 @@ namespace DialogMaker.Core
         {
             IsDisposed = true;
 
-            Disposed?.Invoke(this, EventArgs.Empty);
+            Dispatch(() =>
+            {
+                Disposed?.Invoke(this, EventArgs.Empty);
+            });
         }
 
         private void StartDisposing(bool isDisposing)
         {
-            if (Dispatcher == null || Dispatcher.CurrentThreadIsMain)
-            {
-                Dispose(isDisposing);
-            }
-            else
-            {
-                Dispatcher.Execute(() => Dispose(isDisposing));
-            } 
+            Dispatch(() => Dispose(isDisposing));
         }
 
         #region Статика

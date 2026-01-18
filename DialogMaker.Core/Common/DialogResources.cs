@@ -21,9 +21,11 @@ namespace DialogMaker.Core.Common
             Characters = MakeDictionary(resources.Characters, i => new DialogResourceCharacter(this, i));
             Variables = MakeDictionary(resources.Variables, i => DialogResourceVariable.Create(this, i));
 
+            FileExtensions.CreateDirectory(Folder);
+
             foreach (var file in resources.Items)
             {
-                string originalPath = Path.Combine(file.FilePath, file.FileName);
+                string originalPath = Path.Combine(file.FilePath);
                 var newFile = Files[file.Id];
                 File.Copy(originalPath, newFile.FilePath, true);
             }

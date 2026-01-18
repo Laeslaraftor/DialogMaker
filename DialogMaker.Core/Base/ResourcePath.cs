@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DialogMaker.Core.Common;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
@@ -23,6 +24,11 @@ namespace DialogMaker.Core
         public bool IsEmpty => string.IsNullOrEmpty(Id) || string.IsNullOrEmpty(OwnerPath);
 
         #region Управление
+
+        public IResourceItem Find(IResourcesOwner owner)
+        {
+            return IResourcesOwner.FindResource(owner, this);
+        }
 
         public override bool Equals(object obj)
         {

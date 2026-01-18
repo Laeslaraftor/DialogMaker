@@ -58,6 +58,18 @@ namespace DialogMaker.ViewModels
                 }
             }
         }
+        public ICommand? ExportProjectCommand
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    InvokePropertyChanged(nameof(ExportProjectCommand));
+                }
+            }
+        }
         public bool CanCreatePack
         {
             get => field;

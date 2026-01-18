@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace DialogMaker.Core.Common
 {
-    public class DialogFolder : Disposable, IDialogResourcesContainer
+    public class DialogFolder : ResourcesContainer, IDialogResourcesContainer
     {
         public DialogFolder(DialogPackage package, DialogFolderSavedState savedState)
         {
@@ -44,7 +44,7 @@ namespace DialogMaker.Core.Common
         public string Id { get; }
         public string Name { get; }
         public string Folder { get; }
-        public DialogResources Resources { get; }
+        public override DialogResources Resources { get; }
         public ReadOnlyCollection<string> Dialogs { get; }
         public Dialog this[string id]
         {
@@ -112,7 +112,7 @@ namespace DialogMaker.Core.Common
             return true;
         }
 
-        bool IResourcesOwner.TryFindChild(string id, [NotNullWhen(true)] out IResourcesOwner? result)
+        public override bool TryFindChild(string id, [NotNullWhen(true)] out IResourcesOwner? result)
         {
             result = null;
 
@@ -141,6 +141,13 @@ namespace DialogMaker.Core.Common
 
             _dialogs.Clear();
             Resources.Dispose();
+        }
+        protected override IEnumerable<DialogResources> GetChildResources()
+        {
+            foreach (var dialogId in Dialogs)
+            {
+                yield return this[dialogId].Resources;
+            }
         }
 
         #endregion

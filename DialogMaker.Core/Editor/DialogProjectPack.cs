@@ -65,12 +65,13 @@ namespace DialogMaker.Core.Editor
         public string Id { get; }
         public string Name
         {
-            get => _name;
+            get => field ?? string.Empty;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    InvokePropertyChanging(nameof(Name));
+                    field = value;
                     InvokePropertyChanged(nameof(Name));
                 }
             }
@@ -82,8 +83,6 @@ namespace DialogMaker.Core.Editor
         IResourcesOwner? IResourcesOwner.Parent => Project;
         IResourcesOwner IResourcesOwner.Root => Project;
         IResourcesContainer IResourcesOwner.Resources => Resources;
-
-        private string _name = string.Empty;
 
         #region Управление
 

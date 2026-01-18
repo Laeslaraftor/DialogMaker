@@ -31,7 +31,7 @@ namespace DialogMaker.Core.Editor.Nodes
 
         public override string ToString()
         {
-            return string.Empty;
+            return "Принудительное завершение диалога";
         }
 
         #endregion
