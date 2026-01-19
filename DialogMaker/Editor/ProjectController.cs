@@ -1,15 +1,17 @@
 ﻿using Acly;
 using DialogMaker.Core;
 using DialogMaker.Core.Editor;
-using DialogMaker.Lib;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Windows.Input;
-using System.Collections.Specialized;
-using DialogMaker.Editor.Nodes;
-using System.Diagnostics.CodeAnalysis;
+using DialogMaker.Editor.Data;
 using DialogMaker.Editor.Filters;
+using DialogMaker.Editor.Nodes;
+using DialogMaker.Lib;
 using DialogMaker.Lib.Controllers;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace DialogMaker.Editor
 {
@@ -159,17 +161,15 @@ namespace DialogMaker.Editor
 
         #region Команды
 
-        private void ExecuteCreatePack(object? parameter)
+        private async void ExecuteCreatePack(object? parameter)
         {
-            string? name = Alerts.RequestText("Введите название набора диалогов");
+            var info = await ProjectItemCreationInfo.Create("Создать набор", "набор");
 
-            if (name == null)
+            if (info != null)
             {
-                return;
+                Try(() => Project.CreatePack(info.Id, info.Name));
+                Save();
             }
-
-            Try(() => Project.CreatePack(name, name));
-            Save();
         }
 
         private void ExecuteSave(object? parameter)

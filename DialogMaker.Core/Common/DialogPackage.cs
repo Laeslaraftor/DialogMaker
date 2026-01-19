@@ -251,21 +251,42 @@ namespace DialogMaker.Core.Common
             DialogPackage result = new(project, outputFolder, folders);
             ProgressResult<DialogPackage> progressResult = new()
             {
-                Value = result
+                Value = result,
+                Extra = project,
             };
             int packsCount = project.Packs.Count;
             float progressPerFolder = 1f / packsCount;
             float count = 0;
 
+            yield return progressResult;
+
             foreach (var pack in project.Packs)
             {
                 float baseProgress = progressResult.Progress;
                 DialogFolder? folder = null;
+                //progressResult.Extra = pack;
+
+                yield return new()
+                {
+                    Value = result,
+                    Extra = pack
+                };
+
+                yield return progressResult;
 
                 foreach (var progress in DialogFolder.CreateWithProgress(result, pack))
                 {
                     folder = progress.Value;
-                    progressResult.Progress = baseProgress + (progressPerFolder * progress.Progress);
+                    progressResult.Progress = baseProgress + progressPerFolder * progress.Progress;
+                    progressResult.LocalProgress = progressResult.Progress;
+
+                    yield return new()
+                    {
+                        Value = result,
+                        LocalProgress = progress.Progress,
+                        Progress = progress.Progress,
+                        Extra = progress.Extra,
+                    };
 
                     yield return progressResult;
                 }
@@ -278,6 +299,7 @@ namespace DialogMaker.Core.Common
                 folders[pack.Id] = folder;
                 count++;
                 progressResult.Progress = count / packsCount;
+                progressResult.LocalProgress = progressResult.Progress;
 
                 yield return progressResult;
             }

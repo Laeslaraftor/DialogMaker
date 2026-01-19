@@ -37,6 +37,7 @@ namespace DialogMaker
             DefaultLanguageVisibility = Visibility.Collapsed
         };
         private readonly ResourcesDragAndDropController _resourcesDragAndDrop;
+        private readonly ExportView _exportView = new();
 
         #region Управление
 
@@ -61,6 +62,7 @@ namespace DialogMaker
             }
 
             _model.Project?.Dispose();
+            _exportView.ProjectController = controller;
             _model.Project = controller;
             _model.CanCreatePack = controller != null;
             _model.CreatePackCommand = controller?.CreatePackCommand;
@@ -102,39 +104,22 @@ namespace DialogMaker
         }
         private async void ExecuteExportProject(object? parameter)
         {
-            var project = _model.Project;
-
-            if (project == null)
+            if (_exportView.ProjectController == null)
             {
                 return;
             }
 
-            OpenFolderDialog folderDialog = new()
+            Window window = new()
             {
-                Title = "Выберите папку для экспорта проекта",
-                Multiselect = false
+                Title = "Экспорт проекта",
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                Width = 600,
+                Height = 400,
+                Content = _exportView
             };
 
-            if (folderDialog.ShowDialog() != true)
-            {
-                return;
-            }
-
-            var builder = DialogPackage.CreateWithProgress(project.Project, folderDialog.FolderName);
-            var package = await Task.Run(() =>
-            {
-                DialogPackage? package = null;
-
-                foreach (var result in builder)
-                {
-                    package = result.Value;
-                    Debug.WriteLine(result.Progress);
-                }
-
-                return package;
-            });
-
-            package?.Save();
+            window.ShowDialog();
+            window.Content = null;
         }
 
         #endregion

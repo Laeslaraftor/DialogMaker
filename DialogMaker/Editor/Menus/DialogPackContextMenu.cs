@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Editor;
+using DialogMaker.Editor.Data;
 using DialogMaker.Lib;
 using System.Diagnostics;
 using static DialogMaker.LibExtensions;
@@ -41,16 +42,16 @@ namespace DialogMaker.Editor.Menus
         }
         private void CreateDialog(object? parameter)
         {
-            Resolve(parameter, pack =>
+            Resolve(parameter, async pack =>
             {
-                string? name = Alerts.RequestText("Введите название диалога");
+                var info = await ProjectItemCreationInfo.Create("Создать диалог", "диалог");
 
-                if (name == null)
+                if (info == null)
                 {
                     return;
                 }
 
-                Try(() => pack.CreateDialog(name, name));
+                Try(() => pack.CreateDialog(info.Id, info.Name));
             });
         }
 

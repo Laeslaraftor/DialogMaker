@@ -43,7 +43,7 @@ namespace DialogMaker.Core.Editor
                 Guid.TryParse(savedState.DefaultLanguage, out var defaultLanguageId) &&
                 TryGetLanguage(defaultLanguageId, out var defaultLanguage))
             {
-                _defaultLanguage = defaultLanguage;
+                DefaultLanguage = defaultLanguage;
             }
 
             Resources = DialogProjectResources.OpenOrCreate(this, DialogResourcesFlags.Root);
@@ -114,7 +114,6 @@ namespace DialogMaker.Core.Editor
         IResourcesContainer IResourcesOwner.Resources => Resources;
 
         private readonly List<DialogProjectResourceObject> _registeredResources = [];
-        private DialogProjectLanguage? _defaultLanguage;
 
         #region Управление
 
@@ -132,9 +131,9 @@ namespace DialogMaker.Core.Editor
             {
                 Id = Id,
                 Name = Name,
-                DefaultLanguage = _defaultLanguage?.ProjectId.ToString(),
-                Packs = Packs.Select(p => p.Id).ToArray(),
-                Languages = Languages.Select(l => (DialogProjectLanguageSavedState)l.Save()).ToArray(),
+                DefaultLanguage = DefaultLanguage?.ProjectId.ToString(),
+                Packs = [.. Packs.Select(p => p.Id)],
+                Languages = [.. Languages.Select(l => (DialogProjectLanguageSavedState)l.Save())],
             };
 
             string filePath = Path.Combine(ProjectPath, $"{Id}.{FileExtension}");

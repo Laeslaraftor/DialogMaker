@@ -180,21 +180,38 @@ namespace DialogMaker.Core.Common
             DialogFolder folder = new(package, pack, dialogs);
             ProgressResult<DialogFolder> progressResult = new()
             {
-                Value = folder
+                Value = folder,
+                Extra = pack
             };
             float count = 0;
 
             foreach (var dialogProject in pack.Dialogs)
             {
+                ProgressResult<DialogFolder> dialogProgress = new()
+                {
+                    Value = folder,
+                    Extra = dialogProject
+                };
+
+                yield return dialogProgress;
+
                 var dialog = Dialog.Create(folder, dialogProject);
                 dialogs[dialogProject.Id] = dialog;
                 count++;
+
+                dialogProgress.Progress = 1;
+                dialogProgress.LocalProgress = 1;
+
+                yield return dialogProgress;
+
                 progressResult.Progress = count / totalDialogsCount;
+                progressResult.LocalProgress = progressResult.Progress;
 
                 yield return progressResult;
             }
 
             progressResult.Progress = 1;
+            progressResult.LocalProgress = 1;
             progressResult.IsCompleted = true;
 
             yield return progressResult;

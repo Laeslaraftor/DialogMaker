@@ -16,7 +16,7 @@
             <RowDefinition Height="80"/>
         </Grid.RowDefinitions>
         <Label Background="{DynamicResource LayerOnMicaBaseAltFillColorTertiaryBrush}"
-               x:Name="_content" Padding="0"/>
+               x:Name="_content" Padding="0" HorizontalContentAlignment="Stretch"/>
         <Border Grid.Row="1" VerticalAlignment="Top"
                 Height="1" Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}" />
         <Grid Grid.Row="1" Margin="25,0">

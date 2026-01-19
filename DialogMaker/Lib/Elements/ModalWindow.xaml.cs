@@ -34,6 +34,11 @@ namespace DialogMaker.Lib.Elements
             get => GetValue(SecondaryButtonContentProperty);
             set => SetValue(SecondaryButtonContentProperty, value);
         }
+        public bool CanMove
+        {
+            get => (bool)GetValue(CanMoveProperty);
+            set => SetValue(CanMoveProperty, value);
+        }
 
         private Point _startDragWindowPosition;
         private Point _startDragMousePosition;
@@ -109,7 +114,10 @@ namespace DialogMaker.Lib.Elements
         {
             base.OnMouseMove(e);
 
-            if (e.LeftButton != MouseButtonState.Pressed || _ignoreDrag || e.Handled)
+            if (e.LeftButton != MouseButtonState.Pressed || 
+                _ignoreDrag || 
+                e.Handled ||
+                !CanMove)
             {
                 return;
             }
@@ -160,6 +168,8 @@ namespace DialogMaker.Lib.Elements
             typeof(ModalWindow), new(OnMainButtonContentChanged));
         public static readonly DependencyProperty SecondaryButtonContentProperty = DependencyProperty.Register(nameof(SecondaryButtonContent), typeof(object),
             typeof(ModalWindow), new(OnSecondaryButtonContentChanged));
+        public static readonly DependencyProperty CanMoveProperty = DependencyProperty.Register(nameof(CanMove), typeof(bool),
+            typeof(ModalWindow), new(true));
 
         #endregion
     }
