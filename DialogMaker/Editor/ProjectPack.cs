@@ -1,6 +1,7 @@
 ﻿using Acly;
 using DialogMaker.Core.Editor;
 using DialogMaker.Editor.Menus;
+using DialogMaker.Lib.Controllers;
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -8,7 +9,7 @@ using System.Windows.Controls;
 
 namespace DialogMaker.Editor
 {
-    public class ProjectPack : ProjectStructureItem
+    public class ProjectPack : ProjectResourcesItem
     {
         public ProjectPack(ProjectController project, DialogProjectPack pack) : base(project, pack)
         {
@@ -44,6 +45,7 @@ namespace DialogMaker.Editor
             }
         }
         public override IEnumerable? Children => _dialogs;
+        public override IEnumerable<ActionButton>? Actions => null;
 
         private readonly ProjectDialogConverter _dialogsConverter;
         private readonly CollectionSynchronizer<DialogProjectDialog, ProjectDialog> _dialogsSync;

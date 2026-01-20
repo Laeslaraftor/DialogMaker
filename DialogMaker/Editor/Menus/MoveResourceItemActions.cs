@@ -5,7 +5,7 @@ namespace DialogMaker.Editor.Menus
 {
     public class MoveResourceItemActions(ProjectResourceItem item)
     {
-        private ProjectResources? CurrentResources => _item.Project.TabsController.CurrentItem?.Resources;
+        private ProjectResources? CurrentResources => _item.Project.LastShowedTabItem?.Resources;
 
         private readonly ProjectResourceItem _item = item;
         private ContextMenuContainer? _container;
@@ -23,7 +23,7 @@ namespace DialogMaker.Editor.Menus
             yield return new ContextMenuAction("В проект", CanMoveToProject, MoveToProject);
             yield return new ContextMenuAction("В набор", CanMoveToPack, MoveToPack);
             yield return new ContextMenuAction("В диалог", CanMoveToDialog, MoveToDialog);
-            yield return new ContextMenuAction("В другое...", MoveToProject);
+            //yield return new ContextMenuAction("В другое...", MoveToProject);
         }
 
         #endregion

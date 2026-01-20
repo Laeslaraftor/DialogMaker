@@ -1,25 +1,39 @@
 ﻿using Acly;
-using DialogMaker.Core.Common;
 using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor.Menus;
 using DialogMaker.Editor.Nodes;
 using DialogMaker.Lib;
+using DialogMaker.Lib.Controllers;
 using System.Collections;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.Xml.Linq;
+using System.Windows.Media;
 
 namespace DialogMaker.Editor
 {
-    public class ProjectDialog : ProjectStructureItem
+    public class ProjectDialog : ProjectResourcesItem
     {
         public ProjectDialog(ProjectPack pack, DialogProjectDialog dialog) : base(pack.Project, dialog)
         {
             Original = dialog;
             Pack = pack;
             Clipboard = new(this);
+
+            _compileButton = new()
+            {
+                Icon = Icons.PlaySolid,
+                Text = "Запустить"
+            };
+
+            if (!App.TryFindResource<Brush>("SystemFillColorSuccessBrush", out var successBrush))
+            {
+                successBrush = new SolidColorBrush(Color.FromArgb(255, 50, 167, 81));
+            }
+
+            _compileButton.Color = successBrush;
+            _compileButton.Clicked += OnCompileButtonClicked;
 
             dialog.PropertyChanged += OnDialogPropertyChanged;
             SelectedNodes.ItemChanged += OnSelectedNodesItemChanged;
@@ -87,6 +101,14 @@ namespace DialogMaker.Editor
         }
         public EditableCollection<DialogProjectNode> SelectedNodes { get; } = [];
         public ProjectNodesClipboard Clipboard { get; }
+        public override IEnumerable<ActionButton>? Actions
+        {
+            get
+            {
+                field ??= [_compileButton];
+                return field;
+            }
+        }
         public DialogProjectNode this[INode originalNode]
         {
             get
@@ -103,6 +125,7 @@ namespace DialogMaker.Editor
             }
         }
 
+        private readonly ActionButton _compileButton;
         private ProjectNodeConverter? _nodesConverter;
         private CollectionSynchronizer<DialogProjectDialogNode, DialogProjectNode>? _nodesSync;
         private ProjectResources? _resources;
@@ -271,6 +294,11 @@ namespace DialogMaker.Editor
         #endregion
 
         #region События
+
+        private void OnCompileButtonClicked(object? sender, object? e)
+        {
+            throw new NotImplementedException();
+        }
 
         private void OnDialogPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {

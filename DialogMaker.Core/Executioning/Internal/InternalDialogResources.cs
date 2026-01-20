@@ -1,6 +1,7 @@
 ﻿using DialogMaker.Core.Common;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace DialogMaker.Core.Executioning.Internal
 {
@@ -25,10 +26,17 @@ namespace DialogMaker.Core.Executioning.Internal
             }
             if (Metadata.LocalValues.TryGetValue(index, out var localReference))
             {
+                try
+                {
 #pragma warning disable CS8625 // Литерал, равный NULL, не может быть преобразован в ссылочный тип, не допускающий значение NULL.
-                item = localReference.GetItem(null);
+                    item = localReference.GetItem(null);
 #pragma warning restore CS8625 // Литерал, равный NULL, не может быть преобразован в ссылочный тип, не допускающий значение NULL.
-                Items.Add(index, item);
+                    Items.Add(index, item);
+                }
+                catch (Exception error)
+                {
+                    Debug.WriteLine(error);
+                }
             }
             if (item == null)
             {

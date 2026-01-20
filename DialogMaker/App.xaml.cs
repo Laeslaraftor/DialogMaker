@@ -1,6 +1,7 @@
 ﻿using DialogMaker.Core;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
+using System.Windows.Media;
 
 namespace DialogMaker
 {
@@ -24,6 +25,58 @@ namespace DialogMaker
         #endregion
 
         #region Статика
+
+        public static Brush SuccessBrush
+        {
+            get
+            {
+                if (field == null)
+                {
+                    if (!TryFindResource<Brush>("SystemFillColorSuccessBrush", out var brush))
+                    {
+                        brush = new SolidColorBrush(Color.FromArgb(255, 50, 167, 81));
+                    }
+
+                    field = brush;
+                }
+
+                return field;
+            }
+        }
+        public static Brush WarningBrush
+        {
+            get
+            {
+                if (field == null)
+                {
+                    if (!TryFindResource<Brush>("SystemFillColorCautionBrush", out var brush))
+                    {
+                        brush = new SolidColorBrush(Color.FromArgb(255, 50, 167, 81));
+                    }
+
+                    field = brush;
+                }
+
+                return field;
+            }
+        }
+        public static Brush ErrorBrush
+        {
+            get
+            {
+                if (field == null)
+                {
+                    if (!TryFindResource<Brush>("SystemFillColorCriticalBrush", out var brush))
+                    {
+                        brush = new SolidColorBrush(Color.FromArgb(255, 50, 167, 81));
+                    }
+
+                    field = brush;
+                }
+
+                return field;
+            }
+        }
 
         public static bool TryFindResource<T>(string name, [NotNullWhen(true)] out T? result)
         {

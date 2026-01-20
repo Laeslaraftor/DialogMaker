@@ -39,7 +39,55 @@
         </Menu>
         <Button Content="Собрать" Grid.ColumnSpan="3"
                 HorizontalAlignment="Center"
-                Click="Button_Click"/>
+                Click="Button_Click" Visibility="Collapsed"/>
+        <Border x:Name="_actionButtonsContainer" Grid.ColumnSpan="3"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Background="{DynamicResource SolidBackgroundFillColorQuarternaryBrush}"
+                BorderBrush="{DynamicResource SolidBackgroundFillColorBaseAltBrush}" 
+                CornerRadius="4" BorderThickness="4,0.5,0.5,0.5" Padding="0,2">
+            <ListView x:Name="_actionButtons" Style="{StaticResource NoSelectionListView}"
+                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                      ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                <ListView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ListView.ItemsPanel>
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <MenuItem Height="30" Command="{Binding}"
+                                  IsEnabled="{Binding IsEnabled}"
+                                  ToolTip="{Binding ToolTip}">
+                            <MenuItem.Style>
+                                <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsVisible}" Value="False">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsVisible}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </MenuItem.Style>
+                            <MenuItem.Header>
+                                <StackPanel Orientation="Horizontal" Margin="0,-6,0,0">
+                                    <StackPanel.RenderTransform>
+                                        <TranslateTransform Y="3"/>
+                                    </StackPanel.RenderTransform>
+                                    <TextBlock>
+                                        <Run Text="{Binding Icon}" BaselineAlignment="Center"
+                                             FontFamily="{StaticResource SymbolThemeFontFamily}"
+                                             Foreground="{DynamicResource SystemFillColorSuccessBrush}"/>
+                                        <Run Text="{Binding Text}"/>
+                                    </TextBlock>
+                                </StackPanel>
+                            </MenuItem.Header>
+                        </MenuItem>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Border>
         <TabControl Grid.Row="1">
             <TabItem IsSelected="True">
                 <TabItem.Header>
@@ -63,7 +111,7 @@
                                 Content="&#xE710;" HorizontalAlignment="Right"
                                 Command="{Binding CreatePackCommand}"
                                 IsEnabled="{Binding CanCreatePack}"
-                                ToolTip="Добавить язык"/>
+                                ToolTip="Создать набор" Padding="6"/>
                     </Grid>
                     <TreeView x:Name="_projectStruct" Grid.Row="1" 
                               ItemsSource="{Binding Project.Packs}"
@@ -142,8 +190,9 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        <Border x:Name="_dialogsTabsContainer"
-                Grid.Row="1" Grid.Column="2"/>
+        <lib:ItemTabsView x:Name="_itemTabs"
+                          Grid.Row="1" Grid.Column="2"
+                          CurrentItemChanged="OnItemTabsCurrentItemChanged"/>
         <GridSplitter Grid.RowSpan="2" Grid.Column="1"/>
     </Grid>
 </Window>

@@ -18,6 +18,7 @@ namespace DialogMaker.Lib
         public const string Message = "\uE8BD";
         public const string Update = "\uE72C";
         public const string Play = "\uE768";
+        public const string PlaySolid = "\xF5B0";
         public const string Pause = "\uE769";
         public const string Stop = "\uE71A";
         public const string OpenFolder = "\uE8DA";

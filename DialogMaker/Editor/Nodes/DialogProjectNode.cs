@@ -102,6 +102,7 @@ namespace DialogMaker.Editor
             }
         }
         public int GroupCount => Dialog.SelectedNodes.Count;
+        public override UIElement? TabContent => null;
         FrameworkElement? ISelectable.View => View;
 
         private DiagramNode? _view;

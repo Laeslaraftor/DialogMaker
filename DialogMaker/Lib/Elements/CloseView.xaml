@@ -13,7 +13,7 @@
         </Grid.ColumnDefinitions>
         <local:EditableTextBlock x:Name="_text" Margin="0,0,6,0" AutoEdit="True"
                                  TextConfirmed="OnTextTextConfirmed"/>
-        <Grid Grid.Column="1">
+        <Grid x:Name="_closeButtonContainer" Grid.Column="1">
             <TextBlock HorizontalAlignment="Center"
                        VerticalAlignment="Center"
                        FontSize="10" Text="&#xE711;"

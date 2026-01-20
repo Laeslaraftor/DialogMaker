@@ -222,7 +222,7 @@ namespace DialogMaker.Lib.Controllers
 
             #region События
 
-            private void OnCloseViewClick(object? sender, RoutedEventArgs e)
+            private void OnCloseViewClick(object? sender, ParameterRoutedEventArgs e)
             {
                 CloseRequested?.Invoke(this, EventArgs.Empty);
             }

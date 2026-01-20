@@ -68,11 +68,15 @@ namespace DialogMaker
             _model.CreatePackCommand = controller?.CreatePackCommand;
             _model.Languages = controller?.Languages;
             _model.GlobalResources = controller?.Resources;
-            _dialogsTabsContainer.Child = controller?.TabsController.TabControl;
 
             if (project == null)
             {
                 _model.DefaultLanguageVisibility = Visibility.Collapsed;
+            }
+            if (controller != null)
+            {
+                _itemTabs.Items.Insert(0, controller);
+                _itemTabs.CurrentItem = controller;
             }
         }
 
@@ -199,10 +203,22 @@ namespace DialogMaker
 
         private void OnProjectStructSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
-            if (e.NewValue is ProjectStructureItem item)
+            if (e.NewValue is IItemTab item)
             {
-                item.Project.TabsController.AddItem(item);
+                _itemTabs.CurrentItem = item;
             }
+        }
+        private void OnItemTabsCurrentItemChanged(object sender, ValueChangedEventArgs<IItemTab> e)
+        {
+            if (e.NewValue is IActionsItemTab actionItem)
+            {
+                _actionButtons.ItemsSource = actionItem.Actions;
+                _actionButtonsContainer.Visibility = Visibility.Visible;
+                return;
+            }
+
+            _actionButtons.ItemsSource = null;
+            _actionButtonsContainer.Visibility = Visibility.Collapsed;
         }
 
         #endregion
@@ -228,8 +244,8 @@ namespace DialogMaker
         }
         private void CompileCurrentDialog()
         {
-            if (_model.Project == null || 
-                _model.Project?.TabsController.CurrentItem is not ProjectDialog dialog)
+            if (_model.Project == null ||
+                _itemTabs.CurrentItem is not ProjectDialog dialog)
             {
                 return;
             }

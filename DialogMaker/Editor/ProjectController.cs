@@ -6,18 +6,19 @@ using DialogMaker.Editor.Filters;
 using DialogMaker.Editor.Nodes;
 using DialogMaker.Lib;
 using DialogMaker.Lib.Controllers;
+using System.Collections;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading.Tasks;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace DialogMaker.Editor
 {
-    public partial class ProjectController : Disposable
+    public partial class ProjectController : ProjectResourcesItem
     {
-        public ProjectController(DialogProject project)
+        public ProjectController(DialogProject project) : base(ProjectConverter, project)
         {
             _controllers.Add(this);
 
@@ -42,17 +43,14 @@ namespace DialogMaker.Editor
             project.Languages.ItemChanged += OnProjectLanguagesItemChanged;
             Languages.CollectionChanged += OnLanguagesCollectionChanged;
 
-            Resources = new(this, project.Resources);
-
             UpdateDefaultLanguage();
         }
 
-        public DialogProject Project { get; }
+        public new DialogProject Project { get; }
         public ObservableCollection<ProjectLanguage> Languages { get; }
         public ObservableCollection<ProjectPack> Packs { get; }
         public ReferenceReadOnlyList<string> LanguagesName { get; }
-        public ProjectResources Resources { get; }
-        public string Name
+        public override string Name
         {
             get => Project.Name;
             set => Project.Name = value;
@@ -93,10 +91,27 @@ namespace DialogMaker.Editor
         public ProjectStringConverter StringConverter { get; }
         public ProjectNodesFabric NodesViewFabric { get; } = new();
         public ProjectResourcesFilter ResourcesFilter { get; } = new();
-        public DialogTabsController TabsController { get; } = new();
         public ICommand CreatePackCommand { get; }
         public ICommand CreateLanguageCommand { get; }
         public ICommand SaveCommand { get; }
+        public override string Icon => Icons.Unknown;
+        public override ContextMenu? ContextMenu => null;
+        public override IEnumerable? Children => Packs;
+        public ProjectResourcesItem? LastShowedTabItem
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(LastShowedTabItem));
+                    field = value;
+                    InvokePropertyChanged(nameof(LastShowedTabItem));
+                }
+            }
+        }
+        public override bool CanClose => false;
+        public override IEnumerable<ActionButton>? Actions => null;
 
         private readonly ProjectPackConverter _packsConverter;
         private readonly ProjectLanguageConverter _languageConverter;
@@ -132,7 +147,6 @@ namespace DialogMaker.Editor
             Languages.CollectionChanged -= OnLanguagesCollectionChanged;
             Project.Languages.ItemChanged -= OnProjectLanguagesItemChanged;
 
-            TabsController.Dispose();
             Resources.Dispose();
             _languages.Dispose();
             _languagesName.Dispose();
@@ -260,6 +274,15 @@ namespace DialogMaker.Editor
             }
 
             return true;
+        }
+        private static ProjectController ProjectConverter(ProjectResourcesOwner owner)
+        {
+            if (owner is ProjectController project)
+            {
+                return project;
+            }
+
+            throw new InvalidCastException();
         }
 
         #endregion

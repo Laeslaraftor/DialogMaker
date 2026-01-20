@@ -3,9 +3,20 @@ using DialogMaker.Core.Editor;
 
 namespace DialogMaker.Editor
 {
-    public abstract class ProjectResourcesOwner(ProjectController project, IProjectResourcesOwner resourcesOwner) : Disposable
+    public abstract class ProjectResourcesOwner : Disposable
     {
-        public ProjectController Project { get; } = project;
+        public ProjectResourcesOwner(ProjectController project, IProjectResourcesOwner resourcesOwner)
+        {
+            Project = project;
+            _resourcesOwner = resourcesOwner;
+        }
+        protected ProjectResourcesOwner(Func<ProjectResourcesOwner, ProjectController> projectFabric, IProjectResourcesOwner resourcesOwner)
+        {
+            Project = projectFabric(this);
+            _resourcesOwner = resourcesOwner;
+        }
+
+        public ProjectController Project { get; }
         public virtual ProjectResources Resources
         {
             get
@@ -15,7 +26,7 @@ namespace DialogMaker.Editor
             }
         }
 
-        private readonly IProjectResourcesOwner _resourcesOwner = resourcesOwner;
+        private readonly IProjectResourcesOwner _resourcesOwner;
         private ProjectResources? _resources;
 
         #region Управление

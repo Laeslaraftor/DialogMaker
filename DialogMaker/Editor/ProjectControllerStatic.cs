@@ -1,6 +1,8 @@
 ﻿using DialogMaker.Core.Editor;
 using DialogMaker.Lib;
 using Microsoft.Win32;
+using System.Collections;
+using System.Windows.Controls;
 
 namespace DialogMaker.Editor
 {
