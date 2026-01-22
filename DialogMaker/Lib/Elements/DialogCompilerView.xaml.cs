@@ -1,6 +1,9 @@
 ﻿using DialogMaker.Core.Executioning;
-using DialogMaker.Core.Executioning.Builders;
+using DialogMaker.Editor;
 using DialogMaker.Editor.Runtime;
+using DialogMaker.Lib.InputFields;
+using Newtonsoft.Json.Linq;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -12,88 +15,148 @@ namespace DialogMaker.Lib.Elements
         {
             InitializeComponent();
         }
+        ~DialogCompilerView()
+        {
+            _codeBuffer.Dispose();
+        }
 
-        public DialogCodeBuilder? Builder
+        public ProjectDialog? Dialog
         {
-            get => GetValue(BuilderProperty) as DialogCodeBuilder;
-            set => SetValue(BuilderProperty, value);
+            get => GetValue(DialogProperty) as ProjectDialog;
+            set => SetValue(DialogProperty, value);
         }
-        public DialogCompilerOutput Code
+        public bool IsCompiling
         {
-            get => (DialogCompilerOutput)GetValue(CodeProperty);
-            set => SetValue(CodeProperty, value);
+            get => (bool)GetValue(IsCompilingProperty.DependencyProperty);
+            private set => SetValue(IsCompilingProperty, value);
         }
-        public DialogRuntimeResourcesController? ResourcesController
+        public bool IsCompiled
         {
-            get => GetValue(ResourcesControllerProperty) as DialogRuntimeResourcesController;
-            set => SetValue(ResourcesControllerProperty, value);
+            get => (bool)GetValue(IsCompiledProperty.DependencyProperty);
+            private set => SetValue(IsCompiledProperty, value);
         }
+        public bool IsStarted
+        {
+            get => (bool)GetValue(IsStartedProperty.DependencyProperty);
+            private set => SetValue(IsStartedProperty, value);
+        }
+        public bool IsPaused
+        {
+            get => (bool)GetValue(IsPausedProperty.DependencyProperty);
+            private set => SetValue(IsPausedProperty, value);
+        }
+
+        private DialogCompiler? _compiler;
+        private readonly MemoryStream _codeBuffer = new();
 
         #region Управление
 
-        private void SetResourcesController(DialogRuntimeResourcesController? oldValue, DialogRuntimeResourcesController? newValue)
+        public async void Compile()
         {
-            _resourcesList.ItemsSource = newValue?.Items;
-        }
-        private void SetBuilder(DialogCodeBuilder? oldValue, DialogCodeBuilder? newValue)
-        {
-            _sectionView.ItemsSource = newValue?.Sections;
-        }
-        private void SetCode(DialogCompilerOutput oldValue, DialogCompilerOutput newValue)
-        {
-            if (newValue.Code == null)
+            var dialog = Dialog;
+            var compiler = _compiler;
+
+            if (IsCompiling || dialog == null || compiler == null)
             {
                 return;
             }
 
+            Clear();
+
+            _compiler = compiler;
+            IsCompiling = true;            
+
             try
             {
-                var code = DialogByteCodeData.Read(newValue.Write());
+                var compileOutput = await Task.Run(compiler.Compile);
+                _codeBuffer.Position = 0;
+                _codeBuffer.SetLength(0);
+
+                compileOutput.Write(_codeBuffer);
+                _codeBuffer.Position = 0;
+
+                var code = DialogByteCodeData.Read(_codeBuffer);
+
                 _codeView.ItemsSource = code.Sections;
-                _dialogPlayer.DialogExecutor = new(code, newValue.Context);
+                _dialogPlayer.DialogExecutor?.Dispose();
+                _dialogPlayer.DialogExecutor = new(code, compileOutput.Context);
+                _resourcesList.ItemsSource = new DialogRuntimeResourcesController(new(dialog.Original, compileOutput.Metadata.LocalValues)).Items;
+                IsCompiled = true;
             }
             catch (Exception error)
             {
-                error.Alert();
+                _errorView.Text = $"{error.GetType().Name}: {error.Message}";
+                _errorView.Visibility = Visibility.Visible;
             }
+
+            IsCompiling = false;
+        }
+
+        private void Clear()
+        {
+            IsStarted = false;
+            IsPaused = false;
+            IsCompiled = false;
+            IsCompiling = false;
+            _compiler = null;
+            _codeView.ItemsSource = null;
+            _dialogPlayer.DialogExecutor?.Dispose();
+            _dialogPlayer.DialogExecutor = null;
+            _resourcesList.ItemsSource = null;
+            _errorView.Visibility = Visibility.Collapsed;
         }
 
         #endregion
 
         #region События
 
-        private static void OnBuilderChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private static void OnDialogChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not DialogCompilerView view)
+            {
+                return;
+            }
+
+            view.Clear();
+
+            if (e.NewValue is not ProjectDialog dialog)
+            {
+                return;
+            }
+
+            view._compiler = new(DialogActionsMap.Create(dialog.Original));
+        }
+        private static void OnIsCompilingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is DialogCompilerView view)
             {
-                view.SetBuilder(e.OldValue as DialogCodeBuilder, e.NewValue as DialogCodeBuilder);
+                view._progressGrid.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Collapsed;
             }
         }
-        private static void OnCodeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private static void OnIsCompiledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is DialogCompilerView view)
+            if (d is not DialogCompilerView view || e.NewValue is not bool value)
             {
-                view.SetCode((DialogCompilerOutput)e.OldValue, (DialogCompilerOutput)e.NewValue);
+                return;
             }
-        }
-        private static void OnResourcesControllerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            if (d is DialogCompilerView view)
-            {
-                view.SetResourcesController(e.OldValue as DialogRuntimeResourcesController, e.NewValue as DialogRuntimeResourcesController);
-            }
+
+            view._mainGrid.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
         }
 
         #endregion
 
         #region Dependency
 
-        public static readonly DependencyProperty BuilderProperty = DependencyProperty.Register(nameof(Builder), typeof(DialogCodeBuilder),
-            typeof(DialogCompilerView), new(OnBuilderChanged));
-        public static readonly DependencyProperty CodeProperty = DependencyProperty.Register(nameof(Code), typeof(DialogCompilerOutput),
-            typeof(DialogCompilerView), new(OnCodeChanged));
-        public static readonly DependencyProperty ResourcesControllerProperty = DependencyProperty.Register(nameof(ResourcesController), typeof(DialogRuntimeResourcesController),
-            typeof(DialogCompilerView), new(OnResourcesControllerChanged));
+        public static readonly DependencyProperty DialogProperty = DependencyProperty.Register(nameof(Dialog), typeof(ProjectDialog),
+            typeof(DialogCompilerView), new(OnDialogChanged));
+        public static readonly DependencyPropertyKey IsCompilingProperty = DependencyProperty.RegisterReadOnly(nameof(IsCompiling), typeof(bool),
+            typeof(DialogCompilerView), new(false, OnIsCompilingChanged));
+        public static readonly DependencyPropertyKey IsCompiledProperty = DependencyProperty.RegisterReadOnly(nameof(IsCompiled), typeof(bool),
+            typeof(DialogCompilerView), new(false, OnIsCompiledChanged));
+        public static readonly DependencyPropertyKey IsPausedProperty = DependencyProperty.RegisterReadOnly(nameof(IsPaused), typeof(bool),
+            typeof(DialogCompilerView), new(false));
+        public static readonly DependencyPropertyKey IsStartedProperty = DependencyProperty.RegisterReadOnly(nameof(IsStarted), typeof(bool),
+            typeof(DialogCompilerView), new(false));
 
         #endregion
     }

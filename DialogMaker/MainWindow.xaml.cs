@@ -6,10 +6,6 @@ using DialogMaker.Lib;
 using DialogMaker.Lib.Controllers;
 using DialogMaker.Lib.Elements;
 using DialogMaker.ViewModels;
-using Microsoft.Win32;
-using System.Diagnostics;
-using System.Drawing.Printing;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -210,7 +206,7 @@ namespace DialogMaker
         }
         private void OnItemTabsCurrentItemChanged(object sender, ValueChangedEventArgs<IItemTab> e)
         {
-            if (e.NewValue is IActionsItemTab actionItem)
+            if (e.NewValue is IActionsItemTab actionItem && actionItem.Actions != null)
             {
                 _actionButtons.ItemsSource = actionItem.Actions;
                 _actionButtonsContainer.Visibility = Visibility.Visible;
@@ -230,54 +226,5 @@ namespace DialogMaker
 #nullable enable
 
         #endregion
-
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                CompileCurrentDialog();
-            }
-            catch (Exception error)
-            {
-                error.Alert();
-            }
-        }
-        private void CompileCurrentDialog()
-        {
-            if (_model.Project == null ||
-                _itemTabs.CurrentItem is not ProjectDialog dialog)
-            {
-                return;
-            }
-
-            var compiler = DialogCompiler.Create(dialog.Original);
-            var result = compiler.Compile();
-
-            DialogCompilerView view = new()
-            {
-                Builder = compiler.CodeBuilder,
-                Code = result,
-                ResourcesController = new(new(_model.Project.Project, result.Context.Build()))
-            };
-            ModalWindow window = new()
-            {
-                Child = view,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                Buttons = ModalWindowButtons.Main,
-                MainButtonContent = "Закрыть",
-                SizeToContent = SizeToContent.WidthAndHeight
-            };
-
-            window.ButtonClick += OnWindowButtonClick;
-
-            void OnWindowButtonClick(object? sender, ClickValueEventArgs<ModalWindowButtons> e)
-            {
-                window.ButtonClick -= OnWindowButtonClick;
-                window.Child = null;
-                window.Close();
-            }
-
-            window.Show();
-        }
     }
 }

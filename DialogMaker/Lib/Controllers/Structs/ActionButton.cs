@@ -65,7 +65,7 @@ namespace DialogMaker.Lib.Controllers
         }
         public Brush Color
         {
-            get => field ?? SystemColors.ControlTextBrush;
+            get => field ?? App.TextBrush;
             set
             {
                 if (field != value)

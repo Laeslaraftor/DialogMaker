@@ -9,6 +9,8 @@
                 <ResourceDictionary Source="pack://application:,,,/PresentationFramework.Fluent;component/Themes/Fluent.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
+            <FontFamily x:Key="CascadiaMono">/Lib/Fonts/#Cascadia Mono</FontFamily>
+
             <Style x:Key="NoSelectionListView" TargetType="ListView" 
                    BasedOn="{StaticResource {x:Type ListView}}">
                 <Setter Property="ItemContainerStyle">

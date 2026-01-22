@@ -35,20 +35,23 @@ namespace DialogMaker.Core.Executioning
 
         public readonly bool Equals(Operation other)
         {
-            if (Code != other.Code || Arguments.Length != other.Arguments.Length)
+            if (Code != other.Code || Arguments?.Length != other.Arguments?.Length)
             {
                 return false;
             }
-
-            for (int i = 0; i < Arguments.Length; i++)
+            if (Arguments != null && other.Arguments != null)
             {
-                if (Arguments[i] != other.Arguments[i])
+                for (int i = 0; i < Arguments.Length; i++)
                 {
-                    return false;
+                    if (Arguments[i] != other.Arguments[i])
+                    {
+                        return false;
+                    }
                 }
             }
 
-            return true;
+            return (Arguments == null && other.Arguments == null) || 
+                   (Arguments != null && other.Arguments != null);
         }
         public readonly override bool Equals(object obj)
         {

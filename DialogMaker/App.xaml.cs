@@ -26,6 +26,23 @@ namespace DialogMaker
 
         #region Статика
 
+        public static Brush TextBrush
+        {
+            get
+            {
+                if (field == null)
+                {
+                    if (!TryFindResource<Brush>("TextFillColorPrimaryBrush", out var brush))
+                    {
+                        brush = Brushes.Black;
+                    }
+
+                    field = brush;
+                }
+
+                return field;
+            }
+        }
         public static Brush SuccessBrush
         {
             get

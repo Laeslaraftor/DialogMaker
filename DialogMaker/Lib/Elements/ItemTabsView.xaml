@@ -6,8 +6,7 @@
              xmlns:local="clr-namespace:DialogMaker.Lib.Elements"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <TabControl x:Name="_tabControl"
-                SelectionChanged="OnTabControlSelectionChanged">
+    <TabControl x:Name="_tabControl">
         <TabControl.ItemTemplate>
             <DataTemplate>
                 <local:CloseView Title="{Binding Name, Mode=TwoWay}"

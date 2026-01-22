@@ -3,8 +3,10 @@ using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor.Menus;
 using DialogMaker.Editor.Nodes;
+using DialogMaker.Editor.Runtime;
 using DialogMaker.Lib;
 using DialogMaker.Lib.Controllers;
+using DialogMaker.Lib.Elements;
 using System.Collections;
 using System.ComponentModel;
 using System.Windows;
@@ -129,6 +131,7 @@ namespace DialogMaker.Editor
         private ProjectNodeConverter? _nodesConverter;
         private CollectionSynchronizer<DialogProjectDialogNode, DialogProjectNode>? _nodesSync;
         private ProjectResources? _resources;
+        private DialogCompilerItem? _compilerItem;
 
         #region Управление
 
@@ -285,6 +288,7 @@ namespace DialogMaker.Editor
 
             _nodesSync?.Dispose();
             _resources?.Dispose();
+            _compilerItem?.Dispose();
             _resources = null;
 
             Original.PropertyChanged -= OnDialogPropertyChanged;
@@ -297,7 +301,13 @@ namespace DialogMaker.Editor
 
         private void OnCompileButtonClicked(object? sender, object? e)
         {
-            throw new NotImplementedException();
+            if (IsDisposed || e is not ItemTabsView tabsView)
+            {
+                return;
+            }
+
+            _compilerItem ??= new(this);
+            tabsView.CurrentItem = _compilerItem;
         }
 
         private void OnDialogPropertyChanged(object? sender, PropertyChangedEventArgs e)

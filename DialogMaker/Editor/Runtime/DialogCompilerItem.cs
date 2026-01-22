@@ -20,13 +20,11 @@ namespace DialogMaker.Editor.Runtime
             };
             _pauseResumeButton = new()
             {
-                Color = SystemColors.ControlTextBrush,
                 Icon = Icons.Pause,
                 ToolTip = "Пауза"
             };
             _recompileButton = new()
             {
-                Color = SystemColors.ControlTextBrush,
                 Icon = Icons.Update,
                 ToolTip = "Собрать заново"
             };
@@ -34,6 +32,9 @@ namespace DialogMaker.Editor.Runtime
             UpdateName();
 
             dialog.PropertyChanged += OnDialogPropertyChanged;
+            _startStopButton.Clicked += OnStartStopButtonClicked;
+            _pauseResumeButton.Clicked += OnPauseResumeButtonClicked;
+            _recompileButton.Clicked += OnRecompileButtonClicked;
         }
 
         public event EventHandler? CloseRequested;
@@ -48,7 +49,7 @@ namespace DialogMaker.Editor.Runtime
                 {
                     InvokePropertyChanging(nameof(Name));
                     field = value;
-                    InvokePropertyChanged(nameof(Name));    
+                    InvokePropertyChanged(nameof(Name));
                 }
             }
         }
@@ -63,7 +64,11 @@ namespace DialogMaker.Editor.Runtime
                     throw new InvalidOperationException("Невозможно получить представление для вкладки для очищенного объекта");
                 }
 
-                _view ??= _compilerViewsPool.GetElement();
+                if (_view == null)
+                {
+                    _view = _compilerViewsPool.GetElement();
+                    _view.Dialog = Dialog;
+                }
 
                 return _view;
             }
@@ -89,9 +94,13 @@ namespace DialogMaker.Editor.Runtime
             base.Dispose(isDisposing);
 
             Dialog.PropertyChanged -= OnDialogPropertyChanged;
+            _startStopButton.Clicked -= OnStartStopButtonClicked;
+            _pauseResumeButton.Clicked -= OnPauseResumeButtonClicked;
+            _recompileButton.Clicked -= OnRecompileButtonClicked;
 
             if (_view != null)
             {
+                _view.Dialog = null;
                 _compilerViewsPool.Free(_view);
                 _view = null;
             }
@@ -124,6 +133,17 @@ namespace DialogMaker.Editor.Runtime
             {
                 UpdateName();
             }
+        }
+
+        private void OnRecompileButtonClicked(object? sender, object? e)
+        {
+        }
+        private void OnPauseResumeButtonClicked(object? sender, object? e)
+        {
+        }
+        private void OnStartStopButtonClicked(object? sender, object? e)
+        {
+            _view?.Compile();
         }
 
         #endregion

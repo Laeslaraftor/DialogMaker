@@ -9,7 +9,10 @@ namespace DialogMaker.Editor.Runtime
         public DialogRuntimeResourcesController(DialogRuntimeResources resources)
         {
             Resources = resources;
-            Items = new([.. resources.Items.Select(i => new DialogRuntimeResource(i.Key, resources.ResourcesOwner, i.Value))]);
+            var items = resources.Items.Select(i => new DialogRuntimeResource(i.Key, resources.ResourcesOwner, i.Value)).ToList();
+            items.Sort((v1, v2) => v1.Index.CompareTo(v2.Index));
+
+            Items = new(items);
         }
 
         public DialogRuntimeResources Resources { get; }

@@ -10,10 +10,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Lib\Fonts\CascadiaMono-Italic.ttf" />
+    <None Remove="Lib\Fonts\CascadiaMono.ttf" />
     <None Remove="Lib\Images\EmptyBackgroundPlaceholder.jpg" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Lib\Fonts\CascadiaMono-Italic.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Lib\Fonts\CascadiaMono.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Resource Include="Lib\Images\EmptyBackgroundPlaceholder.jpg" />
   </ItemGroup>
 

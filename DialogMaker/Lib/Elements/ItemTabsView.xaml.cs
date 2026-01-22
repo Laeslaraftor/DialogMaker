@@ -1,7 +1,12 @@
 ﻿using Acly;
 using DialogMaker.Lib.Controllers;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -14,6 +19,13 @@ namespace DialogMaker.Lib.Elements
             Items.ItemChanged += OnItemsItemChanged;
 
             _tabControl.ItemsSource = Items;
+
+            _selectedValueDescriptor = DependencyPropertyDescriptor.FromProperty(Selector.SelectedValueProperty, typeof(TabControl));
+            _selectedValueDescriptor.AddValueChanged(_tabControl, OnTabControlSelectedValueChanged);
+        }
+        ~ItemTabsView()
+        {
+            _selectedValueDescriptor.RemoveValueChanged(_tabControl, OnTabControlSelectedValueChanged);
         }
 
         public event EventHandler<ValueChangedEventArgs<IItemTab?>>? CurrentItemChanged;
@@ -28,6 +40,8 @@ namespace DialogMaker.Lib.Elements
             get => GetValue(CurrentItemProperty) as IItemTab;
             set => SetValue(CurrentItemProperty, value);
         }
+
+        private readonly DependencyPropertyDescriptor _selectedValueDescriptor;
 
         #region Управление
 
@@ -50,22 +64,9 @@ namespace DialogMaker.Lib.Elements
                 Remove(itemTab, e.RoutedEventArgs);
             }
         }
-        private void OnTabControlSelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void OnTabControlSelectedValueChanged(object? sender, EventArgs e)
         {
-            foreach (var item in e.RemovedItems)
-            {
-                if (item is IItemTab itemTab)
-                {
-                    itemTab.OnHided(this, e);
-                }
-            }
-            foreach (var item in e.AddedItems)
-            {
-                if (item is IItemTab itemTab)
-                {
-                    itemTab.OnShowed(this, e);
-                }
-            }
+            CurrentItem = _tabControl.SelectedValue as IItemTab;
         }
 
         private void OnItemsItemChanged(object? sender, CollectionItemEventArgs<IItemTab> e)
@@ -89,12 +90,20 @@ namespace DialogMaker.Lib.Elements
 
         private static void OnCurrentItemChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is ItemTabsView view)
+            if (d is not ItemTabsView view)
             {
-                if (e.NewValue is IItemTab itemTab)
-                {
-                    int index = view.Items.IndexOf(itemTab);
+                return;
+            }
+            if (e.OldValue is IItemTab oldItem)
+            {
+                oldItem.OnHided(d, EventArgs.Empty);
+            }
+            if (e.NewValue is IItemTab itemTab)
+            {
+                int index = view.Items.IndexOf(itemTab);
 
+                if (view._tabControl.SelectedIndex != index)
+                {
                     if (index == -1)
                     {
                         view.Items.Add(itemTab);
@@ -103,9 +112,9 @@ namespace DialogMaker.Lib.Elements
 
                     view._tabControl.SelectedIndex = index;
                 }
-
-                view.CurrentItemChanged?.Invoke(d, new(e));
             }
+
+            view.CurrentItemChanged?.Invoke(d, new(e));
         }
 
         #endregion

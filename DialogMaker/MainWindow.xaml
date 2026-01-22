@@ -37,14 +37,12 @@
                           Command="{Binding CloseProjectCommand}"/>
             </MenuItem>
         </Menu>
-        <Button Content="Собрать" Grid.ColumnSpan="3"
-                HorizontalAlignment="Center"
-                Click="Button_Click" Visibility="Collapsed"/>
         <Border x:Name="_actionButtonsContainer" Grid.ColumnSpan="3"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 Background="{DynamicResource SolidBackgroundFillColorQuarternaryBrush}"
                 BorderBrush="{DynamicResource SolidBackgroundFillColorBaseAltBrush}" 
-                CornerRadius="4" BorderThickness="4,0.5,0.5,0.5" Padding="0,2">
+                CornerRadius="4" BorderThickness="4,0.5,0.5,0.5" Padding="0,2"
+                Visibility="Collapsed">
             <ListView x:Name="_actionButtons" Style="{StaticResource NoSelectionListView}"
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                       ScrollViewer.VerticalScrollBarVisibility="Disabled">
@@ -56,6 +54,7 @@
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <MenuItem Height="30" Command="{Binding}"
+                                  CommandParameter="{Binding ElementName=_itemTabs}"
                                   IsEnabled="{Binding IsEnabled}"
                                   ToolTip="{Binding ToolTip}">
                             <MenuItem.Style>
@@ -78,7 +77,7 @@
                                     <TextBlock>
                                         <Run Text="{Binding Icon}" BaselineAlignment="Center"
                                              FontFamily="{StaticResource SymbolThemeFontFamily}"
-                                             Foreground="{DynamicResource SystemFillColorSuccessBrush}"/>
+                                             Foreground="{Binding Color}"/>
                                         <Run Text="{Binding Text}"/>
                                     </TextBlock>
                                 </StackPanel>
