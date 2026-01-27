@@ -7,6 +7,7 @@ namespace DialogMaker.Core.Common.SavedStates
     [Union(1, typeof(DialogResourceStringSavedState))]
     [Union(2, typeof(DialogResourceCharacterSavedState))]
     [Union(3, typeof(DialogResourceVariableSavedState))]
+    [Union(4, typeof(DialogResourceEmotionSavedState))]
     public abstract class DialogResourceObjectSavedState
     {
         [Key(-1)]

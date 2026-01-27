@@ -23,10 +23,12 @@ namespace DialogMaker.Editor
             Characters = CreateObservable(new ProjectCharacterConverter(controller), resources.Characters, out _characters);
             Variables = CreateObservable(new ProjectVariableConverter(controller), resources.Variables, out _variables);
             Files = CreateObservable(new ProjectFileConverter(controller), resources.Items, out _files);
+            Emotions = CreateObservable(new ProjectEmotionConverter(controller), resources.Emotions, out _emotions);
 
             CreateStringCommand = new RelayCommand(ExecuteCreateString);
             CreateCharacterCommand = new RelayCommand(ExecuteCreateCharacter);
             CreateVariableCommand = new RelayCommand(ExecuteCreateVariable);
+            CreateEmotionCommand = new RelayCommand(ExecuteCreateEmotion);
             AddFileCommand = new RelayCommand(p => AddFile());
             CreateVariablesContextMenu = new CreateVariableContextMenu(this);
 
@@ -34,6 +36,7 @@ namespace DialogMaker.Editor
             List<ReferenceReadOnlyList<ProjectCharacter>> inheritCharacters = [Characters];
             List<ReferenceReadOnlyList<ProjectVariable>> inheritVariables = [Variables];
             List<ReferenceReadOnlyList<ProjectFile>> inheritFiles = [Files];
+            List<ReferenceReadOnlyList<ProjectEmotion>> inheritEmotions = [Emotions];
             DialogResourcesFlags flags = resources.Flags;
 
             while (parent != null)
@@ -42,6 +45,7 @@ namespace DialogMaker.Editor
                 inheritCharacters.Add(parent.Characters);
                 inheritVariables.Add(parent.Variables);
                 inheritFiles.Add(parent.Files);
+                inheritEmotions.Add(parent.Emotions);
 
                 flags |= parent.Flags;
                 parent = parent.Parent;
@@ -51,6 +55,7 @@ namespace DialogMaker.Editor
             InheritedCharacters = new(inheritCharacters, controller.ResourcesFilter);
             InheritedVariables = new(inheritVariables, controller.ResourcesFilter);
             InheritedFiles = new(inheritFiles, controller.ResourcesFilter);
+            InheritedEmotions = new(inheritEmotions, controller.ResourcesFilter);
             Flags = flags;
             UnsettedFlags = ProjectResourcesFilter.AllFlags & ~flags;
         }
@@ -64,20 +69,24 @@ namespace DialogMaker.Editor
         public ReferenceReadOnlyList<ProjectCharacter> Characters { get; }
         public ReferenceReadOnlyList<ProjectVariable> Variables { get; }
         public ReferenceReadOnlyList<ProjectFile> Files { get; }
+        public ReferenceReadOnlyList<ProjectEmotion> Emotions { get; }
         public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectString>, ProjectString> InheritedStrings { get; }
         public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectCharacter>, ProjectCharacter> InheritedCharacters { get; }
         public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectVariable>, ProjectVariable> InheritedVariables { get; }
         public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectFile>, ProjectFile> InheritedFiles { get; }
+        public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectEmotion>, ProjectEmotion> InheritedEmotions { get; }
         public ContextMenu CreateVariablesContextMenu { get; }
         public ICommand CreateStringCommand { get; }
         public ICommand CreateCharacterCommand { get; }
         public ICommand CreateVariableCommand { get; }
+        public ICommand CreateEmotionCommand { get; }
         public ICommand AddFileCommand { get; }
 
         private readonly CollectionSynchronizer<DialogProjectString, ProjectString> _strings;
         private readonly CollectionSynchronizer<DialogProjectCharacter, ProjectCharacter> _characters;
         private readonly CollectionSynchronizer<DialogProjectVariable, ProjectVariable> _variables;
         private readonly CollectionSynchronizer<DialogProjectItem, ProjectFile> _files;
+        private readonly CollectionSynchronizer<DialogProjectEmotion, ProjectEmotion> _emotions;
 
         #region Управление
 
@@ -138,6 +147,7 @@ namespace DialogMaker.Editor
             _characters.Dispose();
             _variables.Dispose();
             _files.Dispose();
+            _emotions.Dispose();
         }
 
         #endregion
@@ -176,6 +186,17 @@ namespace DialogMaker.Editor
             try
             {
                 Original.CreateVariable(type);
+            }
+            catch (Exception error)
+            {
+                error.Alert();
+            }
+        }
+        private void ExecuteCreateEmotion(object? parameter)
+        {
+            try
+            {
+                Original.CreateEmotion();
             }
             catch (Exception error)
             {

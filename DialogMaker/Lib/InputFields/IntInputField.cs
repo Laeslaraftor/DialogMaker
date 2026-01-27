@@ -1,9 +1,10 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using Acly;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace DialogMaker.Lib.InputFields
 {
-    public class IntInputField : TextInputField
+    public class IntInputField : SliderInputField
     {
         protected override Type ValueType { get; } = typeof(int);
 
@@ -46,7 +47,12 @@ namespace DialogMaker.Lib.InputFields
         }
         protected override object? Convert(object? value)
         {
-            if (value is float i)
+            return (int)Helper.Clamp(ToInt(value), MinValue, MaxValue);
+        }
+
+        private int ToInt(object? value)
+        {
+            if (value is int i)
             {
                 return i;
             }
@@ -60,12 +66,11 @@ namespace DialogMaker.Lib.InputFields
             }
             else if (value is string str && TryHandle(str, out var floatObject))
             {
-                return floatObject;
+                return (int)floatObject;
             }
 
-            return 0f;
+            return 0;
         }
-
         private static string RemoveDots(string? value)
         {
             if (value == null)

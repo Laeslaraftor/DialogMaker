@@ -1,9 +1,10 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using Acly;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace DialogMaker.Lib.InputFields
 {
-    public class FloatInputField : TextInputField
+    public class FloatInputField : SliderInputField
     {
         protected override Type ValueType { get; } = typeof(float);
 
@@ -46,6 +47,11 @@ namespace DialogMaker.Lib.InputFields
         }
         protected override object? Convert(object? value)
         {
+            return Helper.Clamp(ToFloat(value), MinValue, MaxValue);
+        }
+
+        private float ToFloat(object? value)
+        {
             if (value is float f)
             {
                 return f;
@@ -60,10 +66,10 @@ namespace DialogMaker.Lib.InputFields
             }
             else if (value is string str && TryHandle(str, out var floatObject))
             {
-                return floatObject;
+                return (float)floatObject;
             }
 
-            return 0f;
+            return 0;
         }
 
         #endregion

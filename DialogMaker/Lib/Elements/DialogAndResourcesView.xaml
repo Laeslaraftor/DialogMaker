@@ -130,6 +130,37 @@
                         </ListView>
                     </local:MinimizableView.Child>
                 </local:MinimizableView>
+                <local:MinimizableView Margin="0,8,0,0">
+                    <local:MinimizableView.Header>
+                        <Grid Margin="6,0,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Эмоции" FontSize="28"
+                                       FontWeight="Medium" Margin="0,0,0,8"/>
+                            <Button Content="Создать" Grid.Column="1" VerticalAlignment="Center"
+                                    Command="{Binding Resources.CreateEmotionCommand}"/>
+                        </Grid>
+                    </local:MinimizableView.Header>
+                    <local:MinimizableView.Child>
+                        <ListView Grid.Row="1"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                  HorizontalContentAlignment="Stretch"
+                                  ItemsSource="{Binding Resources.InheritedEmotions}">
+                            <ListView.Template>
+                                <ControlTemplate>
+                                    <ItemsPresenter/>
+                                </ControlTemplate>
+                            </ListView.Template>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <local:EmotionView Emotion="{Binding}"/>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </local:MinimizableView.Child>
+                </local:MinimizableView>
             </StackPanel>
         </ScrollViewer>
         <local:DiagramView ClipToBounds="True"

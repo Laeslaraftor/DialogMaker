@@ -20,6 +20,7 @@ namespace DialogMaker.Core.Common
             Strings = MakeDictionary(resources.Strings, i => new DialogResourceString(this, i));
             Characters = MakeDictionary(resources.Characters, i => new DialogResourceCharacter(this, i));
             Variables = MakeDictionary(resources.Variables, i => DialogResourceVariable.Create(this, i));
+            Emotions = MakeDictionary(resources.Emotions, i => new DialogResourceEmotion(this, i));
 
             FileExtensions.CreateDirectory(Folder);
 
@@ -39,11 +40,13 @@ namespace DialogMaker.Core.Common
             var strings = RestoreDictionary(savedState.Strings, i => new DialogResourceString(this, i));
             var characters = RestoreDictionary(savedState.Characters, i => new DialogResourceCharacter(this, i));
             var variables = RestoreDictionary(savedState.Variables, i => DialogResourceVariable.Create(this, i));
+            var emotions = RestoreDictionary(savedState.Emotions, i => new DialogResourceEmotion(this, i));
 
             Files = new(Files);
             Strings = new(Strings);
             Characters = new(Characters);
             Variables = new(Variables);
+            Emotions = new(Emotions);
         }
 
         public IDialogResourcesContainer Container { get; }
@@ -53,6 +56,7 @@ namespace DialogMaker.Core.Common
         public ReadOnlyDictionary<string, DialogResourceString> Strings { get; }
         public ReadOnlyDictionary<string, DialogResourceCharacter> Characters { get; }
         public ReadOnlyDictionary<string, DialogResourceVariable> Variables { get; }
+        public ReadOnlyDictionary<string, DialogResourceEmotion> Emotions { get; }
 
         IResourcesOwner IResourcesContainer.Owner => Container;
 
@@ -71,6 +75,7 @@ namespace DialogMaker.Core.Common
                 Strings = Strings.Values.Select(i => (DialogResourceStringSavedState)i.Save()).ToDictionary(e => e.Id),
                 Characters = Characters.Values.Select(i => (DialogResourceCharacterSavedState)i.Save()).ToDictionary(e => e.Id),
                 Variables = Variables.Values.Select(i => (DialogResourceVariableSavedState)i.Save()).ToDictionary(e => e.Id),
+                Emotions = Emotions.Values.Select(i => (DialogResourceEmotionSavedState)i.Save()).ToDictionary(e => e.Id),
             };
 
             var data = MessagePackSerializer.Serialize(savedState);

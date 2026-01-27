@@ -1,6 +1,5 @@
 ﻿using DialogMaker.Core.Attributes;
 using DialogMaker.Core.Editor;
-using DialogMaker.Core.Editor.Nodes;
 
 namespace DialogMaker.Core
 {
@@ -14,5 +13,7 @@ namespace DialogMaker.Core
         File,
         [ResourceType(typeof(DialogProjectVariable), IsDev = true)]
         Variable,
+        [ResourceType(typeof(DialogProjectEmotion), IsDev = true)]
+        Emotion,
     }
 }

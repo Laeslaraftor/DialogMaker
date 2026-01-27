@@ -1,0 +1,35 @@
+﻿<UserControl x:Class="DialogMaker.Lib.Elements.EmotionPreview"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:DialogMaker.Lib.Elements"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <local:FaceView x:Name="_faceView" Margin="0,10,-425,-275"
+                        LeftEyebrowVerticalPosition="{Binding LeftEye.YPosition}"
+                        LeftEyebrowRotation="{Binding LeftEye.ZRotation}"
+                        LeftEyeClosedValue="{Binding LeftEye.ClosePercent}"
+                        RightEyebrowVerticalPosition="{Binding RightEye.YPosition}"
+                        RightEyebrowRotation="{Binding RightEye.ZRotation}"
+                        RightEyeClosedValue="{Binding RightEye.ClosePercent}"
+                        MouthOpenedValue="{Binding Mouth.OpenPercent}"
+                        MouthHorizontalStretch="{Binding Mouth.HorizontalStretchPercent}"
+                        LeftMouthCornerVerticalPosition="{Binding Mouth.LeftCornerYPosition}"
+                        RightMouthCornerVerticalPosition="{Binding Mouth.RightCornerYPosition}">
+            <local:FaceView.RenderTransform>
+                <ScaleTransform ScaleX="0.2" ScaleY="0.2"/>
+            </local:FaceView.RenderTransform>
+        </local:FaceView>
+        <Button x:Name="_editButton" Margin="5"
+                Grid.Column="1" Content="Настроить"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Click="OnEditButtonClicked"/>
+    </Grid>
+</UserControl>

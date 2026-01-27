@@ -120,8 +120,20 @@ namespace DialogMaker.Lib.Controllers
                 };
             }),
             new(typeof(bool), t => new BoolInputField()),
-            new(typeof(float), t => new FloatInputField()),
-            new(typeof(int), t => new IntInputField()),
+            new(typeof(float), t => 
+            {
+                FloatInputField field = new();
+                CheckSlider(t, field);
+
+                return field;
+            }),
+            new(typeof(int), t =>
+            {
+                IntInputField field = new();
+                CheckSlider(t, field);
+
+                return field;
+            }),
             new(typeof(Enum), t =>
             {
                 return new EnumInputField()
@@ -275,6 +287,21 @@ namespace DialogMaker.Lib.Controllers
             }
 
             return result;
+        }
+
+        private static void CheckSlider(PropertyInfo property, SliderInputField field)
+        {
+            var attribute = property.GetCustomAttribute<RangeAttribute>();
+
+            if (attribute == null)
+            {
+                field.IsSlider = false;
+                return;
+            }
+
+            field.IsSlider = true;
+            field.MinValue = attribute.Minimum;
+            field.MaxValue = attribute.Maximum;
         }
 
         #endregion

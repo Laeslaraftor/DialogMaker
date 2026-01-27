@@ -1,0 +1,25 @@
+﻿<UserControl x:Class="DialogMaker.Lib.Elements.EmotionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:DialogMaker.Lib.Elements"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <local:EditableTextBlock x:Name="_idBlock" Text="{Binding Id}"
+                                 FontSize="16" Margin="0,8,0,4"/>
+        <local:EnumValueView x:Name="_flagsView" Grid.Column="1"
+                             HorizontalAlignment="Right" 
+                             VerticalAlignment="Center"/>
+        <local:EmotionPreview x:Name="_preview" Grid.Row="1" Grid.ColumnSpan="2"/>
+    </Grid>
+</UserControl>

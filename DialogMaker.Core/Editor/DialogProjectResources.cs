@@ -1,5 +1,4 @@
 ﻿using Acly;
-using DialogMaker.Core.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -21,6 +20,7 @@ namespace DialogMaker.Core.Editor
             Characters = [];
             Variables = [];
             Items = [];
+            Emotions = [];
 
             List<DialogProjectResources> inheritedResources = [];
             var parent = owner.Parent;
@@ -82,6 +82,17 @@ namespace DialogMaker.Core.Editor
                     Debug.WriteLine(error);
                 }
             }
+            foreach (var emotion in savedState.Emotions)
+            {
+                try
+                {
+                    Emotions.Add(new(this, emotion));
+                }
+                catch (Exception error)
+                {
+                    Debug.WriteLine(error);
+                }
+            }
         }
 
         public IProjectResourcesOwner Owner { get; }
@@ -91,6 +102,7 @@ namespace DialogMaker.Core.Editor
         public EditableCollection<DialogProjectItem> Items { get; }
         public EditableCollection<DialogProjectCharacter> Characters { get; }
         public EditableCollection<DialogProjectVariable> Variables { get; }
+        public EditableCollection<DialogProjectEmotion> Emotions { get; }
         public ReadOnlyCollection<DialogProjectResources> InheritedResources { get; }
 
         IResourcesOwner IResourcesContainer.Owner => Owner;
@@ -111,7 +123,8 @@ namespace DialogMaker.Core.Editor
                 Strings = [.. Strings.Select(r => (DialogProjectStringSavedState)r.Save())],
                 Items = [.. Items.Select(i => (DialogProjectResourceItemSavedState)i.Save())],
                 Characters = [.. Characters.Select(c => (DialogProjectCharacterSavedState)c.Save())],
-                Variables = [.. Variables.Select(v => (DialogProjectVariableSavedState)v.Save())]
+                Variables = [.. Variables.Select(v => (DialogProjectVariableSavedState)v.Save())],
+                Emotions = [.. Emotions.Select(v => (DialogProjectEmotionSavedState)v.Save())]
             };
 
             string filePath = Path.Combine(Folder, ResourcesFileName);
@@ -134,6 +147,10 @@ namespace DialogMaker.Core.Editor
         public bool TryGetVariable(Guid id, [NotNullWhen(true)] out DialogProjectVariable? result)
         {
             return Variables.TryGetValue(i => i.ProjectId == id, out result);
+        }
+        public bool TryGetEmotion(Guid id, [NotNullWhen(true)] out DialogProjectEmotion? result)
+        {
+            return Emotions.TryGetValue(i => i.ProjectId == id, out result);
         }
         public bool TryGetObject(Guid id, Type resourceType, [NotNullWhen(true)] out DialogProjectResourceObject? result)
         {
@@ -158,6 +175,13 @@ namespace DialogMaker.Core.Editor
                 if (TryGetCharacter(id, out var character))
                 {
                     result = character;
+                }
+            }
+            else if (resourceType == typeof(DialogProjectEmotion))
+            {
+                if (TryGetEmotion(id, out var emotion))
+                {
+                    result = emotion;
                 }
             }
             else if (typeof(DialogProjectVariable).IsAssignableFrom(resourceType))
@@ -199,6 +223,10 @@ namespace DialogMaker.Core.Editor
             else if (obj is DialogProjectVariable)
             {
                 return Variables;
+            }
+            else if (obj is DialogProjectEmotion)
+            {
+                return Emotions;
             }
 
             throw new ArgumentException($"Неизвестный тип ресурса");
@@ -286,6 +314,18 @@ namespace DialogMaker.Core.Editor
         public bool RemoveVariable(DialogProjectVariable variable)
         {
             return Variables.Remove(variable);
+        }
+
+        public DialogProjectEmotion CreateEmotion()
+        {
+            DialogProjectEmotion emotion = new(this);
+            Emotions.Add(emotion);
+
+            return emotion;
+        }
+        public bool RemoveEmotion(DialogProjectEmotion emotion)
+        {
+            return Emotions.Remove(emotion);
         }
 
         protected override void Dispose(bool isDisposing)

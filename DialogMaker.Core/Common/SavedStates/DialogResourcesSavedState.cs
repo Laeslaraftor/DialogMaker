@@ -14,5 +14,7 @@ namespace DialogMaker.Core.Common.SavedStates
         public Dictionary<string, DialogResourceCharacterSavedState> Characters { get; set; } = [];
         [Key(3)]
         public Dictionary<string, DialogResourceVariableSavedState> Variables { get; set; } = [];
+        [Key(4)]
+        public Dictionary<string, DialogResourceEmotionSavedState> Emotions { get; set; } = [];
     }
 }

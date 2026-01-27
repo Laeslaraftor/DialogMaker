@@ -8,11 +8,11 @@ namespace DialogMaker.Lib.InputFields
     {
         public TextInputField()
         {
-            _view = new()
+            Entry = new()
             {
                 TextWrapping = TextWrapping.Wrap
             };
-            _view.ConfirmedText += OnViewConfirmedText;
+            Entry.ConfirmedText += OnViewConfirmedText;
         }
 
         public override string Placeholder
@@ -26,10 +26,10 @@ namespace DialogMaker.Lib.InputFields
 
                     field = value;
 
-                    if (_view.Placeholder != value)
+                    if (Entry.Placeholder != value)
                     {
-                        _view.Placeholder = value;
-                        _view.ToolTip = value;
+                        Entry.Placeholder = value;
+                        Entry.ToolTip = value;
                     }
 
                     InvokePropertyChanged(nameof(Placeholder));
@@ -53,9 +53,9 @@ namespace DialogMaker.Lib.InputFields
                     field = Convert(value);
                     string textValue = ValueToString(value);
 
-                    if (textValue.Equals(_view.Text) != true)
+                    if (textValue.Equals(Entry.Text) != true)
                     {
-                        _view.Text = textValue;
+                        Entry.Text = textValue;
                     }
 
                     InvokePropertyChanged(nameof(Value));
@@ -71,21 +71,20 @@ namespace DialogMaker.Lib.InputFields
                 {
                     InvokePropertyChanging(nameof(Multiline));
                     field = value;
-                    _view.TextBox.AcceptsReturn = value;
+                    Entry.TextBox.AcceptsReturn = value;
                     InvokePropertyChanged(nameof(Multiline));
                 }
             }
         }
-        public override FrameworkElement View => _view;
+        public override FrameworkElement View => Entry;
 
         protected virtual Type ValueType { get; } = typeof(string);
         protected string Text
         {
-            get => _view.Text;
-            set => _view.Text = value;
+            get => Entry.Text;
+            set => Entry.Text = value;
         }
-
-        private readonly Entry _view;
+        protected Entry Entry { get; }
 
         #region Управление
 
@@ -93,7 +92,7 @@ namespace DialogMaker.Lib.InputFields
         {
             base.Dispose(isDisposing);
 
-            _view.ConfirmedText -= OnViewConfirmedText;
+            Entry.ConfirmedText -= OnViewConfirmedText;
         }
 
         protected virtual bool TryHandle(string newValue, [NotNullWhen(true)] out object value)
