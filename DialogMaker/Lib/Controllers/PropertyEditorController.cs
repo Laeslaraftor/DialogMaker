@@ -259,7 +259,7 @@ namespace DialogMaker.Lib.Controllers
         public static List<PropertyEditorController> CreateForAllProperties(ObservableObject instance)
         {
             List<PropertyEditorController> result = [];
-            SortedDictionary<SortAttribute, PropertyInfo> sortedProperties = [];
+            SortedDictionary<SortAttribute, List<PropertyInfo>> sortedProperties = [];
             List<PropertyInfo> otherProperties = [];
 
             foreach (var property in instance.GetType().GetProperties())
@@ -268,14 +268,20 @@ namespace DialogMaker.Lib.Controllers
 
                 if (sortAttribute != null)
                 {
-                    sortedProperties.Add(sortAttribute, property);
+                    if (sortedProperties.TryGetValue(sortAttribute, out var properties))
+                    {
+                        properties.Add(property);
+                        continue;
+                    }
+
+                    sortedProperties.Add(sortAttribute, [property]);
                     continue;
                 }
 
                 otherProperties.Add(property);
             }
 
-            List<PropertyInfo> totalProperties = [.. sortedProperties.Values];
+            List<PropertyInfo> totalProperties = [.. GetValues(sortedProperties)];
             totalProperties.AddRange(otherProperties);
 
             foreach (var property in totalProperties)
@@ -302,6 +308,17 @@ namespace DialogMaker.Lib.Controllers
             field.IsSlider = true;
             field.MinValue = attribute.Minimum;
             field.MaxValue = attribute.Maximum;
+        }
+        private static IEnumerable<TValue> GetValues<TKey, TValue>(SortedDictionary<TKey, List<TValue>> sorted)
+            where TKey : notnull
+        {
+            foreach (var list in sorted.Values)
+            {
+                foreach (var value in list)
+                {
+                    yield return value;
+                }
+            }
         }
 
         #endregion

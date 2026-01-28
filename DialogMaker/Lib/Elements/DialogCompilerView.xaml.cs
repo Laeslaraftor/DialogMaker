@@ -47,6 +47,7 @@ namespace DialogMaker.Lib.Elements
         }
 
         private DialogCompiler? _compiler;
+        private DialogRuntimeResourcesController? _lastResourcesController;
         private readonly MemoryStream _codeBuffer = new();
 
         #region Управление
@@ -80,7 +81,8 @@ namespace DialogMaker.Lib.Elements
                 _codeView.ItemsSource = code.Sections;
                 _dialogPlayer.DialogExecutor?.Dispose();
                 _dialogPlayer.DialogExecutor = new(code, compileOutput.Context);
-                _resourcesList.ItemsSource = new DialogRuntimeResourcesController(new(dialog.Original, compileOutput.Metadata.LocalValues)).Items;
+                _lastResourcesController = new(new(dialog.Original, compileOutput.Metadata.LocalValues));
+                _resourcesList.ItemsSource = _lastResourcesController.Items;
                 IsCompiled = true;
             }
             catch (Exception error)
@@ -103,6 +105,8 @@ namespace DialogMaker.Lib.Elements
             _dialogPlayer.DialogExecutor?.Dispose();
             _dialogPlayer.DialogExecutor = null;
             _resourcesList.ItemsSource = null;
+            _lastResourcesController?.Dispose();
+            _lastResourcesController = null;
             _errorView.Visibility = Visibility.Collapsed;
         }
 

@@ -39,15 +39,97 @@
                 </ListView.Template>
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition/>
-                            </Grid.RowDefinitions>
-                            <TextBlock Text="{Binding Name}"/>
-                            <ContentPresenter Grid.Row="1" 
+                        <Border Background="{DynamicResource LayerOnAcrylicFillColorDefaultBrush}"
+                                BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                Padding="8" Margin="0,4,0,0" CornerRadius="4">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="{Binding Name}" FontSize="16"
+                                           FontWeight="Medium" Margin="0,0,0,4"/>
+                                <ListView Grid.Row="1" ItemsSource="{Binding Childs}"
+                                          ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                          Style="{StaticResource NoSelectionListView}">
+                                    <ListView.Template>
+                                        <ControlTemplate>
+                                            <ItemsPresenter/>
+                                        </ControlTemplate>
+                                    </ListView.Template>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{DynamicResource LayerOnAcrylicFillColorDefaultBrush}"
+                                                    BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}"
+                                                    BorderThickness="1"
+                                                    Padding="8" Margin="0,4,0,0" CornerRadius="4">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition/>
+                                                    </Grid.RowDefinitions>
+                                                    <TextBlock Text="{Binding Name}" FontSize="16"
+                                                               FontWeight="Medium" Margin="0,0,0,4"/>
+                                                    <ListView Grid.Row="2"
+                                                              ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                                              Style="{StaticResource NoSelectionListView}"
+                                                              ItemsSource="{Binding Properties}">
+                                                        <ListView.Template>
+                                                            <ControlTemplate>
+                                                                <ItemsPresenter/>
+                                                            </ControlTemplate>
+                                                        </ListView.Template>
+                                                        <ListView.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Grid Margin="0,4,0,0">
+                                                                    <Grid.RowDefinitions>
+                                                                        <RowDefinition Height="Auto"/>
+                                                                        <RowDefinition/>
+                                                                    </Grid.RowDefinitions>
+                                                                    <TextBlock Text="{Binding Name}"/>
+                                                                    <ContentPresenter Grid.Row="1" 
+                                                                                      Content="{Binding View}"/>
+                                                                </Grid>
+                                                            </DataTemplate>
+                                                        </ListView.ItemTemplate>
+                                                    </ListView>
+                                                    <ContentPresenter Grid.Row="1" 
+                                                                      Content="{Binding View}"/>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                                <ListView Grid.Row="2"
+                                          ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                                          Style="{StaticResource NoSelectionListView}"
+                                          ItemsSource="{Binding Properties}">
+                                    <ListView.Template>
+                                        <ControlTemplate>
+                                            <ItemsPresenter/>
+                                        </ControlTemplate>
+                                    </ListView.Template>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,4,0,0">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition/>
+                                                </Grid.RowDefinitions>
+                                                <TextBlock Text="{Binding Name}"/>
+                                                <ContentPresenter Grid.Row="1" 
+                                                                  Content="{Binding View}"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                                <ContentPresenter Grid.Row="1" 
                                               Content="{Binding View}"/>
-                        </Grid>
+                            </Grid>
+                        </Border>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>

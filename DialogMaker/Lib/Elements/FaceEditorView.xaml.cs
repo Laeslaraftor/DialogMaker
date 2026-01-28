@@ -21,7 +21,7 @@ namespace DialogMaker.Lib.Elements
             set => SetValue(EmotionProperty, value);
         }
 
-        private readonly ObservableCollection<PropertyEditorController> _properties = [];
+        private readonly ObservableCollection<PropertiesGroup> _properties = [];
 
         #region Управление
 
@@ -35,26 +35,41 @@ namespace DialogMaker.Lib.Elements
                 return;
             }
 
-            void AddObject(object? obj)
+            PropertiesGroup? CreateGroup(string name, object? obj, PropertiesGroup? parent = null)
             {
                 if (obj is not ObservableObject observable)
                 {
-                    return;
+                    return null;
                 }
 
                 var properties = PropertyEditorController.CreateForAllProperties(observable);
-                
-                foreach (var property in properties)
+                PropertiesGroup group = new(name, properties);
+
+                if (parent != null)
                 {
-                    _properties.Add(property);
+                    parent.Childs ??= [];
+                    parent.Childs.Add(group);
+
+                    return group;
+                }
+
+                _properties.Add(group);
+
+                return group;
+            }
+            void CreateEye(IEmotion.IEye eye)
+            {
+                var eyeGroup = CreateGroup("Левый глаз", eye);
+
+                if (eyeGroup != null)
+                {
+                    CreateGroup("Бровь", eye?.Eyebrow, eyeGroup);
                 }
             }
 
-            AddObject(newValue.LeftEye?.Eyebrow);
-            AddObject(newValue.LeftEye);
-            AddObject(newValue.RightEye?.Eyebrow);
-            AddObject(newValue.RightEye);
-            AddObject(newValue.Mouth);
+            CreateEye(newValue.LeftEye);
+            CreateEye(newValue.RightEye);
+            CreateGroup("Рот", newValue.Mouth);
         }
 
         #endregion
@@ -117,6 +132,17 @@ namespace DialogMaker.Lib.Elements
             {
                 await Task.Delay(50);
             }
+        }
+
+        #endregion
+
+        #region Классы
+
+        private class PropertiesGroup(string name, IEnumerable<PropertyEditorController> properties)
+        {
+            public string Name { get; } = name;
+            public IEnumerable<PropertyEditorController> Properties { get; } = properties;
+            public List<PropertiesGroup>? Childs { get; set; }
         }
 
         #endregion

@@ -28,5 +28,6 @@ namespace DialogMaker.Core.Editor.Nodes
         public IEnumerable<DialogProjectNodePort> GetPorts();
         public ReadOnlyDictionary<DialogProjectNodeInput, DialogProjectNodeMetadata> GetInputs();
         public ReadOnlyDictionary<DialogProjectNodeOutput, DialogProjectNodeMetadata> GetOutputs();
+        public string? GetName(DialogProjectNodePort port);
     }
 }

@@ -12,11 +12,11 @@
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
         <local:FaceView x:Name="_faceView" Margin="0,10,-425,-275"
-                        LeftEyebrowVerticalPosition="{Binding LeftEye.YPosition}"
-                        LeftEyebrowRotation="{Binding LeftEye.ZRotation}"
+                        LeftEyebrowVerticalPosition="{Binding LeftEye.Eyebrow.YPosition}"
+                        LeftEyebrowRotation="{Binding LeftEye.Eyebrow.ZRotation}"
                         LeftEyeClosedValue="{Binding LeftEye.ClosePercent}"
-                        RightEyebrowVerticalPosition="{Binding RightEye.YPosition}"
-                        RightEyebrowRotation="{Binding RightEye.ZRotation}"
+                        RightEyebrowVerticalPosition="{Binding RightEye.Eyebrow.YPosition}"
+                        RightEyebrowRotation="{Binding RightEye.Eyebrow.ZRotation}"
                         RightEyeClosedValue="{Binding RightEye.ClosePercent}"
                         MouthOpenedValue="{Binding Mouth.OpenPercent}"
                         MouthHorizontalStretch="{Binding Mouth.HorizontalStretchPercent}"

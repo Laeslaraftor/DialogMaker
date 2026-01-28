@@ -115,7 +115,7 @@ namespace DialogMaker.Core.Editor.Nodes
                         {
                             return true;
                         }
-                    } 
+                    }
                 }
 
                 return false;
@@ -127,7 +127,7 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 foreach (var input in GetInputs().Keys)
                 {
-                    if (input.ConnectionsCount > 0 && 
+                    if (input.ConnectionsCount > 0 &&
                         input.ConnectionType == DialogNodeConnectionType.Action)
                     {
                         return false;
@@ -203,7 +203,7 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 foreach (var connection in input)
                 {
-                    if (ignorePredicate(connection.Node) || 
+                    if (ignorePredicate(connection.Node) ||
                         connection.Node.IsSeparator)
                     {
                         continue;
@@ -217,7 +217,7 @@ namespace DialogMaker.Core.Editor.Nodes
                     foreach (var subNode in subGroup)
                     {
                         yield return subNode;
-                    } 
+                    }
                 }
             }
 
@@ -297,6 +297,25 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             resource = null;
             return false;
+        }
+        public string? GetName(DialogProjectNodePort port)
+        {
+            foreach (var info in GetOutputs())
+            {
+                if (info.Key.Equals(port))
+                {
+                    return info.Value.Name;
+                }
+            }
+            foreach (var info in GetInputs())
+            {
+                if (info.Key.Equals(port))
+                {
+                    return info.Value.Name;
+                }
+            }
+
+            return string.Empty;
         }
 
         public DialogProjectDialogNodeSavedState Save()
@@ -426,25 +445,57 @@ namespace DialogMaker.Core.Editor.Nodes
             where TPort : DialogProjectNodePort
             where T : NameAttribute
         {
-            Dictionary<TPort, DialogProjectNodeMetadata> result = [];
+            Dictionary<TPort, DialogProjectNodeMetadata> portsMetadata = [];
+            SortedDictionary<SortAttribute, List<TPort>> sortedPorts = [];
+            List<TPort> otherPorts = [];
 
             foreach (var property in node.GetType().GetProperties())
             {
                 var attribute = property.GetCustomAttribute<T>();
+                var sortAttribute = property.GetCustomAttribute<SortAttribute>();
 
-                if (attribute != null)
+                if (attribute == null ||
+                    property.GetValue(node) is not TPort port)
                 {
-                    if (property.GetValue(node) is not TPort port)
+                    continue;
+                }
+
+                string name = attribute.Name;
+                string description = property.GetCustomAttribute<DescriptionAttribute>()?.Description ?? string.Empty;
+                DialogProjectNodeMetadata metadata = new(name, description);
+                port._name = name;
+
+                portsMetadata.Add(port, metadata);
+
+                if (sortAttribute != null)
+                {
+                    if (sortedPorts.TryGetValue(sortAttribute, out var ports))
                     {
+                        ports.Add(port);
                         continue;
                     }
 
-                    string name = attribute.Name;
-                    string description = property.GetCustomAttribute<DescriptionAttribute>()?.Description ?? string.Empty;
-                    DialogProjectNodeMetadata metadata = new(name, description);
-
-                    result.Add(port, metadata);
+                    sortedPorts.Add(sortAttribute, [port]);
                 }
+                else
+                {
+                    otherPorts.Add(port);
+                }
+            }
+
+            otherPorts.Sort();
+            Dictionary<TPort, DialogProjectNodeMetadata> result = [];
+
+            foreach (var list in sortedPorts.Values)
+            {
+                foreach (var port in list)
+                {
+                    result.Add(port, portsMetadata[port]);
+                }
+            }
+            foreach (var port in otherPorts)
+            {
+                result.Add(port, portsMetadata[port]);
             }
 
             return result;

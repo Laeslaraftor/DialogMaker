@@ -7,15 +7,13 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Canvas Width="555" Height="365">
-        <Path Stroke="{DynamicResource AccentTextFillColorTertiaryBrush}" 
+        <Path x:Name="_leftEyebrow"
+              Stroke="{DynamicResource AccentTextFillColorTertiaryBrush}" 
               StrokeThickness="10"
               Canvas.Left="355" Canvas.Top="30" 
               RenderTransformOrigin="0.5,0.5">
             <Path.RenderTransform>
-                <TransformGroup>
-                    <TranslateTransform x:Name="_leftEyebrowTranslation"/>
-                    <RotateTransform x:Name="_leftEyebrowRotation"/>
-                </TransformGroup>
+                <RotateTransform x:Name="_leftEyebrowRotation"/>
             </Path.RenderTransform>
             <Path.Data>
                 <PathGeometry>
@@ -25,13 +23,13 @@
                 </PathGeometry>
             </Path.Data>
         </Path>
-        <Path Stroke="{DynamicResource AccentTextFillColorTertiaryBrush}" 
+        <Path x:Name="_rightEyebrow"
+              Stroke="{DynamicResource AccentTextFillColorTertiaryBrush}" 
               StrokeThickness="10"
               Canvas.Left="0" Canvas.Top="30" 
               RenderTransformOrigin="0.5,0.5">
             <Path.RenderTransform>
                 <TransformGroup>
-                    <TranslateTransform x:Name="_rightEyebrowTranslation"/>
                     <RotateTransform x:Name="_rightEyebrowRotation"/>
                     <ScaleTransform ScaleX="-1"/>
                 </TransformGroup>
@@ -123,17 +121,17 @@
             </Path.RenderTransform>
             <Path.Data>
                 <PathGeometry>
-                    <PathFigure StartPoint="0,0">
+                    <PathFigure x:Name="_mouthLipsFigure" StartPoint="0,0">
                         <PolyBezierSegment x:Name="_mouthTopLip" 
                                            Points="0,0 100,-40 200,0"/>
                         <PolyBezierSegment x:Name="_mouthBottomLip" 
                                            Points="200,0 100,40 0,0"/>
                     </PathFigure>
-                    <PathFigure StartPoint="0,0">
+                    <PathFigure x:Name="_mouthCenterTopFigure" StartPoint="0,0">
                         <PolyBezierSegment x:Name="_mouthCenterTop"
                                            Points="0,0 100,-5 200,0"/>
                     </PathFigure>
-                    <PathFigure StartPoint="0,0">
+                    <PathFigure x:Name="_mouthCenterBottomFigure" StartPoint="0,0">
                         <PolyBezierSegment x:Name="_mouthCenterBottom"
                                            Points="0,0 100,-5 200,0"/>
                     </PathFigure>

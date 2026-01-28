@@ -143,7 +143,7 @@ namespace DialogMaker.Core.Editor
             }
 
             [Key(0), JsonProperty("openPercent")]
-            [Name("Степень закрытости"), Range(0, 1)]
+            [Name("Степень открытости"), Range(0, 1)]
             public float OpenPercent
             {
                 get => field;

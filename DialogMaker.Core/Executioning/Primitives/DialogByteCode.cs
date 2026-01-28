@@ -223,5 +223,13 @@
         /// </summary>
         [ArgsCount(1), Implementation(typeof(IntersectOpCode))]
         Intersect,
+
+        /// <summary>
+        /// Отобразить эмоцию персонажем.
+        /// Аргумент 1 - персонаж, который должен отобразить эмоцию
+        /// Аргумент 2 - отображаемая эмоция
+        /// </summary>
+        [ArgsCount(2), Implementation(typeof(EmotionOpCode))]
+        Emotion,
     }
 }

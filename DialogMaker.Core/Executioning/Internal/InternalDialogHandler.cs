@@ -3,6 +3,7 @@ using System;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace DialogMaker.Core.Executioning.Internal
 {
@@ -47,6 +48,13 @@ namespace DialogMaker.Core.Executioning.Internal
             return await _executor.HandleDialog(async h =>
             {
                 return await h.ShowChoice(character, variants, cancellationToken);
+            }, cancellationToken);
+        }
+        public async Task ShowEmotion(ICharacter? character, IEmotion? emotion, CancellationToken cancellationToken)
+        {
+            await _executor.HandleDialog(async h =>
+            {
+                await h.ShowEmotion(character, emotion, cancellationToken);
             }, cancellationToken);
         }
 

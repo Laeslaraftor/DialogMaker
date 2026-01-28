@@ -144,6 +144,10 @@ namespace DialogMaker.Editor
             {
                 return new ProjectVariable(controller, variable);
             }
+            if (resource is DialogProjectEmotion emotion)
+            {
+                return new ProjectEmotion(controller, emotion);
+            }
 
             throw new ArgumentException($"Неизвестный тип ресурса: {resource.GetType()}", nameof(resource));
         }

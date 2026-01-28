@@ -8,7 +8,7 @@ using System.IO;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
-    public abstract class DialogProjectNodePort : Disposable, IEnumerable<DialogProjectNodePort>, ISavable
+    public abstract class DialogProjectNodePort : Disposable, IEnumerable<DialogProjectNodePort>, ISavable, IComparable
     {
         protected DialogProjectNodePort(INode node, int portId, DialogNodePortType dataType)
             : this(node, portId, dataType.ToConnectionType(), dataType)
@@ -36,6 +36,14 @@ namespace DialogMaker.Core.Editor.Nodes
         }
 
         public int Id { get; }
+        public string Name
+        {
+            get
+            {
+                _name ??= Node.GetName(this) ?? string.Empty;
+                return _name;
+            }
+        }
         public INode Node { get; }
         public DialogNodeConnectionType ConnectionType { get; }
         public DialogNodePortType DataType { get; }
@@ -67,6 +75,8 @@ namespace DialogMaker.Core.Editor.Nodes
         }
 
         protected abstract IEditableList ConnectionsList { get; }
+
+        internal string? _name;
 
         #region Управление
 
@@ -177,6 +187,15 @@ namespace DialogMaker.Core.Editor.Nodes
             }
 
             return $"{currentConnection} -> {nextNodeName}";
+        }
+        public int CompareTo(object obj)
+        {
+            if (obj is DialogProjectNodePort port)
+            {
+                return Name.CompareTo(port.Name);
+            }
+
+            return Name.CompareTo(obj);
         }
 
         protected override void Dispose(bool isDisposing)

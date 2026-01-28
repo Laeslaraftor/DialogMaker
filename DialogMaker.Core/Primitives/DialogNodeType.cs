@@ -142,5 +142,15 @@ namespace DialogMaker.Core
         [Description("Выбрать максимальное из двух входящих значений.")]
         [Path("Вычисления")]
         Maximum,
+
+        [Name("Эмоция"), Node(typeof(DialogProjectSimpleEmotionNode))]
+        [Description("Отобразить эмоцию персонажем.")]
+        [Path("Диалог")]
+        Emotion,
+
+        [Name("Эмоция (ресурс)"), Node(typeof(DialogProjectResourceEmotionNode))]
+        [Description("Отобразить эмоцию персонажем.")]
+        [Path("Диалог")]
+        ResourceEmotion,
     }
 }

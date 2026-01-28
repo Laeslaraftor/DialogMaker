@@ -1,8 +1,10 @@
 ﻿using Acly;
+using DialogMaker.Lib.Controllers;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Shapes;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -84,9 +86,9 @@ namespace DialogMaker.Lib.Elements
             double lipsValue = Helper.LerpUnclamped(80, 150, value);
 
             top.Y = -lipsValue;
-            centerTop.Y = Helper.LerpUnclamped(-5, -75, value);
-            bottom.Y = -lipsValue;
-            centerBottom.Y = Helper.LerpUnclamped(-5, 65, value);
+            centerTop.Y = Helper.LerpUnclamped(-5, -85, value);
+            bottom.Y = lipsValue;
+            centerBottom.Y = Helper.LerpUnclamped(-5, 75, value);
 
             _mouthTopLip.Points[1] = top;
             _mouthCenterTop.Points[1] = centerTop;
@@ -95,26 +97,42 @@ namespace DialogMaker.Lib.Elements
         }
         private void SetMouthLeftCornerValue(double value)
         {
-            SetVerticalCornersValue(value, 2, _mouthBottomLip, _mouthTopLip, _mouthCenterBottom, _mouthCenterTop);
+            SetVerticalCornersValue(value, 2, _mouthTopLip, _mouthCenterBottom, _mouthCenterTop);
+            SetVerticalCornersValue(value, 0, _mouthBottomLip);
         }
         private void SetMouthRightCornerValue(double value)
         {
-            SetVerticalCornersValue(value, 0, _mouthBottomLip, _mouthTopLip, _mouthCenterBottom, _mouthCenterTop);
+            void SetY(double value, params PathFigure[] figures)
+            {
+                foreach (var figure in figures)
+                {
+                    var startPoint = figure.StartPoint;
+                    startPoint.Y = value;
+                    figure.StartPoint = startPoint;
+                }
+            }
+
+            var y = SetVerticalCornersValue(value, 0, _mouthTopLip, _mouthCenterBottom, _mouthCenterTop);
+            SetVerticalCornersValue(value, 2, _mouthBottomLip);
+
+            SetY(y, _mouthLipsFigure, _mouthCenterTopFigure, _mouthCenterBottomFigure);
         }
         private void SetMouthHorizontalValue(double value)
         {
             _mouthScale.ScaleX = Helper.LerpUnclamped(1, 0.4, value);
         }
 
-        private static void SetVerticalCornersValue(double value, int pointIndex, params PolyBezierSegment[] segments)
+        private static double SetVerticalCornersValue(double value, int pointIndex, params PolyBezierSegment[] segments)
         {
-            value = Helper.LerpUnclamped(15, -15, (value + 1) / 2);
+            value = Helper.LerpUnclamped(30, -30, (value + 1) / 2);
 
-            SetCornersValue(point => 
+            SetCornersValue(point =>
             {
                 point.Y = value;
                 return point;
             }, pointIndex, segments);
+
+            return value;
         }
         private static void SetCornersValue(Func<Point, Point> handler, int pointIndex, params PolyBezierSegment[] segments)
         {
@@ -136,6 +154,15 @@ namespace DialogMaker.Lib.Elements
             segment.Points[0] = first;
             segment.Points[1] = second;
         }
+        private void SetEyebrowVerticalPosition(Path eyebrow, double value)
+        {
+            Canvas.SetTop(eyebrow, Helper.LerpUnclamped(30, -70, value));
+        }
+        private void SetEyebrowRotation(RotateTransform rotation, double value)
+        {
+            value = (value + 1) / 2;
+            rotation.Angle = Helper.LerpUnclamped(-30, 30, value);
+        }
 
         #endregion
 
@@ -145,14 +172,14 @@ namespace DialogMaker.Lib.Elements
         {
             if (d is FaceView view && e.NewValue is double value)
             {
-                view._leftEyebrowTranslation.Y = Helper.LerpUnclamped(0, -100, value);
+                view.SetEyebrowVerticalPosition(view._leftEyebrow, value);
             }
         }
         private static void OnLeftEyebrowRotationChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is FaceView view && e.NewValue is double value)
             {
-                view._leftEyebrowRotation.Angle = Helper.LerpUnclamped(-45, 45, value);
+                view.SetEyebrowRotation(view._leftEyebrowRotation, value);
             }
         }
         private static void OnLeftEyeClosedValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -166,14 +193,14 @@ namespace DialogMaker.Lib.Elements
         {
             if (d is FaceView view && e.NewValue is double value)
             {
-                view._rightEyebrowTranslation.Y = Helper.LerpUnclamped(0, -100, value);
+                view.SetEyebrowVerticalPosition(view._rightEyebrow, value);
             }
         }
         private static void OnRightEyebrowRotationChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is FaceView view && e.NewValue is double value)
             {
-                view._rightEyebrowRotation.Angle = Helper.LerpUnclamped(45, -45, value);
+                view.SetEyebrowRotation(view._rightEyebrowRotation, value);
             }
         }
         private static void OnRightEyeClosedValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -217,34 +244,34 @@ namespace DialogMaker.Lib.Elements
         #region Dependency
 
         public static readonly DependencyProperty LeftEyebrowVerticalPositionProperty =
-            DependencyProperty.Register(nameof(LeftEyebrowVerticalPosition), typeof(double), 
+            DependencyProperty.Register(nameof(LeftEyebrowVerticalPosition), typeof(double),
                 typeof(FaceView), new(OnLeftEyebrowVerticalPositionChanged));
         public static readonly DependencyProperty LeftEyebrowRotationProperty =
-            DependencyProperty.Register(nameof(LeftEyebrowRotation), typeof(double), 
+            DependencyProperty.Register(nameof(LeftEyebrowRotation), typeof(double),
                 typeof(FaceView), new(OnLeftEyebrowRotationChanged));
         public static readonly DependencyProperty LeftEyeClosedValueProperty =
-            DependencyProperty.Register(nameof(LeftEyeClosedValue), typeof(double), 
+            DependencyProperty.Register(nameof(LeftEyeClosedValue), typeof(double),
                 typeof(FaceView), new(OnLeftEyeClosedValueChanged));
         public static readonly DependencyProperty RightEyebrowVerticalPositionProperty =
-            DependencyProperty.Register(nameof(RightEyebrowVerticalPosition), typeof(double), 
+            DependencyProperty.Register(nameof(RightEyebrowVerticalPosition), typeof(double),
                 typeof(FaceView), new(OnRightEyebrowVerticalPositionChanged));
         public static readonly DependencyProperty RightEyebrowRotationProperty =
-            DependencyProperty.Register(nameof(RightEyebrowRotation), typeof(double), 
+            DependencyProperty.Register(nameof(RightEyebrowRotation), typeof(double),
                 typeof(FaceView), new(OnRightEyebrowRotationChanged));
         public static readonly DependencyProperty RightEyeClosedValueProperty =
-            DependencyProperty.Register(nameof(RightEyeClosedValue), typeof(double), 
+            DependencyProperty.Register(nameof(RightEyeClosedValue), typeof(double),
                 typeof(FaceView), new(OnRightEyeClosedValueChanged));
         public static readonly DependencyProperty MouthOpenedValueProperty =
-            DependencyProperty.Register(nameof(MouthOpenedValue), typeof(double), 
+            DependencyProperty.Register(nameof(MouthOpenedValue), typeof(double),
                 typeof(FaceView), new(OnMouthOpenedValueChanged));
         public static readonly DependencyProperty MouthHorizontalStretchProperty =
-            DependencyProperty.Register(nameof(MouthHorizontalStretch), typeof(double), 
+            DependencyProperty.Register(nameof(MouthHorizontalStretch), typeof(double),
                 typeof(FaceView), new(OnMouthHorizontalStretchChanged));
         public static readonly DependencyProperty LeftMouthCornerVerticalPositionProperty =
-            DependencyProperty.Register(nameof(LeftMouthCornerVerticalPosition), typeof(double), 
+            DependencyProperty.Register(nameof(LeftMouthCornerVerticalPosition), typeof(double),
                 typeof(FaceView), new(OnLeftMouthCornerVerticalPositionChanged));
         public static readonly DependencyProperty RightMouthCornerVerticalPositionProperty =
-            DependencyProperty.Register(nameof(RightMouthCornerVerticalPosition), typeof(double), 
+            DependencyProperty.Register(nameof(RightMouthCornerVerticalPosition), typeof(double),
                 typeof(FaceView), new(OnRightMouthCornerVerticalPositionChanged));
 
         #endregion

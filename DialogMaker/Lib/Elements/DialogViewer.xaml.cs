@@ -1,8 +1,9 @@
-﻿using DialogMaker.Core.Common;
+﻿using DialogMaker.Core;
+using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning;
-using DialogMaker.Core;
 using System.Windows;
 using System.Windows.Controls;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -32,6 +33,11 @@ namespace DialogMaker.Lib.Elements
         public async Task ShowReplica(ICharacter? character, IResourceString text, CancellationToken cancellationToken)
         {
             AddElement(character, text.Text);
+            await Task.DelaySafe(200, cancellationToken);
+        }
+        public async Task ShowEmotion(ICharacter? character, IEmotion? emotion, CancellationToken cancellationToken)
+        {
+            AddElement(null, $"{character?.Name} показывает какую то эмоцию");
             await Task.DelaySafe(200, cancellationToken);
         }
         //public async Task ShowColorReplica(ICharacter? character, SystemColor backgroundColor, SystemColor textColor, IResourceString text, CancellationToken cancellationToken)
