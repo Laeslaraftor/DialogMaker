@@ -26,7 +26,7 @@
             <Border VerticalAlignment="Bottom" Grid.ColumnSpan="3"
                     Background="{DynamicResource SurfaceStrokeColorDefaultBrush}"
                     Height="1"/>
-            <StackPanel x:Name="_inputs" Grid.Row="1" 
+            <StackPanel x:Name="_inputs" Grid.Row="1"
                         Margin="4" Orientation="Vertical"/>
             <StackPanel x:Name="_outputs" Grid.Row="1" Margin="4"
                         Grid.Column="2" Orientation="Vertical"/>

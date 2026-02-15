@@ -118,14 +118,9 @@ namespace DialogMaker.Lib.Elements
                 return;
             }
 
-            foreach (var port in newValue.Inputs)
-            {
-                _inputs.Children.Add(GetPortView(port));
-            }
-            foreach (var port in newValue.Outputs)
-            {
-                _outputs.Children.Add(GetPortView(port));
-            }
+            PreparePort(_inputs, newValue.Inputs);
+            PreparePort(_outputs, newValue.Outputs);
+
             foreach (var property in newValue.Properties)
             {
                 property.View.RemoveFromParent();
@@ -137,12 +132,21 @@ namespace DialogMaker.Lib.Elements
 
             newValue.PropertyChanged += OnNodePropertyChanged;
         }
-        private DiagramNodePort GetPortView(DialogProjectNodePortProxy port)
+        private void PreparePort(Panel panel, IEnumerable<DialogProjectNodePortProxy> ports)
+        {
+            foreach (var port in ports)
+            {
+                PreparePort(panel, port);
+            }
+        }
+        private void PreparePort(Panel panel, DialogProjectNodePortProxy port)
         {
             var view = port.View;
-            view.RemoveFromParent();
 
-            return view;
+            view.RemoveFromParent();
+            panel.Children.Add(view);
+
+            view.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
 
         #endregion

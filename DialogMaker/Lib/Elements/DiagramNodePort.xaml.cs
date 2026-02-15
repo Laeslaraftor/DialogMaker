@@ -73,8 +73,12 @@ namespace DialogMaker.Lib.Elements
         {
             if (d is DiagramNodePort view)
             {
-                view._background.Background = e.NewValue as Brush;
-                view._border.BorderBrush = e.NewValue as Brush;
+                var colorBrush = e.NewValue as Brush;
+
+                view._background.Background = colorBrush;
+                view._border.BorderBrush = colorBrush;
+                view._borderFade.Background = colorBrush;
+                view._mainContainerBorder.BorderBrush = colorBrush;
             }
         }
         private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -89,24 +93,33 @@ namespace DialogMaker.Lib.Elements
         {
             if (d is DiagramNodePort view && e.NewValue is bool value)
             {
-                int column = 2;
+                int column = 1;
+                GridLength mainColumnLength = GridLength.Auto;
+                GridLength secondColumnLength = new(1, GridUnitType.Star);
 
                 if (value)
                 {
                     column = 0;
+                    mainColumnLength = secondColumnLength;
+                    secondColumnLength = GridLength.Auto;
                 }
 
-                view._text.Margin = value ? new(-6, 0, 4, 0) : new(4, 0, -6, 0);
+                view._firstColumn.Width = secondColumnLength;
+                view._secondColumn.Width = mainColumnLength;
+
+                view._mainContainer.Margin = value ? new(-6, 0, 0, 0) : new(0, 0, -6, 0);
                 view._borderOffset.X = value ? -12 : 12;
-                Grid.SetColumn(view._fieldContainer, 2 - column);
+                view._borderFadeScale.ScaleX = value ? 1 : -1;
+                view._mainContainerBorderScale.ScaleX = view._borderFadeScale.ScaleX;
                 Grid.SetColumn(view._border, column);
+                Grid.SetColumn(view._mainContainer, 1 - column);
             }
         }
         private static void OnExtraControlChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is DiagramNodePort view)
             {
-                view._fieldContainer.Child = e.NewValue as UIElement;
+                view._fieldContainer.Content = e.NewValue as UIElement;
             }
         }
         private static void OnIsExtraControlVisiblePropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

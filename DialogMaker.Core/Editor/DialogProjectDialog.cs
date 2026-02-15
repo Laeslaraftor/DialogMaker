@@ -85,9 +85,23 @@ namespace DialogMaker.Core.Editor
                     }
 
                     field.ItemChanged += OnNodesItemChanged;
+                    IsFullLoaded = true;
                 }
 
                 return field;
+            }
+        }
+        public bool IsFullLoaded
+        {
+            get => field;
+            private set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(IsFullLoaded));
+                    field = value;
+                    InvokePropertyChanged(nameof(IsFullLoaded));
+                }
             }
         }
         public DialogProjectResources Resources { get; }
@@ -103,6 +117,11 @@ namespace DialogMaker.Core.Editor
 
         public void Save()
         {
+            if (!IsFullLoaded)
+            {
+                return;
+            }
+
             CheckHelper.CheckIsDisposed(this);
 
             Resources.Save();
@@ -178,6 +197,13 @@ namespace DialogMaker.Core.Editor
         protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);
+
+            if (!IsFullLoaded)
+            {
+                Resources.Dispose();
+                return;
+            }
+
             Nodes.ItemChanged -= OnNodesItemChanged;
 
             foreach (var node in Nodes)

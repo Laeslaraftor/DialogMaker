@@ -16,6 +16,7 @@ namespace DialogMaker.Lib.InputFields
             _slider.ValueChanged += OnSliderValueChanged;
 
             Entry.TextWrapping = TextWrapping.NoWrap;
+            Grid.SetColumnSpan(Entry, 2);
         }
 
         public bool IsSlider

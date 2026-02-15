@@ -13,7 +13,7 @@
 
             <Style x:Key="NoSelectionListView" TargetType="ListView" 
                    BasedOn="{StaticResource {x:Type ListView}}">
-                <Setter Property="ItemContainerStyle">
+                <Setter Property="ItemContainerStyle" >
                     <Setter.Value>
                         <Style TargetType="ListViewItem">
                             <Setter Property="Background" Value="Transparent" />
