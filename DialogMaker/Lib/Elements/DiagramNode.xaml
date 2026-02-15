@@ -36,7 +36,7 @@
                     Grid.ColumnSpan="3" Grid.RowSpan="3"
                     CornerRadius="10" Margin="-4"
                     BorderBrush="{DynamicResource FocusStrokeColorOuterBrush}"
-                    BorderThickness="2">
+                    BorderThickness="2" Panel.ZIndex="-1">
                 <Border BorderBrush="{DynamicResource FocusStrokeColorInnerBrush}"
                         BorderThickness="2" CornerRadius="9"/>
             </Border>

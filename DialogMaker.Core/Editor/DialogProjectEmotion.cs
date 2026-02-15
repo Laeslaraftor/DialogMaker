@@ -66,7 +66,7 @@ namespace DialogMaker.Core.Editor
             }
 
             [Key(0), JsonProperty("yPosition")]
-            [Name("Положение по вертикали"), Range(0, 1)]
+            [Name("Положение по вертикали"), Range(-1, 1)]
             public float YPosition
             {
                 get => field;
@@ -74,7 +74,7 @@ namespace DialogMaker.Core.Editor
                 {
                     if (field != value)
                     {
-                        value = Helper.Clamp01(value);
+                        value = Helper.Clamp(value, -1, 1);
                         InvokePropertyChanging(nameof(YPosition));
                         field = value;
                         InvokePropertyChanged(nameof(YPosition));

@@ -1,9 +1,7 @@
 ﻿using DialogMaker.Core.Common;
 using System;
-using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace DialogMaker.Core.Executioning.Internal
 {
@@ -35,19 +33,19 @@ namespace DialogMaker.Core.Executioning.Internal
         //        await h.ShowFullscreenReplica(character, background, text, cancellationToken);
         //    }, cancellationToken);
         //}
-        public async Task ShowReplica(ICharacter? character, IResourceString text, CancellationToken cancellationToken)
+        public async Task ShowReplica(ICharacter? character, ICharacter? listener, IResourceString text, CancellationToken cancellationToken)
         {
             await _executor.HandleDialog(async h =>
             {
-                await h.ShowReplica(character, text, cancellationToken);
+                await h.ShowReplica(character, listener, text, cancellationToken);
             }, cancellationToken);
         }
 
-        public async Task<int> ShowChoice(ICharacter? character, IStringCollection variants, CancellationToken cancellationToken)
+        public async Task<int> ShowChoice(ICharacter? character, ICharacter? listener, IStringCollection variants, CancellationToken cancellationToken)
         {
             return await _executor.HandleDialog(async h =>
             {
-                return await h.ShowChoice(character, variants, cancellationToken);
+                return await h.ShowChoice(character, listener, variants, cancellationToken);
             }, cancellationToken);
         }
         public async Task ShowEmotion(ICharacter? character, IEmotion? emotion, CancellationToken cancellationToken)

@@ -48,6 +48,11 @@ namespace DialogMaker.Core.Executioning
             return result;
         }
 
+        public IResourceItem GetItemFromReference(DialogItemReference reference)
+        {
+            return reference.GetItem(ResourcesOwner);
+        }
+
         public IResourceItem GetResource(int index)
         {
             if (TryGetResource(index, out var resource))

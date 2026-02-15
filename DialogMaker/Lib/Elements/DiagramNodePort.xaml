@@ -14,11 +14,14 @@
         </Grid.ColumnDefinitions>
         <Border x:Name="_fieldContainer"
                 MaxWidth="250"/>
-        <TextBlock x:Name="_text" Margin="4,0" Grid.Column="1"
+        <TextBlock x:Name="_text" Margin="4,0,-6,0" Grid.Column="1"
                    VerticalAlignment="Center"/>
         <Border x:Name="_border" Grid.Column="2" Width="14" Height="14"
                 BorderBrush="{DynamicResource AccentFillColorDefaultBrush}" 
                 BorderThickness="2" CornerRadius="30">
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="_borderOffset" X="12"/>
+            </Border.RenderTransform>
             <Border x:Name="_background" Background="{DynamicResource AccentFillColorDefaultBrush}"
                     Opacity="0.1" CornerRadius="30"/>
         </Border>

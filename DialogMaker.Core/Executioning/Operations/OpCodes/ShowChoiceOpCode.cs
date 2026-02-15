@@ -1,6 +1,5 @@
 using DialogMaker.Core.Common;
 using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -10,20 +9,21 @@ namespace DialogMaker.Core.Executioning
 
         public override async Task Execute(DialogExecutionContext context, params int[] args)
         {
-            CheckArgs(context, args, 3);
+            CheckArgs(context, args, 4);
 
             var character = ShowReplicaOpCode.GetCharacter(context, args[0]);
+            var listener = ShowReplicaOpCode.GetCharacter(context, args[1]);
 
-            if (context.Resources.GetResource(args[1]) is not IStringCollection strings)
+            if (context.Resources.GetResource(args[2]) is not IStringCollection strings)
             {
                 throw new DialogExecutionException($"Не удалось получить список строк для отображения вариантов ответа");
             }
 
-            var answer = await DispatchHandler(context, h => h.ShowChoice(character, strings, context.CancellationToken));
+            var answer = await DispatchHandler(context, h => h.ShowChoice(character, listener, strings, context.CancellationToken));
 
             if (!context.CancellationToken.IsCancellationRequested)
             {
-                context.Resources.SetVariable(args[2], answer);
+                context.Resources.SetVariable(args[3], answer);
             }
         }
 

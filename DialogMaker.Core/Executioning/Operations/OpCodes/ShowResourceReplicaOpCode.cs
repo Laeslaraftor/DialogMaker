@@ -1,6 +1,5 @@
 ﻿using DialogMaker.Core.Common;
 using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -10,12 +9,13 @@ namespace DialogMaker.Core.Executioning
 
         public override async Task Execute(DialogExecutionContext context, params int[] args)
         {
-            CheckArgs(context, args, 2);
+            CheckArgs(context, args, 3);
 
             var character = ShowReplicaOpCode.GetCharacter(context, args[0]);
-            var replica = GetString(context, args[1]);
+            var listener = ShowReplicaOpCode.GetCharacter(context, args[1]);
+            var replica = GetString(context, args[2]);
 
-            await DispatchHandler(context, h => h.ShowReplica(character, replica, context.CancellationToken));
+            await DispatchHandler(context, h => h.ShowReplica(character, listener, replica, context.CancellationToken));
         }
 
         #endregion

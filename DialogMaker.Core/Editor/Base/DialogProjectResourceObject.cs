@@ -48,6 +48,11 @@ namespace DialogMaker.Core.Editor
             get => _id;
             set
             {
+                if (IsDisposed)
+                {
+                    return;
+                }
+
                 value = value.Trim();
 
                 if (string.IsNullOrEmpty(value))
@@ -98,13 +103,13 @@ namespace DialogMaker.Core.Editor
         }
         public void MoveTo(DialogProjectResources resources)
         {
+            if (IsDisposed || resources == Resources)
+            {
+                return;
+            }
             if (resources == null)
             {
                 throw new ArgumentNullException(nameof(resources));
-            }
-            if (resources == Resources)
-            {
-                return;
             }
 
             var currentResources = Resources;

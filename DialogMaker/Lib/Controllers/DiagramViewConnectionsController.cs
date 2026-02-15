@@ -1,5 +1,6 @@
 ﻿using Acly.Numbers;
 using DialogMaker.Core;
+using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor;
 using DialogMaker.Lib.Elements;
 using System.Diagnostics.CodeAnalysis;
@@ -90,7 +91,7 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(CurvesResolution)); 
+                    InvokePropertyChanging(nameof(CurvesResolution));
 
                     field = value;
 
@@ -152,7 +153,7 @@ namespace DialogMaker.Lib.Controllers
                     handleCurve(curve);
                 }
             }
-            
+
             if (curvesToRemove != null)
             {
                 foreach (var curve in curvesToRemove)
@@ -259,12 +260,13 @@ namespace DialogMaker.Lib.Controllers
             view.Resolution = CurvesResolution;
             view.Offset = CurvesOffset;
             view.Easing = CurvesEasing;
+            view.Inverse = port.Original is DialogProjectNodeInput;
             result = new(view, Canvas)
             {
                 StartPort = port
             };
 
-            Panel.SetZIndex(view, 100);
+            Panel.SetZIndex(view, -1);
             Canvas.Children.Add(view);
             _curves.Add(result);
 
@@ -362,7 +364,7 @@ namespace DialogMaker.Lib.Controllers
 
             await Canvas.Fetch(position, o =>
             {
-                if (o is DiagramNodePort port && 
+                if (o is DiagramNodePort port &&
                     port.DataContext is DialogProjectNodePortProxy proxy)
                 {
                     endPort = proxy;
@@ -466,7 +468,11 @@ namespace DialogMaker.Lib.Controllers
             public Point StartPosition
             {
                 get => Line.StartPoint;
-                set => Line.StartPoint = value;
+                set
+                {
+                    Line.StartPoint = value;
+                    _gradient.UpdatePosition(value, EndPosition);
+                }
             }
             public Point EndPosition
             {
@@ -474,8 +480,9 @@ namespace DialogMaker.Lib.Controllers
                 set
                 {
                     Line.EndPoint = value;
-                    var gradient = _gradient;
-                    gradient.Invert = StartPosition.X > EndPosition.X;
+                    //var gradient = _gradient;
+                    //gradient.Invert = StartPosition.X > EndPosition.X;
+                    _gradient.UpdatePosition(StartPosition, value);
                 }
             }
 
@@ -504,7 +511,7 @@ namespace DialogMaker.Lib.Controllers
                 }
                 else if (port != null)
                 {
-                    if (EndPort != null && 
+                    if (EndPort != null &&
                         port != EndPort &&
                         StartPort.Original.IsConnected(EndPort.Original))
                     {
@@ -539,6 +546,8 @@ namespace DialogMaker.Lib.Controllers
                     line.Stroke = gradient;
                 }
 
+                _startPointSetter = p => gradient.StartPoint = p;
+                _endPointSetter = p => gradient.EndPoint = p;
                 gradient.StartPoint = new();
                 gradient.EndPoint = new(1, 0);
 
@@ -554,9 +563,7 @@ namespace DialogMaker.Lib.Controllers
                 }
 
                 _start = gradient.GradientStops[0];
-                Start = _start;
                 _end = gradient.GradientStops[1];
-                End = _end;
 
                 for (int i = 0; i < gradient.GradientStops.Count - 2; i++)
                 {
@@ -567,45 +574,40 @@ namespace DialogMaker.Lib.Controllers
             public CurveLine Line { get; }
             public Color StartColor
             {
-                get => Start.Color;
-                set => Start.Color = value;
+                get => _start.Color;
+                set => _start.Color = value;
             }
             public Color EndColor
             {
-                get => End.Color;
-                set => End.Color = value;
+                get => _end.Color;
+                set => _end.Color = value;
             }
-            public bool Invert
-            {
-                get => field;
-                set
-                {
-                    if (field == value)
-                    {
-                        return;
-                    }
-
-                    field = value;
-
-                    if (value)
-                    {
-                        Start = _end;
-                        End = _start;
-                        (_start.Color, _end.Color) = (_end.Color, _start.Color);
-                        return;
-                    }
-
-                    Start = _start;
-                    End = _end;
-                    (_start.Color, _end.Color) = (_end.Color, _start.Color);
-                }
-            }
-
-            private GradientStop Start;
-            private GradientStop End;
 
             private readonly GradientStop _start;
             private readonly GradientStop _end;
+            private readonly Action<Point> _startPointSetter;
+            private readonly Action<Point> _endPointSetter;
+
+            public void UpdatePosition(Point start, Point end)
+            {
+                Rect bounds = Line.RenderedGeometry.Bounds;
+
+                if (bounds.IsEmpty || bounds.Width == 0 || bounds.Height == 0)
+                {
+                    return;
+                }
+
+                double relativeStartX = (start.X - bounds.Left) / bounds.Width;
+                double relativeStartY = (start.Y - bounds.Top) / bounds.Height;
+                double relativeEndX = (end.X - bounds.Left) / bounds.Width;
+                double relativeEndY = (end.Y - bounds.Top) / bounds.Height;
+
+                Point relativeStart = new(relativeStartX, relativeStartY);
+                Point relativeEnd = new(relativeEndX, relativeEndY);
+
+                _startPointSetter(relativeStart);
+                _endPointSetter(relativeEnd);
+            }
         }
 
         #endregion

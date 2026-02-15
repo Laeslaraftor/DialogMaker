@@ -8,11 +8,13 @@ namespace DialogMaker.Core.Executioning.Builders
 {
     public class DialogCodeBuilder
     {
-        public DialogCodeBuilder()
+        public DialogCodeBuilder(IResourcesOwner resourcesOwner)
         {
+            ResourcesOwner = resourcesOwner;
             Sections = new(_sections);
         }
 
+        public IResourcesOwner ResourcesOwner { get; }
         public ReferenceReadOnlyList<DialogSectionBuilder> Sections { get; }
 
         private readonly ObservableList<DialogSectionBuilder> _sections = [];
@@ -42,7 +44,7 @@ namespace DialogMaker.Core.Executioning.Builders
         {
             using MemoryStream codeStream = new();
             using MemoryStream tempCode = new();
-            DialogExecutionContextBuilder contextBuilder = new();
+            DialogExecutionContextBuilder contextBuilder = new(ResourcesOwner);
             CodeCompileContext context = new(nodesInfo, tempCode, contextBuilder);
 
             for (int i = 0; i < _sections.Count; i++)

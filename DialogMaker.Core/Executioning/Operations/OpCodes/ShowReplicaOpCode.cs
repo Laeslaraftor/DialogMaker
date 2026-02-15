@@ -10,13 +10,14 @@ namespace DialogMaker.Core.Executioning
 
         public override async Task Execute(DialogExecutionContext context, params int[] args)
         {
-            CheckArgs(context, args, 2);
+            CheckArgs(context, args, 3);
 
             var character = GetCharacter(context, args[0]);
-            var replica = context.Resources.GetVariable(args[1]).ToString();
-            ResourceString text = new(args[1], replica);
+            var listener = GetCharacter(context, args[1]);
+            var replica = context.Resources.GetVariable(args[2]).ToString();
+            ResourceString text = new(args[2], replica);
 
-            await DispatchHandler(context, h => h.ShowReplica(character, text, context.CancellationToken));
+            await DispatchHandler(context, h => h.ShowReplica(character, listener, text, context.CancellationToken));
         }
 
         #endregion

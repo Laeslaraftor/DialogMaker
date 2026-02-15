@@ -16,7 +16,7 @@ namespace DialogMaker.Core.Editor.Nodes
         }
 
         public override DialogNodeType NodeType => DialogNodeType.SimpleReplica;
-        [Name("Персонаж"), Reference(DialogResourceType.Character)]
+        [Name("Говорящий"), Reference(DialogResourceType.Character)]
         public DialogProjectReference<DialogProjectCharacter>? Character
         {
             get => field;
@@ -27,6 +27,20 @@ namespace DialogMaker.Core.Editor.Nodes
                     InvokePropertyChanging(nameof(Character));
                     field = value;
                     InvokePropertyChanged(nameof(Character));
+                }
+            }
+        }
+        [Name("Слушающий"), Reference(DialogResourceType.Character)]
+        public DialogProjectReference<DialogProjectCharacter>? Listener
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(Listener));
+                    field = value;
+                    InvokePropertyChanged(nameof(Listener));
                 }
             }
         }
@@ -65,8 +79,9 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             var text = context.Compiler.RecursiveCompileConnections(context, Text);
             var character = Character?.Resolve();
+            var listener = Listener?.Resolve();
 
-            CreateOperation(context, character, text, DialogByteCode.ShowReplica, DialogByteCode.ShowResourceReplica);
+            CreateOperation(context, character, listener, text, DialogByteCode.ShowReplica, DialogByteCode.ShowResourceReplica);
             context.CompileOutputs(Output);
         }
 
@@ -87,18 +102,20 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             base.ModifySavedState(savedState);
             savedState.Properties.TryAdd(nameof(Character), Character?.Save());
+            savedState.Properties.TryAdd(nameof(Listener), Listener?.Save());
         }
         protected override void Restore(DialogProjectDialogNodeSavedState savedState)
         {
             base.Restore(savedState);
             Character = savedState.RestoreReference<DialogProjectCharacter>(Project, nameof(Character));
+            Listener = savedState.RestoreReference<DialogProjectCharacter>(Project, nameof(Listener));
         }
 
         #endregion
 
         #region Статика
 
-        internal static OperationBuilder CreateOperation(DialogCompilerContext context, ICharacter? character, DialogExecutionParameter text, DialogByteCode original, DialogByteCode resource)
+        internal static OperationBuilder CreateOperation(DialogCompilerContext context, ICharacter? character, ICharacter? listener, DialogExecutionParameter text, DialogByteCode original, DialogByteCode resource)
         {
             DialogByteCode code = original;
 
@@ -113,8 +130,12 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 result.Arguments[0] = new(character);
             }
+            if (listener != null)
+            {
+                result.Arguments[1] = new(listener);
+            }
 
-            result.Arguments[1] = text;
+            result.Arguments[2] = text;
 
             return result;
         }

@@ -54,7 +54,7 @@ namespace DialogMaker.Core.Editor.Nodes
 
         public override void Compile(DialogCompilerContext context)
         {
-            CompileMath(context, DialogByteCode.Multiply, FirstValue, SecondValue, Output);
+            CompileMath(context, DialogByteCode.Add, FirstValue, SecondValue, Output);
         }
 
         public override string ToString()

@@ -3,7 +3,6 @@ using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning;
 using System.Windows;
 using System.Windows.Controls;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -30,14 +29,14 @@ namespace DialogMaker.Lib.Elements
             _blocksPool.Clear();
         }
 
-        public async Task ShowReplica(ICharacter? character, IResourceString text, CancellationToken cancellationToken)
+        public async Task ShowReplica(ICharacter? character, ICharacter? listener, IResourceString text, CancellationToken cancellationToken)
         {
-            AddElement(character, text.Text);
+            AddElement(character, listener, text.Text);
             await Task.DelaySafe(200, cancellationToken);
         }
         public async Task ShowEmotion(ICharacter? character, IEmotion? emotion, CancellationToken cancellationToken)
         {
-            AddElement(null, $"{character?.Name} показывает какую то эмоцию");
+            AddElement(null, null, $"{character?.Name} показывает какую то эмоцию");
             await Task.DelaySafe(200, cancellationToken);
         }
         //public async Task ShowColorReplica(ICharacter? character, SystemColor backgroundColor, SystemColor textColor, IResourceString text, CancellationToken cancellationToken)
@@ -49,7 +48,7 @@ namespace DialogMaker.Lib.Elements
         //    await ShowReplica(character, text, cancellationToken);
         //}
 
-        public async Task<int> ShowChoice(ICharacter? character, IStringCollection variants, CancellationToken cancellationToken)
+        public async Task<int> ShowChoice(ICharacter? character, ICharacter? listener, IStringCollection variants, CancellationToken cancellationToken)
         {
             bool isCompleted = false;
             int result = -1;
@@ -75,6 +74,8 @@ namespace DialogMaker.Lib.Elements
             var container = GetNewBlock();
             container.Preview = block;
 
+            container.BringIntoView();
+
             while (!isCompleted && !cancellationToken.IsCancellationRequested)
             {
                 await Task.DelaySafe(50, cancellationToken);
@@ -87,14 +88,10 @@ namespace DialogMaker.Lib.Elements
 
         public async Task HandleTrigger(string name, CancellationToken cancellationToken)
         {
-            AddElement(null, $"Событие: {name}");
+            AddElement(null, null, $"Событие: {name}");
         }
 
-        private void AddElement(UIElement element)
-        {
-            _history.Children.Add(element);
-        }
-        private void AddElement(ICharacter? character, string text)
+        private void AddElement(ICharacter? character, ICharacter? listener, string text)
         {
             var block = _textPool.GetElement();
             block.TextWrapping = TextWrapping.Wrap;
@@ -102,10 +99,11 @@ namespace DialogMaker.Lib.Elements
                 
             var container = GetNewBlock();
             container.Preview = block;
+            string? characterText = GetActionText(character, listener, "обращается к");
 
-            if (character != null)
+            if (!string.IsNullOrEmpty(characterText))
             {
-                block.Text = $"{character.Name}: {text}";
+                block.Text = $"{characterText}: {text}";
                 block.Opacity = 1;
             }
             else
@@ -124,6 +122,23 @@ namespace DialogMaker.Lib.Elements
 
             return result;
         }
+        private string? GetActionText(ICharacter? character, ICharacter? listener, string action)
+        {
+            if (character != null && listener != null)
+            {
+                return $"{character.Name} {action} {listener.Name}";
+            }
+            else if (character != null)
+            {
+                return character.Name;
+            }
+            else if (listener != null)
+            {
+                return $"{listener.Name} слушает";
+            }
+
+            return null;
+        }
 
         #endregion
 
@@ -131,11 +146,11 @@ namespace DialogMaker.Lib.Elements
 
         public void OnDialogExecutingEnded(object? sender, EventArgs e)
         {
-            AddElement(null, "Диалог завершён");
+            AddElement(null, null, "Диалог завершён");
         }
         public void OnDialogExecutingStarted(object? sender, EventArgs e)
         {
-            AddElement(null, "Диалог начат");
+            AddElement(null, null, "Диалог начат");
         }
 
         #endregion

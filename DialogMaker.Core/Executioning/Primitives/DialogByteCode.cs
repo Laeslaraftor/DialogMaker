@@ -4,15 +4,15 @@
     {
         /// <summary>
         /// Показать реплику персонажа.
-        /// 1 аргумент - персонаж, 2 - текст (переменная)
+        /// 1 аргумент - говорящий персонаж, 2 аргумент - слушающий персонаж, 3 - текст (переменная)
         /// </summary>
-        [ArgsCount(2), Implementation(typeof(ShowReplicaOpCode))]
+        [ArgsCount(3), Implementation(typeof(ShowReplicaOpCode))]
         ShowReplica,
         /// <summary>
         /// Показать реплику персонажа.
-        /// 1 аргумент - персонаж, 2 - текст (ресурс)
+        /// 1 аргумент - говорящий персонаж, 2 аргумент - слушающий персонаж, 3 - текст (ресурс)
         /// </summary>
-        [ArgsCount(2), Implementation(typeof(ShowResourceReplicaOpCode))]
+        [ArgsCount(3), Implementation(typeof(ShowResourceReplicaOpCode))]
         ShowResourceReplica,
         /// <summary>
         /// Показать полноэкранную реплику персонажа. 
@@ -42,9 +42,9 @@
         ShowResourceColorReplica,
         /// <summary>
         /// Дать выбор ответа.
-        /// 1 аргумент - персонаж, 2 - варианты ответа, 3 - переменная в которую будет записан ответ
+        /// 1 аргумент - говорящий персонаж, 2 аргумент - слушающий персонаж, 3 - варианты ответа, 4 - переменная в которую будет записан ответ
         /// </summary>
-        [ArgsCount(3), Implementation(typeof(ShowChoiceOpCode))]
+        [ArgsCount(4), Implementation(typeof(ShowChoiceOpCode))]
         ShowChoice,
         /// <summary>
         /// Вызывать пользовательский триггер.

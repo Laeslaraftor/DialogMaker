@@ -217,7 +217,12 @@ namespace DialogMaker.Lib.Controllers
 
             foreach (UIElement child in panel.Children)
             {
-                minIndex = Math.Min(Panel.GetZIndex(child), minIndex);
+                int zIndex = Panel.GetZIndex(child);
+
+                if (zIndex >= 0)
+                {
+                    minIndex = Math.Min(zIndex, minIndex);
+                }
             }
             foreach (UIElement child in panel.Children)
             {

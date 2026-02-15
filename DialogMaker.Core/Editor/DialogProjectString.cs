@@ -122,6 +122,7 @@ namespace DialogMaker.Core.Editor
         protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);
+            Variants.Clear();
             Variants.ItemChanged -= OnVariantsItemChanged;
         }
 

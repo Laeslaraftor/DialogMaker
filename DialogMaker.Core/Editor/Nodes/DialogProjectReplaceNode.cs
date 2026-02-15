@@ -14,7 +14,7 @@ namespace DialogMaker.Core.Editor.Nodes
         }
 
         public override DialogNodeType NodeType => DialogNodeType.Replace;
-        [NodeInput("Вход")]
+        [NodeInput("Вход"), Sort(0)]
         public DialogProjectNodeInputAction Input
         {
             get
@@ -23,7 +23,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 return field;
             }
         }
-        [NodeInput("Значение")]
+        [NodeInput("Значение"), Sort(1)]
         public DialogProjectNodeInputString Value
         {
             get

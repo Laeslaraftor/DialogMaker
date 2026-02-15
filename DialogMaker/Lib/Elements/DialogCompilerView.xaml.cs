@@ -46,7 +46,6 @@ namespace DialogMaker.Lib.Elements
             private set => SetValue(IsPausedProperty, value);
         }
 
-        private DialogCompiler? _compiler;
         private DialogRuntimeResourcesController? _lastResourcesController;
         private readonly MemoryStream _codeBuffer = new();
 
@@ -55,17 +54,16 @@ namespace DialogMaker.Lib.Elements
         public async void Compile()
         {
             var dialog = Dialog;
-            var compiler = _compiler;
 
-            if (IsCompiling || dialog == null || compiler == null)
+            if (IsCompiling || dialog == null)
             {
                 return;
             }
 
             Clear();
 
-            _compiler = compiler;
             IsCompiling = true;            
+            DialogCompiler compiler = new(DialogActionsMap.Create(dialog.Original));
 
             try
             {
@@ -100,7 +98,6 @@ namespace DialogMaker.Lib.Elements
             IsPaused = false;
             IsCompiled = false;
             IsCompiling = false;
-            _compiler = null;
             _codeView.ItemsSource = null;
             _dialogPlayer.DialogExecutor?.Dispose();
             _dialogPlayer.DialogExecutor = null;
@@ -127,8 +124,6 @@ namespace DialogMaker.Lib.Elements
             {
                 return;
             }
-
-            view._compiler = new(DialogActionsMap.Create(dialog.Original));
         }
         private static void OnIsCompilingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {

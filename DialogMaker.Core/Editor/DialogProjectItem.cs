@@ -54,7 +54,7 @@ namespace DialogMaker.Core.Editor
             get => field;
             private set
             {
-                if (field != value)
+                if (field != value && !IsDisposed)
                 {
                     InvokePropertyChanging(nameof(FilePath));
                     field = value;
@@ -67,7 +67,7 @@ namespace DialogMaker.Core.Editor
             get => field;
             set
             {
-                if (field != value)
+                if (field != value && !IsDisposed)
                 {
                     value = value.Trim();
 
@@ -111,6 +111,11 @@ namespace DialogMaker.Core.Editor
         }
         protected override bool HandleResourceMoving(DialogProjectResources from, DialogProjectResources to)
         {
+            if (IsDisposed)
+            {
+                return false;
+            }
+
             string newFilePath = SysPath.Combine(to.Folder, FileName);
 
             if (File.Exists(newFilePath))
@@ -126,6 +131,11 @@ namespace DialogMaker.Core.Editor
 
         private string RenameFile(string oldName, string newName)
         {
+            if (IsDisposed)
+            {
+                throw new InvalidOperationException("Невозможно переместить файл, так как экземпляр ресурса был очищен");
+            }
+
             string currentPath = FilePath;
             string currentExtension = "." + oldName.GetFileExtension();
 

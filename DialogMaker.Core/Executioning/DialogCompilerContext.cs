@@ -99,6 +99,7 @@ namespace DialogMaker.Core.Executioning
         public void CompileOutputs(DialogProjectNodeOutput output)
         {
             bool noOutputsAtAll = true;
+            bool dontJump = false;
 
             if (output.Node is DialogProjectDialogNode dialogNode)
             {
@@ -123,7 +124,16 @@ namespace DialogMaker.Core.Executioning
             }
             if (!Compiler.Sections.TryGetValue((DialogProjectDialogNode)output.Node, out var realSection))
             {
-                throw new ArgumentException($"Не удалось получить сегмент для узла {output.Node}", nameof(output));
+                if (!output.Node.IsImmediate ||
+                    output.ConnectionsCount != 1 ||
+                    !Compiler.Sections.TryGetValue((DialogProjectDialogNode)output.Connections[0].Node, out realSection))
+                {
+                    throw new ArgumentException($"Не удалось получить сегмент для узла {output.Node}", nameof(output));
+                }
+                else
+                {
+                    dontJump = true;
+                }
             }
             if (output.ConnectionsCount == 1)
             {
@@ -141,17 +151,19 @@ namespace DialogMaker.Core.Executioning
                     Compile(nextNode);
                     return;
                 }
-
-                var code = sectionsEquals ? DialogByteCode.Goto : DialogByteCode.Jump;
-                var opCode = Section.CreateOperation(code);
-
-                if (sectionsEquals)
+                if (!dontJump)
                 {
-                    opCode.Arguments[0] = new(nextNode);
-                    return;
-                }
+                    var code = sectionsEquals ? DialogByteCode.Goto : DialogByteCode.Jump;
+                    var opCode = Section.CreateOperation(code);
 
-                opCode.Arguments[0] = new(section);
+                    if (sectionsEquals)
+                    {
+                        opCode.Arguments[0] = new(nextNode);
+                        return;
+                    }
+
+                    opCode.Arguments[0] = new(section);
+                }
 
                 Compile(nextNode);
 

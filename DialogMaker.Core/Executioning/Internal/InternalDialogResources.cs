@@ -18,6 +18,11 @@ namespace DialogMaker.Core.Executioning.Internal
 
         #region Управление
 
+        public IResourceItem GetItemFromReference(DialogItemReference reference)
+        {
+            return Resources.GetItemFromReference(reference);
+        }
+
         public IResourceItem GetResource(int index)
         {
             if (Items.TryGetValue(index, out var item))
@@ -28,9 +33,7 @@ namespace DialogMaker.Core.Executioning.Internal
             {
                 try
                 {
-#pragma warning disable CS8625 // Литерал, равный NULL, не может быть преобразован в ссылочный тип, не допускающий значение NULL.
-                    item = localReference.GetItem(null);
-#pragma warning restore CS8625 // Литерал, равный NULL, не может быть преобразован в ссылочный тип, не допускающий значение NULL.
+                    item = GetItemFromReference(localReference);
                     Items.Add(index, item);
                 }
                 catch (Exception error)
@@ -52,11 +55,14 @@ namespace DialogMaker.Core.Executioning.Internal
             {
                 return value;
             }
+            if (Items.TryGetValue(index, out var resource) &&
+                resource is IVariable resourceVariable)
+            {
+                return resourceVariable.Value;
+            }
             if (Metadata.LocalValues.TryGetValue(index, out var localReference))
             {
-#pragma warning disable CS8625 // Литерал, равный NULL, не может быть преобразован в ссылочный тип, не допускающий значение NULL.
-                var item = localReference.GetItem(null);
-#pragma warning restore CS8625 // Литерал, равный NULL, не может быть преобразован в ссылочный тип, не допускающий значение NULL.
+                var item = GetItemFromReference(localReference);
 
                 if (item is not IVariable variable)
                 {
@@ -83,6 +89,12 @@ namespace DialogMaker.Core.Executioning.Internal
         {
             if (Metadata.LocalValues.ContainsKey(index) || onlyLocal)
             {
+                if (Items.TryGetValue(index, out var resource) &&
+                    resource is IVariable resourceVariable)
+                {
+                    resourceVariable.Value = value;
+                    return;
+                }
                 if (!Variables.TryAdd(index, value))
                 {
                     Variables[index] = value;

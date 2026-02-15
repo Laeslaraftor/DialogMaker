@@ -33,8 +33,9 @@ namespace DialogMaker.Core.Editor
             get => _name;
             set
             {
-                if (_name != value)
+                if (_name != value && !IsDisposed)
                 {
+                    InvokePropertyChanging(nameof(Name));
                     _name = value;
                     InvokePropertyChanged(nameof(Name));
                 }

@@ -15,6 +15,11 @@ namespace DialogMaker.Core.Common
 
         #region Управление
 
+        public IResourceItem GetItemFromReference(DialogItemReference reference)
+        {
+            return reference.GetItem(Dialog);
+        }
+
         public IResourceItem GetResource(int index)
         {
             if (_resources.TryGetValue(index, out var result))

@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 
 namespace DialogMaker.Core.Editor
 {
@@ -7,6 +6,8 @@ namespace DialogMaker.Core.Editor
     {
         public DialogProjectLanguage(DialogProject project)
         {
+            Id = DefaultId;
+            Name = DefaultName;
             Project = project;
             ProjectId = Guid.NewGuid();
         }
@@ -14,39 +15,38 @@ namespace DialogMaker.Core.Editor
         {
             Project = project;
             ProjectId = Guid.Parse(savedState.ProjectId);
-            _id = savedState.Id;
-            _name = savedState.Name;
+            Id = savedState.Id;
+            Name = savedState.Name;
         }
 
         public DialogProject Project { get; }
         public Guid ProjectId { get; }
         public string Id
         {
-            get => _id;
+            get => field;
             set
             {
-                if (_id != value)
+                if (field != value)
                 {
-                    _id = value;
+                    InvokePropertyChanging(nameof(Id));
+                    field = value;
                     InvokePropertyChanged(nameof(Id));
                 }
             }
         }
         public string Name
         {
-            get => _name;
+            get => field;
             set
             {
-                if (_name != value)
+                if (field != value)
                 {
-                    _name = value;
+                    InvokePropertyChanging(nameof(Name));
+                    field = value;
                     InvokePropertyChanged(nameof(Name));
                 }
             }
         }
-
-        private string _id = string.Empty;
-        private string _name = string.Empty;
 
         #region Управление
 
@@ -64,6 +64,13 @@ namespace DialogMaker.Core.Editor
         {
             return $"{Id} - {Name}";
         }
+
+        #endregion
+
+        #region Константы
+
+        public string DefaultId = "Идентификатор языка";
+        public string DefaultName = "Название языка";
 
         #endregion
     }

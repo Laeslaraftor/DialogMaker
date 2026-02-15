@@ -9,10 +9,10 @@ namespace DialogMaker.Core.Executioning
     {
         public IThreadDispatcher? Dispatcher { get; }
 
-        public Task ShowReplica(ICharacter? character, IResourceString text, CancellationToken cancellationToken);
+        public Task ShowReplica(ICharacter? character, ICharacter? listener, IResourceString text, CancellationToken cancellationToken);
         //public Task ShowFullscreenReplica(ICharacter? character, IResourceItem? background, IResourceString text, CancellationToken cancellationToken);
         //public Task ShowColorReplica(ICharacter? character, Color backgroundColor, Color textColor, IResourceString text, CancellationToken cancellationToken);
-        public Task<int> ShowChoice(ICharacter? character, IStringCollection variants, CancellationToken cancellationToken);
+        public Task<int> ShowChoice(ICharacter? character, ICharacter? listener, IStringCollection variants, CancellationToken cancellationToken);
         public Task ShowEmotion(ICharacter? character, IEmotion? emotion, CancellationToken cancellationToken);
 
         public Task HandleTrigger(string name, CancellationToken cancellationToken);

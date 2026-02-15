@@ -103,7 +103,9 @@ namespace DialogMaker.Core.Editor.Nodes
                     return true;
                 }
 
-                foreach (var input in GetInputs().Keys)
+                var inputs = GetInputs().Keys;
+
+                foreach (var input in inputs)
                 {
                     if (input.ConnectionsCount > 1)
                     {

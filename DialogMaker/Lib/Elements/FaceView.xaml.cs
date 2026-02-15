@@ -156,7 +156,8 @@ namespace DialogMaker.Lib.Elements
         }
         private void SetEyebrowVerticalPosition(Path eyebrow, double value)
         {
-            Canvas.SetTop(eyebrow, Helper.LerpUnclamped(30, -70, value));
+            value = (value + 1) / 2;
+            Canvas.SetTop(eyebrow, Helper.LerpUnclamped(60, -60, value));
         }
         private void SetEyebrowRotation(RotateTransform rotation, double value)
         {

@@ -4,6 +4,8 @@ namespace DialogMaker.Core.Executioning
 {
     public interface IDialogExecutionResources
     {
+        public IResourceItem GetItemFromReference(DialogItemReference reference);
+
         public IResourceItem GetResource(int index);
         public OperandValue GetVariable(int index);
         public void SetVariable(int index, OperandValue value);

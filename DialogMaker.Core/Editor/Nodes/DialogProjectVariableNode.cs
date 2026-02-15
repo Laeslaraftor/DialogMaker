@@ -30,7 +30,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 }
             }
         }
-        [NodeInput("Действие")]
+        [NodeInput("Действие"), Sort(0)]
         public DialogProjectNodeInputAction Action
         {
             get

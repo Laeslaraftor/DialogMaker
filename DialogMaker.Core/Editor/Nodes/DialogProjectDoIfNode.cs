@@ -26,7 +26,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 return field;
             }
         }
-        [NodeOutput("Правда")]
+        [NodeOutput("Правда"), Sort(0)]
         public DialogProjectNodeOutputAction TrueOutput
         {
             get

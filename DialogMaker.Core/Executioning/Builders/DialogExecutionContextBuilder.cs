@@ -8,12 +8,14 @@ namespace DialogMaker.Core.Executioning.Builders
 {
     public class DialogExecutionContextBuilder : IDialogExecutionResources
     {
-        public DialogExecutionContextBuilder()
+        public DialogExecutionContextBuilder(IResourcesOwner resourcesOwner)
         {
+            ResourcesOwner = resourcesOwner;
             Resources = new(_resources);
             Variables = new(_variables);
         }
 
+        public IResourcesOwner ResourcesOwner { get; }
         public ReferenceReadOnlyDictionary<int, IResourceItem> Resources { get; }
         public ReferenceReadOnlyDictionary<int, IVariable> Variables { get; }
 
@@ -45,6 +47,11 @@ namespace DialogMaker.Core.Executioning.Builders
 
         public Dictionary<int, DialogItemReference> GetGlobalValues() => GetValues(false);
         public Dictionary<int, DialogItemReference> GetLocalValues() => GetValues(true);
+
+        public IResourceItem GetItemFromReference(DialogItemReference reference)
+        {
+            return reference.GetItem(ResourcesOwner);
+        }
 
         public int GetNextIndex()
         {
@@ -164,22 +171,6 @@ namespace DialogMaker.Core.Executioning.Builders
 
         #region Статика
 
-        private static int FindFreeIndex(ICollection<int> indexes)
-        {
-            int index = 0;
-
-            foreach (var i in indexes)
-            {
-                if (i > index)
-                {
-                    return index;
-                }
-
-                index++;
-            }
-
-            return index;
-        }
         private static int FindFreeIndex(params ICollection<int>[] indexes)
         {
             int max = -1;

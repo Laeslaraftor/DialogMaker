@@ -96,8 +96,9 @@ namespace DialogMaker.Lib.Elements
                     column = 0;
                 }
 
+                view._text.Margin = value ? new(-6, 0, 4, 0) : new(4, 0, -6, 0);
+                view._borderOffset.X = value ? -12 : 12;
                 Grid.SetColumn(view._fieldContainer, 2 - column);
-                //Grid.SetColumn(view._text, column);
                 Grid.SetColumn(view._border, column);
             }
         }

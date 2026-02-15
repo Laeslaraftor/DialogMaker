@@ -7,8 +7,9 @@ using System.Linq;
 
 namespace DialogMaker.Core.Executioning
 {
-    public class DialogActionsMap(IList<DialogProjectDialogNode> entries, IDictionary<DialogProjectDialogNode, DialogExecutionEvent> specialNodes, IList<ReadOnlyCollection<DialogProjectDialogNode>> groups, Dictionary<DialogProjectDialogNode, IList<DialogProjectDialogNode>> specialNodesGroup)
+    public class DialogActionsMap(DialogProjectDialog dialog, IList<DialogProjectDialogNode> entries, IDictionary<DialogProjectDialogNode, DialogExecutionEvent> specialNodes, IList<ReadOnlyCollection<DialogProjectDialogNode>> groups, Dictionary<DialogProjectDialogNode, IList<DialogProjectDialogNode>> specialNodesGroup)
     {
+        public DialogProjectDialog Dialog { get; } = dialog;
         public ReadOnlyCollection<DialogProjectDialogNode> EntryNodes { get; } = new(entries);
         public ReadOnlyDictionary<DialogProjectDialogNode, DialogExecutionEvent> SpecialNodes { get; } = new(specialNodes);
         public ReadOnlyDictionary<DialogProjectDialogNode, ReadOnlyCollection<DialogProjectDialogNode>> SpecialNodesGroup { get; } = specialNodesGroup.ToReadonly();
@@ -94,7 +95,7 @@ namespace DialogMaker.Core.Executioning
                 return false;
             });
 
-            return new(entryNodes, specialNodes, [.. actionGroups.Select(c => new ReadOnlyCollection<DialogProjectDialogNode>(c))], specialNodesGroups);
+            return new(dialog, entryNodes, specialNodes, [.. actionGroups.Select(c => new ReadOnlyCollection<DialogProjectDialogNode>(c))], specialNodesGroups);
         }
 
         #endregion

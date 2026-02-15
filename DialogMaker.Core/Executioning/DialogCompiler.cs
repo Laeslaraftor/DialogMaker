@@ -4,7 +4,6 @@ using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Core.Executioning.Builders;
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -12,7 +11,7 @@ namespace DialogMaker.Core.Executioning
     {
         public DialogCompiler(DialogActionsMap map)
         {
-            CodeBuilder = new();
+            CodeBuilder = new(map.Dialog);
             Map = map;
 
             if (map.EntryNodes.Count > 1)

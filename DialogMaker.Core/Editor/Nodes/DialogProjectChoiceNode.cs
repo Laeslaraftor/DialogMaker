@@ -14,7 +14,7 @@ namespace DialogMaker.Core.Editor.Nodes
         {
         }
 
-        [Name("Персонаж"), Reference(DialogResourceType.Character), Sort(0)]
+        [Name("Говорящий"), Reference(DialogResourceType.Character), Sort(0)]
         public DialogProjectReference<DialogProjectCharacter>? Character
         {
             get => field;
@@ -28,6 +28,20 @@ namespace DialogMaker.Core.Editor.Nodes
                 }
             }
         }
+        [Name("Слушающий"), Reference(DialogResourceType.Character), Sort(1)]
+        public DialogProjectReference<DialogProjectCharacter>? Listener
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(Listener));
+                    field = value;
+                    InvokePropertyChanged(nameof(Listener));
+                }
+            }
+        }
         
         [NodeInput("Вход"), Description("Вход в узел")]
         public DialogProjectNodeInputAction Input
@@ -38,7 +52,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 return field;
             }
         }
-        [NodeOutput("Выход"), Description("Действие после выбора ответа")]
+        [NodeOutput("Выход"), Description("Действие после выбора ответа"), Sort(0)]
         public DialogProjectNodeOutput Output
         {
             get
@@ -62,7 +76,8 @@ namespace DialogMaker.Core.Editor.Nodes
 
         public override void Compile(DialogCompilerContext context)
         {
-            IResourceItem? character = Character?.Resolve();
+            var character = Character?.Resolve();
+            var listener = Listener?.Resolve();
             var variants = GetChoiceVariants();
 
             var outputIndex = context.Resources.GetOrCreateVariable(SelectedVarianIndex);
@@ -72,9 +87,13 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 choiceOpCode.Arguments[0] = new(character);
             }
+            if (listener != null)
+            {
+                choiceOpCode.Arguments[1] = new(listener);
+            }
 
-            choiceOpCode.Arguments[1] = new(variants);
-            choiceOpCode.Arguments[2] = outputIndex;
+            choiceOpCode.Arguments[2] = new(variants);
+            choiceOpCode.Arguments[3] = outputIndex;
 
             context.CompileOutputs(Output);
             context.CompileOutputs(SelectedVarianIndex);
@@ -113,6 +132,7 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             var savedState = base.CreateSavedState();
             savedState.Properties.TryAdd(nameof(Character), Character?.Save());
+            savedState.Properties.TryAdd(nameof(Listener), Listener?.Save());
 
             return savedState;
         }
@@ -121,6 +141,7 @@ namespace DialogMaker.Core.Editor.Nodes
             base.Restore(savedState);
 
             Character = savedState.RestoreReference<DialogProjectCharacter>(Project, nameof(Character));
+            Listener = savedState.RestoreReference<DialogProjectCharacter>(Project, nameof(Listener));
         }
 
         #endregion
