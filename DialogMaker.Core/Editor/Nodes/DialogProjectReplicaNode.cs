@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Common;
+﻿using DialogMaker.Core.Attributes;
+using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning;
 using DialogMaker.Core.Executioning.Builders;
 using System.Linq.Expressions;
@@ -50,6 +51,15 @@ namespace DialogMaker.Core.Editor.Nodes
             get
             {
                 field ??= new(this, 0);
+                return field;
+            }
+        }
+        [NodeInput("Говорящий"), Reference(DialogResourceType.Character)]
+        public DialogProjectNodeInputReference CharacterInput
+        {
+            get
+            {
+                field ??= new(this, 3, DialogResourceType.Character);
                 return field;
             }
         }

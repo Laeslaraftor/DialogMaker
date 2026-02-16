@@ -11,5 +11,14 @@ namespace DialogMaker.Lib
 
         public T OldValue { get; } = oldValue;
         public T NewValue { get; } = newValue;
+
+        #region Операторы
+
+        public static implicit operator ValueChangedEventArgs<T>(DependencyPropertyChangedEventArgs args)
+        {
+            return new(args);
+        }
+
+        #endregion
     }
 }

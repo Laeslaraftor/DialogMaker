@@ -54,6 +54,10 @@ namespace DialogMaker.Lib.Elements
 
         private void OnItemChanged(ProjectResourceItem? oldItem, ProjectResourceItem? newItem)
         {
+            if (oldItem?.Equals(newItem) == true)
+            {
+                return;
+            }
             if (LastPreview != null)
             {
                 oldItem?.FreePreview(LastPreview);

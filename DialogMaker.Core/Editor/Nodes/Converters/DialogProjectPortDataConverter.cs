@@ -1,4 +1,6 @@
-﻿using System;
+﻿using DialogMaker.Core.Common;
+using DialogMaker.Core.Executioning.Internal;
+using System;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -21,14 +23,36 @@ namespace DialogMaker.Core.Editor.Nodes
         }
         public object? Convert(DialogNodePortType valueType, object? value, DialogNodePortType convertType)
         {
-            if (valueType == convertType)
+            if (valueType == convertType || convertType == DialogNodePortType.Object)
             {
                 return value;
             }
             if (value == null)
             {
-                throw new ArgumentNullException("Значение не указано", nameof(value));
+                return convertType.GetDefaultValue();
             }
+            if (convertType == DialogNodePortType.String)
+            {
+                if (value is IResourceString resourceString)
+                {
+                    return resourceString;
+                }
+
+                var text = value.ToString().Replace(",", ".");
+
+                if (string.IsNullOrEmpty(text))
+                {
+                    return ResourceString.Empty;
+                }
+
+                return new ResourceString(text);
+            }
+
+            if (value is IResourceString resource)
+            {
+                value = resource.Text;
+            }
+
             if (convertType == DialogNodePortType.Bool)
             {
                 if (valueType == DialogNodePortType.Number ||
@@ -56,10 +80,6 @@ namespace DialogMaker.Core.Editor.Nodes
                     return System.Convert.ToSingle(value);
                 }
             }
-            else if (convertType == DialogNodePortType.String)
-            {
-                return value.ToString().Replace(",", ".");
-            }
 
             throw new ArgumentException($"Не удалось преобразовать {value} из {valueType} в {convertType}");
         }
@@ -67,7 +87,7 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             if (instance == null)
             {
-                return DialogNodePortType.Action;
+                return DialogNodePortType.Object;
             }
             if (instance is int ||
                 instance is byte ||
@@ -81,7 +101,8 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 return DialogNodePortType.Number;
             }
-            else if (instance is string)
+            else if (instance is string || 
+                     instance is IResourceString)
             {
                 return DialogNodePortType.String;
             }
@@ -90,7 +111,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 return DialogNodePortType.Bool;
             }
 
-            throw new NotSupportedException($"Неизвестный тип: {instance.GetType()}");
+            return DialogNodePortType.Object;
         }
 
         private bool AtLeastOneEquals(DialogNodePortType from, DialogNodePortType to, DialogNodePortType type)

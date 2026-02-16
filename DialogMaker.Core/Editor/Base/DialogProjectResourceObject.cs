@@ -90,6 +90,23 @@ namespace DialogMaker.Core.Editor
 
         #region Управление
 
+        public override bool Equals(object obj)
+        {
+            if (obj is IResourceItem resource)
+            {
+                return Id == resource.Id &&
+                       ResourceType == resource.ResourceType &&
+                       IsSeparated == resource.IsSeparated &&
+                       Path == resource.GetPath();
+            }
+
+            return false;
+        }
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Id, ResourceType, IsSeparated, Path);
+        }
+
         public DialogItemReference CreateReference()
         {
             return DialogItemReference.Create(this);

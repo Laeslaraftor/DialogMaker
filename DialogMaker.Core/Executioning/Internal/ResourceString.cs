@@ -39,7 +39,7 @@ namespace DialogMaker.Core.Executioning.Internal
                     return _voice;
                 }
                 if (_triedToFindVoice ||
-                    _voicePath == ResourcePath.Empty || 
+                    _voicePath == ResourcePath.Empty ||
                     _resourcesOwner == null)
                 {
                     return null;
@@ -85,6 +85,12 @@ namespace DialogMaker.Core.Executioning.Internal
         {
             return $"[{Id}] {Text}";
         }
+
+        #endregion
+
+        #region Статика
+
+        public static readonly ResourceString Empty = new(string.Empty);
 
         #endregion
     }

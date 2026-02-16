@@ -10,6 +10,7 @@ namespace DialogMaker.Core.Editor.Nodes
 {
     public interface INode : INotifyPropertyChanged, IDisposable
     {
+        public IResourcesOwner Owner { get; }
         public bool IsDisposed { get; }
         public Guid Id { get; }
         public DialogNodeType NodeType { get; }

@@ -1,10 +1,11 @@
-﻿using DialogMaker.Core.Editor;
+﻿using DialogMaker.Core.Common;
+using DialogMaker.Core.Editor;
 using DialogMaker.Editor.Menus;
 using System.ComponentModel;
 
 namespace DialogMaker.Editor
 {
-    public class ProjectCharacter : ProjectResourceItem<DialogProjectCharacter>
+    public class ProjectCharacter : ProjectResourceItem<DialogProjectCharacter>, ICharacter
     {
         public ProjectCharacter(ProjectController controller, DialogProjectCharacter character)
             : base(controller, character)
@@ -41,6 +42,8 @@ namespace DialogMaker.Editor
                 }
             }
         }
+
+        string ICharacter.Name => Name?.Item?.PreviewVariant?.Text ?? string.Empty;
 
         #region Управление
 

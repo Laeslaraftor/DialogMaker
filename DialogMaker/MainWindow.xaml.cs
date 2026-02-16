@@ -6,6 +6,7 @@ using DialogMaker.Lib;
 using DialogMaker.Lib.Controllers;
 using DialogMaker.Lib.Elements;
 using DialogMaker.ViewModels;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -57,7 +58,15 @@ namespace DialogMaker
                 controller = new(project);
             }
 
-            _model.Project?.Dispose();
+            try
+            {
+                _model.Project?.Dispose();
+            }
+            catch (Exception error)
+            {
+                Debug.WriteLine(error);
+            }
+
             _exportView.ProjectController = controller;
             _model.Project = controller;
             _model.CanCreatePack = controller != null;

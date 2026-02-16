@@ -2,6 +2,7 @@
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor;
 using DialogMaker.Lib.Elements;
+using DialogMaker.Lib.InputFields;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
@@ -60,7 +61,6 @@ namespace DialogMaker.Lib.Controllers
             View.IsActive = Port.IsActive;
             View.ToolTip = string.IsNullOrEmpty(Port.Description) ? null : Port.Description;
             View.Invert = invert;
-            View.HorizontalAlignment = invert ? HorizontalAlignment.Left : HorizontalAlignment.Right;
             View.IsExtraControlVisible = PresetValueEditor != null && !Port.IsActive;
         }
 
@@ -81,9 +81,7 @@ namespace DialogMaker.Lib.Controllers
         {
             result = null;
 
-            if (port.Original.DataType == DialogNodePortType.Object ||
-                port.Original.DataType == DialogNodePortType.Action ||
-                port.Original is not IValuePort valuePort ||
+            if (port.Original is not IValuePort valuePort ||
                 !valuePort.CanPresetValue)
             {
                 return false;
@@ -96,14 +94,28 @@ namespace DialogMaker.Lib.Controllers
                 return false;
             }
 
-            var propertyType = port.Original.DataType.GetInfo().FirstOrDefault()?.Type;
+            Type? propertyType = valuePort.ReflectionValueType;
 
-            if (propertyType == null)
+            if (PropertyEditorController.TryCreate(port.Original, valueProperty, propertyType, out result))
             {
-                return false;
+                var newPlaceholder = valuePort.ResourceType?.GetEnumAttribute<NameAttribute>()?.Name;
+
+                if (result.InputField is ObjectInputField objectField)
+                {
+                    objectField.AllowedValues = valuePort.AllowedValues;
+                    objectField.ResourceType ??= valuePort.ResourceType;
+                }
+                if (result.InputField is ReferenceInputField referenceField)
+                {
+                    referenceField.ResourceType = valuePort.ResourceType;
+                }
+                if (newPlaceholder != null)
+                {
+                    result.InputField.Placeholder = newPlaceholder;
+                }
             }
 
-            return PropertyEditorController.TryCreate(port.Original, valueProperty, propertyType, out result);
+            return result != null;
         }
 
         #endregion

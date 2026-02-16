@@ -7,6 +7,8 @@ using System.ComponentModel;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows;
+using DialogMaker.Core.Common;
+using DialogMaker.Core.Executioning;
 
 namespace DialogMaker.Editor
 {
@@ -20,7 +22,7 @@ namespace DialogMaker.Editor
 
         public T Original { get; }
     }
-    public abstract class ProjectResourceItem : Disposable
+    public abstract class ProjectResourceItem : Disposable, IResource
     {
         protected ProjectResourceItem(ProjectController project, DialogProjectResourceObject model)
         {
@@ -48,10 +50,24 @@ namespace DialogMaker.Editor
         }
         public ICommand EditIdCommand => IdEditCommand;
 
+        IResourcesContainer IResource.Container => Model.Resources;
+        DialogResourceType IResourceItem.ResourceType => Model.ResourceType;
+        string IResourceItem.Id => Id;
+        bool IResourceItem.IsSeparated => Model.IsSeparated;
+
         private readonly ElementsPool<TextBlock> _previewBlocks = new();
         private readonly List<TextBlock> _createdBlocks = [];
 
         #region Управление
+
+        public override bool Equals(object? obj)
+        {
+            return Model.Equals(obj);
+        }
+        public override int GetHashCode()
+        {
+            return Model.GetHashCode();
+        }
 
         public virtual bool ContainsValue(string value)
         {
@@ -84,6 +100,19 @@ namespace DialogMaker.Editor
             {
                 _previewBlocks.Free(block);
             }
+        }
+
+        DialogItemReference IResourceItem.CreateReference()
+        {
+            return Model.CreateReference();
+        }
+        ResourcePath IResourceItem.GetPath()
+        {
+            return Model.Path;
+        }
+        IVariable IResourceItem.ToVariable()
+        {
+            return Model.ToVariable();
         }
 
         protected override void Dispose(bool isDisposing)

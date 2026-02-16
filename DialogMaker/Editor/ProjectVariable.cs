@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core;
+using DialogMaker.Core.Common;
 using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor.Menus;
@@ -9,7 +10,7 @@ using System.Reflection;
 
 namespace DialogMaker.Editor
 {
-    public class ProjectVariable : ProjectResourceItem<DialogProjectVariable>
+    public class ProjectVariable : ProjectResourceItem<DialogProjectVariable>, IVariable
     {
         public ProjectVariable(ProjectController project, DialogProjectVariable original) : base(project, original)
         {
@@ -17,6 +18,12 @@ namespace DialogMaker.Editor
         }
 
         public DialogNodePortType ValueType { get; }
+        public bool IsReadOnly => Original.IsReadOnly;
+        public OperandValue Value
+        {
+            get => ((IVariable)Original).Value;
+            set => ((IVariable)Original).Value = value;
+        }
 
         private readonly ElementsPool<VariableView> _views = new();
 

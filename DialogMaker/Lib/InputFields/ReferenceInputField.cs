@@ -38,7 +38,7 @@ namespace DialogMaker.Lib.InputFields
             get => field;
             set
             {
-                if (field != value)
+                if (field?.Equals(value) != true)
                 {
                     InvokePropertyChanging(nameof(Value));
                     field = value;

@@ -1,19 +1,20 @@
 ﻿using DialogMaker.Core.Attributes;
 using DialogMaker.Core.Editor;
+using DialogMaker.Core.Editor.Nodes;
 
 namespace DialogMaker.Core
 {
     public enum DialogResourceType
     {
-        [ResourceType(typeof(DialogProjectString), IsDev = true)]
+        [Name("Строка"), ResourceType(typeof(DialogProjectString), IsDev = true)]
         String,
-        [ResourceType(typeof(DialogProjectCharacter), IsDev = true)]
+        [Name("Персонаж"), ResourceType(typeof(DialogProjectCharacter), IsDev = true)]
         Character,
-        [ResourceType(typeof(DialogProjectItem), IsDev = true)]
+        [Name("Файл"), ResourceType(typeof(DialogProjectItem), IsDev = true)]
         File,
-        [ResourceType(typeof(DialogProjectVariable), IsDev = true)]
+        [Name("Переменная"), ResourceType(typeof(DialogProjectVariable), IsDev = true)]
         Variable,
-        [ResourceType(typeof(DialogProjectEmotion), IsDev = true)]
+        [Name("Эмоция"), ResourceType(typeof(DialogProjectEmotion), IsDev = true)]
         Emotion,
     }
 }

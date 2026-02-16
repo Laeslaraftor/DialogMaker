@@ -4,11 +4,9 @@ using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor;
 using DialogMaker.Lib.InputFields;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Reflection.Metadata.Ecma335;
 using System.Windows;
 
 namespace DialogMaker.Lib.Controllers
@@ -114,13 +112,13 @@ namespace DialogMaker.Lib.Controllers
         {
             new(typeof(string), t =>
             {
-                return new TextInputField() 
+                return new TextInputField()
                 {
                     Multiline = t.GetCustomAttribute<TextAttribute>()?.AllowMultiline == true
                 };
             }),
             new(typeof(bool), t => new BoolInputField()),
-            new(typeof(float), t => 
+            new(typeof(float), t =>
             {
                 FloatInputField field = new();
                 CheckSlider(t, field);
@@ -167,6 +165,35 @@ namespace DialogMaker.Lib.Controllers
                         if (textSettings != null && field is TextInputField textField)
                         {
                             textField.Multiline = textSettings.AllowMultiline;
+                        }
+                    }
+                };
+            }),
+            new(typeof(object), t =>
+            {
+                AllowedObjectValues allowedValues = AllowedObjectValues.AllWithoutList;
+                DialogResourceType? resourceType = t.GetCustomAttribute<ReferenceAttribute>()?.Type;
+                var textSettings = t.GetCustomAttribute<TextAttribute>();
+                var valuesAttribute = t.GetCustomAttribute<AllowedTypesAttribute>();
+
+                if (valuesAttribute != null)
+                {
+                    allowedValues = valuesAttribute.AllowedTypes;
+                }
+
+                return new ObjectInputField()
+                {
+                    AllowedValues = allowedValues,
+                    ResourceType = resourceType,
+                    FieldsHandler = field =>
+                    {
+                        if (field is TextInputField textField && field.GetType().Name == nameof(TextInputField))
+                        {
+                            textField.Multiline = textSettings?.AllowMultiline == true;
+                        }
+                        if (field is SliderInputField sliderField)
+                        {
+                            CheckSlider(t, sliderField);
                         }
                     }
                 };

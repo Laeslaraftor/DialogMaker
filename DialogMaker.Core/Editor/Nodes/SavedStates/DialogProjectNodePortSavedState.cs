@@ -10,6 +10,8 @@ namespace DialogMaker.Core.Editor.Nodes
         public Dictionary<Guid, List<int>> Connections { get; set; } = [];
         [JsonProperty("name")]
         public object? Value { get; set; }
+        [JsonProperty("valueType")]
+        public Type? ValueType { get; set; }
 
         #region Управление
 

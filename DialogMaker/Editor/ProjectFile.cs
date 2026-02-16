@@ -1,5 +1,7 @@
 ﻿using DialogMaker.Core;
+using DialogMaker.Core.Common;
 using DialogMaker.Core.Editor;
+using DialogMaker.Core.Executioning;
 using DialogMaker.Editor.Menus;
 using DialogMaker.Lib;
 using DialogMaker.Lib.Elements;
@@ -9,7 +11,7 @@ using System.Windows.Media.Imaging;
 
 namespace DialogMaker.Editor
 {
-    public class ProjectFile : ProjectResourceItem<DialogProjectItem>
+    public class ProjectFile : ProjectResourceItem<DialogProjectItem>, IResourceFile
     {
         public ProjectFile(ProjectController project, DialogProjectItem original) : base(project, original)
         {

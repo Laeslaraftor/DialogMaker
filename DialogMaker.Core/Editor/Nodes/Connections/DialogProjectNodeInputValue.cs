@@ -7,13 +7,33 @@ namespace DialogMaker.Core.Editor.Nodes
     {
         public new T Value
         {
-            get => (T)Convert.ChangeType(base.Value, typeof(T));
+            get => ExtractValue(base.Value);
             set
             {
                 value ??= (T)DataType.GetDefaultValue();
+                ValidateValue(value);
                 base.Value = value;
             }
         }
+        public override Type ReflectionValueType
+        {
+            get
+            {
+                field ??= typeof(T);
+                return field;
+            }
+        }
+
+        #region Управление
+
+        protected virtual bool ValidateValue(T? value) => true;
+
+        protected virtual T ExtractValue(object value)
+        {
+            return (T)Convert.ChangeType(base.Value, typeof(T));
+        }
+
+        #endregion
     }
     public class DialogProjectNodeInputValue(INode node, int portId, DialogNodePortType dataType = DialogNodePortType.Object)
         : DialogProjectNodeInput(node, portId, dataType)

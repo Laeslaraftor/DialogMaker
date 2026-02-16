@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Editor.Nodes;
+﻿using DialogMaker.Core.Common;
+using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Core.Executioning.Builders;
 using System.Collections.Generic;
 
@@ -53,7 +54,14 @@ namespace DialogMaker.Core.Executioning
                 if (port is IValuePort valuePort &&
                     valuePort.CanPresetValue)
                 {
-                    return new(new OperandValue(valuePort.Value));
+                    var value = valuePort.Value;
+
+                    if (value is IResourceItem resource)
+                    {
+                        return new(resource);
+                    }
+
+                    return new(new OperandValue(value));
                 }
 
                 return DialogExecutionParameter.Empty;

@@ -1,8 +1,12 @@
 ﻿using Acly;
+using DialogMaker.Core.Common;
+using DialogMaker.Core.Executioning;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Linq;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -55,9 +59,39 @@ namespace DialogMaker.Core.Editor.Nodes
 
                 InvokePropertyChanging(nameof(Value));
                 field = Node.DataConverter.Convert(type, value, DataType);
+                var valueType = GetValueType(value);
+
+                if (valueType != null)
+                {
+                    CurrentValueType = valueType.Value;
+                }
+
                 InvokePropertyChanged(nameof(Value));
             }
         }
+        public virtual Type ReflectionValueType
+        {
+            get
+            {
+                field ??= DataType.GetDefaultType();
+                return field;
+            }
+        }
+        public AllowedObjectValues CurrentValueType
+        {
+            get => field;
+            private set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(CurrentValueType));
+                    field = value;
+                    InvokePropertyChanged(nameof(CurrentValueType));
+                }
+            }
+        }
+        public virtual AllowedObjectValues AllowedValues => AllowedObjectValues.AllWithoutList;
+        public virtual DialogResourceType? ResourceType => null;
 
         protected override IEditableList ConnectionsList => Connections;
         protected virtual bool Multiconnection { get; }
@@ -66,13 +100,26 @@ namespace DialogMaker.Core.Editor.Nodes
 
         #region Управление
 
+        protected virtual object GetValueToSave()
+        {
+            if (Value is IResourceItem resource)
+            {
+                return resource.CreateReference();
+            }
+
+            return Value;
+        }
+
         protected override DialogProjectNodePortSavedState CreateSavedState()
         {
             DialogProjectNodePortSavedState result = new();
 
             if (CanPresetValue)
             {
-                result.Value = Value;
+                var valueToSave = GetValueToSave();
+
+                result.Value = valueToSave;
+                result.ValueType = valueToSave?.GetType(); 
             }
 
             return result;
@@ -92,9 +139,21 @@ namespace DialogMaker.Core.Editor.Nodes
 
                 if (savedState.Value is JToken token)
                 {
-                    var defaultType = DataType.GetDefaultType();
-                    restoredValue = token.ToObject(defaultType);
-                    restoredValue ??= DataType.GetDefaultValue();
+                    if (savedState.ValueType == null)
+                    {
+                        var defaultType = DataType.GetDefaultType();
+                        restoredValue = token.ToObject(defaultType);
+                        restoredValue ??= DataType.GetDefaultValue();
+                    }
+                    else
+                    {
+                        restoredValue = token.ToObject(savedState.ValueType);
+
+                        if (restoredValue is DialogItemReference reference)
+                        {
+                            restoredValue = reference.GetItem(Node.Owner);
+                        }
+                    }
                 }
                 if (restoredValue == null)
                 {
@@ -124,6 +183,52 @@ namespace DialogMaker.Core.Editor.Nodes
         public override IEnumerator<DialogProjectNodePort> GetEnumerator()
         {
             return Connections.GetEnumerator();
+        }
+
+        #endregion
+
+        #region Статика
+
+        private static readonly AllowedObjectValues[] _allowedValues = [.. Enum.GetValues(typeof(AllowedObjectValues)).Cast<AllowedObjectValues>()];
+        private static readonly Dictionary<AllowedObjectValues, ReadOnlyCollection<TypeAttribute>> _allowedValuesInfo = [];
+
+        public static AllowedObjectValues? GetValueType(object? value)
+        {
+            if (value == null)
+            {
+                return null;
+            }
+            if (value is IResourceItem)
+            {
+                return AllowedObjectValues.Resource;
+            }
+            if (_allowedValuesInfo.Count == 0)
+            {
+                foreach (var allowedValue in _allowedValues)
+                {
+                    var typeAttributes = allowedValue.GetEnumAttributes<TypeAttribute>();
+
+                    if (typeAttributes.Count > 0)
+                    {
+                        _allowedValuesInfo.Add(allowedValue, new(typeAttributes));
+                    }
+                }
+            }
+
+            Type objType = value.GetType();
+
+            foreach (var info in _allowedValuesInfo)
+            {
+                foreach (var typeInfo in info.Value)
+                {
+                    if (typeInfo.Type == objType)
+                    {
+                        return info.Key;
+                    }
+                }
+            }
+
+            return null;
         }
 
         #endregion

@@ -1,4 +1,5 @@
 ﻿using Acly;
+using DialogMaker.Core.Common;
 using DialogMaker.Core.Editor;
 using DialogMaker.Editor.Menus;
 using DialogMaker.Lib;
@@ -7,7 +8,7 @@ using System.ComponentModel;
 
 namespace DialogMaker.Editor
 {
-    public class ProjectString : ProjectResourceItem<DialogProjectString>
+    public class ProjectString : ProjectResourceItem<DialogProjectString>, IResourceString
     {
         public ProjectString(ProjectController project, DialogProjectString original)
             : base(project, original)
@@ -63,6 +64,9 @@ namespace DialogMaker.Editor
                 }
             }
         }
+
+        string IResourceString.Text => PreviewVariant?.Text ?? string.Empty;
+        IResourceFile? IResourceString.Voice => PreviewVariant?.Voice?.Item;
 
         private readonly ProjectStringVariantConverter _variantsConverter;
         private readonly CollectionSynchronizer<DialogProjectStringVariant, ProjectStringVariant> _variants;

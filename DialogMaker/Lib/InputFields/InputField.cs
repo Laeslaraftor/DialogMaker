@@ -66,7 +66,12 @@ namespace DialogMaker.Lib.InputFields
             {
                 return typeof(BoolInputField);
             }
-            if (type.Name == typeof(DialogProjectReference<>).Name ||
+            if (type == typeof(object))
+            {
+                return typeof(ObjectInputField);
+            }
+            if (type == typeof(DialogProjectReference) ||
+                type.Name == typeof(DialogProjectReference<>).Name ||
                 type == typeof(DialogProjectResourceObject))
             {
                 return typeof(ReferenceInputField);

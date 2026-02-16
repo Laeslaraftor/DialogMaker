@@ -30,6 +30,7 @@ namespace DialogMaker.Core.Editor.Nodes
         public DialogProject Project => Pack.Project;
         public DialogProjectPack Pack => Dialog.Pack;
         public DialogProjectDialog Dialog { get; }
+        public IResourcesOwner Owner => Dialog;
         public Guid Id { get; }
         public string Name
         {
