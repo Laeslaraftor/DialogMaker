@@ -2,6 +2,7 @@
 using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning;
 using DialogMaker.Core.Executioning.Builders;
+using System.Diagnostics;
 using System.Linq.Expressions;
 
 namespace DialogMaker.Core.Editor.Nodes
@@ -17,34 +18,6 @@ namespace DialogMaker.Core.Editor.Nodes
         }
 
         public override DialogNodeType NodeType => DialogNodeType.SimpleReplica;
-        [Name("Говорящий"), Reference(DialogResourceType.Character)]
-        public DialogProjectReference<DialogProjectCharacter>? Character
-        {
-            get => field;
-            set
-            {
-                if (field != value)
-                {
-                    InvokePropertyChanging(nameof(Character));
-                    field = value;
-                    InvokePropertyChanged(nameof(Character));
-                }
-            }
-        }
-        [Name("Слушающий"), Reference(DialogResourceType.Character)]
-        public DialogProjectReference<DialogProjectCharacter>? Listener
-        {
-            get => field;
-            set
-            {
-                if (field != value)
-                {
-                    InvokePropertyChanging(nameof(Listener));
-                    field = value;
-                    InvokePropertyChanged(nameof(Listener));
-                }
-            }
-        }
         [NodeInput("Вход")]
         public DialogProjectNodeInputAction Input
         {
@@ -55,11 +28,20 @@ namespace DialogMaker.Core.Editor.Nodes
             }
         }
         [NodeInput("Говорящий"), Reference(DialogResourceType.Character)]
-        public DialogProjectNodeInputReference CharacterInput
+        public DialogProjectNodeInputCharacter Character
         {
             get
             {
-                field ??= new(this, 3, DialogResourceType.Character);
+                field ??= new(this, 3);
+                return field;
+            }
+        }
+        [NodeInput("Слушающий"), Reference(DialogResourceType.Character)]
+        public DialogProjectNodeInputCharacter Listener
+        {
+            get
+            {
+                field ??= new(this, 4);
                 return field;
             }
         }
@@ -88,8 +70,8 @@ namespace DialogMaker.Core.Editor.Nodes
         public override void Compile(DialogCompilerContext context)
         {
             var text = context.Compiler.RecursiveCompileConnections(context, Text);
-            var character = Character?.Resolve();
-            var listener = Listener?.Resolve();
+            var character = context.Compiler.RecursiveCompileConnections(context, Character);
+            var listener = context.Compiler.RecursiveCompileConnections(context, Listener);
 
             CreateOperation(context, character, listener, text, DialogByteCode.ShowReplica, DialogByteCode.ShowResourceReplica);
             context.CompileOutputs(Output);
@@ -97,35 +79,14 @@ namespace DialogMaker.Core.Editor.Nodes
 
         public override string ToString()
         {
-            string characterName = string.Empty;
-            var character = Character;
-
-            if (character != null)
-            {
-                characterName = $"{character.Resolve()}: ";
-            }
-
-            return $"{characterName}{Text.GetPreview()}";
-        }
-
-        protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)
-        {
-            base.ModifySavedState(savedState);
-            savedState.Properties.TryAdd(nameof(Character), Character?.Save());
-            savedState.Properties.TryAdd(nameof(Listener), Listener?.Save());
-        }
-        protected override void Restore(DialogProjectDialogNodeSavedState savedState)
-        {
-            base.Restore(savedState);
-            Character = savedState.RestoreReference<DialogProjectCharacter>(Project, nameof(Character));
-            Listener = savedState.RestoreReference<DialogProjectCharacter>(Project, nameof(Listener));
+            return $"{Character.GetPreview()}: {Text.GetPreview()}";
         }
 
         #endregion
 
         #region Статика
 
-        internal static OperationBuilder CreateOperation(DialogCompilerContext context, ICharacter? character, ICharacter? listener, DialogExecutionParameter text, DialogByteCode original, DialogByteCode resource)
+        internal static OperationBuilder CreateOperation(DialogCompilerContext context, DialogExecutionParameter character, DialogExecutionParameter listener, DialogExecutionParameter text, DialogByteCode original, DialogByteCode resource)
         {
             DialogByteCode code = original;
 
@@ -138,11 +99,11 @@ namespace DialogMaker.Core.Editor.Nodes
 
             if (character != null)
             {
-                result.Arguments[0] = new(character);
+                result.Arguments[0] = character;
             }
             if (listener != null)
             {
-                result.Arguments[1] = new(listener);
+                result.Arguments[1] = listener;
             }
 
             result.Arguments[2] = text;

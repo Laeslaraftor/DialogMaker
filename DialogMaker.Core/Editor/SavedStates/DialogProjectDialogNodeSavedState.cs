@@ -16,6 +16,8 @@ namespace DialogMaker.Core.Editor
         public DialogNodeType NodeType { get; set; }
         [JsonProperty("position")]
         public Vector2 Position { get; set; }
+        [JsonProperty("inverted")]
+        public bool Inverted { get; set; }
         [JsonProperty("inputs")]
         public Dictionary<int, DialogProjectNodePortSavedState> Inputs { get; set; } = [];
         [JsonProperty("outputs")]

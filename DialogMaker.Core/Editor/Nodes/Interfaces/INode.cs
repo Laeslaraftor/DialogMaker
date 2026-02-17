@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Common;
+﻿using Acly;
+using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,9 @@ namespace DialogMaker.Core.Editor.Nodes
 {
     public interface INode : INotifyPropertyChanged, IDisposable
     {
+        public event EventHandler? InputsUpdated;
+        public event EventHandler? OutputsUpdated;
+
         public IResourcesOwner Owner { get; }
         public bool IsDisposed { get; }
         public Guid Id { get; }
@@ -27,8 +31,8 @@ namespace DialogMaker.Core.Editor.Nodes
         public void Compile(DialogCompilerContext context);
         public bool TryGetResourceValue(DialogProjectNodeOutput port, [NotNullWhen(true)] out IResourceItem? resource);
         public IEnumerable<DialogProjectNodePort> GetPorts();
-        public ReadOnlyDictionary<DialogProjectNodeInput, DialogProjectNodeMetadata> GetInputs();
-        public ReadOnlyDictionary<DialogProjectNodeOutput, DialogProjectNodeMetadata> GetOutputs();
+        public ReferenceReadOnlyDictionary<DialogProjectNodeInput, DialogProjectNodeMetadata> GetInputs();
+        public ReferenceReadOnlyDictionary<DialogProjectNodeOutput, DialogProjectNodeMetadata> GetOutputs();
         public string? GetName(DialogProjectNodePort port);
     }
 }

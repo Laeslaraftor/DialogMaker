@@ -26,6 +26,31 @@ namespace DialogMaker.Core.Executioning
                 bool canBeEntryPoint = node.CanBeEntryPoint;
                 bool isImmediate = node.IsImmediate;
 
+                bool CheckInputs(INode nodeToCheck, bool isFirstIteration)
+                {
+                    if (node.Equals(nodeToCheck) && !isFirstIteration)
+                    {
+                        return false;
+                    }
+
+                    foreach (var input in nodeToCheck.GetInputs().Keys)
+                    {
+                        foreach (var connection in input)
+                        {
+                            if (connection.Node.IsFunction)
+                            {
+                                return false;
+                            }
+
+                            return CheckInputs(connection.Node, false);
+                        }
+                    }
+
+                    return true;
+                }
+
+                canBeEntryPoint = canBeEntryPoint && CheckInputs(node, true);
+
                 if (canBeEntryPoint && isImmediate && node.IsUserHandleNode)
                 {
                     result.Add(node);

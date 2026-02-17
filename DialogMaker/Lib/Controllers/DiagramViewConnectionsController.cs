@@ -256,6 +256,11 @@ namespace DialogMaker.Lib.Controllers
             }
 
             var view = _curvesPool.GetElement();
+
+            Panel.SetZIndex(view, -1);
+            view.RemoveFromParent();
+            Canvas.Children.Add(view);
+
             view.StrokeThickness = CurvesThickness;
             view.Resolution = CurvesResolution;
             view.Offset = CurvesOffset;
@@ -266,8 +271,6 @@ namespace DialogMaker.Lib.Controllers
                 StartPort = port
             };
 
-            Panel.SetZIndex(view, -1);
-            Canvas.Children.Add(view);
             _curves.Add(result);
 
             return result;

@@ -44,7 +44,7 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             get
             {
-                field ??= new(this, 0);
+                field ??= new(this, 0, false);
                 return field;
             }
         }

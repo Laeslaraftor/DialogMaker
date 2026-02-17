@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Common;
+﻿using Acly;
+using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning;
 using System;
 using System.Collections.Generic;
@@ -8,24 +9,43 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
+using System.Collections.Specialized;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
     public abstract class DialogProjectDialogNode : Disposable, INode, ISavable
     {
         protected DialogProjectDialogNode(DialogProjectDialog dialog)
+            : this(dialog, Guid.NewGuid())
         {
-            Dialog = dialog;
-            Id = Guid.NewGuid();
         }
         protected DialogProjectDialogNode(DialogProjectDialog dialog, DialogProjectDialogNodeSavedState savedState)
+            : this(dialog, savedState.Id)
         {
-            Id = savedState.Id;
-            Dialog = dialog;
             Position = savedState.Position;
+            Inverted = savedState.Inverted;
 
-            Restore(savedState);
+            try
+            {
+                Restore(savedState);
+            }
+            catch (Exception error)
+            {
+                Debug.WriteLine(error);
+            }
         }
+        private DialogProjectDialogNode(DialogProjectDialog dialog, Guid id)
+        {
+            Dialog = dialog;
+            Id = id;
+
+            ExtraInputs.CollectionChanged += OnExtraInputsCollectionChanged;
+            ExtraOutputs.CollectionChanged += OnExtraOutputsCollectionChanged;
+        }
+
+        public event EventHandler? PortsUpdated;
+        public event EventHandler? InputsUpdated;
+        public event EventHandler? OutputsUpdated;
 
         public DialogProject Project => Pack.Project;
         public DialogProjectPack Pack => Dialog.Pack;
@@ -165,9 +185,31 @@ namespace DialogMaker.Core.Editor.Nodes
                 return true;
             }
         }
+        public bool Inverted
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(Inverted));
+                    field = value;
+                    InvokePropertyChanged(nameof(Inverted));
+                }
+            }
+        }
 
-        private ReadOnlyDictionary<DialogProjectNodeInput, DialogProjectNodeMetadata>? _inputs;
-        private ReadOnlyDictionary<DialogProjectNodeOutput, DialogProjectNodeMetadata>? _outputs;
+        // дополнительные порты имеют отрицательные идетификаторы
+        protected ObservableDictionary<DialogProjectNodeInput, DialogProjectNodeMetadata> ExtraInputs { get; } = [];
+        protected ObservableDictionary<DialogProjectNodeOutput, DialogProjectNodeMetadata> ExtraOutputs { get; } = [];
+
+        private Dictionary<DialogProjectNodeInput, DialogProjectNodeMetadata>? _baseInputs;
+        private Dictionary<DialogProjectNodeOutput, DialogProjectNodeMetadata>? _baseOutputs;
+        private ObservableDictionary<DialogProjectNodeInput, DialogProjectNodeMetadata>? _dynamicInputs;
+        private ObservableDictionary<DialogProjectNodeOutput, DialogProjectNodeMetadata>? _dynamicOutputs;
+
+        private ReferenceReadOnlyDictionary<DialogProjectNodeInput, DialogProjectNodeMetadata>? _readInputs;
+        private ReferenceReadOnlyDictionary<DialogProjectNodeOutput, DialogProjectNodeMetadata>? _readOutputs;
 
         #region Управление
 
@@ -250,25 +292,31 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             return GetPorts(p => true);
         }
-        public ReadOnlyDictionary<DialogProjectNodeInput, DialogProjectNodeMetadata> GetInputs()
+        public ReferenceReadOnlyDictionary<DialogProjectNodeInput, DialogProjectNodeMetadata> GetInputs()
         {
-            if (_inputs == null)
+            if (_baseInputs == null)
             {
                 var ports = GetPorts<DialogProjectNodeInput, NodeInputAttribute>(this);
-                _inputs = new(ports);
+                _baseInputs = new(ports);
             }
 
-            return _inputs;
+            _dynamicInputs ??= CombineDictionaries(_baseInputs, ExtraInputs);
+            _readInputs ??= new(_dynamicInputs);
+
+            return _readInputs;
         }
-        public ReadOnlyDictionary<DialogProjectNodeOutput, DialogProjectNodeMetadata> GetOutputs()
+        public ReferenceReadOnlyDictionary<DialogProjectNodeOutput, DialogProjectNodeMetadata> GetOutputs()
         {
-            if (_outputs == null)
+            if (_baseOutputs == null)
             {
                 var ports = GetPorts<DialogProjectNodeOutput, NodeOutputAttribute>(this);
-                _outputs = new(ports);
+                _baseOutputs = new(ports);
             }
 
-            return _outputs;
+            _dynamicOutputs ??= CombineDictionaries(_baseOutputs, ExtraOutputs);
+            _readOutputs ??= new(_dynamicOutputs);
+
+            return _readOutputs;
         }
         public bool TryGetPort(int id, [NotNullWhen(true)] out DialogProjectNodePort? result)
         {
@@ -331,6 +379,7 @@ namespace DialogMaker.Core.Editor.Nodes
             savedState.Id = Id;
             savedState.NodeType = NodeType;
             savedState.Position = Position;
+            savedState.Inverted = Inverted;
 
             foreach (var port in GetInputs().Keys)
             {
@@ -345,6 +394,50 @@ namespace DialogMaker.Core.Editor.Nodes
         }
 
         ISavedState ISavable.Save() => Save();
+
+        protected IEnumerable<DialogProjectNodePort> GetExtraPorts()
+        {
+            foreach (var port in ExtraInputs.Keys)
+            {
+                yield return port;
+            }
+            foreach (var port in ExtraOutputs.Keys)
+            {
+                yield return port;
+            }
+        }
+        protected int GetNextExtraPortId()
+        {
+            int extraPortsCount = -(ExtraOutputs.Count + ExtraInputs.Count);
+
+            if (extraPortsCount == 0)
+            {
+                return -1;
+            }
+
+            var extraPorts = GetExtraPorts();
+
+            for (int i = -1; i > extraPortsCount; i--)
+            {
+                bool failed = false;
+
+                foreach (var port in extraPorts)
+                {
+                    if (port.Id == i)
+                    {
+                        failed = true;
+                        break;
+                    }
+                }
+
+                if (!failed)
+                {
+                    return i;
+                }
+            }
+
+            return extraPortsCount - 1;
+        }
 
         protected virtual DialogProjectDialogNodeSavedState CreateSavedState()
         {
@@ -381,6 +474,9 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             base.Dispose(isDisposing);
 
+            ExtraInputs.CollectionChanged -= OnExtraInputsCollectionChanged;
+            ExtraOutputs.CollectionChanged -= OnExtraOutputsCollectionChanged;
+
             static void DisposePorts(IEnumerable<DialogProjectNodePort> ports)
             {
                 foreach (var port in ports)
@@ -392,8 +488,27 @@ namespace DialogMaker.Core.Editor.Nodes
             DisposePorts(GetInputs().Keys);
             DisposePorts(GetOutputs().Keys);
 
-            _inputs = null;
-            _outputs = null;
+            _baseInputs = null;
+            _baseOutputs = null;
+        }
+
+        #endregion
+
+        #region События
+
+        private void OnExtraOutputsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            UpdateDynamicDictionary(_dynamicOutputs, _baseOutputs, ExtraOutputs);
+
+            OutputsUpdated?.Invoke(this, e);
+            PortsUpdated?.Invoke(this, e);
+        }
+        private void OnExtraInputsCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            UpdateDynamicDictionary(_dynamicInputs, _baseInputs, ExtraInputs);
+
+            InputsUpdated?.Invoke(this, e);
+            PortsUpdated?.Invoke(this, e);
         }
 
         #endregion
@@ -502,6 +617,37 @@ namespace DialogMaker.Core.Editor.Nodes
             }
 
             return result;
+        }
+        private static ObservableDictionary<TPort, DialogProjectNodeMetadata> CombineDictionaries<TPort>(Dictionary<TPort, DialogProjectNodeMetadata> main, ObservableDictionary<TPort, DialogProjectNodeMetadata> extraPorts)
+            where TPort : DialogProjectNodePort
+        {
+            ObservableDictionary<TPort, DialogProjectNodeMetadata> result = [.. main];
+
+            foreach (var extra in extraPorts)
+            {
+                result.Add(extra);
+            }
+
+            return result;
+        }
+        private static void UpdateDynamicDictionary<TPort>(ObservableDictionary<TPort, DialogProjectNodeMetadata>? dynamic, Dictionary<TPort, DialogProjectNodeMetadata>? main, ObservableDictionary<TPort, DialogProjectNodeMetadata>? extra)
+            where TPort : DialogProjectNodePort
+        {
+            if (dynamic == null || main == null || extra == null)
+            {
+                return;
+            }
+
+            dynamic.Clear();
+
+            foreach (var info in main)
+            {
+                dynamic.Add(info);
+            }
+            foreach (var info in extra)
+            {
+                dynamic.Add(info);
+            }
         }
 
         internal static void CompileMath(DialogCompilerContext context, DialogByteCode code, DialogProjectNodeInputValue firstValue, DialogProjectNodeInputValue secondValue, DialogProjectNodeOutputObject outputPort)

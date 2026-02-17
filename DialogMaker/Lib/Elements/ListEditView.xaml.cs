@@ -62,6 +62,7 @@ namespace DialogMaker.Lib.Elements
         private readonly ObjectEditorsConverter _converter = new();
         private readonly ObservableCollection<InputField> _inputs = [];
         private CollectionSynchronizer<object?, InputField>? _collectionsSync;
+        private bool _disableSync;
 
         #region Управление
 
@@ -100,6 +101,43 @@ namespace DialogMaker.Lib.Elements
             var list = EditableList;
             _addButton.IsEnabled = list != null && list.CanAddNew;
         }
+        private void UpdateMoveButtons()
+        {
+            var list = EditableList;
+
+            if (list == null)
+            {
+                _moveUpButton.IsEnabled = false;
+                _moveDownButton.IsEnabled = false;
+                return;
+            }
+
+            int selectedIndex = _itemsView.SelectedIndex;
+
+            _moveUpButton.IsEnabled = selectedIndex > 0;
+            _moveDownButton.IsEnabled = _inputs.Count - 1 > selectedIndex && selectedIndex != -1;
+        }
+
+        private void MoveElement(int index, int offset)
+        {
+            var list = EditableList;
+            int newIndex = index + offset;
+
+            if (list == null || 0 > newIndex || newIndex >= _inputs.Count)
+            {
+                return;
+            }
+
+            var currentValue = list.GetValue(index);
+            var otherValue = list.GetValue(newIndex);
+
+            list.SetValue(otherValue, index);
+            list.SetValue(currentValue, newIndex);
+
+            _collectionsSync?.SyncFirstToSecond();
+
+            _itemsView.SelectedIndex = newIndex;
+        }
 
         #endregion
 
@@ -120,6 +158,11 @@ namespace DialogMaker.Lib.Elements
 
         private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (_disableSync)
+            {
+                return;
+            }
+
             var list = EditableList;
 
             if (list == null ||
@@ -142,10 +185,13 @@ namespace DialogMaker.Lib.Elements
 
                 try
                 {
+                    _disableSync = true;
                     list.SetValue(value, index);
+                    _disableSync = false;
                 }
                 catch (Exception error)
                 {
+                    _disableSync = false;
                     error.Alert();
                 }
             }
@@ -173,17 +219,43 @@ namespace DialogMaker.Lib.Elements
 
             list.RemoveAt(index);
         }
+        private void OnMoveUpButtonClicked(object sender, RoutedEventArgs e)
+        {
+            MoveElement(_itemsView.SelectedIndex, -1);
+        }
+        private void OnMoveDownButtonClicked(object sender, RoutedEventArgs e)
+        {
+            MoveElement(_itemsView.SelectedIndex, 1);
+        }
         private void OnItemsViewSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             UpdateRemoveButton();
+            UpdateMoveButtons();
         }
 
         private static void OnEditableListChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is ListEditView view)
+            if (d is not ListEditView view)
             {
-                view.SetEditableList(e.OldValue as IEditableList, e.NewValue as IEditableList);
+                return;
             }
+
+            var newValue = e.NewValue as IEditableList;
+            var newValueType = newValue?.GetType();
+            Type newItemsType = typeof(object);
+
+            if (newValueType != null && newValueType.IsGenericType)
+            {
+                var genericTypes = newValueType.GetGenericArguments();
+
+                if (genericTypes.Length == 1)
+                {
+                    newItemsType = genericTypes[0];
+                }
+            }
+
+            view._converter.ItemsType = newItemsType;
+            view.SetEditableList(e.OldValue as IEditableList, newValue);
         }
         private static void OnPlaceholderChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -194,7 +266,7 @@ namespace DialogMaker.Lib.Elements
         }
         private static void OnInputFieldHandlerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is not ListEditView view || 
+            if (d is not ListEditView view ||
                 e.NewValue is not Action<InputField> handler)
             {
                 return;

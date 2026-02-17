@@ -52,7 +52,7 @@ namespace DialogMaker.Editor
 
         IResourcesContainer IResource.Container => Model.Resources;
         DialogResourceType IResourceItem.ResourceType => Model.ResourceType;
-        string IResourceItem.Id => Id;
+        string IResourceItem.Id => Model.ProjectId.ToString();
         bool IResourceItem.IsSeparated => Model.IsSeparated;
 
         private readonly ElementsPool<TextBlock> _previewBlocks = new();
@@ -62,7 +62,7 @@ namespace DialogMaker.Editor
 
         public override bool Equals(object? obj)
         {
-            return Model.Equals(obj);
+            return Model.Equals(obj!);
         }
         public override int GetHashCode()
         {

@@ -28,17 +28,22 @@ namespace DialogMaker.Core.Editor.Nodes
 
         protected virtual bool ValidateValue(T? value) => true;
 
-        protected virtual T ExtractValue(object value)
+        protected virtual T ExtractValue(object? value)
         {
             return (T)Convert.ChangeType(base.Value, typeof(T));
         }
 
         #endregion
     }
-    public class DialogProjectNodeInputValue(INode node, int portId, DialogNodePortType dataType = DialogNodePortType.Object)
+    public class DialogProjectNodeInputValue(INode node, int portId, bool canPresetValue, DialogNodePortType dataType = DialogNodePortType.Object)
         : DialogProjectNodeInput(node, portId, dataType)
     {
-        public override bool CanPresetValue => true;
+        public DialogProjectNodeInputValue(INode node, int portId, DialogNodePortType dataType = DialogNodePortType.Object)
+            : this(node, portId, true, dataType)
+        {
+        }
+
+        public override bool CanPresetValue { get; } = canPresetValue;
 
         #region Управление
 

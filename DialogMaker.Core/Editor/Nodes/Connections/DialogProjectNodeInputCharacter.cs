@@ -4,11 +4,11 @@ using System;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
-    public class DialogProjectNodeInputString(INode node, int portId)
-        : DialogProjectNodeInputValue<IResourceString>(node, portId, DialogNodePortType.String)
+    public class DialogProjectNodeInputCharacter(INode node, int portId)
+        : DialogProjectNodeInputValue<ICharacter>(node, portId, DialogNodePortType.Object)
     {
         public override AllowedObjectValues AllowedValues => AllowedObjectValues.Resource | AllowedObjectValues.String;
-        public override DialogResourceType? ResourceType => DialogResourceType.String;
+        public override DialogResourceType? ResourceType => DialogResourceType.Character;
         public override Type ReflectionValueType
         {
             get
@@ -24,24 +24,24 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             if (Value.IsSeparated)
             {
-                return Value.Text;
+                return Value.Name;
             }
 
             return base.GetValueToSave();
         }
 
-        protected override IResourceString ExtractValue(object? value)
+        protected override ICharacter ExtractValue(object? value)
         {
             if (value == null)
             {
-                return ResourceString.Empty;
+                return LocalCharacter.Empty;
             }
-            if (value is IResourceString resource)
+            if (value is ICharacter resource)
             {
                 return resource;
             }
 
-            return new ResourceString(Id, value.ToString());
+            return new LocalCharacter(Id, value.ToString());
         }
 
         #endregion

@@ -79,7 +79,7 @@ namespace DialogMaker.Lib.Elements
                 _codeView.ItemsSource = code.Sections;
                 _dialogPlayer.DialogExecutor?.Dispose();
                 _dialogPlayer.DialogExecutor = new(code, compileOutput.Context);
-                _lastResourcesController = new(new(dialog.Original, compileOutput.Metadata.LocalValues));
+                _lastResourcesController = new(dialog.Original, compileOutput.Context);
                 _resourcesList.ItemsSource = _lastResourcesController.Items;
                 IsCompiled = true;
             }

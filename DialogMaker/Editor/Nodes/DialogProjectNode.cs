@@ -22,11 +22,17 @@ namespace DialogMaker.Editor
             Dialog = dialog;
             Original = node;
             Position = new(node.Position.X, node.Position.Y);
-            Inputs = new(DialogProjectNodePortProxy.GetInputs(this));
-            Outputs = new(DialogProjectNodePortProxy.GetOutputs(this));
+
+            _inputs = DialogProjectNodePortProxy.GetInputs(this);
+            _outputs = DialogProjectNodePortProxy.GetOutputs(this);
+
+            Inputs = new(_inputs);
+            Outputs = new(_outputs);
             Properties = new(DialogProjectNodeProperty.GetProperties(this));
 
             node.PropertyChanged += OnNodePropertyChanged;
+            node.InputsUpdated += OnNodeInputsUpdated;
+            node.OutputsUpdated += OnNodeOutputsUpdated;
             dialog.SelectedNodes.ItemChanged += OnSelectedNodesItemChanged;
         }
 
@@ -54,8 +60,13 @@ namespace DialogMaker.Editor
                 }
             }
         }
-        public ReadOnlyCollection<DialogProjectNodePortProxy> Inputs { get; }
-        public ReadOnlyCollection<DialogProjectNodePortProxy> Outputs { get; }
+        public bool Inverted
+        {
+            get => Original.Inverted;
+            set => Original.Inverted = value;
+        }
+        public ReferenceReadOnlyList<DialogProjectNodePortProxy> Inputs { get; }
+        public ReferenceReadOnlyList<DialogProjectNodePortProxy> Outputs { get; }
         public ReadOnlyCollection<DialogProjectNodeProperty> Properties { get; }
         public override ContextMenu? ContextMenu => null;
         public override IEnumerable? Children => null;
@@ -105,6 +116,8 @@ namespace DialogMaker.Editor
         public override UIElement? TabContent => null;
         FrameworkElement? ISelectable.View => View;
 
+        private readonly EditableCollection<DialogProjectNodePortProxy> _inputs = [];
+        private readonly EditableCollection<DialogProjectNodePortProxy> _outputs = [];
         private DiagramNode? _view;
 
         #region Управление
@@ -137,7 +150,7 @@ namespace DialogMaker.Editor
 
         public bool TryGetPortView(DialogProjectNodePortProxy port, [NotNullWhen(true)] out DiagramNodePort? result)
         {
-            bool Search(ReadOnlyCollection<DialogProjectNodePortProxy> ports, [NotNullWhen(true)] out DiagramNodePort? view)
+            bool Search(IEnumerable<DialogProjectNodePortProxy> ports, [NotNullWhen(true)] out DiagramNodePort? view)
             {
                 view = null;
 
@@ -175,6 +188,8 @@ namespace DialogMaker.Editor
                 _view = null;
             }
 
+            Original.InputsUpdated += OnNodeInputsUpdated;
+            Original.OutputsUpdated += OnNodeOutputsUpdated;
             Original.PropertyChanged -= OnNodePropertyChanged;
             Dialog.SelectedNodes.ItemChanged -= OnSelectedNodesItemChanged;
 
@@ -196,11 +211,24 @@ namespace DialogMaker.Editor
 
         #region События
 
+        private void OnNodeOutputsUpdated(object? sender, EventArgs e)
+        {
+            UpdatePort(this, Original.GetOutputs(), _outputs);
+        }
+        private void OnNodeInputsUpdated(object? sender, EventArgs e)
+        {
+            UpdatePort(this, Original.GetInputs(), _inputs);
+        }
+
         private void OnNodePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(Position))
             {
                 Position = new(Original.Position.X, Original.Position.Y);
+            }
+            else if (e.PropertyName == nameof(Inverted))
+            {
+                InvokePropertyChanged(nameof(Inverted));
             }
         }
         private void OnSelectedNodesItemChanged(object? sender, CollectionItemEventArgs<DialogProjectNode> e)
@@ -211,6 +239,54 @@ namespace DialogMaker.Editor
             }
 
             IsSelected = e.Action == CollectionItemAction.Add;
+        }
+
+        #endregion
+
+        #region Статика
+
+        private static void UpdatePort<T>(DialogProjectNode node, ReferenceReadOnlyDictionary<T, DialogProjectNodeMetadata> ports, EditableCollection<DialogProjectNodePortProxy> proxyPorts)
+            where T : DialogProjectNodePort
+        {
+            List<DialogProjectNodePortProxy> portsToRemove = [];
+            Dictionary<DialogProjectNodePort, DialogProjectNodeMetadata> portsToAdd = [];
+
+            bool Contains(DialogProjectNodePort checkPort)
+            {
+                foreach (var port in proxyPorts)
+                {
+                    if (port.Original.Equals(checkPort))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            foreach (var port in proxyPorts)
+            {
+                if (!ports.ContainsKey((T)port.Original))
+                {
+                    portsToRemove.Add(port);
+                }
+            }
+            foreach (var port in ports)
+            {
+                if (!Contains(port.Key))
+                {
+                    portsToAdd.Add(port.Key, port.Value);
+                }
+            }
+            foreach (var port in portsToRemove)
+            {
+                port.Dispose();
+                proxyPorts.Remove(port);
+            }
+            foreach (var port in portsToAdd)
+            {
+                proxyPorts.Add(new(node, port.Key, port.Value));
+            }
         }
 
         #endregion

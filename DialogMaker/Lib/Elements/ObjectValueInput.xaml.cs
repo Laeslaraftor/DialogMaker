@@ -8,10 +8,13 @@ using System.ComponentModel;
 using Acly;
 using System.Diagnostics.CodeAnalysis;
 using Acly.Tokens;
+using DialogMaker.Lib.Controllers;
+using DialogMaker.Editor;
+using System.Windows.Media;
 
 namespace DialogMaker.Lib.Elements
 {
-    public partial class ObjectValueInput : UserControl
+    public partial class ObjectValueInput : UserControl, IReferenceView
     {
         public ObjectValueInput()
         {
@@ -59,6 +62,19 @@ namespace DialogMaker.Lib.Elements
             set => SetValue(FieldsHandlerProperty, value);
         }
 
+        bool IReferenceView.CanSetReference => AllowedValues.HasFlag(AllowedObjectValues.Resource);
+        ProjectResourceItem? IReferenceView.Item
+        {
+            get => Value as ProjectResourceItem;
+            set => Value = value;
+        }
+        DialogResourceType? IReferenceView.RequestedResourceType
+        {
+            get => ResourceType;
+            set => ResourceType = value;
+        }
+        FrameworkElement IReferenceView.View => this;
+
         private readonly ObservableCollection<ValueTypeInfo> _valuesTypeInfo = [];
         private readonly Dictionary<AllowedObjectValues, InputField> _createdFields = [];
         private bool _skipNextSync;
@@ -66,6 +82,16 @@ namespace DialogMaker.Lib.Elements
         private Token? _valuesSyncToken;
 
         #region Управление
+
+        Point IReferenceView.GetPosition(Visual relativeTo)
+        {
+            if (_createdFields.TryGetValue(AllowedObjectValues.Resource, out var info))
+            {
+                return info.View.GetPosition(relativeTo);
+            }
+
+            return LibExtensions.GetPosition(this, relativeTo);
+        }
 
         private async void SetAllowedValues(AllowedObjectValues allowedValues)
         {
@@ -247,6 +273,7 @@ namespace DialogMaker.Lib.Elements
                         if (info.AllowedValueFlag == valueType)
                         {
                             valueTypeInfo = info;
+                            info.Field.Value = e.NewValue;
                             view._typesSelector.SelectedIndex = i;
                             break;
                         }
@@ -266,6 +293,10 @@ namespace DialogMaker.Lib.Elements
                 {
                     view._lastSelectedValueType = valueTypeInfo;
                     valueTypeInfo.Value.Field.Value = e.NewValue;
+                }
+                else if (view._valuesTypeInfo.Count > 0)
+                {
+                    view._valuesTypeInfo[0].Field.Value = null;
                 }
             }
 

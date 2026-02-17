@@ -1,9 +1,11 @@
 ﻿using DialogMaker.Core.Common;
+using DialogMaker.Core.Editor;
 using DialogMaker.Core.Executioning.Internal;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -127,7 +129,7 @@ namespace DialogMaker.Core.Executioning
                 {
                     return new JoinOperationInfo([], []);
                 }
-                
+
                 var inputParts = parts[1].Split(',');
                 var outputParts = parts[2].Split(';');
                 List<int> inputs = [.. inputParts.Select(int.Parse)];
@@ -149,6 +151,42 @@ namespace DialogMaker.Core.Executioning
                 }
 
                 return new JoinOperationInfo(parts[0], inputs, outputs);
+            }
+            else if (Type == DialogItemType.Character)
+            {
+                string id = string.Empty;
+                string name = string.Empty;
+                string value = Value.ToString();
+                bool skipNext = false;
+                bool isSecondPart = false;
+
+                foreach (var c in value)
+                {
+                    if (c == ':' && !skipNext)
+                    {
+                        isSecondPart = true;
+                        skipNext = false;
+                        continue;
+                    }
+                    if (c == '\\' && !skipNext)
+                    {
+                        skipNext = true;
+                        continue;
+                    }
+
+                    skipNext = false;
+
+                    if (isSecondPart)
+                    {
+                        name += c;
+                    }
+                    else
+                    {
+                        id += c;
+                    }
+                }
+
+                return new LocalCharacter(id, name);
             }
             if (!ResourcePath.TryParse(Value.ToString(), out var path))
             {
@@ -337,6 +375,22 @@ namespace DialogMaker.Core.Executioning
             }
 
             return new(DialogItemType.JoinInfo, $"{info.Id}|{inputs}|{outputs}");
+        }
+        public static DialogItemReference Create(ICharacter character)
+        {
+            if (!character.IsSeparated)
+            {
+                return Create(character);
+            }
+
+            string id = character.Id.Trim().Replace(@"\", @"\\").Replace(":", @"\:");
+            string name = character.Name.Trim();
+
+            return new(DialogItemType.Character, $"{id}:{name}");
+        }
+        public static DialogItemReference CreateFromProject(DialogProjectReference projectReference)
+        {
+            return new(DialogItemType.Resource, projectReference.ResourcesPath.ToString());
         }
 
         public static DialogItemReference CreateUnknown(object? item)

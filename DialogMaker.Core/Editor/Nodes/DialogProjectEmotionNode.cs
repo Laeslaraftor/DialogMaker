@@ -1,9 +1,8 @@
 ﻿using DialogMaker.Core.Executioning;
-using DialogMaker.Core.Executioning.Builders;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
-    public abstract class DialogProjectEmotionNode : DialogProjectDialogNode
+    public class DialogProjectEmotionNode : DialogProjectDialogNode
     {
         public DialogProjectEmotionNode(DialogProjectDialog dialog) 
             : base(dialog)
@@ -14,7 +13,8 @@ namespace DialogMaker.Core.Editor.Nodes
         {
         }
 
-        [NodeInput("Вход"), Sort(0)]
+        public override DialogNodeType NodeType => DialogNodeType.Emotion;
+        [NodeInput("Вход")]
         public DialogProjectNodeInputAction Input
         {
             get
@@ -23,16 +23,25 @@ namespace DialogMaker.Core.Editor.Nodes
                 return field;
             }
         }
+        [NodeInput("Эмоция")]
+        public DialogProjectNodeInputReference Emotion
+        {
+            get
+            {
+                field ??= new(this, 1, DialogResourceType.Emotion);
+                return field;
+            }
+        }
         [NodeOutput("Выход")]
         public DialogProjectNodeOutputAction Output
         {
             get
             {
-                field ??= new(this, 1);
+                field ??= new(this, 2);
                 return field;
             }
         }
-        [Name("Персонаж"), Reference(DialogResourceType.Character), Sort(0)]
+        [Name("Персонаж"), Reference(DialogResourceType.Character)]
         public DialogProjectReference<DialogProjectCharacter>? Character
         {
             get => field;
@@ -53,7 +62,7 @@ namespace DialogMaker.Core.Editor.Nodes
         public override void Compile(DialogCompilerContext context)
         {
             var character = Character?.Resolve();
-            var emotion = GetEmotion(context);
+            var emotion = context.RecursiveCompileConnections(Emotion);
             var emotionOpCode = context.Section.CreateOperation(DialogByteCode.Emotion);
             emotionOpCode.Arguments[1] = emotion;
 
@@ -69,8 +78,6 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             return Name;
         }
-
-        protected abstract DialogExecutionParameter GetEmotion(DialogCompilerContext context);
 
         protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)
         {

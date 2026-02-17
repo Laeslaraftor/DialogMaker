@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace DialogMaker.Core.Editor
 {
-    public abstract class DialogProjectResourceObject : Disposable, IResource
+    public abstract class DialogProjectResourceObject : Disposable, IResource, IEquatable<IResourceItem>, IEquatable<DialogProjectResourceObject>
     {
         protected DialogProjectResourceObject(DialogProjectResources resources, Guid id)
         {
@@ -92,15 +92,30 @@ namespace DialogMaker.Core.Editor
 
         public override bool Equals(object obj)
         {
+            if (obj is DialogProjectResourceObject resourceObject)
+            {
+                return Equals(resourceObject);
+            }
             if (obj is IResourceItem resource)
             {
-                return Id == resource.Id &&
-                       ResourceType == resource.ResourceType &&
-                       IsSeparated == resource.IsSeparated &&
-                       Path == resource.GetPath();
+                return Equals(resource);
             }
 
             return false;
+        }
+        public bool Equals(IResourceItem other)
+        {
+            return Id == other.Id &&
+                   ResourceType == other.ResourceType &&
+                   IsSeparated == other.IsSeparated &&
+                   Path == other.GetPath();
+        }
+        public bool Equals(DialogProjectResourceObject other)
+        {
+            return ProjectId == other.ProjectId &&
+                   ResourceType == other.ResourceType &&
+                   IsSeparated == other.IsSeparated &&
+                   Path == other.Path;
         }
         public override int GetHashCode()
         {

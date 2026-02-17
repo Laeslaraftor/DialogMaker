@@ -29,7 +29,7 @@ namespace DialogMaker.Lib.InputFields
             get => _view.Value; 
             set
             {
-                if (_view.Value?.Equals(value) != true)
+                if (!Equals(_view.Value, value))
                 {
                     InvokePropertyChanging(nameof(Value));
                     _view.Value = value;

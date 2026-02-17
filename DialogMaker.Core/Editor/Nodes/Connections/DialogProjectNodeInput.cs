@@ -198,7 +198,7 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 return null;
             }
-            if (value is IResourceItem)
+            if (value is IResourceItem || value is DialogProjectReference)
             {
                 return AllowedObjectValues.Resource;
             }

@@ -24,15 +24,33 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
-        <StackPanel Grid.Row="2" Orientation="Horizontal">
-            <Button x:Name="_addButton" FontFamily="{StaticResource SymbolThemeFontFamily}"
-                    Content="&#xE710;"
-                    Click="OnAddButtonClicked"
-                    ToolTip="Добавить объект"/>
-            <Button x:Name="_removeButton" FontFamily="{StaticResource SymbolThemeFontFamily}"
-                    Content="&#xE711;" Margin="5,0,0,0"
-                    Click="OnRemoveButtonClicked"
-                    ToolTip="Удалить объект"/>
-        </StackPanel>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Left">
+                <Button x:Name="_addButton" FontFamily="{StaticResource SymbolThemeFontFamily}"
+                        Content="&#xE710;" Padding="5" Margin="1,0,0,0"
+                        Click="OnAddButtonClicked"
+                        ToolTip="Добавить объект"/>
+                <Button x:Name="_removeButton" FontFamily="{StaticResource SymbolThemeFontFamily}"
+                        Content="&#xE711;" Padding="5" Margin="5,0,0,0"
+                        Click="OnRemoveButtonClicked"
+                        ToolTip="Удалить объект"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Grid.Column="1" 
+                        HorizontalAlignment="Right">
+                <Button x:Name="_moveUpButton" FontFamily="{StaticResource SymbolThemeFontFamily}"
+                        Content="&#xE70E;" Padding="5" Margin="5,0,0,0"
+                        Click="OnMoveUpButtonClicked"
+                        ToolTip="Переместить вверх" IsEnabled="False"/>
+                <Button x:Name="_moveDownButton" FontFamily="{StaticResource SymbolThemeFontFamily}"
+                        Content="&#xE70D;" Padding="5" Margin="5,0,0,0"
+                        Click="OnMoveDownButtonClicked"
+                        ToolTip="Переместить вниз"  IsEnabled="False"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

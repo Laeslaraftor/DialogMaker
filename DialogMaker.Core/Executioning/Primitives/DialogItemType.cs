@@ -6,6 +6,7 @@
         Variable,
         String,
         StringCollection,
-        JoinInfo
+        JoinInfo,
+        Character
     }
 }

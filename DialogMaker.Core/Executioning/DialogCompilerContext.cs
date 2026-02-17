@@ -96,7 +96,7 @@ namespace DialogMaker.Core.Executioning
             return skipComparison;
         }
 
-        public void CompileOutputs(DialogProjectNodeOutput output)
+        public void CompileOutputs(DialogProjectNodeOutput output, bool onlyStartThreads = false, bool forceToCurrent = false)
         {
             bool noOutputsAtAll = true;
             bool dontJump = false;
@@ -135,7 +135,7 @@ namespace DialogMaker.Core.Executioning
                     dontJump = true;
                 }
             }
-            if (output.ConnectionsCount == 1)
+            if (output.ConnectionsCount == 1 && !onlyStartThreads)
             {
                 if (output.FirstOrDefault()?.Node is not DialogProjectDialogNode nextNode ||
                     !Compiler.Sections.TryGetValue(nextNode, out var section))
@@ -148,12 +148,22 @@ namespace DialogMaker.Core.Executioning
 
                 if (sectionsEquals && !isCompiled)
                 {
-                    Compile(nextNode);
+                    Compile(nextNode, forceToCurrent);
                     return;
                 }
                 if (!dontJump)
                 {
-                    var code = sectionsEquals ? DialogByteCode.Goto : DialogByteCode.Jump;
+                    DialogByteCode code;
+
+                    if (onlyStartThreads)
+                    {
+                        code = DialogByteCode.StartThread;
+                    }
+                    else
+                    {
+                        code = sectionsEquals ? DialogByteCode.Goto : DialogByteCode.Jump;
+                    }
+
                     var opCode = Section.CreateOperation(code);
 
                     if (sectionsEquals)
@@ -182,7 +192,7 @@ namespace DialogMaker.Core.Executioning
                     continue;
                 }
 
-                var opCode = count + 1 >= output.ConnectionsCount ? DialogByteCode.JumpTo : DialogByteCode.StartThread2;
+                var opCode = count + 1 >= output.ConnectionsCount && !onlyStartThreads ? DialogByteCode.JumpTo : DialogByteCode.StartThread2;
                 var threadStart = Section.CreateOperation(opCode);
                 threadStart.Arguments[0] = new(section);
                 jumpOperations.Add(node, threadStart);
@@ -223,7 +233,7 @@ namespace DialogMaker.Core.Executioning
         {
             return _nodesInfo.TryGetValue(node, out result);
         }
-        public bool Compile(INode node)
+        public bool Compile(INode node, bool forceToCurrent = false)
         {
             if (_compiledNodes.Contains(node))
             {
@@ -234,7 +244,7 @@ namespace DialogMaker.Core.Executioning
             _compiledNodes.Add(node);
             DialogCompilerContext context = this;
 
-            if (node is DialogProjectDialogNode dialogNode &&
+            if (!forceToCurrent && node is DialogProjectDialogNode dialogNode &&
                 Compiler.IndividualSections.TryGetValue(dialogNode, out var nodeSection) &&
                 nodeSection != Section)
             {

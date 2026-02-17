@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core;
+﻿using Acly;
+using DialogMaker.Core;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Lib.Controllers;
 using DialogMaker.Lib.Elements;
@@ -78,6 +79,7 @@ namespace DialogMaker.Editor
 
             if (_view != null)
             {
+                _view.RemoveFromParent();
                 Node.Project.NodesViewFabric.Free(_view);
                 _view = null;
             }
@@ -108,19 +110,19 @@ namespace DialogMaker.Editor
 
         private static readonly Dictionary<Color, SolidColorBrush> _colorBrushes = [];
 
-        public static List<DialogProjectNodePortProxy> GetOutputs(DialogProjectNode node)
+        public static EditableCollection<DialogProjectNodePortProxy> GetOutputs(DialogProjectNode node)
         {
             return GetPorts(node, node.Original.GetOutputs());
         }
-        public static List<DialogProjectNodePortProxy> GetInputs(DialogProjectNode node)
+        public static EditableCollection<DialogProjectNodePortProxy> GetInputs(DialogProjectNode node)
         {
             return GetPorts(node, node.Original.GetInputs());
         }
 
-        private static List<DialogProjectNodePortProxy> GetPorts<T>(DialogProjectNode node, ReadOnlyDictionary<T, DialogProjectNodeMetadata> ports)
+        private static EditableCollection<DialogProjectNodePortProxy> GetPorts<T>(DialogProjectNode node, ReferenceReadOnlyDictionary<T, DialogProjectNodeMetadata> ports)
             where T : DialogProjectNodePort
         {
-            List<DialogProjectNodePortProxy> result = [];
+            EditableCollection<DialogProjectNodePortProxy> result = [];
 
             foreach (var port in ports)
             {

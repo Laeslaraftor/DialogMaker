@@ -149,6 +149,7 @@ namespace DialogMaker.Lib.Controllers
             new(t => t?.GetInterface(nameof(IEditableList)) != null, t =>
             {
                 var resourceType = t?.GetCustomAttribute<ReferenceAttribute>()?.Type;
+                var allowedTypes = t?.GetCustomAttribute<AllowedTypesAttribute>()?.AllowedTypes ?? AllowedObjectValues.AllWithoutList;
                 var itemName = t?.GetCustomAttribute<ItemNameAttribute>()?.Name ?? string.Empty;
                 var textSettings = t?.GetCustomAttribute<TextAttribute>();
 
@@ -162,7 +163,12 @@ namespace DialogMaker.Lib.Controllers
                         {
                             referenceField.ResourceType = resourceType;
                         }
-                        if (textSettings != null && field is TextInputField textField)
+                        else if (field is ObjectInputField objectField)
+                        {
+                            objectField.ResourceType = resourceType;
+                            objectField.AllowedValues = allowedTypes;
+                        }
+                        else if (textSettings != null && field is TextInputField textField)
                         {
                             textField.Multiline = textSettings.AllowMultiline;
                         }

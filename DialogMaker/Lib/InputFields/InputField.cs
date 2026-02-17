@@ -1,5 +1,6 @@
 ﻿using Acly;
 using DialogMaker.Core;
+using DialogMaker.Core.Common;
 using DialogMaker.Core.Editor;
 using System.Windows;
 
@@ -72,7 +73,8 @@ namespace DialogMaker.Lib.InputFields
             }
             if (type == typeof(DialogProjectReference) ||
                 type.Name == typeof(DialogProjectReference<>).Name ||
-                type == typeof(DialogProjectResourceObject))
+                type == typeof(DialogProjectResourceObject) ||
+                type.IsAssignableTo(typeof(IResourceItem)))
             {
                 return typeof(ReferenceInputField);
             }

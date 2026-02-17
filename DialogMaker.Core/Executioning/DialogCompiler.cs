@@ -25,9 +25,11 @@ namespace DialogMaker.Core.Executioning
 
                 foreach (var node in nodes)
                 {
-                    _sections.Add(node, section);
-                    _individualSections.Add(node, new());
-                    handler?.Invoke(node, section);
+                    if (_sections.TryAdd(node, section))
+                    {
+                        _individualSections.Add(node, new());
+                        handler?.Invoke(node, section);
+                    }
                 }
             }
 
@@ -200,7 +202,7 @@ namespace DialogMaker.Core.Executioning
 
                     if (currentPosition > lastPosition)
                     {
-                        positions.Add(node, new(node, lastPosition, section, currentPosition - lastPosition));
+                        positions.TryAdd(node, new(node, lastPosition, section, currentPosition - lastPosition));
                     }
                 }
             }

@@ -35,6 +35,22 @@ namespace DialogMaker
             return true;
         }
 
+        public static object? GetValue(this IEnumerable enumerable, int index)
+        {
+            int i = 0;
+
+            foreach (var element in enumerable)
+            {
+                if (i == index)
+                {
+                    return element;
+                }
+
+                i++;
+            }
+
+            return null;
+        }
         public static IEnumerable<T> EmptyEnumerable<T>()
         {
             yield break;

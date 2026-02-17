@@ -1,6 +1,7 @@
 ﻿using Acly;
 using DialogMaker.Core;
 using DialogMaker.Lib.InputFields;
+using Newtonsoft.Json.Linq;
 using System.Collections;
 
 namespace DialogMaker.Lib.Converters
@@ -9,13 +10,41 @@ namespace DialogMaker.Lib.Converters
     {
         public event EventHandler<CollectionItemEventArgs<InputField>>? EditorChanged;
 
+        public Type ItemsType
+        {
+            get
+            {
+                field ??= typeof(object);
+                return field;
+            }
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    FieldType = InputField.GetFieldType(value);
+                }
+            }
+        }
+
+        private Type? FieldType
+        {
+            get
+            {
+                field ??= InputField.GetFieldType(ItemsType);
+                return field;
+            }
+            set => field = value;
+        }
+
+
         private readonly List<InputField> _createdFields = [];
 
         #region Управление
 
         public InputField Convert(object? Value, int Index, IList FirstCollection, IList SecondCollection)
         {
-            var fieldType = InputField.GetFieldType(Value);
+            var fieldType = FieldType;
 
             if (SecondCollection.Count > Index && 
                 SecondCollection[Index] is InputField createdField && 

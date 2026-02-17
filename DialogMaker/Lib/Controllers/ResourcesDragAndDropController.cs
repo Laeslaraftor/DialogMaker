@@ -136,7 +136,7 @@ namespace DialogMaker.Lib.Controllers
                 Position = Position;
             }
         }
-        private ReferenceView? EndView
+        private IReferenceView? EndView
         {
             get => field;
             set
@@ -171,7 +171,7 @@ namespace DialogMaker.Lib.Controllers
         private readonly TranslateTransform _dragViewTranslation;
         private readonly ScaleTransform _dragViewScale;
         private readonly ToolTipController _toolTips;
-        private readonly Dictionary<ReferenceView, ToolTipController.Token> _viewsToolTips = [];
+        private readonly Dictionary<IReferenceView, ToolTipController.Token> _viewsToolTips = [];
         private Point _startPosition;
         private Point _endPosition;
         private object? _itemPreview;
@@ -201,7 +201,7 @@ namespace DialogMaker.Lib.Controllers
             _weightAnimation.Start();
         }
 
-        private async void ShowToolTip(ReferenceView view)
+        private async void ShowToolTip(IReferenceView view)
         {
             if (CurrentItem == null || _viewsToolTips.ContainsKey(view))
             {
@@ -220,11 +220,11 @@ namespace DialogMaker.Lib.Controllers
                 message = GetErrorMessage(requestedType.Value, item.ResourceType);
             }
 
-            var token = await _toolTips.ShowAt(view, message, type);
+            var token = await _toolTips.ShowAt(view.View, message, type);
 
             _viewsToolTips.Add(view, token);
         }
-        private void HideToolTip(ReferenceView view)
+        private void HideToolTip(IReferenceView view)
         {
             if (_viewsToolTips.TryGetValue(view, out var token))
             {
@@ -239,7 +239,7 @@ namespace DialogMaker.Lib.Controllers
                 return;
             }
 
-            List<ReferenceView> views = [.. _viewsToolTips.Keys];
+            List<IReferenceView> views = [.. _viewsToolTips.Keys];
 
             foreach (var view in views)
             {
@@ -262,13 +262,13 @@ namespace DialogMaker.Lib.Controllers
 
             return item;
         }
-        private async Task<ReferenceView?> GetReferenceView(MouseEventArgs mouse)
+        private async Task<IReferenceView?> GetReferenceView(MouseEventArgs mouse)
         {
-            ReferenceView? refenceView = null;
+            IReferenceView? refenceView = null;
 
             await _window.Fetch(mouse, target =>
             {
-                if (target is ReferenceView view)
+                if (target is IReferenceView view && view.CanSetReference)
                 {
                     refenceView = view;
                 }

@@ -1,11 +1,13 @@
 ﻿using DialogMaker.Core;
 using DialogMaker.Editor;
+using DialogMaker.Lib.Controllers;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace DialogMaker.Lib.Elements
 {
-    public partial class ReferenceView : UserControl
+    public partial class ReferenceView : UserControl, IReferenceView
     {
         public ReferenceView()
         {
@@ -29,6 +31,8 @@ namespace DialogMaker.Lib.Elements
             get => (DialogResourceType?)GetValue(RequestedResourceTypeProperty);
             set => SetValue(RequestedResourceTypeProperty, value);
         }
+        public FrameworkElement View => this;
+        public bool CanSetReference => IsEnabled;
 
         private object? LastPreview
         {
@@ -49,6 +53,15 @@ namespace DialogMaker.Lib.Elements
                 field = value;
             }
         }
+
+        #region Управление
+
+        public Point GetPosition(Visual relativeTo)
+        {
+            return LibExtensions.GetPosition(this, relativeTo);
+        }
+
+        #endregion
 
         #region События
 

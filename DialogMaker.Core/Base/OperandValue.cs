@@ -371,6 +371,8 @@ namespace DialogMaker.Core
             }
             else if (value is string str)
             {
+                str = str.Replace(",", ".");
+
                 if (float.TryParse(str, NumberStyles.Any, CultureInfo.InvariantCulture, out var number))
                 {
                     return number;

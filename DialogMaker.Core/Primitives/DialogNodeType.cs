@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Editor.Nodes;
+using System;
 using System.ComponentModel;
 
 namespace DialogMaker.Core
@@ -12,7 +13,7 @@ namespace DialogMaker.Core
         [Path("Диалог")]
         SimpleReplica,
 
-        [Name("Вариант ответа (ресурсы)"), Node(typeof(DialogProjectResourceChoiceNode))]
+        [Name("Вариант ответа (ресурсы)")]
         [Description("Выбор ответа. В качестве вариантов ответа задаются строковые ресурсы.")]
         [Path("Диалог")]
         Choice,
@@ -143,14 +144,9 @@ namespace DialogMaker.Core
         [Path("Вычисления")]
         Maximum,
 
-        [Name("Эмоция"), Node(typeof(DialogProjectSimpleEmotionNode))]
+        [Name("Эмоция"), Node(typeof(DialogProjectEmotionNode))]
         [Description("Отобразить эмоцию персонажем.")]
         [Path("Диалог")]
         Emotion,
-
-        [Name("Эмоция (ресурс)"), Node(typeof(DialogProjectResourceEmotionNode))]
-        [Description("Отобразить эмоцию персонажем.")]
-        [Path("Диалог")]
-        ResourceEmotion,
     }
 }

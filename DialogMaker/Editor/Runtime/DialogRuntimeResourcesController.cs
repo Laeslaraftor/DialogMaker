@@ -1,21 +1,28 @@
 ﻿using DialogMaker.Core;
 using DialogMaker.Core.Executioning;
+using DialogMaker.Core.Executioning.Builders;
 using System.Collections.ObjectModel;
 
 namespace DialogMaker.Editor.Runtime
 {
     public class DialogRuntimeResourcesController : Disposable
     {
-        public DialogRuntimeResourcesController(DialogRuntimeResources resources)
+        public DialogRuntimeResourcesController(IResourcesOwner resourcesOwner, DialogExecutionContextBuilder contextBuilder)
         {
-            Resources = resources;
-            var items = resources.Items.Select(i => new DialogRuntimeResource(i.Key, resources.ResourcesOwner, i.Value)).ToList();
-            items.Sort((v1, v2) => v1.Index.CompareTo(v2.Index));
+            SortedDictionary<int, DialogRuntimeResource> items = [];
 
-            Items = new(items);
+            foreach (var info in contextBuilder.GetGlobalValues())
+            {
+                items.Add(info.Key, new(info.Key, resourcesOwner, info.Value));
+            }
+            foreach (var info in contextBuilder.GetLocalValues())
+            {
+                items.Add(info.Key, new(info.Key, resourcesOwner, info.Value));
+            }
+
+            Items = new([.. items.Values]);
         }
 
-        public DialogRuntimeResources Resources { get; }
         public ReadOnlyCollection<DialogRuntimeResource> Items { get; }
 
         #region Управление

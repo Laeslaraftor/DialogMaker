@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Editor;
-using DialogMaker.Lib.Controllers;
+using System.Collections;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
@@ -95,6 +96,8 @@ namespace DialogMaker.Lib.Elements
             if (oldValue != null)
             {
                 oldValue.PropertyChanged -= OnNodePropertyChanged;
+                oldValue.Inputs.CollectionChanged -= OnInputsCollectionChanged;
+                oldValue.Outputs.CollectionChanged -= OnOutputsCollectionChanged;
             }
 
             _inputs.Children.Clear();
@@ -121,6 +124,9 @@ namespace DialogMaker.Lib.Elements
             PreparePort(_inputs, newValue.Inputs);
             PreparePort(_outputs, newValue.Outputs);
 
+            newValue.Inputs.CollectionChanged += OnInputsCollectionChanged;
+            newValue.Outputs.CollectionChanged += OnOutputsCollectionChanged;
+
             foreach (var property in newValue.Properties)
             {
                 property.View.RemoveFromParent();
@@ -132,6 +138,7 @@ namespace DialogMaker.Lib.Elements
 
             newValue.PropertyChanged += OnNodePropertyChanged;
         }
+
         private void PreparePort(Panel panel, IEnumerable<DialogProjectNodePortProxy> ports)
         {
             foreach (var port in ports)
@@ -152,6 +159,15 @@ namespace DialogMaker.Lib.Elements
         #endregion
 
         #region События
+
+        private void OnOutputsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            UpdatePorts(this, _outputs, e);
+        }
+        private void OnInputsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            UpdatePorts(this, _inputs, e);
+        }
 
         private void OnNodePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
@@ -217,6 +233,75 @@ namespace DialogMaker.Lib.Elements
             typeof(DiagramNode), new(OnNodeChanged));
         public static readonly DependencyProperty IsSelectedProperty = DependencyProperty.Register(nameof(IsSelected), typeof(bool),
             typeof(DiagramNode), new(OnIsSelectedChanged));
+
+        #endregion
+
+        #region Статика
+
+        private static void UpdatePorts(DiagramNode view, Panel container, NotifyCollectionChangedEventArgs e)
+        {
+            void AddPorts(IList? items)
+            {
+                if (items == null)
+                {
+                    return;
+                }
+
+                foreach (var item in items)
+                {
+                    if (item is DialogProjectNodePortProxy port)
+                    {
+                        view.PreparePort(container, port);
+                    }
+                }
+            }
+            void RemovePorts(IList? items)
+            {
+                if (items == null)
+                {
+                    return;
+                }
+
+                foreach (var item in items)
+                {
+                    if (item is DialogProjectNodePortProxy port)
+                    {
+                        if (!port.IsDisposed)
+                        {
+                            port.View.RemoveFromParent();
+                        }
+                    }
+                }
+            }
+
+            if (e.Action == NotifyCollectionChangedAction.Reset)
+            {
+                container.Children.Clear();
+            }
+            else if (e.Action == NotifyCollectionChangedAction.Add)
+            {
+                AddPorts(e.NewItems);
+            }
+            else if (e.Action == NotifyCollectionChangedAction.Replace)
+            {
+                RemovePorts(e.OldItems);
+                AddPorts(e.NewItems);
+            }
+            else if (e.Action == NotifyCollectionChangedAction.Move)
+            {
+                var currentChild = container.Children[e.OldStartingIndex];
+                var movedChild = container.Children[e.NewStartingIndex];
+
+                container.Children.Remove(currentChild);
+                container.Children.Remove(movedChild);
+                container.Children.Insert(e.NewStartingIndex, currentChild);
+                container.Children.Insert(e.OldStartingIndex, movedChild);
+            }
+            else if (e.Action == NotifyCollectionChangedAction.Remove)
+            {
+                RemovePorts(e.OldItems);
+            }
+        }
 
         #endregion
     }
