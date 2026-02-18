@@ -27,7 +27,7 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             get
             {
-                field ??= new(this, 0);
+                field ??= new(this, 0, true);
                 return field;
             }
         }
@@ -36,7 +36,7 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             get
             {
-                field ??= new(this, 1);
+                field ??= new(this, 1, true);
                 return field;
             }
         }

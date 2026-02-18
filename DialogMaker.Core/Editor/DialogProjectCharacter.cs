@@ -74,13 +74,11 @@ namespace DialogMaker.Core.Editor
 
         public override string ToString()
         {
-            string name = NamelessCharacter;
-
             if (Name != null)
             {
                 try
                 {
-                    name = Name.Resolve().Preview;
+                    return Name.Resolve().Preview;
                 }
                 catch (Exception error)
                 {
@@ -88,7 +86,7 @@ namespace DialogMaker.Core.Editor
                 }
             }
 
-            return $"[{Id}] {name}";
+            return NamelessCharacter;
         }
 
         protected override DialogProjectResourceObjectSavedState CreateSavedState()

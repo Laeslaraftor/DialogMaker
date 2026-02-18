@@ -128,7 +128,7 @@ namespace DialogMaker.Core.Editor
 
         public override string ToString()
         {
-            return $"[{Id}] {Preview}".TrimEnd();
+            return Preview.Trim();
         }
 
         #endregion

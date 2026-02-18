@@ -74,7 +74,8 @@ namespace DialogMaker.Lib.InputFields
         private readonly Slider _slider = new()
         {
             Visibility = Visibility.Collapsed,
-            Margin = new(0, 0, 10, 0)
+            Margin = new(0, 0, 10, 0),
+            Maximum = double.MaxValue
         };
 
         #region Управление

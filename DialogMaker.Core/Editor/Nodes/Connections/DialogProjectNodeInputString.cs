@@ -5,10 +5,9 @@ using System;
 namespace DialogMaker.Core.Editor.Nodes
 {
     public class DialogProjectNodeInputString(INode node, int portId)
-        : DialogProjectNodeInputValue<IResourceString>(node, portId, DialogNodePortType.String)
+        : DialogProjectNodeInputValue<IResourceItem>(node, portId, DialogNodePortType.String)
     {
         public override AllowedObjectValues AllowedValues => AllowedObjectValues.Resource | AllowedObjectValues.String;
-        public override DialogResourceType? ResourceType => DialogResourceType.String;
         public override Type ReflectionValueType
         {
             get
@@ -22,15 +21,15 @@ namespace DialogMaker.Core.Editor.Nodes
 
         protected override object GetValueToSave()
         {
-            if (Value.IsSeparated)
+            if (Value is IResourceString resourceString && resourceString.IsSeparated)
             {
-                return Value.Text;
+                return resourceString.Text;
             }
 
             return base.GetValueToSave();
         }
 
-        protected override IResourceString ExtractValue(object? value)
+        protected override IResourceItem ExtractValue(object? value)
         {
             if (value == null)
             {
@@ -39,6 +38,10 @@ namespace DialogMaker.Core.Editor.Nodes
             if (value is IResourceString resource)
             {
                 return resource;
+            }
+            else if (value is IVariable variable)
+            {
+                return new ResourceString(variable.Id, variable.Value.ToString());
             }
 
             return new ResourceString(Id, value.ToString());

@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Input;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Microsoft.VisualBasic;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -105,12 +106,19 @@ namespace DialogMaker.Lib.Elements
                 return;
             }
 
-            _canvas.Children.Clear();
 
             if (oldValue != null)
             {
                 oldValue.Nodes.ItemChanged -= OnNodesItemChanged;
+
+                foreach (var node in oldValue.Nodes)
+                {
+                    ClearNode(node);
+                }
             }
+
+            _canvas.Children.Clear();
+
             if (newValue != null)
             {
                 newValue.Nodes.ItemChanged -= OnNodesItemChanged;
@@ -130,6 +138,8 @@ namespace DialogMaker.Lib.Elements
                 try
                 {
                     _connections.Dialog = newValue;
+                    await Task.Delay(10);
+                    _connections.UpdateConnections();
                 }
                 catch (InvalidOperationException invalidTry)
                 {
@@ -173,14 +183,24 @@ namespace DialogMaker.Lib.Elements
             var view = node.View;
             view.RemoveFromParent();
 
+            view.Redraw -= OnNodeViewRedraw;
+            view.Redraw += OnNodeViewRedraw;
+
             _canvas.Children.Add(view);
         }
+
         private void RemoveNode(DialogProjectNode node)
         {
             var view = node.View;
 
+            ClearNode(node);
+
             _connections.RemoveConnections(node);
             _canvas.Children.Remove(view);
+        }
+        private void ClearNode(DialogProjectNode node)
+        {
+            node.View.Redraw -= OnNodeViewRedraw;
         }
 
         #endregion
@@ -199,6 +219,13 @@ namespace DialogMaker.Lib.Elements
             }
         }
 
+        private void OnNodeViewRedraw(object? sender, EventArgs e)
+        {
+            if (sender is DiagramNode view && TryGetNode(view, out var node))
+            {
+                _connections.UpdatePosition(node);
+            }
+        }
         private async void OnNodesItemChanged(object? sender, CollectionItemEventArgs<DialogProjectNode> e)
         {
             if (e.Action == CollectionItemAction.Add)

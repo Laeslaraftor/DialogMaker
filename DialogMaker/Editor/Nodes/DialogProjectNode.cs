@@ -31,6 +31,7 @@ namespace DialogMaker.Editor
             Properties = new(DialogProjectNodeProperty.GetProperties(this));
 
             node.PropertyChanged += OnNodePropertyChanged;
+            node.PropertyChanging += OnNodePropertyChanging;
             node.InputsUpdated += OnNodeInputsUpdated;
             node.OutputsUpdated += OnNodeOutputsUpdated;
             dialog.SelectedNodes.ItemChanged += OnSelectedNodesItemChanged;
@@ -188,9 +189,10 @@ namespace DialogMaker.Editor
                 _view = null;
             }
 
-            Original.InputsUpdated += OnNodeInputsUpdated;
-            Original.OutputsUpdated += OnNodeOutputsUpdated;
+            Original.InputsUpdated -= OnNodeInputsUpdated;
+            Original.OutputsUpdated -= OnNodeOutputsUpdated;
             Original.PropertyChanged -= OnNodePropertyChanged;
+            Original.PropertyChanging -= OnNodePropertyChanging;
             Dialog.SelectedNodes.ItemChanged -= OnSelectedNodesItemChanged;
 
             foreach (var input in Inputs)
@@ -231,6 +233,14 @@ namespace DialogMaker.Editor
                 InvokePropertyChanged(nameof(Inverted));
             }
         }
+        private void OnNodePropertyChanging(object? sender, PropertyChangingEventArgs e)
+        {
+            if (e.PropertyName == nameof(Inverted))
+            {
+                OnPropertyChanging(e.PropertyName);
+            }
+        }
+
         private void OnSelectedNodesItemChanged(object? sender, CollectionItemEventArgs<DialogProjectNode> e)
         {
             if (e.Item != this || e.Action == CollectionItemAction.Move)

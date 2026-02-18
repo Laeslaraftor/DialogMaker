@@ -58,7 +58,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 }
 
                 InvokePropertyChanging(nameof(Value));
-                field = Node.DataConverter.Convert(type, value, DataType);
+                field = value;
                 var valueType = GetValueType(value);
 
                 if (valueType != null)
@@ -116,6 +116,7 @@ namespace DialogMaker.Core.Editor.Nodes
 
             if (CanPresetValue)
             {
+                var currentType = GetType();
                 var valueToSave = GetValueToSave();
 
                 result.Value = valueToSave;

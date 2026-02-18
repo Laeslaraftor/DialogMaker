@@ -21,8 +21,20 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="5"/>
             </Grid.RowDefinitions>
-            <TextBlock x:Name="_title" Grid.ColumnSpan="3" 
-                       Margin="12,4" FontWeight="Medium"/>
+            <Grid Grid.ColumnSpan="3" Margin="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="_title" FontWeight="Medium"
+                           VerticalAlignment="Center" FontSize="18"
+                           Margin="4,0"/>
+                <Button Grid.Column="1" Content="&#xE8AB;"
+                        FontFamily="{StaticResource SymbolThemeFontFamily}"
+                        ToolTip="Сменить направление"
+                        Click="OnInvertButtonClicked"
+                        VerticalAlignment="Center"/>
+            </Grid>
             <Border VerticalAlignment="Bottom" Grid.ColumnSpan="3"
                     Background="{DynamicResource SurfaceStrokeColorDefaultBrush}"
                     Height="1"/>

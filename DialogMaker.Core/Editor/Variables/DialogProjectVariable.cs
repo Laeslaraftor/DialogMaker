@@ -59,7 +59,7 @@ namespace DialogMaker.Core.Editor
         public override IVariable ToVariable() => this;
         public override string ToString()
         {
-            return $"[{Id}] {Type}: {Value}";
+            return Value?.ToString() ?? string.Empty;
         }
 
         protected abstract bool CanConvertValue(object? value);

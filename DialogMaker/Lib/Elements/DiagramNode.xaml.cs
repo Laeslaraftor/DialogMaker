@@ -17,6 +17,8 @@ namespace DialogMaker.Lib.Elements
             InitializeComponent();
         }
 
+        public event EventHandler? Redraw;
+
         public DialogProjectNode? Node
         {
             get => GetValue(NodeProperty) as DialogProjectNode;
@@ -42,6 +44,8 @@ namespace DialogMaker.Lib.Elements
                 return 0;
             }
         }
+
+        private bool _lastInvertedValue;
 
         #region Управление
 
@@ -121,6 +125,8 @@ namespace DialogMaker.Lib.Elements
                 return;
             }
 
+            SetInverted(newValue.Inverted);
+
             PreparePort(_inputs, newValue.Inputs);
             PreparePort(_outputs, newValue.Outputs);
 
@@ -155,10 +161,54 @@ namespace DialogMaker.Lib.Elements
 
             view.HorizontalAlignment = HorizontalAlignment.Stretch;
         }
+        private async void SetInverted(bool value)
+        {
+            if (_lastInvertedValue == value)
+            {
+                return;
+            }
+
+            _lastInvertedValue = value;
+            int inputsColumn = 0;
+            Thickness inputsMargin = new(-4, 0, 4, 0);
+            int outputsColumn = 2;
+            Thickness outputsMargin = new(4, 0, -4, 0);
+
+            if (value)
+            {
+                (inputsColumn, outputsColumn) = (outputsColumn, inputsColumn);
+                (inputsMargin, outputsMargin) = (outputsMargin, inputsMargin);
+            }
+
+            _inputs.Margin = inputsMargin;
+            _outputs.Margin = outputsMargin;
+
+            Grid.SetColumn(_inputs, inputsColumn);
+            Grid.SetColumn(_outputs, outputsColumn);
+
+            await Task.Delay(10);
+
+            Redraw?.Invoke(this, EventArgs.Empty);
+        }
 
         #endregion
 
         #region События
+
+        protected override void OnPreviewMouseMove(MouseEventArgs e)
+        {
+            base.OnPreviewMouseMove(e);
+
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                Node?.Position = Canvas.GetElementPosition(this);
+            }
+        }
+        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+        {
+            base.OnRenderSizeChanged(sizeInfo);
+            Redraw?.Invoke(this, EventArgs.Empty);
+        }
 
         private void OnOutputsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
@@ -167,6 +217,17 @@ namespace DialogMaker.Lib.Elements
         private void OnInputsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             UpdatePorts(this, _inputs, e);
+        }
+        private void OnInvertButtonClicked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Node?.Inverted ^= true;
+            }
+            catch (Exception error)
+            {
+                error.Alert();
+            }
         }
 
         private void OnNodePropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -184,15 +245,9 @@ namespace DialogMaker.Lib.Elements
             {
                 IsSelected = node.IsSelected;
             }
-        }
-
-        protected override void OnPreviewMouseMove(MouseEventArgs e)
-        {
-            base.OnPreviewMouseMove(e);
-
-            if (e.LeftButton == MouseButtonState.Pressed)
+            else if (e.PropertyName == "Inverted")
             {
-                Node?.Position = Canvas.GetElementPosition(this);
+                SetInverted(node.Inverted);
             }
         }
 

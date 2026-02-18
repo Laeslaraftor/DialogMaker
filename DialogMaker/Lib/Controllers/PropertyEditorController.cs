@@ -51,8 +51,25 @@ namespace DialogMaker.Lib.Controllers
                 {
                     value = Info.Converter(value);
                 }
+                if (ExtraConverter != null)
+                {
+                    value = ExtraConverter(value);
+                }
 
                 Property.SetValue(ObjectInstance, value);
+            }
+        }
+        public Func<object?, object?>? ExtraConverter
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(ExtraConverter));
+                    field = value;
+                    InvokePropertyChanged(nameof(ExtraConverter));
+                }
             }
         }
         public FrameworkElement View => InputField.View;
@@ -77,7 +94,7 @@ namespace DialogMaker.Lib.Controllers
         {
             var value = InputField.Value;
 
-            if (value?.Equals(Value) != true)
+            if (!Equals(value, Value))
             {
                 Value = value;
                 InvokePropertyChanged(nameof(Value));

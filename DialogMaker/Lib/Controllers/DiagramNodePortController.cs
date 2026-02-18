@@ -53,14 +53,12 @@ namespace DialogMaker.Lib.Controllers
 
         private void Update()
         {
-            bool invert = Port.Original is DialogProjectNodeInput;
-
             View.DataContext = Port;
             View.Text = Port.Name;
             View.Color = Port.Color;
             View.IsActive = Port.IsActive;
             View.ToolTip = string.IsNullOrEmpty(Port.Description) ? null : Port.Description;
-            View.Invert = invert;
+            View.Invert = Port.Inverted;
             View.IsExtraControlVisible = PresetValueEditor != null && !Port.IsActive;
         }
 
@@ -113,9 +111,21 @@ namespace DialogMaker.Lib.Controllers
                 {
                     result.InputField.Placeholder = newPlaceholder;
                 }
+
+                result.ExtraConverter = PortFieldValueConverter;
             }
 
             return result != null;
+        }
+
+        private static object? PortFieldValueConverter(object? value)
+        {
+            if (value is ProjectResourceItem resource)
+            {
+                return resource.Model;
+            }
+
+            return value;
         }
 
         #endregion

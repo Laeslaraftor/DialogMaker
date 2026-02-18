@@ -206,6 +206,41 @@ namespace DialogMaker.Lib.Elements
 
             return result;
         }
+        private ValueTypeInfo? ShowType(int index)
+        {
+            if (_valuesTypeInfo.Count == 0)
+            {
+                return null;
+            }
+            else if (0 > index || index >= _valuesTypeInfo.Count)
+            {
+                index = 0;
+            }
+
+            _valuesSyncToken = null;
+            int i = 0;
+            ValueTypeInfo? result = null;
+
+            foreach (var info in _valuesTypeInfo)
+            {
+                info.Field.PropertyChanged -= OnFieldPropertyChanged;
+                Visibility visibility = Visibility.Collapsed;
+
+                if (i == index)
+                {
+                    visibility = Visibility.Visible;
+                    info.Field.PropertyChanged += OnFieldPropertyChanged;
+                    result = info;
+                }
+
+                info.Field.View.Visibility = visibility;
+                i++;
+            }
+
+            _typesSelector.SelectedIndex = index;
+
+            return result;
+        }
 
         #endregion
 
@@ -213,22 +248,17 @@ namespace DialogMaker.Lib.Elements
 
         private void OnTypesSelectorSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_typesSelector.SelectedValue is not ValueTypeInfo info)
+            var info = ShowType(_typesSelector.SelectedIndex);
+
+            if (info == null)
             {
                 return;
             }
-            foreach (var field in _createdFields.Values)
-            {
-                field.View.Visibility = Visibility.Collapsed;
-                field.PropertyChanged -= OnFieldPropertyChanged;
-            }
 
-            info.Field.View.Visibility = Visibility.Visible;
             _skipNextSync = true;
-            _lastSelectedValueType = info;
-            Value = info.Field.Value;
+            _lastSelectedValueType = info.Value;
+            Value = info.Value.Field.Value;
             _skipNextSync = false;
-            info.Field.PropertyChanged += OnFieldPropertyChanged;
         }
 
         private void OnFieldPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -274,7 +304,7 @@ namespace DialogMaker.Lib.Elements
                         {
                             valueTypeInfo = info;
                             info.Field.Value = e.NewValue;
-                            view._typesSelector.SelectedIndex = i;
+                            view.ShowType(i);
                             break;
                         }
                     }

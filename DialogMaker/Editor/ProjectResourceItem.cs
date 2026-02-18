@@ -87,7 +87,7 @@ namespace DialogMaker.Editor
             block.MaxWidth = 200;
             block.Margin = new(5, 0, 5, 0);
             block.TextWrapping = TextWrapping.Wrap;
-            block.Text = ToString() ?? string.Empty;
+            block.Text = $"[{Id}] {this}";
 
             _createdBlocks.Add(block);
 
@@ -134,7 +134,7 @@ namespace DialogMaker.Editor
             InvokePropertyChanged(e.PropertyName);
 #pragma warning restore CS8604 // Возможно, аргумент-ссылка, допускающий значение NULL.
 
-            string preview = ToString() ?? string.Empty;
+            string preview = $"[{Id}] {this}";
 
             foreach (var block in _createdBlocks)
             {

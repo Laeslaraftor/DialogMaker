@@ -1,15 +1,14 @@
 ﻿using Acly.Numbers;
-using DialogMaker.Core;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor;
 using DialogMaker.Lib.Elements;
 using System.Diagnostics.CodeAnalysis;
-using System.Printing;
-using System.Threading.Tasks;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Diagnostics;
 
 namespace DialogMaker.Lib.Controllers
 {
@@ -112,9 +111,7 @@ namespace DialogMaker.Lib.Controllers
                 if (field != value)
                 {
                     InvokePropertyChanging(nameof(Dialog));
-
                     field = value;
-                    UpdateConnections();
                     InvokePropertyChanged(nameof(Dialog));
                 }
             }
@@ -340,6 +337,18 @@ namespace DialogMaker.Lib.Controllers
                 {
                     e.Handled = true;
                     _currentCurve = GetCurve(port);
+
+                    if (port.Original is DialogProjectNodeInput)
+                    {
+                        _currentCurve.Line.DirectEnd = port.Node.Inverted;
+                    }
+                    else
+                    {
+                        _currentCurve.Line.DirectStart = port.Node.Inverted;
+                    }
+
+                    _currentCurve.EndPosition = e.GetPosition(Canvas);
+
                     _currentCurve.SyncPositions();
                 }
             }
@@ -349,7 +358,24 @@ namespace DialogMaker.Lib.Controllers
         protected override void OnMouseMove(object? sender, MouseEventArgs e)
         {
             base.OnMouseMove(sender, e);
-            _currentCurve?.EndPosition = e.GetPosition(Canvas);
+
+            if (_currentCurve == null)
+            {
+                return;
+            }
+
+            var position = e.GetPosition(Canvas);
+
+            _currentCurve.EndPosition = position;
+
+            if (_currentCurve.StartPort?.Original is DialogProjectNodeInput)
+            {
+                _currentCurve.Line.DirectStart = position.X > _currentCurve.StartPosition.X;
+            }
+            else if (_currentCurve.StartPort?.Original is DialogProjectNodeOutput)
+            {
+                _currentCurve.Line.DirectEnd = position.X < _currentCurve.StartPosition.X;
+            }
         }
         protected override async void OnMouseUp(object? sender, MouseButtonEventArgs e)
         {
@@ -432,12 +458,20 @@ namespace DialogMaker.Lib.Controllers
                         return;
                     }
 
+                    field?.PropertyChanged -= OnPortPropertyChanged;
                     field = value;
+
+                    Line.DirectStart = value?.Node.Inverted == true;
 
                     if (value == null)
                     {
                         Line.Visibility = Visibility.Collapsed;
                         return;
+                    }
+                    else
+                    {
+                        value.PropertyChanged -= OnPortPropertyChanged;
+                        value.PropertyChanged += OnPortPropertyChanged;
                     }
 
                     Line.Visibility = Visibility.Visible;
@@ -456,12 +490,20 @@ namespace DialogMaker.Lib.Controllers
                         return;
                     }
 
+                    field?.PropertyChanged -= OnPortPropertyChanged;
                     field = value;
+
+                    Line.DirectEnd = value?.Node.Inverted == true;
 
                     if (value == null)
                     {
                         _gradient.EndColor = Colors.White;
                         return;
+                    }
+                    else
+                    {
+                        value.PropertyChanged -= OnPortPropertyChanged;
+                        value.PropertyChanged += OnPortPropertyChanged;
                     }
 
                     _gradient.EndColor = value.Color.Color;
@@ -483,23 +525,25 @@ namespace DialogMaker.Lib.Controllers
                 set
                 {
                     Line.EndPoint = value;
-                    //var gradient = _gradient;
-                    //gradient.Invert = StartPosition.X > EndPosition.X;
                     _gradient.UpdatePosition(StartPosition, value);
                 }
             }
 
             private readonly Gradient _gradient;
 
+            #region Управление
+
             public void SyncPositions()
             {
                 if (StartPort != null)
                 {
                     StartPosition = StartPort.View.GetConnectorPosition(Container);
+                    Line.DirectStart = StartPort.Node.Inverted;
                 }
                 if (EndPort != null)
                 {
                     EndPosition = EndPort.View.GetConnectorPosition(Container);
+                    Line.DirectEnd = EndPort.Node.Inverted;
                 }
             }
             public bool SetConnection(DialogProjectNodePortProxy? port)
@@ -536,6 +580,20 @@ namespace DialogMaker.Lib.Controllers
 
                 return true;
             }
+
+            #endregion
+
+            #region События
+
+            private void OnPortPropertyChanged(object? sender, PropertyChangedEventArgs e)
+            {
+                if (e.PropertyName == "Inverted")
+                {
+                    SyncPositions();
+                }
+            }
+
+            #endregion
         }
         private class Gradient
         {

@@ -89,7 +89,8 @@ namespace DialogMaker.Lib.Controllers
                    obj is ScrollBar ||
                    obj is Slider ||
                    obj is TextBox ||
-                   obj is RichTextBox;
+                   obj is RichTextBox ||
+                   obj is Button;
         }
 
         private async Task<UIElement?> Fetch(MouseEventArgs mouse)

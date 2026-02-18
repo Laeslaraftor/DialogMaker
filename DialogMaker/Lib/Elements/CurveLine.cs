@@ -58,6 +58,16 @@ namespace DialogMaker.Lib.Elements
             get => (bool)GetValue(InverseProperty);
             set => SetValue(InverseProperty, value);
         }
+        public bool DirectStart
+        {
+            get => (bool)GetValue(DirectStartProperty);
+            set => SetValue(DirectStartProperty, value);
+        }
+        public bool DirectEnd
+        {
+            get => (bool)GetValue(DirectEndProperty);
+            set => SetValue(DirectEndProperty, value);
+        }
 
         protected override Geometry DefiningGeometry => _path.Data;
 
@@ -83,18 +93,12 @@ namespace DialogMaker.Lib.Elements
             double offset = Offset;
             int resolution = Resolution;
             bool invertPoints = Inverse;
+            bool directStart = DirectStart;
+            bool directEnd = DirectEnd;
 
             if (from == to)
             {
                 return;
-            }
-
-            void AddSegment(Point position)
-            {
-                var segment = _segmentsPool.GetElement();
-                segment.Point = position;
-
-                _figure.Segments.Add(segment);
             }
 
             if (from.X > to.X)
@@ -116,18 +120,41 @@ namespace DialogMaker.Lib.Elements
                 }
             }
 
+            Point lastSegment = from;
+
+            void AddSegment(Point position)
+            {
+                if (lastSegment == position)
+                {
+                    return;
+                }
+
+                lastSegment = position;
+                var segment = _segmentsPool.GetElement();
+                segment.Point = position;
+
+                _figure.Segments.Add(segment);
+            }
+
             _figure.StartPoint = from;
 
-            foreach (var line in GetSmoothPoints(from, to, invertPoints))
+            if (!directStart && !directEnd && invertPoints)
             {
-                for (int i = 0; i < resolution; i++)
-                {
-                    float percent = (float)i / resolution;
-                    var position = line.Lerp(percent);
-
-                    AddSegment(position);
-                }
+                resolution *= 2;
             }
+
+            var points = GetCurvePoints(from, to, invertPoints, directStart, directEnd);
+            var pointsArray = points.ToArray();
+
+            for (int i = 0; i < resolution; i++)
+            {
+                float percent = (float)i / resolution;
+                var position = Line.Lerp(pointsArray, percent, EasingFunctions.Cubic.InOut);
+
+                AddSegment(position);
+            }
+
+            AddSegment(to);
         }
         private IEnumerable<Line> GetSmoothPoints(Point start, Point end, bool invert)
         {
@@ -209,6 +236,96 @@ namespace DialogMaker.Lib.Elements
 
             yield return new(secondEnd, end, EasingFunctions.Cubic.Out);
         }
+        private IEnumerable<Line> GetCurvePoints(Point start, Point end, bool invert, bool directStart, bool directEnd)
+        {
+            if (invert)
+            {
+                (directStart, directEnd) = (directEnd, directStart);
+            }
+            if (directStart && directEnd)
+            {
+                invert = !invert;
+                directStart = false;
+                directEnd = false;
+            }
+
+            const double maxOffset = 25;
+            double scalePercent = 0;
+
+            Point offset = new()
+            {
+                X = maxOffset,
+                Y = Math.Min(Math.Abs(start.Y - end.Y) / 8, maxOffset)
+            };
+            Point delta = new()
+            {
+                X = end.X - start.X,
+                Y = end.Y - start.Y
+            };
+
+            scalePercent = Helper.Clamp01(-delta.X / maxOffset);
+
+            if (!invert)
+            {
+                scalePercent = 1 - scalePercent;
+            }
+
+            Point halfDelta = new()
+            {
+                X = Math.Abs(delta.X / 2),
+                Y = Math.Abs(delta.Y / 2),
+            };
+
+            offset += halfDelta * scalePercent;
+            offset.X = Math.Min(offset.X, halfDelta.X);
+
+            if (directStart || directEnd)
+            {
+                offset.X = Math.Min(offset.X, maxOffset);
+            }
+
+            offset.Y = Math.Min(offset.Y, halfDelta.Y);
+
+            Point startOffset = new()
+            {
+                X = AddOrSubtract(0, offset.X, (false ^ invert) ^ (!invert && directStart)),
+                Y = AddOrSubtract(0, offset.Y, start.Y > end.Y)
+            };
+            Point endOffset = new()
+            {
+                X = AddOrSubtract(0, offset.X, !invert ^ (!invert && directEnd)),
+                Y = AddOrSubtract(0, offset.Y, start.Y < end.Y)
+            };
+
+            Point first = start + startOffset;
+            Point second = end + endOffset;
+
+            if (!directStart && !directEnd)
+            {
+                yield return new(start, first, EasingFunctions.Cubic.In);
+                yield return new(first, second, EasingFunctions.Cubic.InOut)
+                {
+                    LerpFunc = Line.XLerp
+                };
+                yield return new(second, end, EasingFunctions.Cubic.Out);
+            }
+            else if ((invert && directStart) || (!invert && directEnd))
+            {
+                yield return new(start, second, EasingFunctions.Cubic.Out)
+                {
+                    LerpFunc = Line.XLerp
+                };
+                yield return new(second, end, EasingFunctions.Cubic.Out);
+            }
+            else if ((invert && directEnd) || (!invert && directStart))
+            {
+                yield return new(start, first, EasingFunctions.Cubic.In);
+                yield return new(first, end, EasingFunctions.Cubic.In)
+                {
+                    LerpFunc = Line.XLerp
+                };
+            }
+        }
 
         #endregion
 
@@ -238,6 +355,10 @@ namespace DialogMaker.Lib.Elements
             typeof(CurveLine), new(false, OnCurveParamChanged));
         public static readonly DependencyProperty ResolutionProperty = DependencyProperty.Register(nameof(Resolution), typeof(int),
             typeof(CurveLine), new(8, OnCurveParamChanged));
+        public static readonly DependencyProperty DirectStartProperty = DependencyProperty.Register(nameof(DirectStart), typeof(bool),
+            typeof(CurveLine), new(false, OnCurveParamChanged));
+        public static readonly DependencyProperty DirectEndProperty = DependencyProperty.Register(nameof(DirectEnd), typeof(bool),
+            typeof(CurveLine), new(false, OnCurveParamChanged));
 
         #endregion
 
@@ -292,6 +413,50 @@ namespace DialogMaker.Lib.Elements
                     Y = Helper.LerpUnclamped(line.Start.Y, line.End.Y, line.Easing(percent)),
                 };
             }
+            public static Point Lerp(Line[] lines, double time, Func<float, float> easing)
+            {
+                if (lines.Length == 0)
+                {
+                    return new();
+                }
+
+                double lineSize = 1d / lines.Length;
+                int partIndex = (int)Math.Floor(time / lineSize);
+
+                if (0 > partIndex)
+                {
+                    return lines[0].Start;
+                }
+                else if (partIndex >= lines.Length)
+                {
+                    return lines[^1].End;
+                }
+
+                time = (time - (lineSize * partIndex)) / lineSize;
+                var easingValue = easing((float)time);
+                var line = lines[partIndex];
+
+                return line.Lerp((float)time);
+                return new()
+                {
+                    X = Helper.LerpUnclamped(line.Start.X, line.End.X, time),
+                    Y = Helper.LerpUnclamped(line.Start.Y, line.End.Y, easingValue)
+                };
+            }
+        }
+
+        #endregion
+
+        #region Статика
+
+        private static double AddOrSubtract(double v1, double v2, bool localInvert)
+        {
+            if (localInvert)
+            {
+                return v1 - v2;
+            }
+
+            return v1 + v2;
         }
 
         #endregion

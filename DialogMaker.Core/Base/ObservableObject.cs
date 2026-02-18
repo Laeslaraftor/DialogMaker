@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace DialogMaker.Core
@@ -36,7 +37,13 @@ namespace DialogMaker.Core
 
         protected void InvokePropertyChanging(string propertyName)
         {
-            InvokePropertyChanging(new PropertyChangingEventArgs(propertyName));
+            if (!_propertyChangingEventArgs.TryGetValue(propertyName, out var args))
+            {
+                args = new(propertyName);
+                _propertyChangingEventArgs.Add(propertyName, args);
+            }
+
+            InvokePropertyChanging(args);
         }
         protected void InvokePropertyChanging(PropertyChangingEventArgs args)
         {
@@ -48,7 +55,13 @@ namespace DialogMaker.Core
         }
         protected void InvokePropertyChanged(string propertyName)
         {
-            InvokePropertyChanged(new PropertyChangedEventArgs(propertyName));
+            if (!_propertyChangedEventArgs.TryGetValue(propertyName, out var args))
+            {
+                args = new(propertyName);
+                _propertyChangedEventArgs.Add(propertyName, args);
+            }
+
+            InvokePropertyChanged(args);
         }
         protected void InvokePropertyChanged(PropertyChangedEventArgs args)
         {
@@ -64,6 +77,9 @@ namespace DialogMaker.Core
         #region Статика
 
         public static IThreadDispatcher? Dispatcher { get; set; }
+
+        private static readonly Dictionary<string, PropertyChangedEventArgs> _propertyChangedEventArgs = [];
+        private static readonly Dictionary<string, PropertyChangingEventArgs> _propertyChangingEventArgs = [];
 
         #endregion
     }

@@ -6,11 +6,12 @@ using DialogMaker.Lib.Elements;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Media;
+using System.Xml.Linq;
 using Color = System.Drawing.Color;
 
 namespace DialogMaker.Editor
 {
-    public class DialogProjectNodePortProxy : ObservableObject, IDisposable
+    public class DialogProjectNodePortProxy : Disposable
     {
         public DialogProjectNodePortProxy(DialogProjectNode node, DialogProjectNodePort port, DialogProjectNodeMetadata metadata)
         {
@@ -27,19 +28,30 @@ namespace DialogMaker.Editor
 
             Color = colorBrush;
 
+            UpdateInverted();
+
             port.PropertyChanged += OnPortPropertyChanged;
-        }
-        ~DialogProjectNodePortProxy()
-        {
-            Dispose();
+            node.PropertyChanged += OnNodePropertyChanged;
         }
 
-        public bool IsDisposed { get; private set; }
         public DialogProjectNode Node { get; }
         public DialogProjectNodePort Original { get; }
         public string Name { get; }
         public string Description { get; }
         public SolidColorBrush Color { get; }
+        public bool Inverted
+        {
+            get => field;
+            private set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(Inverted));
+                    field = value;
+                    InvokePropertyChanged(nameof(Inverted));
+                }
+            }
+        }
         public bool IsActive => ConnectionsCount > 0;
         public int ConnectionsCount => Original.ConnectionsCount;
         public DiagramNodePort View
@@ -62,18 +74,13 @@ namespace DialogMaker.Editor
 
         private DiagramNodePort? _view;
         private DiagramNodePortController? _viewController;
-        private bool _isDisposing;
 
         #region Управление
 
-        public void Dispose()
+        protected override void Dispose(bool isDisposing)
         {
-            if (IsDisposed || _isDisposing)
-            {
-                return;
-            }
+            base.Dispose(isDisposing);
 
-            _isDisposing = true;
             _viewController?.Dispose();
             _viewController = null;
 
@@ -85,10 +92,12 @@ namespace DialogMaker.Editor
             }
 
             Original.PropertyChanged -= OnPortPropertyChanged;
+            Node.PropertyChanged -= OnNodePropertyChanged;
+        }
 
-            IsDisposed = true;
-
-            GC.SuppressFinalize(this);
+        private void UpdateInverted()
+        {
+            Inverted = Original is DialogProjectNodeInput ^ Node.Inverted;
         }
 
         #endregion
@@ -101,6 +110,13 @@ namespace DialogMaker.Editor
             {
                 InvokePropertyChanged(nameof(IsActive));
                 InvokePropertyChanged(e.PropertyName);
+            }
+        }
+        private void OnNodePropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(Inverted))
+            {
+                UpdateInverted();
             }
         }
 
