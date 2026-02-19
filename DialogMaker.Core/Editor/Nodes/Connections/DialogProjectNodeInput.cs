@@ -92,9 +92,9 @@ namespace DialogMaker.Core.Editor.Nodes
         }
         public virtual AllowedObjectValues AllowedValues => AllowedObjectValues.AllWithoutList;
         public virtual DialogResourceType? ResourceType => null;
+        public override bool Multiconnection => false;
 
         protected override IEditableList ConnectionsList => Connections;
-        protected virtual bool Multiconnection { get; }
 
         private EditableCollection<DialogProjectNodeOutput>? _connections;
 

@@ -1,14 +1,17 @@
-﻿using Acly.Numbers;
+﻿using Acly;
+using Acly.Numbers;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor;
 using DialogMaker.Lib.Elements;
-using System.Diagnostics.CodeAnalysis;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Diagnostics;
+using System.Windows.Shapes;
 
 namespace DialogMaker.Lib.Controllers
 {
@@ -119,7 +122,7 @@ namespace DialogMaker.Lib.Controllers
 
         private readonly ElementsPool<CurveLine> _curvesPool = new();
         private readonly List<Curve> _curves = [];
-        private Curve? _currentCurve;
+        private PortSearchResult _currentCurve;
 
         #region Управление
 
@@ -127,7 +130,6 @@ namespace DialogMaker.Lib.Controllers
         {
             if (Dialog == null)
             {
-                Clear();
                 return;
             }
 
@@ -212,6 +214,15 @@ namespace DialogMaker.Lib.Controllers
                 return false;
             });
         }
+        public void Clear()
+        {
+            foreach (var curve in _curves)
+            {
+                RemoveCurve(curve, false);
+            }
+
+            _curves.Clear();
+        }
 
         protected override void Dispose(bool isDisposing)
         {
@@ -225,15 +236,6 @@ namespace DialogMaker.Lib.Controllers
             base.Dispose(isDisposing);
         }
 
-        private void Clear()
-        {
-            foreach (var curve in _curves)
-            {
-                RemoveCurve(curve, false);
-            }
-
-            _curves.Clear();
-        }
 
         private void RemoveCurve(Curve curve, bool fullRemove = true)
         {
@@ -263,12 +265,11 @@ namespace DialogMaker.Lib.Controllers
             view.Offset = CurvesOffset;
             view.Easing = CurvesEasing;
             view.Inverse = port.Original is DialogProjectNodeInput;
-            result = new(view, Canvas)
-            {
-                StartPort = port
-            };
+            result = new(view, Canvas);
 
             _curves.Add(result);
+
+            result.StartPort = port;
 
             return result;
         }
@@ -289,9 +290,10 @@ namespace DialogMaker.Lib.Controllers
             return false;
         }
 
-        private async Task<DialogProjectNodePortProxy?> FindPort(MouseButtonEventArgs mouse)
+        private async Task<PortSearchResult> FindPort(MouseButtonEventArgs mouse)
         {
-            DialogProjectNodePortProxy? result = null;
+            PortSearchResult result = new();
+            bool touchedSomeElement = false;
             int skipCount = 0;
             Point position = mouse.GetPosition(View);
 
@@ -301,11 +303,15 @@ namespace DialogMaker.Lib.Controllers
                     view.GetConnectorRect(View).IntersectsWith(position) &&
                     view.DataContext is DialogProjectNodePortProxy port)
                 {
-                    result = port;
+                    result.Port = port;
                 }
+                if (obj is ISelectable)
+                {
+                    touchedSomeElement = true;
+                }                
             }, callback =>
             {
-                if (result != null || skipCount > 2)
+                if (!result.IsEmpty || skipCount > 2)
                 {
                     return true;
                 }
@@ -319,6 +325,27 @@ namespace DialogMaker.Lib.Controllers
                 return false;
             });
 
+            if (result.Port == null && !touchedSomeElement)
+            {
+                foreach (var curve in _curves)
+                {
+                    var line = curve.Line;
+                    var positionOnCurve = mouse.GetPosition(line);
+
+                    if (line.IsHit(positionOnCurve, line.StrokeThickness * 2))
+                    {
+                        var positionOnCanvas = mouse.GetPosition(Canvas);
+                        var startDistance = curve.StartPosition.Distance(positionOnCanvas);
+                        var endDistance = curve.EndPosition.Distance(positionOnCanvas);
+
+                        result.Curve = curve;
+                        result.Port = startDistance > endDistance ? curve.EndPort : curve.StartPort;
+                        result.IsCurveControl = true;
+                        break;
+                    }
+                }
+            }
+
             return result;
         }
 
@@ -329,27 +356,29 @@ namespace DialogMaker.Lib.Controllers
         protected override async void OnMouseDown(object? sender, MouseButtonEventArgs e)
         {
             if (e.LeftButton == MouseButtonState.Pressed &&
-                _currentCurve == null)
+                _currentCurve.IsEmpty)
             {
-                var port = await FindPort(e);
+                var portSearchResult = await FindPort(e);
+                var port = portSearchResult.Port;
 
                 if (port != null)
                 {
                     e.Handled = true;
-                    _currentCurve = GetCurve(port);
+                    portSearchResult.Curve ??= GetCurve(port, port.ConnectionsCount > 0 && port.Original.Multiconnection && portSearchResult.Curve == null);
+
+                    _currentCurve = portSearchResult;
 
                     if (port.Original is DialogProjectNodeInput)
                     {
-                        _currentCurve.Line.DirectEnd = port.Node.Inverted;
+                        portSearchResult.Curve.Line.DirectEnd = port.Node.Inverted;
                     }
                     else
                     {
-                        _currentCurve.Line.DirectStart = port.Node.Inverted;
+                        portSearchResult.Curve.Line.DirectStart = port.Node.Inverted;
                     }
 
-                    _currentCurve.EndPosition = e.GetPosition(Canvas);
-
-                    _currentCurve.SyncPositions();
+                    portSearchResult.SetPosition(e.GetPosition(Canvas));
+                    portSearchResult.Curve.SyncPositions();
                 }
             }
 
@@ -359,22 +388,28 @@ namespace DialogMaker.Lib.Controllers
         {
             base.OnMouseMove(sender, e);
 
-            if (_currentCurve == null)
+            if (_currentCurve.IsEmpty)
             {
                 return;
             }
 
             var position = e.GetPosition(Canvas);
+            var curve = _currentCurve.Curve;
 
-            _currentCurve.EndPosition = position;
+            _currentCurve.SetPosition(position);
 
-            if (_currentCurve.StartPort?.Original is DialogProjectNodeInput)
+            if (curve == null)
             {
-                _currentCurve.Line.DirectStart = position.X > _currentCurve.StartPosition.X;
+                return;
             }
-            else if (_currentCurve.StartPort?.Original is DialogProjectNodeOutput)
+
+            if (curve.StartPort?.Original is DialogProjectNodeInput)
             {
-                _currentCurve.Line.DirectEnd = position.X < _currentCurve.StartPosition.X;
+                curve.Line.DirectStart = position.X > curve.StartPosition.X;
+            }
+            else if (curve.StartPort?.Original is DialogProjectNodeOutput)
+            {
+                curve.Line.DirectEnd = position.X < curve.StartPosition.X;
             }
         }
         protected override async void OnMouseUp(object? sender, MouseButtonEventArgs e)
@@ -382,7 +417,7 @@ namespace DialogMaker.Lib.Controllers
             base.OnMouseUp(sender, e);
 
             if (e.LeftButton != MouseButtonState.Released ||
-                _currentCurve == null)
+                _currentCurve.IsEmpty)
             {
                 return;
             }
@@ -409,16 +444,24 @@ namespace DialogMaker.Lib.Controllers
                 return false;
             });
 
-            if (!_currentCurve.SetConnection(endPort) || endPort == null)
+            var curve = _currentCurve.Curve;
+
+            if (curve == null)
             {
-                RemoveCurve(_currentCurve);
+                _currentCurve = default;
+                return;
+            }
+
+            if (curve.SetConnection(endPort, _currentCurve.IsStartPortControl) == false || endPort == null)
+            {
+                RemoveCurve(curve);
             }
             else
             {
-                _currentCurve.SyncPositions();
+                curve.SyncPositions();
             }
 
-            _currentCurve = null;
+            _currentCurve = default;
         }
 
         #endregion
@@ -546,7 +589,7 @@ namespace DialogMaker.Lib.Controllers
                     Line.DirectEnd = EndPort.Node.Inverted;
                 }
             }
-            public bool SetConnection(DialogProjectNodePortProxy? port)
+            public bool? SetConnection(DialogProjectNodePortProxy? port, bool fromEnd = false)
             {
                 if (StartPort == null)
                 {
@@ -558,16 +601,38 @@ namespace DialogMaker.Lib.Controllers
                 }
                 else if (port != null)
                 {
-                    if (EndPort != null &&
-                        port != EndPort &&
-                        StartPort.Original.IsConnected(EndPort.Original))
+                    if (port == StartPort && EndPort != null)
                     {
-                        StartPort.Original.Disconnect(EndPort.Original);
+                        return null;
+                    }
+                    if (StartPort.Original.IsConnected(port.Original))
+                    {
+                        if (port == EndPort)
+                        {
+                            return null;
+                        }
+
+                        return false;
+                    }
+
+                    var sourcePort = StartPort!;
+                    var destinationPort = EndPort;
+
+                    if (fromEnd)
+                    {
+                        (sourcePort, destinationPort) = (destinationPort!, sourcePort);
+                    }
+
+                    if (destinationPort != null &&
+                        port != EndPort &&
+                        sourcePort.Original.IsConnected(destinationPort.Original))
+                    {
+                        sourcePort.Original.Disconnect(destinationPort.Original);
                     }
 
                     try
                     {
-                        StartPort.Original.Connect(port.Original);
+                        sourcePort.Original.Connect(port.Original);
                     }
                     catch (Exception error)
                     {
@@ -576,7 +641,14 @@ namespace DialogMaker.Lib.Controllers
                     }
                 }
 
-                EndPort = port;
+                if (fromEnd)
+                {
+                    StartPort = port;
+                }
+                else
+                {
+                    EndPort = port;
+                }
 
                 return true;
             }
@@ -668,6 +740,29 @@ namespace DialogMaker.Lib.Controllers
 
                 _startPointSetter(relativeStart);
                 _endPointSetter(relativeEnd);
+            }
+        }
+        private struct PortSearchResult
+        {
+            public bool IsEmpty => Port == null && Curve == null;
+            public bool IsStartPortControl => Port != null && IsCurveControl && Port == Curve?.StartPort;
+            public DialogProjectNodePortProxy? Port;
+            public Curve? Curve;
+            public bool IsCurveControl;
+
+            public void SetPosition(Point position)
+            {
+                if (Curve == null)
+                {
+                    return;
+                }
+                if (IsStartPortControl)
+                {
+                    Curve.StartPosition = position;
+                    return;
+                }
+
+                Curve.EndPosition = position;
             }
         }
 

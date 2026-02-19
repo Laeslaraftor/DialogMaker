@@ -1,6 +1,5 @@
 ﻿using Acly;
 using Acly.Numbers;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -19,9 +18,6 @@ namespace DialogMaker.Lib.Elements
             };
 
             StrokeDashArray = [];
-
-            Canvas canvas = new();
-            canvas.Children.Add(_path);
         }
         ~CurveLine()
         {
@@ -76,6 +72,40 @@ namespace DialogMaker.Lib.Elements
         private readonly ElementsPool<LineSegment> _segmentsPool = new();
 
         #region Управление
+
+        public bool IsHit(Point position, double maxDistance)
+        {
+            var geometry = RenderedGeometry.GetFlattenedPathGeometry();
+
+            foreach (var figure in geometry.Figures)
+            {
+                var segments = figure.Segments;
+
+                for (int i = 0; i < segments.Count; i++)
+                {
+                    var currentSegment = segments[i];
+
+                    if (currentSegment is PolyLineSegment polyLine)
+                    {
+                        for (int p = 0; p < polyLine.Points.Count - 1; p++)
+                        {
+                            var point1 = polyLine.Points[p];
+                            var point2 = polyLine.Points[p + 1];
+                            var pointsDistance = DistanceToSegmentSquared(position, point1, point2);
+
+                            if (pointsDistance < maxDistance)
+                            {
+                                return true;
+                            }
+                        }
+
+                        continue;
+                    }
+                }
+            }
+
+            return false;
+        }
 
         public void Dispose()
         {
@@ -155,86 +185,6 @@ namespace DialogMaker.Lib.Elements
             }
 
             AddSegment(to);
-        }
-        private IEnumerable<Line> GetSmoothPoints(Point start, Point end, bool invert)
-        {
-            Func<double, double, bool, double> addOrSubtractX;
-
-            if (invert)
-            {
-                addOrSubtractX = (v1, v2, localInvert) =>
-                {
-                    if (localInvert)
-                    {
-                        return v1 + v2;
-                    }
-
-                    return v1 - v2;
-                };
-            }
-            else
-            {
-                addOrSubtractX = (v1, v2, localInvert) =>
-                {
-                    if (localInvert)
-                    {
-                        return v1 - v2;
-                    }
-
-                    return v1 + v2;
-                };
-            }
-
-            double offset = 25;
-            double horizontalDistance = Math.Abs(end.X - start.X);
-            double verticalDistance = Math.Abs(end.Y - start.Y);
-
-            double percentOfTransition;
-            double horizontalSmoothDistance;
-
-            if (invert)
-            {
-                percentOfTransition = offset / 80;
-                horizontalSmoothDistance = offset / 1.5;
-            }
-            else
-            {
-                percentOfTransition = Helper.Clamp01((horizontalDistance + offset / 2) / 80);
-                horizontalSmoothDistance = Helper.Lerp(offset, horizontalDistance / 2, percentOfTransition);
-            }
-
-            double verticalSmoothDistance = Math.Min(verticalDistance / 6, offset);
-            verticalSmoothDistance = Helper.Lerp(verticalSmoothDistance, verticalDistance / 2, percentOfTransition);
-
-            Point firstEnd = new()
-            {
-                X = addOrSubtractX(start.X, horizontalSmoothDistance, false),
-                Y = end.Y > start.Y ? start.Y + verticalSmoothDistance : start.Y - verticalSmoothDistance
-            };
-
-            yield return new(start, firstEnd, EasingFunctions.Cubic.In);
-
-            Point secondEnd;
-
-            if (percentOfTransition < 1)
-            {
-                secondEnd = new()
-                {
-                    X = addOrSubtractX(end.X, horizontalSmoothDistance, true),
-                    Y = end.Y > start.Y ? end.Y - verticalSmoothDistance : end.Y + verticalSmoothDistance
-                };
-
-                yield return new(firstEnd, secondEnd, EasingFunctions.Cubic.InOut)
-                {
-                    LerpFunc = Line.XLerp
-                };
-            }
-            else
-            {
-                secondEnd = firstEnd;
-            }
-
-            yield return new(secondEnd, end, EasingFunctions.Cubic.Out);
         }
         private IEnumerable<Line> GetCurvePoints(Point start, Point end, bool invert, bool directStart, bool directEnd)
         {
@@ -330,6 +280,15 @@ namespace DialogMaker.Lib.Elements
         #endregion
 
         #region События
+
+        protected override GeometryHitTestResult HitTestCore(GeometryHitTestParameters hitTestParameters)
+        {
+            return base.HitTestCore(hitTestParameters);
+        }
+        protected override HitTestResult HitTestCore(PointHitTestParameters hitTestParameters)
+        {
+            return base.HitTestCore(hitTestParameters);
+        }
 
         private static void OnCurveParamChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
@@ -457,6 +416,33 @@ namespace DialogMaker.Lib.Elements
             }
 
             return v1 + v2;
+        }
+        private static double DistanceToSegmentSquared(Point point, Point start, Point end)
+        {
+            double dx = end.X - start.X;
+            double dy = end.Y - start.Y;
+            double lengthSquared = dx * dx + dy * dy;
+
+            // Если отрезок вырожден в точку
+            if (lengthSquared == 0)
+                return (point - start).LengthSquared;
+
+            // Находим параметр t для проекции точки на прямую
+            double t = ((point.X - start.X) * dx + (point.Y - start.Y) * dy) / lengthSquared;
+
+            // Ограничиваем t диапазоном [0, 1] чтобы остаться на отрезке
+            t = Math.Max(0, Math.Min(1, t));
+
+            // Находим ближайшую точку на отрезке
+            Point projection = new Point(
+                start.X + t * dx,
+                start.Y + t * dy
+            );
+
+            return (point - projection).Length;
+
+            // Возвращаем квадрат расстояния до проекции
+            return (point - projection).LengthSquared;
         }
 
         #endregion

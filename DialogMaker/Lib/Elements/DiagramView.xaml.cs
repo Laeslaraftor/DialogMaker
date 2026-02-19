@@ -105,8 +105,6 @@ namespace DialogMaker.Lib.Elements
             {
                 return;
             }
-
-
             if (oldValue != null)
             {
                 oldValue.Nodes.ItemChanged -= OnNodesItemChanged;
@@ -114,6 +112,14 @@ namespace DialogMaker.Lib.Elements
                 foreach (var node in oldValue.Nodes)
                 {
                     ClearNode(node);
+                }
+                try
+                {
+                    ClearConnections();
+                }
+                catch (Exception error)
+                {
+                    error.Alert();
                 }
             }
 
@@ -137,13 +143,17 @@ namespace DialogMaker.Lib.Elements
             {
                 try
                 {
+                    if (_connections.Dialog != null)
+                    {
+                        ClearConnections();
+                    }
+
                     _connections.Dialog = newValue;
                     await Task.Delay(10);
                     _connections.UpdateConnections();
                 }
                 catch (InvalidOperationException invalidTry)
                 {
-                    _connections.Dialog = null;
                     tries++;
                     Debug.WriteLine(invalidTry);
                     await Task.Delay(50);
@@ -177,7 +187,11 @@ namespace DialogMaker.Lib.Elements
             _canvas.Width = width;
             _canvas.Height = height;
         }
-
+        private void ClearConnections()
+        {
+            _connections.Clear();
+            _connections.Dialog = null;
+        }
         private void CreateNode(DialogProjectNode node)
         {
             var view = node.View;

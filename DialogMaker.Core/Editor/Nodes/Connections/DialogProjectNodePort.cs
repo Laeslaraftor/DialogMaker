@@ -49,6 +49,7 @@ namespace DialogMaker.Core.Editor.Nodes
         public DialogNodePortType DataType { get; }
         public Color Color { get; }
         public abstract int ConnectionsCount { get; }
+        public virtual bool Multiconnection => true;
         public DialogProjectNodePort this[int index]
         {
             get

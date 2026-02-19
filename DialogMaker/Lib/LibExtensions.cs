@@ -4,11 +4,11 @@ using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
-using System.Security.Cryptography;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shapes;
 using Vector = System.Windows.Vector;
 using WColor = System.Windows.Media.Color;
 
@@ -167,6 +167,24 @@ namespace DialogMaker
 
                 return scale;
             }
+            public Point GetVisualTreeTranslation()
+            {
+                FrameworkElement? parent = element;
+                Point translation = new(1, 1);
+
+                while (parent != null)
+                {
+                    if (parent.TryGetTransform<TranslateTransform>(out var transform))
+                    {
+                        translation.X += transform.X;
+                        translation.Y += transform.Y;
+                    }
+
+                    parent = parent.Parent as FrameworkElement;
+                }
+
+                return translation;
+            }
         }
         extension(UIElement element)
         {
@@ -258,6 +276,12 @@ namespace DialogMaker
 
 
         }
+
+        public static bool IsGeometryHit(this Visual visual, Shape shape, Point position)
+        {
+            return false;
+        }
+
         extension<T>(T visual) where T : Visual, IInputElement
         {
             public async Task Fetch(MouseEventArgs mouse, Action<DependencyObject> targetHandler)
