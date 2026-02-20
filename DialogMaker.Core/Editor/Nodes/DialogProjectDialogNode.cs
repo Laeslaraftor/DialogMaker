@@ -199,7 +199,7 @@ namespace DialogMaker.Core.Editor.Nodes
             }
         }
 
-        // дополнительные порты имеют отрицательные идетификаторы
+        // дополнительные порты имеют отрицательные идентификаторы
         protected ObservableDictionary<DialogProjectNodeInput, DialogProjectNodeMetadata> ExtraInputs { get; } = [];
         protected ObservableDictionary<DialogProjectNodeOutput, DialogProjectNodeMetadata> ExtraOutputs { get; } = [];
 
@@ -515,21 +515,21 @@ namespace DialogMaker.Core.Editor.Nodes
 
         #region Статика
 
-        public static ReadOnlyDictionary<DialogNodeType, Type> AvailableNodes
+        public static ReadOnlyDictionary<DialogNodeType, DialogNodeInfo> AvailableNodes
         {
             get
             {
                 if (field == null)
                 {
-                    Dictionary<DialogNodeType, Type> result = [];
+                    Dictionary<DialogNodeType, DialogNodeInfo> result = [];
 
                     foreach (var value in Enum.GetValues(typeof(DialogNodeType)))
                     {
-                        var node = value.GetEnumAttribute<NodeAttribute>();
+                        var nodeType = (DialogNodeType)value;
 
-                        if (node != null)
+                        if (DialogNodeInfo.TryCreate(nodeType, out var info))
                         {
-                            result.Add((DialogNodeType)value, node.NodeType);
+                            result.Add(nodeType, info);
                         }
                     }
 
@@ -542,18 +542,18 @@ namespace DialogMaker.Core.Editor.Nodes
 
         public static DialogProjectDialogNode Create(DialogProjectDialog dialog, DialogNodeType type)
         {
-            if (AvailableNodes.TryGetValue(type, out var nodeType))
+            if (AvailableNodes.TryGetValue(type, out var info))
             {
-                return (DialogProjectDialogNode)Activator.CreateInstance(nodeType, dialog);
+                return (DialogProjectDialogNode)Activator.CreateInstance(info.Type, dialog);
             }
 
             throw new ArgumentException($"Узел недоступен: {type}", nameof(type));
         }
         public static DialogProjectDialogNode Restore(DialogProjectDialog dialog, DialogProjectDialogNodeSavedState savedState)
         {
-            if (AvailableNodes.TryGetValue(savedState.NodeType, out var nodeType))
+            if (AvailableNodes.TryGetValue(savedState.NodeType, out var info))
             {
-                return (DialogProjectDialogNode)Activator.CreateInstance(nodeType, dialog, savedState);
+                return (DialogProjectDialogNode)Activator.CreateInstance(info.Type, dialog, savedState);
             }
 
             throw new ArgumentException($"Узел недоступен: {savedState.NodeType}", nameof(savedState));

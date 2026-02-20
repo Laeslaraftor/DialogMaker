@@ -1,11 +1,10 @@
-﻿using System;
-
-namespace DialogMaker.Core.Editor
+﻿namespace DialogMaker.Core.Editor
 {
-    public class ItemEventArgs(object item) : ItemEventArgs<object>(item)
+    public readonly struct ItemEventArgs(object item)
     {
+        public object Item { get; } = item;
     }
-    public class ItemEventArgs<T>(T item) : EventArgs
+    public readonly struct ItemEventArgs<T>(T item)
     {
         public T Item { get; } = item;
     }

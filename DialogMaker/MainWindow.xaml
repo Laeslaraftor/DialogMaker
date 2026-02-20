@@ -37,6 +37,9 @@
                           Command="{Binding CloseProjectCommand}"/>
             </MenuItem>
         </Menu>
+        <lib:NodeSelector Panel.ZIndex="100" Grid.ColumnSpan="100"
+                          Grid.RowSpan="100" HorizontalAlignment="Center"
+                          VerticalAlignment="Center" MinWidth="150" Height="200"/>
         <Border x:Name="_actionButtonsContainer" Grid.ColumnSpan="3"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 Background="{DynamicResource SolidBackgroundFillColorQuarternaryBrush}"

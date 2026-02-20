@@ -33,21 +33,17 @@ namespace DialogMaker.Editor.Menus
 
         private IEnumerable<IContextMenuModifier> GetNodes()
         {
-            Dictionary<string, List<NodeInfo>> folders = [];
+            Dictionary<string, List<DialogNodeInfo>> folders = [];
 
-            foreach (var nodeInfo in DialogProjectDialogNode.AvailableNodes)
+            foreach (var nodeInfo in DialogProjectDialogNode.AvailableNodes.Values)
             {
-                var name = nodeInfo.Key.GetEnumAttribute<NameAttribute>()?.Name;
-                var path = nodeInfo.Key.GetEnumAttribute<PathAttribute>()?.Path ?? string.Empty;
-                name ??= nodeInfo.Key.ToString();
-
-                if (!folders.TryGetValue(path, out var nodes))
+                if (!folders.TryGetValue(nodeInfo.Path, out var nodes))
                 {
                     nodes = [];
-                    folders.Add(path, nodes);
+                    folders.Add(nodeInfo.Path, nodes);
                 }
 
-                nodes.Add(new(name, nodeInfo.Key, nodeInfo.Value));
+                nodes.Add(nodeInfo);
             }
 
             foreach (var info in folders)
@@ -60,7 +56,7 @@ namespace DialogMaker.Editor.Menus
                 }
             }
         }
-        IEnumerable<IContextMenuModifier> CreateFolder(KeyValuePair<string, List<NodeInfo>> info)
+        IEnumerable<IContextMenuModifier> CreateFolder(KeyValuePair<string, List<DialogNodeInfo>> info)
         {
             if (info.Value.Count == 0)
             {
@@ -96,11 +92,11 @@ namespace DialogMaker.Editor.Menus
 
             yield return Create(0);
         }
-        private IEnumerable<IContextMenuModifier> CreateNodes(IEnumerable<NodeInfo> nodesInfo)
+        private IEnumerable<IContextMenuModifier> CreateNodes(IEnumerable<DialogNodeInfo> nodesInfo)
         {
             foreach (var info in nodesInfo)
             {
-                yield return new ContextMenuAction(info.Name, p => AddNode(p, info.NodeType));
+                yield return new ContextMenuAction(info.Metadata.Name, p => AddNode(p, info.NodeType));
             }
         }
 
@@ -168,27 +164,6 @@ namespace DialogMaker.Editor.Menus
                 Shortcut = "Ctrl+V"
             };
             yield return ContextMenuSeparator.Instance;
-        }
-
-        #endregion
-
-        #region Классы
-
-        private readonly struct NodeInfo(string name, DialogNodeType nodeType, Type type) : IComparable
-        {
-            public string Name { get; } = name;
-            public DialogNodeType NodeType { get; } = nodeType;
-            public Type Type { get; } = type;
-
-            public int CompareTo(object? obj)
-            {
-                if (obj is NodeInfo other)
-                {
-                    return Name.CompareTo(other.Name);
-                }
-
-                return -1;
-            }
         }
 
         #endregion

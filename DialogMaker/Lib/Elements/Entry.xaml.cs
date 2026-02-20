@@ -60,6 +60,16 @@ namespace DialogMaker.Lib.Elements
             get => (int)GetValue(MaxLengthProperty);
             set => SetValue(MaxLengthProperty, value);
         }
+        public double TextBoxMinHeight
+        {
+            get => (double)GetValue(TextBoxMinHeightProperty);
+            set => SetValue(TextBoxMinHeightProperty, value);
+        }
+        public Thickness TextBoxPadding
+        {
+            get => (Thickness)GetValue(TextBoxPaddingProperty);
+            set => SetValue(TextBoxPaddingProperty, value);
+        }
 
         private string _startFocusValue = string.Empty;
 
@@ -165,6 +175,25 @@ namespace DialogMaker.Lib.Elements
                 view._text.MaxLength = (int)e.NewValue;
             }
         }
+        private static void OnTextBoxMinHeightChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is Entry view)
+            {
+                view._text.MinHeight = (double)e.NewValue;
+            }
+        }
+        private static void OnTextBoxPaddingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is Entry view && e.NewValue is Thickness padding)
+            {
+                view._text.Padding = padding;
+                padding.Top = 0;
+                padding.Right = 0;
+                padding.Bottom = 0;
+
+                view._placeholder.Margin = padding;
+            }
+        }
 
         #endregion
 
@@ -188,6 +217,10 @@ namespace DialogMaker.Lib.Elements
             typeof(Entry), new(-1, OnMaxLinesChanged));
         public static readonly DependencyProperty MaxLengthProperty = DependencyProperty.Register(nameof(MaxLength), typeof(int),
             typeof(Entry), new(-1, OnMaxLengthChanged));
+        public static readonly DependencyProperty TextBoxMinHeightProperty = DependencyProperty.Register(nameof(TextBoxMinHeight), typeof(double),
+            typeof(Entry), new(32d, OnTextBoxMinHeightChanged));
+        public static readonly DependencyProperty TextBoxPaddingProperty = DependencyProperty.Register(nameof(TextBoxPadding), typeof(Thickness),
+            typeof(Entry), new(new Thickness(12, 4, 12, 4), OnTextBoxPaddingChanged));
 
         #endregion
     }
