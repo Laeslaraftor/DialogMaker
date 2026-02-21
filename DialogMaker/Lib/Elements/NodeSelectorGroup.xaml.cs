@@ -1,8 +1,10 @@
 ﻿using DialogMaker.Core.Editor;
 using DialogMaker.Lib.Data;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -51,7 +53,9 @@ namespace DialogMaker.Lib.Elements
             }
 
             oldValue?.PropertyChanged -= OnNodeSelectorGroupPropertyChanged;
+            oldValue?.BringToViewRequested -= OnNodeSelectorGroupBringToViewRequested;
             newValue?.PropertyChanged += OnNodeSelectorGroupPropertyChanged;
+            newValue?.BringToViewRequested += OnNodeSelectorGroupBringToViewRequested;
 
             _mainGrid.DataContext = newValue;
             IsMinimized = newValue?.IsMinimized == true;
@@ -67,6 +71,28 @@ namespace DialogMaker.Lib.Elements
                 e.PropertyName == nameof(IsMinimized))
             {
                 IsMinimized = item.IsMinimized;
+            }
+        }
+        private void OnNodeSelectorGroupBringToViewRequested(object? sender, ItemEventArgs<NodeSelectorItemInfo> e)
+        {
+            if (VisualTreeHelper.GetChildrenCount(_itemsList) == 0 || 
+                VisualTreeHelper.GetChild(_itemsList, 0) is not ItemsPresenter content)
+            {
+                return;
+            }
+            if (VisualTreeHelper.GetChildrenCount(content) == 0 || 
+                VisualTreeHelper.GetChild(content, 0) is not Panel panel)
+            {
+                return;
+            }
+
+            foreach (FrameworkElement item in panel.Children)
+            {
+                if (item.DataContext?.Equals(e.Item) == true)
+                {
+                    item.BringIntoView();
+                    break;
+                }
             }
         }
 

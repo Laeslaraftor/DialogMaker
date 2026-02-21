@@ -73,7 +73,24 @@
                                     </Style.Triggers>
                                 </Style>
                             </Border.Style>
-                            <Grid>
+                            <Grid Margin="4">
+                                <Border BorderBrush="{DynamicResource FocusStrokeColorOuterBrush}"
+                                        BorderThickness="2" CornerRadius="4" Margin="-4">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="False">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Border BorderBrush="{DynamicResource FocusStrokeColorInnerBrush}"
+                                            BorderThickness="2" CornerRadius="2"/>
+                                </Border>
                                 <Grid Margin="4,2">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
