@@ -1,6 +1,4 @@
-﻿using DialogMaker.Core.Common;
-using DialogMaker.Core.Editor;
-using DialogMaker.Core.Executioning;
+﻿using DialogMaker.Core.Editor;
 using DialogMaker.Editor;
 using DialogMaker.Lib;
 using DialogMaker.Lib.Controllers;
@@ -10,6 +8,8 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace DialogMaker
 {
@@ -24,6 +24,7 @@ namespace DialogMaker
             _model.CloseProjectCommand = new RelayCommand(ExecuteCloseProject);
             _model.ExportProjectCommand = new RelayCommand(ExecuteExportProject);
             _resourcesDragAndDrop = new(this);
+            _backgroundRendererController.RendererChanged += OnBackgroundRendererControllerRendererChanged;
 
             DataContext = _model;
             Instance = this;
@@ -35,6 +36,10 @@ namespace DialogMaker
         };
         private readonly ResourcesDragAndDropController _resourcesDragAndDrop;
         private readonly ExportView _exportView = new();
+        private readonly ViewRenderController _backgroundRendererController = new()
+        {
+            PixelFormat = PixelFormats.Pbgra32
+        };
 
         #region Управление
 
@@ -205,6 +210,16 @@ namespace DialogMaker
                 }
             }
         }
+        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+        {
+            base.OnRenderSizeChanged(sizeInfo);
+            _blurredBackgroundMainClipRect.Rect = new(sizeInfo.NewSize);
+        }
+
+        private void OnBackgroundRendererControllerRendererChanged(object? sender, ValueChangedEventArgs<RenderTargetBitmap?> e)
+        {
+            _blurredBackgroundBrush.ImageSource = e.NewValue;
+        }
 
         private void OnProjectStructSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
@@ -215,6 +230,14 @@ namespace DialogMaker
         }
         private void OnItemTabsCurrentItemChanged(object sender, ValueChangedEventArgs<IItemTab> e)
         {
+            if (e.OldValue?.TabContent is DialogAndResourcesView oldDialogView)
+            {
+                oldDialogView.DiagramViewRedraw -= OnDialogViewDiagramViewRedraw;
+            }
+            if (e.NewValue?.TabContent is DialogAndResourcesView newDialogView)
+            {
+                newDialogView.DiagramViewRedraw += OnDialogViewDiagramViewRedraw;
+            }
             if (e.NewValue is IActionsItemTab actionItem && actionItem.Actions != null)
             {
                 _actionButtons.ItemsSource = actionItem.Actions;
@@ -224,6 +247,54 @@ namespace DialogMaker
 
             _actionButtons.ItemsSource = null;
             _actionButtonsContainer.Visibility = Visibility.Collapsed;
+        }
+
+        private bool _isRendering;
+
+        private async void OnDialogViewDiagramViewRedraw(object? sender, ItemEventArgs<DiagramView> e)
+        {
+            if (_isRendering || sender is not DialogAndResourcesView dialogView)
+            {
+                return;
+            }
+
+            Point position;
+
+            try
+            {
+                position = e.Item.TransformToVisual(this).Transform(new(0, 0));
+            }
+            catch (Exception error)
+            {
+                Debug.WriteLine(error);
+                return;
+            }
+
+            _isRendering = true;
+            //await Task.Delay(100);
+
+            position *= -1;
+            PresentationSource source = PresentationSource.FromVisual(this);
+            Size dpi = new(96, 96);
+
+            if (source != null)
+            {
+                dpi.Width *= source.CompositionTarget.TransformToDevice.M11;
+                dpi.Height *= source.CompositionTarget.TransformToDevice.M22;
+            }
+
+            int sizePart = 2;
+            dpi /= sizePart;
+            var size = RenderSize / sizePart;
+
+            _backgroundRendererController.Size = size;
+            _backgroundRendererController.Dpi = dpi;
+            _backgroundRendererController.Render(e.Item.Canvas);
+
+            _blurredBackgroundBrush.Viewbox = new(position, _blurredBackground.RenderSize);
+            _blurredBackgroundDiagramClipRect.Rect = dialogView.GetDiagramRect();
+
+            _isRendering = false;
         }
 
         #endregion

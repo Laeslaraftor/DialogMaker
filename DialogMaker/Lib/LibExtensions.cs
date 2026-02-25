@@ -149,6 +149,27 @@ namespace DialogMaker
         }
         extension(FrameworkElement element)
         {
+            public Window GetWindow()
+            {
+                if (element is Window window)
+                {
+                    return window;
+                }
+
+                while (element is not Window)
+                {
+                    var parent = VisualTreeHelper.GetParent(element);
+
+                    if (parent is not FrameworkElement frameworkElement)
+                    {
+                        throw new InvalidOperationException("Не удалось найти окно, содержащее элемент");
+                    }
+
+                    element = frameworkElement;
+                }
+
+                return (Window)element;
+            }
             public Point GetVisualTreeScale()
             {
                 FrameworkElement? parent = element;
@@ -281,7 +302,6 @@ namespace DialogMaker
         {
             return false;
         }
-
         extension<T>(T visual) where T : Visual, IInputElement
         {
             public async Task Fetch(MouseEventArgs mouse, Action<DependencyObject> targetHandler)
@@ -312,7 +332,8 @@ namespace DialogMaker
                 {
                     completed = true;
 
-                    if (hitCallback(result))
+                    if (((result.VisualHit is UIElement v && v.IsHitTestVisible) ||
+                        result.VisualHit is not UIElement) && hitCallback(result))
                     {
                         return HitTestResultBehavior.Stop;
                     }

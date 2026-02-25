@@ -12,5 +12,12 @@
                 MaxWidth="200" MaxHeight="200"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"/>
+        <local:NodeSelector x:Name="_nodeSelector" Panel.ZIndex="100" 
+                            Grid.ColumnSpan="100" Grid.RowSpan="100" 
+                            HorizontalAlignment="Left" VerticalAlignment="Top" 
+                            MinWidth="200" MaxHeight="300" Visibility="Collapsed"
+                            IsHitTestVisible="False"
+                            NodeSelected="OnNodeSelectorNodeSelected"
+                            LostFocus="OnNodeSelectorLostFocus"/>
     </Grid>
 </UserControl>

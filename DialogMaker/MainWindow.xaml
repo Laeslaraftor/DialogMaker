@@ -21,6 +21,26 @@
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
+        <Rectangle x:Name="_blurredBackground" IsHitTestVisible="False"
+                   Grid.ColumnSpan="3" Grid.RowSpan="2">
+            <Rectangle.Fill>
+                <ImageBrush x:Name="_blurredBackgroundBrush" Stretch="None"
+                            ViewboxUnits="Absolute"/>
+            </Rectangle.Fill>
+            <Rectangle.Clip>
+                <CombinedGeometry GeometryCombineMode="Exclude">
+                    <CombinedGeometry.Geometry1>
+                        <RectangleGeometry x:Name="_blurredBackgroundMainClipRect"/>
+                    </CombinedGeometry.Geometry1>
+                    <CombinedGeometry.Geometry2>
+                        <RectangleGeometry x:Name="_blurredBackgroundDiagramClipRect"/>
+                    </CombinedGeometry.Geometry2>
+                </CombinedGeometry>
+            </Rectangle.Clip>
+            <Rectangle.Effect>
+                <BlurEffect Radius="20"/>
+            </Rectangle.Effect>
+        </Rectangle>
         <Menu Grid.ColumnSpan="3">
             <MenuItem Header="Файл">
                 <MenuItem Header="Создать"
@@ -37,9 +57,6 @@
                           Command="{Binding CloseProjectCommand}"/>
             </MenuItem>
         </Menu>
-        <lib:NodeSelector Panel.ZIndex="100" Grid.ColumnSpan="100"
-                          Grid.RowSpan="100" HorizontalAlignment="Center"
-                          VerticalAlignment="Center" MinWidth="200" MaxHeight="300"/>
         <Border x:Name="_actionButtonsContainer" Grid.ColumnSpan="3"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 Background="{DynamicResource SolidBackgroundFillColorQuarternaryBrush}"
@@ -90,6 +107,9 @@
                 </ListView.ItemTemplate>
             </ListView>
         </Border>
+        <lib:ItemTabsView x:Name="_itemTabs"
+                          Grid.Row="1" Grid.Column="2"
+                          CurrentItemChanged="OnItemTabsCurrentItemChanged"/>
         <TabControl Grid.Row="1">
             <TabItem IsSelected="True">
                 <TabItem.Header>
@@ -192,9 +212,6 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        <lib:ItemTabsView x:Name="_itemTabs"
-                          Grid.Row="1" Grid.Column="2"
-                          CurrentItemChanged="OnItemTabsCurrentItemChanged"/>
         <GridSplitter Grid.RowSpan="2" Grid.Column="1"/>
     </Grid>
 </Window>

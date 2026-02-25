@@ -1,6 +1,9 @@
-﻿using DialogMaker.Editor;
+﻿using DialogMaker.Core.Editor;
+using DialogMaker.Editor;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -10,7 +13,10 @@ namespace DialogMaker.Lib.Elements
         {
             InitializeComponent();
             DataContext = _viewModel;
+            _diagram.Clip = _diagramClipRectangle;
         }
+
+        public event EventHandler<ItemEventArgs<DiagramView>>? DiagramViewRedraw;
 
         public ProjectStructureItem? Item
         {
@@ -29,9 +35,64 @@ namespace DialogMaker.Lib.Elements
             set => _viewModel.Dialog = value;
         }
 
+        private readonly RectangleGeometry _diagramClipRectangle = new();
         private readonly DialogAndResourcesViewModel _viewModel = new();
 
+        #region Управление
+
+        public Rect GetDiagramRect()
+        {
+            Point position = new();
+
+            try
+            {
+                position = TransformToVisual(this.GetWindow()).Transform(new(0, 0));
+            }
+            catch (Exception error)
+            {
+                Debug.WriteLine(error);
+            }
+
+            return new(position, _diagramSizeReference.RenderSize);
+        }
+
+        private void UpdateDiagramClipping()
+        {
+            Point position;
+
+            try
+            {
+                position = TransformToVisual(this.GetWindow()).Transform(new(0, 0));
+            }
+            catch (Exception error)
+            {
+                Debug.WriteLine(error);
+                return;
+            }
+
+            _diagram.Margin = new(-position.X, -position.Y, 0, 0);
+            _diagramClipRectangle.Rect = new(position, _diagramSizeReference.RenderSize);
+        }
+
+        #endregion
+
         #region События
+
+        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+        {
+            base.OnRenderSizeChanged(sizeInfo);
+            UpdateDiagramClipping();
+        }
+
+        private void OnDiagramRedraw(object sender, EventArgs e)
+        {
+            UpdateDiagramClipping();
+            DiagramViewRedraw?.Invoke(this, new(_diagram));
+        }
+        private void OnDiagramSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            OnDiagramRedraw(this, e);
+        }
 
         private static void OnItemChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {

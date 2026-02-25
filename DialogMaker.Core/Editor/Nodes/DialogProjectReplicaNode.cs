@@ -55,11 +55,11 @@ namespace DialogMaker.Core.Editor.Nodes
             }
         }
         [NodeOutput("Выход")]
-        public DialogProjectNodeOutput Output
+        public DialogProjectNodeOutputAction Output
         {
             get
             {
-                field ??= new(this, 1, DialogNodePortType.Action);
+                field ??= new(this, 1);
                 return field;
             }
         }

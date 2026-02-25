@@ -1,7 +1,11 @@
 ﻿using Acly;
 using DialogMaker.Core;
 using DialogMaker.Core.Editor;
+using DialogMaker.Core.Editor.Nodes;
+using DialogMaker.Editor;
 using System.Collections.Specialized;
+using System.Reflection;
+using System.Windows;
 
 namespace DialogMaker.Lib.Data
 {
@@ -118,7 +122,7 @@ namespace DialogMaker.Lib.Data
                 }
             }
         }
-        public object? Value
+        public DialogNodeInfo? Value
 
         {
             get => field;
@@ -132,8 +136,53 @@ namespace DialogMaker.Lib.Data
                 }
             }
         }
+        public KeyValuePair<PropertyInfo, DialogProjectNodeMetadata>? Port
+        {
+            get => field;
+            set
+            {
+                if (!Equals(field, value))
+                {
+                    InvokePropertyChanging(nameof(Port));
+                    field = value;
+                    InvokePropertyChanged(nameof(Port));
+                }
+            }
+        }
 
         #region Управление
+
+        public void CreateNode(ProjectDialog dialog, DialogProjectNodePortProxy? connection = null)
+        {
+            CreateNode(dialog, new(0, 0), connection);
+        }
+        public void CreateNode(ProjectDialog dialog, Point position, DialogProjectNodePortProxy? connection = null)
+        {
+            var nodeInfo = Value;
+            var portInfo = Port;
+
+            if (nodeInfo == null)
+            {
+                throw new InvalidOperationException("Невозможно создать узел, так как отсутствует информация, необходимая для его создания (тип узла)");
+            }
+
+            var node = dialog.Original.CreateNode(nodeInfo.Value.NodeType);
+            node.Position = new()
+            {
+                X = (float)position.X, 
+                Y = (float)position.Y
+            };
+
+            if (connection != null && portInfo != null)
+            {
+                if (portInfo.Value.Key.GetValue(node) is not DialogProjectNodePort port)
+                {
+                    throw new InvalidOperationException($"Невозможно автоматически подключить узел, так как не удалось получить необходимый порт созданного узла: {portInfo.Value.Value.Name}");
+                }
+
+                port.Connect(connection.Original);
+            }
+        }
 
         public void RequestBringToView()
         {
@@ -150,6 +199,7 @@ namespace DialogMaker.Lib.Data
                 IsSelected = IsSelected,
                 Name = Name,
                 Value = Value,
+                Port = Port
             };
             var children = Children;
 

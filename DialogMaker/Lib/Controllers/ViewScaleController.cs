@@ -2,7 +2,6 @@
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Converters;
 
 namespace DialogMaker.Lib.Controllers
 {
@@ -12,8 +11,10 @@ namespace DialogMaker.Lib.Controllers
         {
             Element = element;
 
-            element.PreviewMouseWheel += OnElementPreviewMouseWheel;
+            element.MouseWheel += OnElementPreviewMouseWheel;
         }
+
+        public event EventHandler? ScaleChanged;
 
         public UIElement Element { get; }
         public UIElement? Container { get; set; }
@@ -27,7 +28,7 @@ namespace DialogMaker.Lib.Controllers
         {
             base.Dispose(isDisposing);
 
-            Element.PreviewMouseWheel -= OnElementPreviewMouseWheel;
+            Element.MouseWheel -= OnElementPreviewMouseWheel;
         }
 
         #endregion
@@ -36,6 +37,11 @@ namespace DialogMaker.Lib.Controllers
 
         private void OnElementPreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
+            if (e.Handled)
+            {
+                return;
+            }
+
             var scale = OverrideScaleTransform;
             scale ??= Element.GetTransform<ScaleTransform>();
             double delta = (double)e.Delta / 2000;
@@ -50,28 +56,32 @@ namespace DialogMaker.Lib.Controllers
             scale.ScaleX = newScale.X;
             scale.ScaleY = newScale.Y;
 
-            if (Container != null)
+            if (Container == null)
             {
-                var translation = Container.GetTransform<TranslateTransform>();
-                var halfSize = Element.RenderSize / 2;
-                Point position;
-
-                if (0 > e.Delta)
-                {
-                    position = (Point)halfSize;
-                }
-                else
-                {
-                    position = e.GetPosition(Element);
-                }
-
-                Point origin = (position / Element.RenderSize) * Element.RenderSize;
-                origin -= halfSize;
-                origin *= (-delta * 2) / scale.ScaleX;
-                
-                translation.X += origin.X;
-                translation.Y += origin.Y;
+                return;
             }
+
+            var translation = Container.GetTransform<TranslateTransform>();
+            var halfSize = Element.RenderSize / 2;
+            Point position;
+
+            if (0 > e.Delta)
+            {
+                position = (Point)halfSize;
+            }
+            else
+            {
+                position = e.GetPosition(Element);
+            }
+
+            Point origin = (position / Element.RenderSize) * Element.RenderSize;
+            origin -= halfSize;
+            origin *= (-delta * 2) / scale.ScaleX;
+
+            translation.X += origin.X;
+            translation.Y += origin.Y;
+
+            ScaleChanged?.Invoke(this, EventArgs.Empty);
         }
 
         #endregion

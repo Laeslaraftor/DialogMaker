@@ -8,8 +8,10 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Input;
 using System.Diagnostics;
-using System.Threading.Tasks;
-using Microsoft.VisualBasic;
+using DialogMaker.Core.Editor;
+using DialogMaker.Lib.Data;
+using DialogMaker.Core.Editor.Nodes;
+using System.ComponentModel;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -21,7 +23,7 @@ namespace DialogMaker.Lib.Elements
 
             _canvas.RenderTransform = new TransformGroup()
             {
-                Children = [new TranslateTransform(), new ScaleTransform()]
+                Children = [_canvasTranslation, new ScaleTransform()]
             };
             _scaleController = new(_mainGrid)
             {
@@ -42,12 +44,28 @@ namespace DialogMaker.Lib.Elements
                 ExtraMouseButton = MouseButton.Right
             };
 
+            _canvasXDescriptor = DependencyPropertyDescriptor.FromProperty(TranslateTransform.XProperty, typeof(TranslateTransform));
+            _canvasYDescriptor = DependencyPropertyDescriptor.FromProperty(TranslateTransform.YProperty, typeof(TranslateTransform));
+
+            _canvasXDescriptor.AddValueChanged(_canvasTranslation, OnCanvasTranslationXChanged);
+            _canvasYDescriptor.AddValueChanged(_canvasTranslation, OnCanvasTranslationYChanged);
+
+            _connections.ReleasedOnEmptySpace += OnConnectionsReleasedOnEmptySpace;
             _dragAndDrop.DragUpdated += OnDragAndDropDragUpdated;
             _dragAndDrop.DragCheck += OnDragAndDropDragCheck;
+            _scaleController.ScaleChanged += OnScaleControllerScaleChanged;
 
             _selectionController.EmptyClick += OnSelectionControllerEmptyClick;
             _selectionController.Selected += OnSelectionControllerSelected;
         }
+        ~DiagramView()
+        {
+            _canvasXDescriptor.RemoveValueChanged(_canvasTranslation, OnCanvasTranslationXChanged);
+            _canvasYDescriptor.RemoveValueChanged(_canvasTranslation, OnCanvasTranslationYChanged);
+        }
+
+        public event EventHandler<ItemEventArgs<Point>>? PositionChanged;
+        public event EventHandler? Redraw;
 
         public UIElementCollection Children => _canvas.Children;
         public ProjectDialog? Dialog
@@ -85,13 +103,51 @@ namespace DialogMaker.Lib.Elements
             get => (double)GetValue(MinZoomProperty);
             set => SetValue(MinZoomProperty, value);
         }
-
+        public Point Position
+        {
+            get => (Point)GetValue(PositionProperty);
+            set => SetValue(PositionProperty, value);
+        }
+        public Canvas Canvas => _canvas;
+        
+        private readonly TranslateTransform _canvasTranslation = new();
+        private readonly DependencyPropertyDescriptor _canvasXDescriptor;
+        private readonly DependencyPropertyDescriptor _canvasYDescriptor;
         private readonly DragAndDropController _dragAndDrop;
         private readonly ViewScaleController _scaleController;
         private readonly MouseMultiselectController _selectionController;
         private readonly DiagramViewConnectionsController _connections;
+        private ConnectionReleaseEventArgs? _lastConnectionRequested;
+        private Point _newNodePosition;
 
         #region Управление
+
+        public Size GetActualSize()
+        {
+            double maxLeft = ActualWidth;
+            double maxTop = ActualHeight;
+
+            foreach (UIElement child in _canvas.Children)
+            {
+                var left = Canvas.GetLeft(child);
+                var top = Canvas.GetTop(child);
+
+                if (!double.IsNaN(left))
+                {
+                    maxLeft = Math.Max(maxLeft, Math.Abs(left));
+                }
+                if (!double.IsNaN(top))
+                {
+                    maxTop = Math.Max(maxTop, Math.Abs(top));
+                }
+            }
+
+            return new(maxLeft, maxTop);
+        }
+        public Point GetAbsolutePosition()
+        {
+            return _canvas.TransformToVisual(this.GetWindow()).Transform(new(0, 0));
+        }
 
         public bool TryGetNode(DiagramNode node, [NotNullWhen(true)] out DialogProjectNode? result)
         {
@@ -201,6 +257,8 @@ namespace DialogMaker.Lib.Elements
             view.Redraw += OnNodeViewRedraw;
 
             _canvas.Children.Add(view);
+
+            Redraw?.Invoke(this, EventArgs.Empty);
         }
 
         private void RemoveNode(DialogProjectNode node)
@@ -211,10 +269,19 @@ namespace DialogMaker.Lib.Elements
 
             _connections.RemoveConnections(node);
             _canvas.Children.Remove(view);
+
+            Redraw?.Invoke(this, EventArgs.Empty);
         }
         private void ClearNode(DialogProjectNode node)
         {
             node.View.Redraw -= OnNodeViewRedraw;
+        }
+
+        private void HideNodeSelector()
+        {
+            _nodeSelector.Visibility = Visibility.Collapsed;
+            _nodeSelector.IsHitTestVisible = false;
+            _lastConnectionRequested = null;
         }
 
         #endregion
@@ -233,11 +300,82 @@ namespace DialogMaker.Lib.Elements
             }
         }
 
+        private void OnCanvasTranslationXChanged(object? sender, EventArgs e)
+        {
+            if (sender is TranslateTransform translation)
+            {
+                Position = new()
+                {
+                    X = translation.X,
+                    Y = Position.Y
+                };
+            }
+        }
+        private void OnCanvasTranslationYChanged(object? sender, EventArgs e)
+        {
+            if (sender is TranslateTransform translation)
+            {
+                Position = new()
+                {
+                    X = Position.X,
+                    Y = translation.Y
+                };
+            }
+        }
+        private void OnScaleControllerScaleChanged(object? sender, EventArgs e)
+        {
+            Redraw?.Invoke(this, e);
+        }
+
+        private void OnNodeSelectorNodeSelected(object sender, ItemEventArgs<NodeSelectorItemInfo> e)
+        {
+            var dialog = Dialog;
+
+            if (_lastConnectionRequested == null || dialog == null)
+            {
+                return;
+            }
+
+            try
+            {
+                e.Item.CreateNode(dialog, _newNodePosition, _lastConnectionRequested.Value.Port);
+            }
+            catch (Exception error)
+            {
+                error.Alert();
+            }
+
+            HideNodeSelector();
+        }
+        private void OnNodeSelectorLostFocus(object sender, RoutedEventArgs e)
+        {
+            HideNodeSelector();
+        }
+        private void OnConnectionsReleasedOnEmptySpace(object? sender, ConnectionReleaseEventArgs e)
+        {
+            var position = e.Mouse.GetPosition(this);
+            var translation = _nodeSelector.GetTransform<TranslateTransform>();
+
+            translation.X = position.X - _nodeSelector.RenderSize.Width / 2;
+            translation.Y = position.Y - 20;
+
+            _newNodePosition = e.Mouse.GetPosition(_canvas);
+            _lastConnectionRequested = e;
+
+            _nodeSelector.Mode = e.Port.Original is DialogProjectNodeInput ? NodeSelectionMode.Output : NodeSelectionMode.Input;
+            _nodeSelector.PortsType = e.Port.Original.ConnectionType;
+            _nodeSelector.SearchValue = null;
+            _nodeSelector.Visibility = Visibility.Visible;
+            _nodeSelector.IsHitTestVisible = true;
+            _nodeSelector.Focus();
+        }
+
         private void OnNodeViewRedraw(object? sender, EventArgs e)
         {
             if (sender is DiagramNode view && TryGetNode(view, out var node))
             {
                 _connections.UpdatePosition(node);
+                Redraw?.Invoke(this, EventArgs.Empty);
             }
         }
         private async void OnNodesItemChanged(object? sender, CollectionItemEventArgs<DialogProjectNode> e)
@@ -368,6 +506,18 @@ namespace DialogMaker.Lib.Elements
                 view._scaleController.MinScale = (double)e.NewValue;
             }
         }
+        private static void OnPositionChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is DiagramView view && e.NewValue is Point position)
+            {
+                var translation = view._canvasTranslation;
+                translation.X = position.X;
+                translation.Y = position.Y;
+
+                view.PositionChanged?.Invoke(d, new(position));
+                view.Redraw?.Invoke(d, EventArgs.Empty);
+            }
+        }
 
         #endregion
 
@@ -387,6 +537,8 @@ namespace DialogMaker.Lib.Elements
             typeof(DiagramView), new(2d, OnMaxZoomChanged));
         public static readonly DependencyProperty MinZoomProperty = DependencyProperty.Register(nameof(MinZoom), typeof(double),
             typeof(DiagramView), new(0.25d, OnMinZoomChanged));
+        public static readonly DependencyProperty PositionProperty = DependencyProperty.Register(nameof(Position), typeof(Point),
+            typeof(DiagramView), new(new Point(0, 0), OnPositionChanged));
 
         #endregion
     }

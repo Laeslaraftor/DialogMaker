@@ -1,7 +1,10 @@
-﻿using DialogMaker.Core.Editor;
+﻿using Acly;
+using DialogMaker.Core;
+using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Lib.Data;
 using System.Collections.ObjectModel;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -14,7 +17,7 @@ namespace DialogMaker.Lib.Elements
         {
             InitializeComponent();
 
-            foreach (var item in CreateItems())
+            foreach (var item in CreateDefaultItems())
             {
                 _items.Add(item.Copy());
             }
@@ -36,6 +39,16 @@ namespace DialogMaker.Lib.Elements
             get => (int)GetValue(SelectedIndexProperty);
             set => SetValue(SelectedIndexProperty, value);
         }
+        public NodeSelectionMode Mode
+        {
+            get => (NodeSelectionMode)GetValue(ModeProperty);
+            set => SetValue(ModeProperty, value);
+        }
+        public DialogNodeConnectionType PortsType
+        {
+            get => (DialogNodeConnectionType)GetValue(PortsTypeProperty);
+            set => SetValue(PortsTypeProperty, value);
+        }
 
         private readonly ObservableCollection<NodeSelectorItemInfo> _items = [];
 
@@ -43,14 +56,34 @@ namespace DialogMaker.Lib.Elements
 
         private void Search(string? value)
         {
+            var mode = Mode;
+            var portsType = PortsType;
             Predicate<NodeSelectorItemInfo> itemPredicate = i => true;
+            Predicate<NodeSelectorItemInfo> portPredicate = i => i.Port == null;
 
             if (value != null)
             {
                 itemPredicate = i => i.Name?.Contains(value, StringComparison.InvariantCultureIgnoreCase) == true;
             }
+            if (mode != NodeSelectionMode.Default)
+            {
+                GetPortTypes(mode == NodeSelectionMode.Input, out var modeType, out var dataType);
+                portPredicate = i =>
+                {
+                    if (i.Port == null)
+                    {
+                        return false;
+                    }
 
-            FilterItems(itemPredicate);
+                    var property = i.Port.Value.Key;
+                    var propertyIsAction = property.PropertyType == dataType;
+                    bool isAssignable = property.PropertyType.IsAssignableTo(modeType);
+
+                    return isAssignable && propertyIsAction ^ portsType == DialogNodeConnectionType.Data;
+                };
+            }
+
+            FilterItems(n => itemPredicate(n) && portPredicate(n));
         }
 
         private void FilterItems(Predicate<NodeSelectorItemInfo> predicate)
@@ -151,20 +184,20 @@ namespace DialogMaker.Lib.Elements
                         item.IsSelected = false;
                         result = previousItem;
                     }
-                    
+
                     return true;
                 }
                 if (item.IsEnabled)
                 {
                     previousItem = item;
-                }                
+                }
 
                 return false;
             });
 
             return result;
         }
-
+            
         #endregion
 
         #region События
@@ -222,6 +255,13 @@ namespace DialogMaker.Lib.Elements
                 view._searchValueEntry.Text = searchValue ?? string.Empty;
             }
         }
+        private static void OnFilterValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is NodeSelector view)
+            {
+                view.Search(view.SearchValue);
+            }
+        }
 
         #endregion
 
@@ -231,20 +271,52 @@ namespace DialogMaker.Lib.Elements
             typeof(NodeSelector), new(OnSearchValueChanged));
         public static readonly DependencyProperty SelectedIndexProperty = DependencyProperty.Register(nameof(SelectedIndex), typeof(int),
             typeof(NodeSelector), new(-1, OnSearchValueChanged));
+        public static readonly DependencyProperty ModeProperty = DependencyProperty.Register(nameof(Mode), typeof(NodeSelectionMode),
+            typeof(NodeSelector), new(NodeSelectionMode.Default, OnFilterValueChanged));
+        public static readonly DependencyProperty PortsTypeProperty = DependencyProperty.Register(nameof(PortsType), typeof(DialogNodeConnectionType),
+            typeof(NodeSelector), new(DialogNodeConnectionType.Action, OnFilterValueChanged));
 
         #endregion
 
         #region Статика
 
-        private static ReadOnlyCollection<NodeSelectorItemInfo>? _nodeItems;
+        private static readonly Type _inputActionPort = typeof(DialogProjectNodeInputAction);
+        private static readonly Type _inputPort = typeof(DialogProjectNodeInput);
+        private static readonly Type _outputActionPort = typeof(DialogProjectNodeOutputAction);
+        private static readonly Type _outputPort = typeof(DialogProjectNodeOutput);
+        private static ReadOnlyCollection<NodeSelectorItemInfo>? _defaultNodeItems;
 
-        private static ReadOnlyCollection<NodeSelectorItemInfo> CreateItems()
+        private static ReadOnlyCollection<NodeSelectorItemInfo> CreateDefaultItems()
         {
-            if (_nodeItems != null)
+            _defaultNodeItems ??= CreateItems((infos, node) =>
             {
-                return _nodeItems;
-            }
+                infos.Add(new()
+                {
+                    Name = node.Metadata.Name,
+                    Value = node
+                });
 
+                CreatePortItems(infos, node, node.Inputs);
+                CreatePortItems(infos, node, node.Outputs);
+            });
+
+            return _defaultNodeItems;
+        }
+        private static void CreatePortItems(EditableCollection<NodeSelectorItemInfo> infos, DialogNodeInfo node, ReadOnlyDictionary<PropertyInfo, DialogProjectNodeMetadata> ports)
+        {
+            foreach (var portInfo in ports)
+            {
+                infos.Add(new()
+                {
+                    Name = $"{node.Metadata.Name} → {portInfo.Value.Name}",
+                    Value = node,
+                    Port = portInfo
+                });
+            }
+        }
+
+        private static ReadOnlyCollection<NodeSelectorItemInfo> CreateItems(Action<EditableCollection<NodeSelectorItemInfo>, DialogNodeInfo> infoHandler)
+        {
             Dictionary<string, NodeSelectorItemInfo> groups = [];
             List<NodeSelectorItemInfo> result = [];
             HashSet<string> paths = [];
@@ -264,11 +336,10 @@ namespace DialogMaker.Lib.Elements
                     groups.Add(info.Path, group);
                 }
 
-                group.Children?.Add(new()
+                if (group.Children != null)
                 {
-                    Name = info.Metadata.Name,
-                    Value = info
-                });
+                    infoHandler(group.Children, info);
+                }
             }
 
             NodeSelectorItemInfo? AddChilds(NodeSelectorItemInfo? parent, string[] pathParts, int currentIndex)
@@ -327,9 +398,7 @@ namespace DialogMaker.Lib.Elements
                 }
             }
 
-            _nodeItems = new(result);
-
-            return _nodeItems;
+            return new(result);
         }
 
         private static void ForEachItems(IEnumerable<NodeSelectorItemInfo> items, Predicate<NodeSelectorItemInfo> handler)
@@ -369,6 +438,11 @@ namespace DialogMaker.Lib.Elements
                     return;
                 }
             }
+        }
+        private static void GetPortTypes(bool isInput, out Type modeType, out Type dataType)
+        {
+            modeType = isInput ? _inputPort : _outputPort;
+            dataType = isInput ? _inputActionPort : _outputActionPort;
         }
 
         #endregion

@@ -44,20 +44,20 @@ namespace DialogMaker.Core.Editor.Nodes
             }
         }
         [NodeOutput("Выход"), Description("Действие после выбора ответа"), Sort(0)]
-        public DialogProjectNodeOutput Output
+        public DialogProjectNodeOutputAction Output
         {
             get
             {
-                field ??= new(this, 1, DialogNodePortType.Action);
+                field ??= new(this, 1);
                 return field;
             }
         }
         [NodeOutput("Варианты ответа"), Description("Индекс выбранного варианта ответа")]
-        public DialogProjectNodeOutput SelectedVariantIndex
+        public DialogProjectNodeOutputNumber SelectedVariantIndex
         {
             get
             {
-                field ??= new(this, 2, DialogNodePortType.Number);
+                field ??= new(this, 2);
                 return field;
             }
         }

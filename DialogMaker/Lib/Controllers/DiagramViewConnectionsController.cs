@@ -24,6 +24,8 @@ namespace DialogMaker.Lib.Controllers
             Canvas = canvas;
         }
 
+        public event EventHandler<ConnectionReleaseEventArgs>? ReleasedOnEmptySpace;
+
         public DiagramView View { get; }
         public Canvas Canvas { get; }
         public double CurvesThickness
@@ -452,8 +454,18 @@ namespace DialogMaker.Lib.Controllers
                 return;
             }
 
+            var curveStartPort = curve.StartPort;
+            var curveEndPort = curve.EndPort;
+
             if (curve.SetConnection(endPort, _currentCurve.IsStartPortControl) == false || endPort == null)
             {
+                if (endPort == null && 
+                    ((_currentCurve.IsStartPortControl && curveStartPort == null) || 
+                    (!_currentCurve.IsStartPortControl && curveEndPort == null)))
+                {
+                    ReleasedOnEmptySpace?.Invoke(this, new(e, _currentCurve.IsStartPortControl ? curveEndPort! : curveStartPort!));
+                }
+
                 RemoveCurve(curve);
             }
             else
