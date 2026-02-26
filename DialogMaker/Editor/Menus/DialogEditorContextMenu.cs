@@ -1,6 +1,6 @@
 ﻿using DialogMaker.Core;
-using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Lib;
+using DialogMaker.Lib.Controllers;
 using System.Windows.Input;
 
 namespace DialogMaker.Editor.Menus
@@ -16,7 +16,10 @@ namespace DialogMaker.Editor.Menus
 
         protected override IEnumerable<IContextMenuModifier> GetItems()
         {
-            yield return new ContextMenuContainer(Icons.Add, "Добавить", GetNodes());
+            yield return new ContextMenuAction("Добавить", AddNode, Icons.Add)
+            {
+                Shortcut = $"Shift+A"
+            };
             yield return ContextMenuSeparator.Instance;
 
             foreach (var modifier in CreateClipboardModifiers(Item))
@@ -31,77 +34,15 @@ namespace DialogMaker.Editor.Menus
             };
         }
 
-        private IEnumerable<IContextMenuModifier> GetNodes()
-        {
-            Dictionary<string, List<DialogNodeInfo>> folders = [];
-
-            foreach (var nodeInfo in DialogProjectDialogNode.AvailableNodes.Values)
-            {
-                if (!folders.TryGetValue(nodeInfo.Path, out var nodes))
-                {
-                    nodes = [];
-                    folders.Add(nodeInfo.Path, nodes);
-                }
-
-                nodes.Add(nodeInfo);
-            }
-
-            foreach (var info in folders)
-            {
-                info.Value.Sort();
-
-                foreach (var modifier in CreateFolder(info))
-                {
-                    yield return modifier;
-                }
-            }
-        }
-        IEnumerable<IContextMenuModifier> CreateFolder(KeyValuePair<string, List<DialogNodeInfo>> info)
-        {
-            if (info.Value.Count == 0)
-            {
-                return [];
-            }
-
-            var parts = info.Key.Split('/');
-            var nodes = CreateNodes(info.Value);
-
-            return CreateContainer(nodes, parts);
-        }
-        IEnumerable<IContextMenuModifier> CreateContainer(IEnumerable<IContextMenuModifier> nodes, string[] parts)
-        {
-            if (parts.Length == 0)
-            {
-                foreach (var node in nodes)
-                {
-                    yield return node;
-                }
-            }
-
-            ContextMenuContainer Create(int index)
-            {
-                IEnumerable<IContextMenuModifier> next = nodes;
-
-                if (index + 1 < parts.Length)
-                {
-                    next = [Create(index + 1)];
-                }
-
-                return new ContextMenuContainer(parts[index], next);
-            }
-
-            yield return Create(0);
-        }
-        private IEnumerable<IContextMenuModifier> CreateNodes(IEnumerable<DialogNodeInfo> nodesInfo)
-        {
-            foreach (var info in nodesInfo)
-            {
-                yield return new ContextMenuAction(info.Metadata.Name, p => AddNode(p, info.NodeType));
-            }
-        }
-
         #region Команды
 
+        private void AddNode(object? parameter)
+        {
+            Resolve(parameter, async dialog =>
+            {
+                await NodeSelectorController.Request(dialog, null, dialog.LastMouseClickPosition);
+            });
+        }
         private void AddNode(object? parameter, DialogNodeType nodeType)
         {
             Resolve(parameter, dialog =>

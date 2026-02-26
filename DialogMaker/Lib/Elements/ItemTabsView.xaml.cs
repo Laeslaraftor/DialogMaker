@@ -66,7 +66,9 @@ namespace DialogMaker.Lib.Elements
         }
         private void OnTabControlSelectedValueChanged(object? sender, EventArgs e)
         {
-            CurrentItem = _tabControl.SelectedValue as IItemTab;
+            var item = _tabControl.SelectedValue as IItemTab;
+            CurrentItem = item;
+            item?.OnShowed(this, e);
         }
 
         private void OnItemsItemChanged(object? sender, CollectionItemEventArgs<IItemTab> e)

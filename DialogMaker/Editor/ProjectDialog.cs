@@ -11,6 +11,7 @@ using System.Collections;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace DialogMaker.Editor
@@ -126,8 +127,47 @@ namespace DialogMaker.Editor
                 throw new ArgumentException($"Не удалось найти узел для {originalNode}", nameof(originalNode));
             }
         }
+        public DiagramView? CurrentView
+        {
+            get
+            {
+                if (_currentView == null)
+                {
+                    return null;
+                }
+
+                _currentView.TryGetTarget(out var view);
+                return view;
+            }
+            set
+            {
+                if (!Equals(CurrentView, value))
+                {
+                    InvokePropertyChanging(nameof(CurrentView));
+
+                    if (value != null)
+                    {
+                        if (_currentView != null)
+                        {
+                            _currentView.SetTarget(value);
+                        }
+                        else
+                        {
+                            _currentView = new(value);
+                        }
+                    }
+                    else
+                    {
+                        _currentView = null;
+                    }
+
+                    InvokePropertyChanged(nameof(CurrentView));
+                }
+            }
+        }
 
         private readonly ActionButton _compileButton;
+        private WeakReference<DiagramView>? _currentView;
         private ProjectNodeConverter? _nodesConverter;
         private CollectionSynchronizer<DialogProjectDialogNode, DialogProjectNode>? _nodesSync;
         private ProjectResources? _resources;
@@ -286,6 +326,8 @@ namespace DialogMaker.Editor
         {
             base.Dispose(isDisposing);
 
+            CurrentView = null;
+
             _nodesSync?.Dispose();
             _resources?.Dispose();
             _compilerItem?.Dispose();
@@ -294,10 +336,77 @@ namespace DialogMaker.Editor
             Original.PropertyChanged -= OnDialogPropertyChanged;
             SelectedNodes.ItemChanged -= OnSelectedNodesItemChanged;
         }
+        protected override void ClearHotkeys()
+        {
+            base.ClearHotkeys();
+
+            Hotkey.Add.Pressed -= OnAddHotkeyPressed;
+            Hotkey.SelectAll.Pressed -= OnSelectAllHotkeyPressed;
+            Hotkey.Copy.Pressed -= OnCopyHotkeyPressed;
+            Hotkey.Cut.Pressed -= OnCutHotkeyPressed;
+            Hotkey.Paste.Pressed -= OnPasteHotkeyPressed;
+            Hotkey.Delete.Pressed -= OnDeleteHotkeyPressed;
+        }
 
         #endregion
 
         #region События
+
+        public override void OnShowed(object? sender, EventArgs e)
+        {
+            base.OnShowed(sender, e);
+
+            Hotkey.Add.Pressed += OnAddHotkeyPressed;
+            Hotkey.SelectAll.Pressed += OnSelectAllHotkeyPressed;
+            Hotkey.Copy.Pressed += OnCopyHotkeyPressed;
+            Hotkey.Cut.Pressed += OnCutHotkeyPressed;
+            Hotkey.Paste.Pressed += OnPasteHotkeyPressed;
+            Hotkey.Delete.Pressed += OnDeleteHotkeyPressed;
+        }
+
+        protected virtual void OnSelectAllHotkeyPressed(object? sender, ItemEventArgs<object?> e)
+        {
+            foreach (var node in Nodes)
+            {
+                node.IsSelected = true;
+            }
+        }
+        protected virtual void OnDeleteHotkeyPressed(object? sender, ItemEventArgs<object?> e)
+        {
+            RemoveSelectedNodes();
+        }
+        protected virtual void OnPasteHotkeyPressed(object? sender, ItemEventArgs<object?> e)
+        {
+            var view = CurrentView;
+
+            if (view == null)
+            {
+                return;
+            }
+
+            var position = Mouse.GetPosition(view.Canvas);
+            Clipboard.Paste(position);
+        }
+        protected virtual void OnCutHotkeyPressed(object? sender, ItemEventArgs<object?> e)
+        {
+            Clipboard.Cut();
+        }
+        protected virtual void OnCopyHotkeyPressed(object? sender, ItemEventArgs<object?> e)
+        {
+            Clipboard.Copy();
+        }
+        protected virtual async void OnAddHotkeyPressed(object? sender, ItemEventArgs<object?> e)
+        {
+            var view = CurrentView;
+
+            if (view == null)
+            {
+                return;
+            }
+
+            var position = Mouse.GetPosition(view.Canvas);
+            await NodeSelectorController.Request(this, null, position);
+        }
 
         private void OnCompileButtonClicked(object? sender, object? e)
         {

@@ -152,11 +152,11 @@ namespace DialogMaker.Lib.Data
 
         #region Управление
 
-        public void CreateNode(ProjectDialog dialog, DialogProjectNodePortProxy? connection = null)
+        public DialogProjectDialogNode CreateNode(ProjectDialog dialog, DialogProjectNodePortProxy? connection = null)
         {
-            CreateNode(dialog, new(0, 0), connection);
+            return CreateNode(dialog, new(0, 0), connection);
         }
-        public void CreateNode(ProjectDialog dialog, Point position, DialogProjectNodePortProxy? connection = null)
+        public DialogProjectDialogNode CreateNode(ProjectDialog dialog, Point position, DialogProjectNodePortProxy? connection = null)
         {
             var nodeInfo = Value;
             var portInfo = Port;
@@ -182,6 +182,8 @@ namespace DialogMaker.Lib.Data
 
                 port.Connect(connection.Original);
             }
+
+            return node;
         }
 
         public void RequestBringToView()

@@ -19,7 +19,7 @@
         </Grid.ColumnDefinitions>
         <Border x:Name="_diagramSizeReference"/>
         <local:DiagramView x:Name="_diagram" ClipToBounds="True"
-                           CurvesThickness="6" CurvesOffset="5" CurvesResolution="24"
+                           CurvesThickness="4" CurvesOffset="5" CurvesResolution="24"
                            Dialog="{Binding Dialog}" Redraw="OnDiagramRedraw"
                            SizeChanged="OnDiagramSizeChanged"/>
         <ScrollViewer Grid.RowSpan="3" Grid.Column="2"

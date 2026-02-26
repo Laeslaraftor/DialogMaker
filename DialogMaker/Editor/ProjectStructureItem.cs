@@ -27,16 +27,39 @@ namespace DialogMaker.Editor
         public virtual bool CanRename => true;
         public virtual bool CanClose => true;
 
+        #region Управление
+
+        protected override void Dispose(bool isDisposing)
+        {
+            base.Dispose(isDisposing);
+            ClearHotkeys();
+        }
+        protected virtual void ClearHotkeys()
+        {
+            Hotkey.Save.Pressed -= OnSaveHotkeyPressed;
+        }
+
+        protected virtual void HotkeySave()
+        {
+            Project.Save();
+        }
+
+        #endregion
+
         #region События
 
         public virtual void OnClosed(object? sender, EventArgs e)
         {
+            ClearHotkeys();
         }
         public virtual void OnHided(object? sender, EventArgs e)
         {
+            ClearHotkeys();
         }
         public virtual void OnShowed(object? sender, EventArgs e)
         {
+            ClearHotkeys();
+            Hotkey.Save.Pressed += OnSaveHotkeyPressed;
         }
 
         protected virtual void OnCloseRequested(EventArgs e)
@@ -45,6 +68,10 @@ namespace DialogMaker.Editor
             {
                 CloseRequested?.Invoke(this, e);
             });
+        }
+        protected virtual void OnSaveHotkeyPressed(object? sender, ItemEventArgs<object?> e)
+        {
+            HotkeySave();
         }
 
         #endregion

@@ -92,6 +92,7 @@ namespace DialogMaker.Lib.Elements
         {
             Interval = 50,
             AutoReset = true,
+            Enabled = false
         };
         private bool _disablePositionSync;
 

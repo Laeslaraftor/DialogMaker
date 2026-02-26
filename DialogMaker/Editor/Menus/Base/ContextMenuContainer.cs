@@ -3,8 +3,8 @@ using System.Windows.Controls;
 
 namespace DialogMaker.Editor.Menus
 {
-    public class ContextMenuContainer(string name, IEnumerable<IContextMenuModifier> modifiers) 
-        : ContextMenuItemModifier(name), IContextMenuModifier
+    public class ContextMenuContainer(string name, IEnumerable<IContextMenuModifier> modifiers)
+        : ContextMenuAction(name, (Action<object?>?)null), IContextMenuModifier
     {
         public ContextMenuContainer(string name, IContextMenuModifier modifier)
             : this(name, new ReadOnlyCollection<IContextMenuModifier>([modifier]))
@@ -16,24 +16,28 @@ namespace DialogMaker.Editor.Menus
             Icon = icon;
         }
         public ContextMenuContainer(string icon, string name, IContextMenuModifier modifier)
-            : this(icon, name, new ReadOnlyCollection<IContextMenuModifier>([modifier]))
+            : this(icon, name, [modifier])
         {
+        }
+        public ContextMenuContainer(string icon, string name, Action<object?>? execute, Func<object?, bool>? canExecute, IEnumerable<IContextMenuModifier> modifiers)
+            : this(icon, name, modifiers)
+        {
+            CanExecute = canExecute;
+            Execute = execute;
         }
 
         public IEnumerable<IContextMenuModifier> Modifiers { get; } = modifiers;
 
         #region Управление
 
-        public void Modify(ContextMenu menu, ItemCollection items)
+        protected override void Modify(ContextMenu menu, MenuItem item)
         {
-            var item = GetItem(menu, items);
+            base.Modify(menu, item);
 
             foreach (var modifier in Modifiers)
             {
                 modifier.Modify(menu, item.Items);
             }
-
-            items.Add(item);
         }
 
         #endregion

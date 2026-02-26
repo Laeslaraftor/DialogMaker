@@ -60,6 +60,16 @@ namespace DialogMaker.Lib.Elements
         }
         ~DiagramView()
         {
+            Dispatcher.Invoke(() =>
+            {
+                var dialog = Dialog;
+
+                if (dialog?.CurrentView == this)
+                {
+                    dialog.CurrentView = null;
+                }
+            });
+
             _canvasXDescriptor.RemoveValueChanged(_canvasTranslation, OnCanvasTranslationXChanged);
             _canvasYDescriptor.RemoveValueChanged(_canvasTranslation, OnCanvasTranslationYChanged);
         }
@@ -109,7 +119,7 @@ namespace DialogMaker.Lib.Elements
             set => SetValue(PositionProperty, value);
         }
         public Canvas Canvas => _canvas;
-        
+
         private readonly TranslateTransform _canvasTranslation = new();
         private readonly DependencyPropertyDescriptor _canvasXDescriptor;
         private readonly DependencyPropertyDescriptor _canvasYDescriptor;
@@ -117,8 +127,6 @@ namespace DialogMaker.Lib.Elements
         private readonly ViewScaleController _scaleController;
         private readonly MouseMultiselectController _selectionController;
         private readonly DiagramViewConnectionsController _connections;
-        private ConnectionReleaseEventArgs? _lastConnectionRequested;
-        private Point _newNodePosition;
 
         #region Управление
 
@@ -165,6 +173,11 @@ namespace DialogMaker.Lib.Elements
             {
                 oldValue.Nodes.ItemChanged -= OnNodesItemChanged;
 
+                if (newValue == null && oldValue.CurrentView == this)
+                {
+                    oldValue.CurrentView = null;
+                }
+
                 foreach (var node in oldValue.Nodes)
                 {
                     ClearNode(node);
@@ -183,6 +196,8 @@ namespace DialogMaker.Lib.Elements
 
             if (newValue != null)
             {
+                newValue.CurrentView = this;
+
                 newValue.Nodes.ItemChanged -= OnNodesItemChanged;
                 newValue.Nodes.ItemChanged += OnNodesItemChanged;
 
@@ -257,8 +272,6 @@ namespace DialogMaker.Lib.Elements
             view.Redraw += OnNodeViewRedraw;
 
             _canvas.Children.Add(view);
-
-            Redraw?.Invoke(this, EventArgs.Empty);
         }
 
         private void RemoveNode(DialogProjectNode node)
@@ -269,19 +282,10 @@ namespace DialogMaker.Lib.Elements
 
             _connections.RemoveConnections(node);
             _canvas.Children.Remove(view);
-
-            Redraw?.Invoke(this, EventArgs.Empty);
         }
         private void ClearNode(DialogProjectNode node)
         {
             node.View.Redraw -= OnNodeViewRedraw;
-        }
-
-        private void HideNodeSelector()
-        {
-            _nodeSelector.Visibility = Visibility.Collapsed;
-            _nodeSelector.IsHitTestVisible = false;
-            _lastConnectionRequested = null;
         }
 
         #endregion
@@ -327,47 +331,10 @@ namespace DialogMaker.Lib.Elements
             Redraw?.Invoke(this, e);
         }
 
-        private void OnNodeSelectorNodeSelected(object sender, ItemEventArgs<NodeSelectorItemInfo> e)
+        private async void OnConnectionsReleasedOnEmptySpace(object? sender, ConnectionReleaseEventArgs e)
         {
-            var dialog = Dialog;
-
-            if (_lastConnectionRequested == null || dialog == null)
-            {
-                return;
-            }
-
-            try
-            {
-                e.Item.CreateNode(dialog, _newNodePosition, _lastConnectionRequested.Value.Port);
-            }
-            catch (Exception error)
-            {
-                error.Alert();
-            }
-
-            HideNodeSelector();
-        }
-        private void OnNodeSelectorLostFocus(object sender, RoutedEventArgs e)
-        {
-            HideNodeSelector();
-        }
-        private void OnConnectionsReleasedOnEmptySpace(object? sender, ConnectionReleaseEventArgs e)
-        {
-            var position = e.Mouse.GetPosition(this);
-            var translation = _nodeSelector.GetTransform<TranslateTransform>();
-
-            translation.X = position.X - _nodeSelector.RenderSize.Width / 2;
-            translation.Y = position.Y - 20;
-
-            _newNodePosition = e.Mouse.GetPosition(_canvas);
-            _lastConnectionRequested = e;
-
-            _nodeSelector.Mode = e.Port.Original is DialogProjectNodeInput ? NodeSelectionMode.Output : NodeSelectionMode.Input;
-            _nodeSelector.PortsType = e.Port.Original.ConnectionType;
-            _nodeSelector.SearchValue = null;
-            _nodeSelector.Visibility = Visibility.Visible;
-            _nodeSelector.IsHitTestVisible = true;
-            _nodeSelector.Focus();
+            var position = e.Mouse.GetPosition(_canvas);
+            await NodeSelectorController.Request(e.Port.Node.Dialog, e.Port, e.Mouse, position);
         }
 
         private void OnNodeViewRedraw(object? sender, EventArgs e)
@@ -515,7 +482,6 @@ namespace DialogMaker.Lib.Elements
                 translation.Y = position.Y;
 
                 view.PositionChanged?.Invoke(d, new(position));
-                view.Redraw?.Invoke(d, EventArgs.Empty);
             }
         }
 

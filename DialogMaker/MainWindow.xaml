@@ -4,14 +4,23 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:lib="clr-namespace:DialogMaker.Lib.Elements"
+        xmlns:lib2="clr-namespace:DialogMaker.Lib"
         xmlns:models="clr-namespace:DialogMaker.ViewModels"
         xmlns:local="clr-namespace:DialogMaker"
         xmlns:editor="clr-namespace:DialogMaker.Editor"
         xmlns:core="clr-namespace:DialogMaker.Core;assembly=DialogMaker.Core"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
-        Title="DialogMaker" Height="450" Width="1000"
-        MinWidth="1400" MinHeight="800">
-    <Grid>
+        Title="DialogMaker" Height="800" Width="1400"
+        MinWidth="1000" MinHeight="800">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome x:Name="_chrome" 
+                        CaptionHeight="40"
+                        UseAeroCaptionButtons="True"
+                        ResizeBorderThickness="5"
+                        GlassFrameThickness="-1"/>
+    </shell:WindowChrome.WindowChrome>
+    <Grid x:Name="_mainGrid">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition/>
@@ -24,8 +33,9 @@
         <Rectangle x:Name="_blurredBackground" IsHitTestVisible="False"
                    Grid.ColumnSpan="3" Grid.RowSpan="2">
             <Rectangle.Fill>
-                <ImageBrush x:Name="_blurredBackgroundBrush" Stretch="None"
-                            ViewboxUnits="Absolute"/>
+                <VisualBrush x:Name="_blurredBackgroundBrush"
+                             AlignmentX="Left" AlignmentY="Top"
+                             Stretch="None" ViewboxUnits="Absolute"/>
             </Rectangle.Fill>
             <Rectangle.Clip>
                 <CombinedGeometry GeometryCombineMode="Exclude">
@@ -38,11 +48,11 @@
                 </CombinedGeometry>
             </Rectangle.Clip>
             <Rectangle.Effect>
-                <BlurEffect Radius="20"/>
+                <BlurEffect Radius="50"/>
             </Rectangle.Effect>
         </Rectangle>
-        <Menu Grid.ColumnSpan="3">
-            <MenuItem Header="Файл">
+        <Menu Grid.ColumnSpan="3" Margin="0,0,150,0">
+            <MenuItem Header="Файл" shell:WindowChrome.IsHitTestVisibleInChrome="True">
                 <MenuItem Header="Создать"
                           Command="{Binding CreateProjectCommand}"/>
                 <MenuItem Header="Открыть"
@@ -58,6 +68,7 @@
             </MenuItem>
         </Menu>
         <Border x:Name="_actionButtonsContainer" Grid.ColumnSpan="3"
+                shell:WindowChrome.IsHitTestVisibleInChrome="True"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 Background="{DynamicResource SolidBackgroundFillColorQuarternaryBrush}"
                 BorderBrush="{DynamicResource SolidBackgroundFillColorBaseAltBrush}" 
@@ -213,5 +224,11 @@
             </TabItem>
         </TabControl>
         <GridSplitter Grid.RowSpan="2" Grid.Column="1"/>
+        <lib:NodeSelector x:Name="_nodeSelector" Panel.ZIndex="100" 
+                          Grid.ColumnSpan="100" Grid.RowSpan="100" 
+                          HorizontalAlignment="Left" VerticalAlignment="Top" 
+                          MinWidth="200" MaxHeight="300" Visibility="Collapsed"
+                          IsHitTestVisible="False"
+                          lib2:FocusHelper.IgnoreFocusHit="True"/>
     </Grid>
 </Window>

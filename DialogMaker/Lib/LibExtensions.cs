@@ -129,6 +129,40 @@ namespace DialogMaker
             }
         }
 
+        extension(DependencyObject dp)
+        {
+            public bool TryGetParent<T>([NotNullWhen(true)] out T? result)
+            {
+                result = default;
+
+                while (dp != null && dp is not T)
+                {
+                    dp = VisualTreeHelper.GetParent(dp);
+                }
+
+                if (dp is T typedObj)
+                {
+                    result = typedObj;
+                    return true;
+                }
+
+                return false;
+            }
+            public T GetParent<T>()
+            {
+                while (dp != null && dp is not T)
+                {
+                    dp = VisualTreeHelper.GetParent(dp);
+                }
+
+                if (dp == null)
+                {
+                    throw new ArgumentException($"Не удалось получить родительский объект", nameof(dp));
+                }
+
+                return (T)Convert.ChangeType(dp, typeof(T));
+            }
+        }
         extension(Canvas canvas)
         {
             public static Point GetElementPosition(UIElement element)
@@ -356,6 +390,24 @@ namespace DialogMaker
             public DependencyObject Fetch(Point position)
             {
                 return VisualTreeHelper.HitTest(visual, position).VisualHit;
+            }
+            public async Task<bool> PositionContains(MouseEventArgs mouse, Predicate<DependencyObject> predicate)
+            {
+                return await visual.PositionContains(mouse.GetPosition(null), predicate);
+            }
+            public async Task<bool> PositionContains(Point position, Predicate<DependencyObject> predicate)
+            {
+                bool result = false;
+
+                await visual.Fetch(position, target =>
+                {
+                    if (predicate(target))
+                    {
+                        result = true;
+                    }
+                }, obj => result);
+
+                return result;
             }
 
             public async Task<TElement?> Fetch<TElement>(Point position) where TElement : DependencyObject

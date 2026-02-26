@@ -9,7 +9,6 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace DialogMaker
 {
@@ -24,10 +23,17 @@ namespace DialogMaker
             _model.CloseProjectCommand = new RelayCommand(ExecuteCloseProject);
             _model.ExportProjectCommand = new RelayCommand(ExecuteExportProject);
             _resourcesDragAndDrop = new(this);
-            _backgroundRendererController.RendererChanged += OnBackgroundRendererControllerRendererChanged;
+            _nodeSelectorController = new(this, _nodeSelector);
+            _hotkeysController = new(this);
 
             DataContext = _model;
             Instance = this;
+        }
+        ~MainWindow()
+        {
+            _resourcesDragAndDrop.Dispose();
+            _nodeSelectorController.Dispose();
+            _hotkeysController.Dispose();
         }
 
         private readonly MainWindowViewModel _model = new()
@@ -36,10 +42,8 @@ namespace DialogMaker
         };
         private readonly ResourcesDragAndDropController _resourcesDragAndDrop;
         private readonly ExportView _exportView = new();
-        private readonly ViewRenderController _backgroundRendererController = new()
-        {
-            PixelFormat = PixelFormats.Pbgra32
-        };
+        private readonly NodeSelectorController _nodeSelectorController;
+        private readonly HotkeysController _hotkeysController;
 
         #region Управление
 
@@ -47,6 +51,9 @@ namespace DialogMaker
         {
             Keyboard.ClearFocus();
             FocusManager.SetFocusedElement(this, null);
+
+            FocusManager.SetFocusedElement(this, this);
+            Keyboard.Focus(this);
         }
 
         private void SetProject(DialogProject? project)
@@ -174,38 +181,23 @@ namespace DialogMaker
                 return false;
             }
 
-            IInputElement? pressedElement = null;
-            int callbackCount = 0;
+            DependencyObject? pressedElement = VisualTreeHelper.HitTest(this, e.GetPosition(this)).VisualHit;
 
-            await this.Fetch(e, obj =>
-            {
-                if (IsTextInput(obj))
-                {
-                    pressedElement = (IInputElement)obj;
-                }
-            }, callback =>
-            {
-                if (callbackCount > 0)
-                {
-                    return true;
-                }
-
-                callbackCount++;
-
-                return false;
-            });
-
-            if (!IsTextInput(Keyboard.FocusedElement))
+            if (!IsTextInput(Keyboard.FocusedElement) || 
+                FocusHelper.GetVisualTreeIgnoreFocusSwitch(Keyboard.FocusedElement as DependencyObject))
             {
                 return;
             }
 
             if (Keyboard.FocusedElement?.Equals(pressedElement) != true)
             {
-
-                if (pressedElement == null ||
-                    !pressedElement.Focus())
+                if (pressedElement != null && !FocusHelper.GetVisualTreeIgnoreFocusHit(pressedElement))
                 {
+                    if (pressedElement is IInputElement input && input.Focus())
+                    {
+                        return;
+                    }
+
                     ClearFocus();
                 }
             }
@@ -215,10 +207,17 @@ namespace DialogMaker
             base.OnRenderSizeChanged(sizeInfo);
             _blurredBackgroundMainClipRect.Rect = new(sizeInfo.NewSize);
         }
-
-        private void OnBackgroundRendererControllerRendererChanged(object? sender, ValueChangedEventArgs<RenderTargetBitmap?> e)
+        protected override void OnStateChanged(EventArgs e)
         {
-            _blurredBackgroundBrush.ImageSource = e.NewValue;
+            base.OnStateChanged(e);
+
+            if (WindowState == WindowState.Maximized)
+            {
+                _mainGrid.Margin = new(8);
+                return;
+            }
+
+            _mainGrid.Margin = new(0);
         }
 
         private void OnProjectStructSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
@@ -232,10 +231,12 @@ namespace DialogMaker
         {
             if (e.OldValue?.TabContent is DialogAndResourcesView oldDialogView)
             {
+                _blurredBackgroundBrush.Visual = null;
                 oldDialogView.DiagramViewRedraw -= OnDialogViewDiagramViewRedraw;
             }
             if (e.NewValue?.TabContent is DialogAndResourcesView newDialogView)
             {
+                _blurredBackgroundBrush.Visual = newDialogView._diagram.Canvas;
                 newDialogView.DiagramViewRedraw += OnDialogViewDiagramViewRedraw;
             }
             if (e.NewValue is IActionsItemTab actionItem && actionItem.Actions != null)
@@ -249,52 +250,19 @@ namespace DialogMaker
             _actionButtonsContainer.Visibility = Visibility.Collapsed;
         }
 
-        private bool _isRendering;
-
         private async void OnDialogViewDiagramViewRedraw(object? sender, ItemEventArgs<DiagramView> e)
         {
-            if (_isRendering || sender is not DialogAndResourcesView dialogView)
+            if (sender is not DialogAndResourcesView dialogView)
             {
                 return;
             }
 
-            Point position;
+            var clipRect = dialogView.GetDiagramRect();
+            Point offset = new(_mainGrid.Margin.Left, _mainGrid.Margin.Top);
+            clipRect.Location = (Point)(clipRect.Location - offset);
 
-            try
-            {
-                position = e.Item.TransformToVisual(this).Transform(new(0, 0));
-            }
-            catch (Exception error)
-            {
-                Debug.WriteLine(error);
-                return;
-            }
-
-            _isRendering = true;
-            //await Task.Delay(100);
-
-            position *= -1;
-            PresentationSource source = PresentationSource.FromVisual(this);
-            Size dpi = new(96, 96);
-
-            if (source != null)
-            {
-                dpi.Width *= source.CompositionTarget.TransformToDevice.M11;
-                dpi.Height *= source.CompositionTarget.TransformToDevice.M22;
-            }
-
-            int sizePart = 2;
-            dpi /= sizePart;
-            var size = RenderSize / sizePart;
-
-            _backgroundRendererController.Size = size;
-            _backgroundRendererController.Dpi = dpi;
-            _backgroundRendererController.Render(e.Item.Canvas);
-
-            _blurredBackgroundBrush.Viewbox = new(position, _blurredBackground.RenderSize);
-            _blurredBackgroundDiagramClipRect.Rect = dialogView.GetDiagramRect();
-
-            _isRendering = false;
+            _blurredBackgroundBrush.Viewbox = new(offset, dialogView._diagramSizeReference.RenderSize);
+            _blurredBackgroundDiagramClipRect.Rect = clipRect;
         }
 
         #endregion

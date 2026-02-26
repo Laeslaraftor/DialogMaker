@@ -1,12 +1,11 @@
-﻿using DialogMaker.Lib;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace DialogMaker.Editor.Menus
 {
     public class ContextMenuAction : ContextMenuItemModifier, IContextMenuModifier, ICommand
     {
-        public ContextMenuAction(string name, Action<object?> execute, string? icon = null)
+        public ContextMenuAction(string name, Action<object?>? execute, string? icon = null)
             : this(name, execute, null, icon)
         {
         }
@@ -18,7 +17,7 @@ namespace DialogMaker.Editor.Menus
             : this(name, execute, canExecute, icon)
         {
         }
-        public ContextMenuAction(string name, Action<object?> execute, Func<object?, bool>? canExecute, string? icon = null)
+        public ContextMenuAction(string name, Action<object?>? execute, Func<object?, bool>? canExecute, string? icon = null)
             : base(icon, name)
         {
             Icon = icon;
@@ -29,8 +28,8 @@ namespace DialogMaker.Editor.Menus
 
         public event EventHandler? CanExecuteChanged;
 
-        public Action<object?> Execute { get; }
-        public Func<object?, bool>? CanExecute { get; }
+        public Action<object?>? Execute { get; protected set; }
+        public Func<object?, bool>? CanExecute { get; protected set; }
         public object? CommandParameter
         {
             get => field;
@@ -50,7 +49,13 @@ namespace DialogMaker.Editor.Menus
         public void Modify(ContextMenu menu, ItemCollection items)
         {
             var item = GetItem(menu, items);
+            Modify(menu, item);
+
             items.Add(item);
+        }
+
+        protected virtual void Modify(ContextMenu menu, MenuItem item)
+        {
         }
 
         bool ICommand.CanExecute(object? parameter)
@@ -64,7 +69,7 @@ namespace DialogMaker.Editor.Menus
         }
         void ICommand.Execute(object? parameter)
         {
-            Execute(parameter);
+            Execute?.Invoke(parameter);
         }
 
         protected override void SetupItem(MenuItem item)

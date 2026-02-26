@@ -54,6 +54,11 @@ namespace DialogMaker.Lib.Elements
 
         #region Управление
 
+        public void FocusSearch()
+        {
+            _searchValueEntry.TextBox.Focus();
+        }
+
         private void Search(string? value)
         {
             var mode = Mode;
@@ -234,7 +239,7 @@ namespace DialogMaker.Lib.Elements
                 handled = false;
             }
 
-            e.Handled = handled;
+            //e.Handled = handled;
         }
 
         private void OnEntryTextChanged(object sender, TextChangedEventArgs e)
