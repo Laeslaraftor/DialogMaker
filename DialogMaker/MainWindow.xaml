@@ -51,22 +51,87 @@
                 <BlurEffect Radius="50"/>
             </Rectangle.Effect>
         </Rectangle>
-        <Menu Grid.ColumnSpan="3" Margin="0,0,150,0">
-            <MenuItem Header="Файл" shell:WindowChrome.IsHitTestVisibleInChrome="True">
-                <MenuItem Header="Создать"
+        <Grid Grid.ColumnSpan="3" IsHitTestVisible="False"
+              Height="{Binding ElementName=_topMenu, Path=ActualHeight}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="0.25*" 
+                                  MinWidth="{Binding ElementName=_topMenu, Path=ActualWidth}"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Border>
+                <Border.OpacityMask>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                        <GradientStop Color="#FF000000" Offset="0.5"/>
+                        <GradientStop Color="#00000000" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.OpacityMask>
+                <Rectangle Margin="-75,-100,0,-75" Fill="#ff2b6aff">
+                    <Rectangle.OpacityMask>
+                        <ImageBrush ImageSource="Lib/Images/HorizontalGradientBlock.png"/>
+                    </Rectangle.OpacityMask>
+                </Rectangle>
+            </Border>
+            <StackPanel x:Name="_logoContainer" 
+                        Orientation="Horizontal" Grid.ColumnSpan="2">
+                <Border Background="{DynamicResource TextFillColorPrimaryBrush}"
+                    Width="30" Height="30" Margin="12,0,0,0">
+                    <Border.OpacityMask>
+                        <ImageBrush ImageSource="Lib/Images/DialogMakerLogoSmall.png"/>
+                    </Border.OpacityMask>
+                </Border>
+                <TextBlock Text="Dialogue Maker" Margin="8,0,0,0"
+                       FontWeight="ExtraBold" FontSize="24"
+                       VerticalAlignment="Center"/>
+            </StackPanel>
+        </Grid>
+        <Grid x:Name="_menuContainer" Margin="0,0,150,0" Opacity="0"
+              VerticalAlignment="Top" Grid.ColumnSpan="3">
+            <Menu x:Name="_topMenu" HorizontalAlignment="Left">
+                <MenuItem Header="Файл" 
+                      shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <MenuItem Header="Создать"
                           Command="{Binding CreateProjectCommand}"/>
-                <MenuItem Header="Открыть"
+                    <MenuItem Header="Открыть"
                           Command="{Binding OpenProjectCommand}"/>
-                <MenuItem Header="Сохранить"
+                    <MenuItem Header="Сохранить"
                           Command="{Binding Project.SaveCommand}"/>
-                <Separator/>
-                <MenuItem Header="Экспорт"
+                    <Separator/>
+                    <MenuItem Header="Экспорт"
                           Command="{Binding ExportProjectCommand}"/>
-                <Separator/>
-                <MenuItem Header="Закрыть"
+                    <Separator/>
+                    <MenuItem Header="Закрыть"
                           Command="{Binding CloseProjectCommand}"/>
-            </MenuItem>
-        </Menu>
+                </MenuItem>
+                <MenuItem Header="Правка" 
+                      shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <MenuItem Header="Отменить" InputGestureText="Ctrl+Z"/>
+                    <MenuItem Header="Вернуть" InputGestureText="Ctrl+Shift+Z"/>
+                    <Separator/>
+                    <MenuItem Header="Вырезать" InputGestureText="Ctrl+X"/>
+                    <MenuItem Header="Копировать" InputGestureText="Ctrl+C"/>
+                    <MenuItem Header="Вставить" InputGestureText="Ctrl+V"/>
+                    <Separator/>
+                    <MenuItem Header="Выделить всё" InputGestureText="Ctrl+A"/>
+                </MenuItem>
+                <MenuItem Header="Средства" 
+                      shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <MenuItem Header="Редактор строк"/>
+                    <MenuItem Header="Предпросмотр структуры диалога"/>
+                    <Separator/>
+                    <MenuItem Header="Параметры"/>
+                </MenuItem>
+                <MenuItem Header="Окно" 
+                      shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <MenuItem Header="Закрыть все вкладки"/>
+                    <MenuItem Header="Закрыть все вкладки, кроме текущей"/>
+                </MenuItem>
+                <MenuItem Header="Справка" 
+                      shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <MenuItem Header="Страница на GitHub"/>
+                    <MenuItem Header="О программе"/>
+                </MenuItem>
+            </Menu>
+        </Grid>
         <Border x:Name="_actionButtonsContainer" Grid.ColumnSpan="3"
                 shell:WindowChrome.IsHitTestVisibleInChrome="True"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -223,7 +288,7 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        <GridSplitter Grid.RowSpan="2" Grid.Column="1"/>
+        <GridSplitter Grid.Row="1" Grid.Column="1"/>
         <lib:NodeSelector x:Name="_nodeSelector" Panel.ZIndex="100" 
                           Grid.ColumnSpan="100" Grid.RowSpan="100" 
                           HorizontalAlignment="Left" VerticalAlignment="Top" 

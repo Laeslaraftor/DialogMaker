@@ -35,6 +35,18 @@ namespace DialogMaker
             return true;
         }
 
+        public static bool IsOpen(this Menu menu)
+        {
+            foreach (MenuItem item in menu.Items)
+            {
+                if (item.IsSubmenuOpen)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
         public static object? GetValue(this IEnumerable enumerable, int index)
         {
             int i = 0;

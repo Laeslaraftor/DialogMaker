@@ -12,7 +12,10 @@
   <ItemGroup>
     <None Remove="Lib\Fonts\CascadiaMono-Italic.ttf" />
     <None Remove="Lib\Fonts\CascadiaMono.ttf" />
+    <None Remove="Lib\Images\DialogMakerLogo.png" />
+    <None Remove="Lib\Images\DialogMakerLogoSmall.png" />
     <None Remove="Lib\Images\EmptyBackgroundPlaceholder.jpg" />
+    <None Remove="Lib\Images\HorizontalGradientBlock.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -22,7 +25,10 @@
     <Content Include="Lib\Fonts\CascadiaMono.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Resource Include="Lib\Images\DialogMakerLogo.png" />
+    <Resource Include="Lib\Images\DialogMakerLogoSmall.png" />
     <Resource Include="Lib\Images\EmptyBackgroundPlaceholder.jpg" />
+    <Resource Include="Lib\Images\HorizontalGradientBlock.png" />
   </ItemGroup>
 
   <ItemGroup>

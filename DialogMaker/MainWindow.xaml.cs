@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Editor;
+﻿using Acly.Numbers;
+using DialogMaker.Core.Editor;
 using DialogMaker.Editor;
 using DialogMaker.Lib;
 using DialogMaker.Lib.Controllers;
@@ -44,6 +45,7 @@ namespace DialogMaker
         private readonly ExportView _exportView = new();
         private readonly NodeSelectorController _nodeSelectorController;
         private readonly HotkeysController _hotkeysController;
+        private bool _topMenuIsShowed;
 
         #region Управление
 
@@ -147,6 +149,41 @@ namespace DialogMaker
 
         #region События
 
+        protected override void OnPreviewMouseMove(MouseEventArgs e)
+        {
+            base.OnPreviewMouseMove(e);
+
+            if (_topMenu.IsOpen())
+            {
+                return;
+            }
+
+            var position = e.GetPosition(this);
+            UIElement elementToShow = _logoContainer;
+            UIElement elementToHide = _menuContainer;
+
+            if (_menuContainer.ActualHeight * 2 > position.Y)
+            {
+                if (_topMenuIsShowed)
+                {
+                    return;
+                }
+
+                _topMenuIsShowed = true;
+                (elementToShow, elementToHide) = (elementToHide, elementToShow);
+            }
+            else if (!_topMenuIsShowed)
+            {
+                return;
+            }
+            else
+            {
+                _topMenuIsShowed = false;
+            }
+
+            AnimationsHelper.FadeIn(elementToShow);
+            AnimationsHelper.FadeOut(elementToHide);
+        }
         protected override async void OnPreviewMouseDown(MouseButtonEventArgs e)
         {
             base.OnPreviewMouseDown(e);
