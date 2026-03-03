@@ -1,5 +1,4 @@
-﻿using Acly.Numbers;
-using DialogMaker.Core.Editor;
+﻿using DialogMaker.Core.Editor;
 using DialogMaker.Editor;
 using DialogMaker.Lib;
 using DialogMaker.Lib.Controllers;

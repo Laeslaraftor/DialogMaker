@@ -68,6 +68,11 @@ namespace DialogMaker.Lib.Controllers
 
         private void OnPortPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (IsDisposed || Port.IsDisposed)
+            {
+                return;
+            }
+
             Update();
         }
 

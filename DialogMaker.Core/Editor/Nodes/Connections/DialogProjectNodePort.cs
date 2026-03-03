@@ -43,6 +43,15 @@ namespace DialogMaker.Core.Editor.Nodes
                 _name ??= Node.GetName(this) ?? string.Empty;
                 return _name;
             }
+            internal set
+            {
+                if (_name != value)
+                {
+                    InvokePropertyChanging(nameof(Name));
+                    _name = value;
+                    InvokePropertyChanged(nameof(Name));
+                }
+            }
         }
         public INode Node { get; }
         public DialogNodeConnectionType ConnectionType { get; }

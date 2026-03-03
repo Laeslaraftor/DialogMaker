@@ -17,7 +17,6 @@ namespace DialogMaker.Editor
         {
             Node = node;
             Original = port;
-            Name = metadata.Name;
             Description = metadata.Description;
 
             if (!_colorBrushes.TryGetValue(port.Color, out var colorBrush))
@@ -36,7 +35,7 @@ namespace DialogMaker.Editor
 
         public DialogProjectNode Node { get; }
         public DialogProjectNodePort Original { get; }
-        public string Name { get; }
+        public string Name => Original.Name;
         public string Description { get; }
         public SolidColorBrush Color { get; }
         public bool Inverted
@@ -110,6 +109,10 @@ namespace DialogMaker.Editor
             {
                 InvokePropertyChanged(nameof(IsActive));
                 InvokePropertyChanged(e.PropertyName);
+            }
+            else if (e.PropertyName == nameof(Name))
+            {
+                InvokePropertyChanged(e);
             }
         }
         private void OnNodePropertyChanged(object? sender, PropertyChangedEventArgs e)

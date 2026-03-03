@@ -1,15 +1,17 @@
 ﻿using Acly;
 using DialogMaker.Core.Common;
+using DialogMaker.Core.Editor.Collections;
+using DialogMaker.Core.Editor.Messages;
 using DialogMaker.Core.Executioning;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
-using System.Collections.Specialized;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -198,10 +200,26 @@ namespace DialogMaker.Core.Editor.Nodes
                 }
             }
         }
+        public ReferenceReadOnlyList<Message> Messages
+        {
+            get
+            {
+                field ??= new(InternalMessages);
+                return field;
+            }
+        }
 
         // дополнительные порты имеют отрицательные идентификаторы
-        protected ObservableDictionary<DialogProjectNodeInput, DialogProjectNodeMetadata> ExtraInputs { get; } = [];
-        protected ObservableDictionary<DialogProjectNodeOutput, DialogProjectNodeMetadata> ExtraOutputs { get; } = [];
+        protected ObservableListAsDictionary<DialogProjectNodeInput, DialogProjectNodeMetadata> ExtraInputs { get; } = [];
+        protected ObservableListAsDictionary<DialogProjectNodeOutput, DialogProjectNodeMetadata> ExtraOutputs { get; } = [];
+        protected EditableCollection<Message> InternalMessages
+        {
+            get
+            {
+                field ??= [];
+                return field;
+            }
+        }
 
         private Dictionary<DialogProjectNodeInput, DialogProjectNodeMetadata>? _baseInputs;
         private Dictionary<DialogProjectNodeOutput, DialogProjectNodeMetadata>? _baseOutputs;
@@ -618,7 +636,7 @@ namespace DialogMaker.Core.Editor.Nodes
 
             return result;
         }
-        private static ObservableDictionary<TPort, DialogProjectNodeMetadata> CombineDictionaries<TPort>(Dictionary<TPort, DialogProjectNodeMetadata> main, ObservableDictionary<TPort, DialogProjectNodeMetadata> extraPorts)
+        private static ObservableDictionary<TPort, DialogProjectNodeMetadata> CombineDictionaries<TPort>(Dictionary<TPort, DialogProjectNodeMetadata> main, ObservableListAsDictionary<TPort, DialogProjectNodeMetadata> extraPorts)
             where TPort : DialogProjectNodePort
         {
             ObservableDictionary<TPort, DialogProjectNodeMetadata> result = [.. main];
@@ -630,7 +648,7 @@ namespace DialogMaker.Core.Editor.Nodes
 
             return result;
         }
-        private static void UpdateDynamicDictionary<TPort>(ObservableDictionary<TPort, DialogProjectNodeMetadata>? dynamic, Dictionary<TPort, DialogProjectNodeMetadata>? main, ObservableDictionary<TPort, DialogProjectNodeMetadata>? extra)
+        private static void UpdateDynamicDictionary<TPort>(ObservableDictionary<TPort, DialogProjectNodeMetadata>? dynamic, Dictionary<TPort, DialogProjectNodeMetadata>? main, ObservableListAsDictionary<TPort, DialogProjectNodeMetadata>? extra)
             where TPort : DialogProjectNodePort
         {
             if (dynamic == null || main == null || extra == null)

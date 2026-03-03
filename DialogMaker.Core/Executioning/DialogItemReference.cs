@@ -188,6 +188,10 @@ namespace DialogMaker.Core.Executioning
 
                 return new LocalCharacter(id, name);
             }
+            else if (Type == DialogItemType.Trigger)
+            {
+                return TriggerMetadata.Parse(Value.ToString());
+            }
             if (!ResourcePath.TryParse(Value.ToString(), out var path))
             {
                 throw new ArgumentException($"Не удалось получить путь ресурса");
@@ -419,6 +423,10 @@ namespace DialogMaker.Core.Executioning
             {
                 return Create(resource);
             }
+            else if (item is TriggerMetadata trigger)
+            {
+                return trigger.CreateReference();
+            }
             else if (item is string ||
                      item is float ||
                      item is int ||
@@ -426,6 +434,7 @@ namespace DialogMaker.Core.Executioning
             {
                 return new(DialogItemType.Variable, new(item));
             }
+
             throw new ArgumentException($"Невозможно создать ссылку для неизвестного типа: {item?.GetType().FullName}", nameof(item));
         }
 

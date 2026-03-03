@@ -7,6 +7,7 @@
         String,
         StringCollection,
         JoinInfo,
-        Character
+        Character,
+        Trigger
     }
 }

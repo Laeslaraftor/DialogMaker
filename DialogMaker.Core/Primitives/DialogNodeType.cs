@@ -34,7 +34,7 @@ namespace DialogMaker.Core
         Trigger,
 
         [Name("Завершение"), Node(typeof(DialogProjectEndNode))]
-        [Description("Завершить текущий диалог.")]
+        [Description("Завершить текущий диалог или поток.")]
         [Path("Диалог")]
         End,
 
