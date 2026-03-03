@@ -11,28 +11,13 @@ namespace DialogMaker.Core.Executioning.Internal
 
         private readonly IInternalDialogExecutor _executor = executor;
 
-        public async Task HandleTrigger(string name, CancellationToken cancellationToken)
+        public async Task HandleTrigger(Trigger trigger, CancellationToken cancellationToken)
         {
             await _executor.HandleDialog(async h =>
             {
-                await h.HandleTrigger(name, cancellationToken);
+                await h.HandleTrigger(trigger, cancellationToken);
             }, cancellationToken);
         }
-
-        //public async Task ShowColorReplica(ICharacter? character, Color backgroundColor, Color textColor, IResourceString text, CancellationToken cancellationToken)
-        //{
-        //    await _executor.HandleDialog(async h =>
-        //    {
-        //        await h.ShowColorReplica(character, backgroundColor, textColor, text, cancellationToken);
-        //    }, cancellationToken);
-        //}
-        //public async Task ShowFullscreenReplica(ICharacter? character, IResourceItem? background, IResourceString text, CancellationToken cancellationToken)
-        //{
-        //    await _executor.HandleDialog(async h =>
-        //    {
-        //        await h.ShowFullscreenReplica(character, background, text, cancellationToken);
-        //    }, cancellationToken);
-        //}
         public async Task ShowReplica(ICharacter? character, ICharacter? listener, IResourceString text, CancellationToken cancellationToken)
         {
             await _executor.HandleDialog(async h =>

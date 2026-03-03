@@ -19,6 +19,7 @@ namespace DialogMaker.Core
         [Name("Список"), Type(typeof(EditableCollection<object>), null!)]
         List = 1 << 5,
         AllWithoutList = Number | String | Bool | Resource,
+        Native = Number | String | Bool,
         All = AllWithoutList | List
     }
 }

@@ -12,7 +12,7 @@ namespace DialogMaker.Core.Executioning
             }
 
             bool skipNext = false;
-            string currentValue = string.Empty;
+            string? currentValue = null;
 
             foreach (var c in value)
             {
@@ -25,7 +25,7 @@ namespace DialogMaker.Core.Executioning
                     }
                     else if (c == separator)
                     {
-                        handler(currentValue);
+                        handler(currentValue ?? string.Empty);
                         currentValue = string.Empty;
                         continue;
                     }
@@ -35,7 +35,7 @@ namespace DialogMaker.Core.Executioning
                 skipNext = false;
             }
 
-            if (!string.IsNullOrEmpty(currentValue))
+            if (currentValue != null)
             {
                 handler(currentValue);
             }

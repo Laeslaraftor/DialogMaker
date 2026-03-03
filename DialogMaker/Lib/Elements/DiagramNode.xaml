@@ -4,8 +4,12 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:DialogMaker.Lib.Elements"
+             xmlns:converters="clr-namespace:DialogMaker.Lib.Converters"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <converters:MessageTypeConverter x:Key="_messageTypeConverter"/>
+    </UserControl.Resources>
     <Border x:Name="_main"
             Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
             BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}" 
@@ -17,6 +21,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="5"/>
@@ -38,14 +43,34 @@
             <Border VerticalAlignment="Bottom" Grid.ColumnSpan="3"
                     Background="{DynamicResource SurfaceStrokeColorDefaultBrush}"
                     Height="1"/>
-            <StackPanel x:Name="_inputs" Grid.Row="1"
+            <ListView x:Name="_messagesList" 
+                      Background="Black"
+                      Grid.Row="1" Grid.ColumnSpan="3"
+                      HorizontalAlignment="Center"
+                      Style="{StaticResource NoSelectionListView}"
+                      MaxWidth="350" Margin="4,0">
+                <ListView.Template>
+                    <ControlTemplate>
+                        <ItemsPresenter/>
+                    </ControlTemplate>
+                </ListView.Template>
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <local:ToolTipView Text="{Binding Text}"
+                                           MessageType="{Binding Path=Importance, Converter={StaticResource _messageTypeConverter}}"
+                                           Commands="{Binding Commands}"
+                                           Margin="0,4,0,0"/>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+            <StackPanel x:Name="_inputs" Grid.Row="2"
                         Margin="-4,0,4,0" Orientation="Vertical"/>
-            <StackPanel x:Name="_outputs" Grid.Row="1" Margin="4,0,-4,0"
+            <StackPanel x:Name="_outputs" Grid.Row="2" Margin="4,0,-4,0"
                         Grid.Column="2" Orientation="Vertical"/>
-            <StackPanel x:Name="_properties" Grid.Row="1" 
+            <StackPanel x:Name="_properties" Grid.Row="2" 
                         Grid.Column="1" Margin="4" MaxWidth="300"/>
             <Border x:Name="_selectionOutline" Visibility="Collapsed"
-                    Grid.ColumnSpan="3" Grid.RowSpan="3"
+                    Grid.ColumnSpan="3" Grid.RowSpan="4"
                     CornerRadius="10" Margin="-4"
                     BorderBrush="{DynamicResource FocusStrokeColorOuterBrush}"
                     BorderThickness="2" Panel.ZIndex="-1">

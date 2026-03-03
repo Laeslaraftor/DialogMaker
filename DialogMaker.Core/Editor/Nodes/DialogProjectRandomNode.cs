@@ -50,7 +50,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 return field;
             }
         }
-        [NodeOutput("Случайное значение"), Description("Вывод случайного значение из заданного диапазона")]
+        [NodeOutput("Результат"), Description("Вывод случайного значения из заданного диапазона")]
         public DialogProjectNodeOutputNumber Output
         {
             get

@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using DialogMaker.Core.Editor.Messages;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
@@ -22,6 +23,11 @@ namespace DialogMaker.Lib.Elements
             get => (MessageType)GetValue(MessageTypeProperty);
             set => SetValue(MessageTypeProperty, value);
         }
+        public IEnumerable<MessageCommand>? Commands
+        {
+            get => GetValue(CommandsProperty) as IEnumerable<MessageCommand>;
+            set => SetValue(CommandsProperty, value);
+        }
 
         #region Управление
 
@@ -29,6 +35,7 @@ namespace DialogMaker.Lib.Elements
         {
             _border.Background = scheme.Background;
             _text.Foreground = scheme.Text;
+            _commandsList.Foreground = scheme.Text;
         }
 
         #endregion
@@ -67,6 +74,13 @@ namespace DialogMaker.Lib.Elements
 
             view.SetColorsScheme(scheme);
         }
+        private static void OnCommandsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is ToolTipView view)
+            {
+                view._commandsList.ItemsSource = e.NewValue as IEnumerable<MessageCommand>;
+            }
+        }
 
         #endregion
 
@@ -76,6 +90,8 @@ namespace DialogMaker.Lib.Elements
             typeof(ToolTipView), new(string.Empty, OnTextChanged));
         public static readonly DependencyProperty MessageTypeProperty = DependencyProperty.Register(nameof(MessageType), typeof(MessageType),
             typeof(ToolTipView), new(MessageType.Normal, OnStatusChanged));
+        public static readonly DependencyProperty CommandsProperty = DependencyProperty.Register(nameof(Commands), typeof(IEnumerable<MessageCommand>),
+            typeof(ToolTipView), new(OnCommandsChanged));
 
         #endregion
 

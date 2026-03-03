@@ -1,6 +1,5 @@
-﻿using DialogMaker.Core.Common;
+﻿using DialogMaker.Core.Executioning.Internal;
 using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -12,9 +11,16 @@ namespace DialogMaker.Core.Executioning
         {
             CheckArgs(context, args, 1);
 
-            var triggerId = context.Resources.GetVariable(args[0]).ToString();
+            var resource = context.Resources.GetResource(args[0]);
 
-            await DispatchHandler(context, h => h.HandleTrigger(triggerId, context.CancellationToken));
+            if (resource is not TriggerMetadata metadata)
+            {
+                throw new DialogExecutionException("Не удалось получить метаданные события");
+            }
+
+            var trigger = Trigger.Create(metadata, context);
+
+            await DispatchHandler(context, h => h.HandleTrigger(trigger, context.CancellationToken));
         }
 
         #endregion

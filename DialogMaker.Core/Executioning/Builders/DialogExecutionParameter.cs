@@ -1,7 +1,9 @@
 ﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Editor.Nodes;
+using DialogMaker.Core.Editor.Nodes.Structs;
 using DialogMaker.Core.Executioning.Internal;
 using System;
+using System.Collections.Generic;
 
 namespace DialogMaker.Core.Executioning.Builders
 {
@@ -34,6 +36,10 @@ namespace DialogMaker.Core.Executioning.Builders
         public DialogExecutionParameter(JoinOperationInfoBuilder joinBuilder)
         {
             Value = joinBuilder;
+        }
+        public DialogExecutionParameter(TriggerNodeCompileTimeInfo triggerNodeInfo)
+        {
+            Value = triggerNodeInfo;
         }
         public DialogExecutionParameter(int value, bool isRawNumber)
         {
@@ -104,6 +110,24 @@ namespace DialogMaker.Core.Executioning.Builders
             {
                 var info = joinBuilder.Compile(context);
                 return contextBuilder.AddResource(info);
+            }
+            else if (Value is TriggerNodeCompileTimeInfo triggerInfo)
+            {
+                Dictionary<string, int> inputs = [];
+                Dictionary<string, int> outputs = [];
+
+                foreach (var info in triggerInfo.Inputs)
+                {
+                    inputs.Add(info.Key, info.Value.AddToContext(context));
+                }
+                foreach (var info in triggerInfo.Outputs)
+                {
+                    outputs.Add(info.Key, info.Value.AddToContext(context));
+                }
+
+                TriggerMetadata metadata = new(triggerInfo.Id, inputs, outputs);
+
+                return contextBuilder.AddResource(metadata);
             }
 
             throw new InvalidOperationException($"Невозможно добавить значение в контекст, так как оно либо пустое, либо имеет недопустимый тип. Значение: {Value}");

@@ -6,7 +6,8 @@ using System.Globalization;
 
 namespace DialogMaker.Core.Executioning.Internal
 {
-    internal readonly struct TriggerMetadata(string id, IDictionary<string, int> inputs, IDictionary<string, int> outputs) : IResourceItem
+    internal readonly struct TriggerMetadata(string id, IDictionary<string, int> inputs, IDictionary<string, int> outputs) 
+        : IResourceItem, IEquatable<TriggerMetadata>
     {
         public string Id { get; } = id;
         public DialogResourceType ResourceType => DialogResourceType.String;
@@ -55,6 +56,23 @@ namespace DialogMaker.Core.Executioning.Internal
             }
 
             return $"{Format(Id)}:{DictionaryToString(Inputs)}:{DictionaryToString(Outputs)}";
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is TriggerMetadata other && Equals(other);
+        }
+        public bool Equals(TriggerMetadata other)
+        {
+            return Id == other.Id &&
+                   ResourceType == other.ResourceType &&
+                   IsSeparated == other.IsSeparated &&
+                   Inputs == other.Inputs &&
+                   Outputs == other.Outputs;
+        }
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Id, ResourceType, IsSeparated, Inputs, Outputs);
         }
 
         #endregion

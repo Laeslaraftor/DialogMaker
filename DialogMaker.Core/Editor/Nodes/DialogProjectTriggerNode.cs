@@ -1,6 +1,7 @@
 ﻿using Acly;
 using DialogMaker.Core.Editor.Collections;
 using DialogMaker.Core.Editor.Messages;
+using DialogMaker.Core.Editor.Nodes.Structs;
 using DialogMaker.Core.Executioning;
 using System;
 using System.Collections.Generic;
@@ -116,13 +117,26 @@ namespace DialogMaker.Core.Editor.Nodes
 
         public override void Compile(DialogCompilerContext context)
         {
-            var triggerId = TriggerId;
+            TriggerNodeCompileTimeInfo info = new(TriggerId ?? string.Empty);
 
-            if (!string.IsNullOrEmpty(triggerId))
+            foreach (var message in InternalMessages)
             {
-                var opcode = context.Section.CreateOperation(DialogByteCode.Trigger);
-                opcode.Arguments[0] = new(triggerId);
+                throw new InvalidOperationException(message.Text);
             }
+
+            foreach (var input in ExtraInputs.Keys)
+            {
+                var parameter = context.RecursiveCompileConnections(input);
+                info.Inputs.Add(input.Name, parameter);
+            }
+            foreach (var output in ExtraOutputs.Keys)
+            {
+                var parameter = context.Resources.GetOrCreateVariable(output);
+                info.Outputs.Add(output.Name, parameter);
+            }
+
+            var opcode = context.Section.CreateOperation(DialogByteCode.Trigger);
+            opcode.Arguments[0] = new(info);
 
             context.CompileOutputs(Output);
         }
@@ -193,16 +207,33 @@ namespace DialogMaker.Core.Editor.Nodes
         }
         private bool ValidateName(EditableCollection<string?> names, string? name)
         {
-            return name != null && !names.Contains(name);
+            if (string.IsNullOrEmpty(name))
+            {
+                return false;
+            }
+
+            int equalsCount = 0;
+
+            foreach (var otherName in names)
+            {
+                if (name.Equals(otherName))
+                {
+                    equalsCount++;
+                }
+            }
+
+            return 1 >= equalsCount;
         }
         private void AddOrRemoveMessage(EditableCollection<string?> namesToCheck, Message message, ref bool alreadyAdded)
         {
-            if (ValidateNames(namesToCheck) && alreadyAdded)
+            bool allNamesValid = ValidateNames(namesToCheck);
+
+            if (allNamesValid && alreadyAdded)
             {
                 alreadyAdded = false;
                 InternalMessages.Remove(message);
             }
-            else if (!_invalidInputNameMessageAdded)
+            else if (!allNamesValid && !alreadyAdded)
             {
                 alreadyAdded = true;
                 InternalMessages.Add(message);
@@ -238,7 +269,7 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             if (e.Action != CollectionItemAction.Move)
             {
-                AddOrRemoveMessage(InputsName, InvalidOutputNameMessage, ref _invalidOutputNameMessageAdded);
+                AddOrRemoveMessage(OutputsName, InvalidOutputNameMessage, ref _invalidOutputNameMessageAdded);
             }
         }
 
@@ -309,8 +340,8 @@ namespace DialogMaker.Core.Editor.Nodes
 
         public const string FixCommandName = "Исправить";
         public const string InvalidPortsNameTitle = "Недопустимые параметры";
-        public const string InvalidInputsNameText = "Один или несколько входных параметров либо не имеют названия, либо имеют уже занятое название";
-        public const string InvalidOutputsNameText = "Один или несколько выходящих значений либо не имеют названия, либо имеют уже занятое название";
+        public const string InvalidInputsNameText = "Входящие параметры должны иметь уникальные имена";
+        public const string InvalidOutputsNameText = "Порты вывода должны иметь уникальные имена";
 
 
         #endregion

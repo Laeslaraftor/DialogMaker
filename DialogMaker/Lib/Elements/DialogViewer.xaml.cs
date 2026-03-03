@@ -1,8 +1,11 @@
 ﻿using DialogMaker.Core;
 using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
+using Trigger = DialogMaker.Core.Executioning.Trigger;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -18,6 +21,7 @@ namespace DialogMaker.Lib.Elements
         private readonly ElementsPool<DragView> _blocksPool = new();
         private readonly ElementsPool<TextBlock> _textPool = new();
         private readonly ElementsPool<DialogChoice> _dialogChoice = new();
+        private readonly ElementsPool<TriggerHandlerView> _triggerPool = new();
 
         #region Управление
 
@@ -27,6 +31,7 @@ namespace DialogMaker.Lib.Elements
             _textPool.Clear();
             _dialogChoice.Clear();
             _blocksPool.Clear();
+            _triggerPool.Clear();
         }
 
         public async Task ShowReplica(ICharacter? character, ICharacter? listener, IResourceString text, CancellationToken cancellationToken)
@@ -39,14 +44,6 @@ namespace DialogMaker.Lib.Elements
             AddElement(null, null, $"{character?.Name} показывает какую то эмоцию");
             await Task.DelaySafe(200, cancellationToken);
         }
-        //public async Task ShowColorReplica(ICharacter? character, SystemColor backgroundColor, SystemColor textColor, IResourceString text, CancellationToken cancellationToken)
-        //{
-        //    await ShowReplica(character, text, cancellationToken);
-        //}
-        //public async Task ShowFullscreenReplica(ICharacter? character, IResourceItem? background, IResourceString text, CancellationToken cancellationToken)
-        //{
-        //    await ShowReplica(character, text, cancellationToken);
-        //}
 
         public async Task<int> ShowChoice(ICharacter? character, ICharacter? listener, IStringCollection variants, CancellationToken cancellationToken)
         {
@@ -86,9 +83,15 @@ namespace DialogMaker.Lib.Elements
             return result;
         }
 
-        public async Task HandleTrigger(string name, CancellationToken cancellationToken)
+        public async Task HandleTrigger(Trigger trigger, CancellationToken cancellationToken)
         {
-            AddElement(null, null, $"Событие: {name}");
+            var triggerView = _triggerPool.GetElement();
+            var container = GetNewBlock();
+            container.Preview = triggerView;
+
+            container.BringIntoView();
+
+            await triggerView.Handle(trigger, cancellationToken);
         }
 
         private void AddElement(ICharacter? character, ICharacter? listener, string text)

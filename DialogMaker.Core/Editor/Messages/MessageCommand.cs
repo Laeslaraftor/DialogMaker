@@ -12,6 +12,7 @@ namespace DialogMaker.Core.Editor.Messages
         private MessageCommand(string name, Action<object?> handler, bool readOnly)
         {
             Name = name;
+            IsEnabled = true;
 
             _handler = handler;
             _isReadOnly = readOnly;

@@ -50,6 +50,12 @@ namespace DialogMaker.Lib.Converters
                 SecondCollection[Index] is InputField createdField && 
                 createdField.GetType() == fieldType)
             {
+                if (createdField.Value != null && Value != null &&
+                    !Equals(createdField.Value, Value))
+                {
+                    createdField.Value = Value;
+                }
+
                 return createdField;
             }
 

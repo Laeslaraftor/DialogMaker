@@ -116,6 +116,7 @@ namespace DialogMaker.Lib.Elements
             }
 
             _title.Text = newValue?.Name;
+            _messagesList.ItemsSource = newValue?.Original.Messages;
             Point position = (newValue?.Position).GetValueOrDefault();
 
             Canvas.SetElementPosition(this, position);

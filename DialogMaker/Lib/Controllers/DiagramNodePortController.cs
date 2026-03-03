@@ -39,11 +39,7 @@ namespace DialogMaker.Lib.Controllers
 
             if (PresetValueEditor != null)
             {
-                if (View.ExtraControl == PresetValueEditor.View)
-                {
-                    View.ExtraControl = null;
-                }
-
+                PresetValueEditor.View.RemoveFromParent();
                 PresetValueEditor.Dispose();
             }
 
