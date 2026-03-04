@@ -119,8 +119,8 @@ namespace DialogMaker.Core.Editor.Nodes
                 var currentType = GetType();
                 var valueToSave = GetValueToSave();
 
+                result.ValueType = valueToSave?.GetType();
                 result.Value = valueToSave;
-                result.ValueType = valueToSave?.GetType(); 
             }
 
             return result;

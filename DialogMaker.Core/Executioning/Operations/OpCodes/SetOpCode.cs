@@ -10,8 +10,8 @@ namespace DialogMaker.Core.Executioning
         {
             CheckArgs(context, args, 2);
 
-            var value2 = context.Resources.GetVariable(args[1]);
-            context.Resources.SetVariable(args[0], value2);
+            var value2 = context.Resources.GetResource(args[1]);
+            context.Resources.SetValue(args[0], value2);
         }
 
         #endregion

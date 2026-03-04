@@ -9,7 +9,7 @@ namespace DialogMaker.Core.Executioning
         protected override void Execute(DialogExecutionContext context, int[] args, OperandValue value1, OperandValue value2)
         {
             value1.Subtract(value2);    
-            context.Resources.SetVariable(args[0], value1);
+            context.Resources.SetValue(args[0], value1);
         }
 
         #endregion

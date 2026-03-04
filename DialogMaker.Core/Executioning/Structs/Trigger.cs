@@ -26,7 +26,7 @@ namespace DialogMaker.Core.Executioning
 
         public void SetOutput(string key, OperandValue value)
         {
-            _context.Resources.SetVariable(_metadata.Outputs[key], value);
+            _context.Resources.SetValue(_metadata.Outputs[key], value);
         }
 
         public bool Equals(Trigger other)

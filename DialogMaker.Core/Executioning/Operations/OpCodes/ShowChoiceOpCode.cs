@@ -23,7 +23,7 @@ namespace DialogMaker.Core.Executioning
 
             if (!context.CancellationToken.IsCancellationRequested)
             {
-                context.Resources.SetVariable(args[3], answer);
+                context.Resources.SetValue(args[3], answer);
             }
         }
 

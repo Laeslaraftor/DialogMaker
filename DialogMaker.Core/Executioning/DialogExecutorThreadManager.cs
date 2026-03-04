@@ -225,6 +225,7 @@ namespace DialogMaker.Core.Executioning
 
             _specialResources = newResources;
             _stack.Clear();
+            CurrentResources.Reset();
         }
 
         protected override void Dispose(bool isDisposing)

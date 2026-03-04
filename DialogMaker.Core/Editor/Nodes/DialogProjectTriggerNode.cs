@@ -161,11 +161,12 @@ namespace DialogMaker.Core.Editor.Nodes
         }
         protected override void Restore(DialogProjectDialogNodeSavedState savedState)
         {
-            base.Restore(savedState);
             TriggerId = savedState.GetProperty<string>(nameof(TriggerId));
 
             RestoreCollection(savedState, nameof(InputsName), InputsName);
             RestoreCollection(savedState, nameof(OutputsName), OutputsName);
+
+            base.Restore(savedState);
         }
 
         private void RestoreCollection(DialogProjectDialogNodeSavedState savedState, string propertyName, EditableCollection<string?> collection)
@@ -316,6 +317,8 @@ namespace DialogMaker.Core.Editor.Nodes
             }
             else if (e.Action == NotifyCollectionChangedAction.Remove)
             {
+                var port = ports.ValuesCollection[e.OldStartingIndex].Key;
+                port.Dispose();
                 ports.ValuesCollection.RemoveAt(e.OldStartingIndex);
             }
             else if (e.Action == NotifyCollectionChangedAction.Replace)

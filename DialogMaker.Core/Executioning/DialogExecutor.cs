@@ -93,7 +93,6 @@ namespace DialogMaker.Core.Executioning
             if (isolated)
             {
                 newResources = _isolatedResources;
-                _isolatedResources.Clear();
             }
 
             await _threadManager.Reset(newResources);

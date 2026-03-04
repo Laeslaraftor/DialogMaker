@@ -26,7 +26,7 @@ namespace DialogMaker.Core.Common
                 resourcesIndex.Add(info.Key, DialogItemReference.Parse(info.Value));
             }
 
-            _indexedResources = new(this, new(resourcesIndex));
+            _indexedResources = new(this, resourcesIndex);
             _bytecode = savedState.Bytecode;
         }
         private Dialog(DialogFolder folder, DialogProjectDialog dialog, DialogCompilerOutput compiledDialog)
@@ -37,7 +37,7 @@ namespace DialogMaker.Core.Common
             Folder = Path.Combine(folder.Folder, dialog.Id);
             Resources = new(this, dialog.Resources);
 
-            _indexedResources = new(this, new(compiledDialog.Context.GetGlobalValues()));
+            _indexedResources = compiledDialog.Context.Build(this);
 
             using MemoryStream codeStream = new();
             compiledDialog.Write(codeStream);
@@ -56,7 +56,7 @@ namespace DialogMaker.Core.Common
         IResourcesOwner? IResourcesOwner.Parent => Parent;
         IResourcesContainer IResourcesOwner.Resources => Resources;
 
-        private readonly DialogIndexedResources _indexedResources;
+        private readonly DialogRuntimeResources _indexedResources;
         private readonly List<DialogExecutor> _executors = [];
         private readonly byte[] _bytecode;
 
@@ -79,9 +79,9 @@ namespace DialogMaker.Core.Common
             } 
 
             var filePath = Path.Combine(Folder, $"{Id}.{FileExtension}");
-            Dictionary<int, string> resourcesIndexes = new(_indexedResources.Indexes.Count);
+            Dictionary<int, string> resourcesIndexes = new(_indexedResources.Items.Count);
 
-            foreach (var info in _indexedResources.Indexes)
+            foreach (var info in _indexedResources.Items)
             {
                 resourcesIndexes.Add(info.Key, info.Value.ToString());
             }

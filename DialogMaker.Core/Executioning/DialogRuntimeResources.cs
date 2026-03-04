@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Common;
+using DialogMaker.Core.Executioning.Internal;
 using DialogMaker.Core.Executioning.SavedStates;
 using System;
 using System.Collections.Generic;
@@ -24,9 +25,13 @@ namespace DialogMaker.Core.Executioning
             Items = new(references);
         }
         public DialogRuntimeResources(IResourcesOwner resourcesOwner, IDictionary<int, DialogItemReference> items)
+            : this(resourcesOwner, new ReadOnlyDictionary<int, DialogItemReference>(items))
+        {
+        }
+        public DialogRuntimeResources(IResourcesOwner resourcesOwner, ReadOnlyDictionary<int, DialogItemReference> items)
         {
             ResourcesOwner = resourcesOwner;
-            Items = new(items);
+            Items = items;
         }
 
         public IResourcesOwner ResourcesOwner { get; }
@@ -36,6 +41,16 @@ namespace DialogMaker.Core.Executioning
 
         #region Управление
 
+        public void Reset()
+        {
+            _resources.Clear();
+
+            foreach (var info in Items)
+            {
+                var item = info.Value.GetItem(ResourcesOwner);
+                _resources.Add(info.Key, item);
+            }
+        }
         public DialogResourcesSavedState Save()
         {
             DialogResourcesSavedState result = new();
@@ -47,7 +62,6 @@ namespace DialogMaker.Core.Executioning
 
             return result;
         }
-
         public IResourceItem GetItemFromReference(DialogItemReference reference)
         {
             return reference.GetItem(ResourcesOwner);
@@ -66,20 +80,17 @@ namespace DialogMaker.Core.Executioning
         {
             if (!TryGetResource(index, out var resource))
             {
-                throw GetIndexException(index);
-            }
-            if (resource is IVariable variable)
-            {
-                return variable.Value;
+                return 0;
             }
 
-            throw new ArgumentException($"Ресурс {resource} по индексу {index} не является переменной!", nameof(index));
+            return ToOperandValue(resource);
         }
-        public void SetVariable(int index, OperandValue value)
+        public void SetValue(int index, OperandValue value)
         {
             if (!TryGetResource(index, out var resource))
             {
-                throw GetIndexException(index);
+                _resources.Add(index, new LocalVariable(value));
+                return;
             }
             if (resource is IVariable variable)
             {
@@ -91,7 +102,26 @@ namespace DialogMaker.Core.Executioning
                 return;
             }
 
-            throw new ArgumentException($"Ресурс {resource} по индексу {index} не является переменной!", nameof(index));
+            _resources[index] = new LocalVariable(value);
+        }
+        public void SetValue(int index, IResourceItem resource)
+        {
+            if (!TryGetResource(index, out var currentResource))
+            {
+                _resources.Add(index, resource);
+                return;
+            }
+            if (currentResource is IVariable currentVariable &&
+                resource is IVariable variable)
+            {
+                if (!currentVariable.IsReadOnly)
+                {
+                    currentVariable.Value = variable.Value;
+                    return;
+                }
+            }
+
+            _resources[index] = resource;
         }
 
         private bool TryGetResource(int index, [NotNullWhen(true)] out IResourceItem? result)
@@ -100,8 +130,11 @@ namespace DialogMaker.Core.Executioning
             {
                 return true;
             }
+            if (!Items.TryGetValue(index, out var reference))
+            {
+                return false;
+            }
 
-            var reference = Items[index];
             result = reference.GetItem(ResourcesOwner);
 
             _resources.Add(index, result);
@@ -113,6 +146,29 @@ namespace DialogMaker.Core.Executioning
         #endregion
 
         #region Статика
+
+        internal static OperandValue ToOperandValue(IResourceItem resource, bool throwError = true)
+        {
+            if (resource is IVariable variable)
+            {
+                return variable.Value;
+            }
+            else if (resource is IResourceString stringResource)
+            {
+                return stringResource.Text;
+            }
+            else if (resource is ICharacter character)
+            {
+                return character.Name;
+            }
+
+            if (throwError)
+            {
+                throw new ArgumentException($"Ресурс {resource} невозможно преобразовать в значение переменной!", nameof(resource));
+            }
+
+            return 0;
+        }
 
         private static ArgumentException GetIndexException(int index)
         {

@@ -59,6 +59,19 @@ namespace DialogMaker.Core.Editor.Messages
                 }
             }
         }
+        public bool Read
+        {
+            get => field;
+            set
+            {
+                if (field != value)
+                {
+                    InvokePropertyChanging(nameof(Read));
+                    field = value;
+                    InvokePropertyChanged(nameof(Read));
+                }
+            }
+        }
         public ReferenceReadOnlyList<MessageCommand> Commands { get; }
 
         private readonly EditableCollection<MessageCommand> _commands;

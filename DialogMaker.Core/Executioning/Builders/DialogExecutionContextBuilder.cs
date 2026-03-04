@@ -24,6 +24,12 @@ namespace DialogMaker.Core.Executioning.Builders
 
         #region Управление
 
+        public void Reset()
+        {
+            _resources.Clear();
+            _variables.Clear();
+        }
+
         public IDictionary<int, DialogItemReference> Build()
         {
             SortedDictionary<int, DialogItemReference> result = [];
@@ -133,7 +139,7 @@ namespace DialogMaker.Core.Executioning.Builders
 
             throw new ArgumentException($"Переменная с индексом {index} не найден");
         }
-        public void SetVariable(int index, OperandValue value)
+        public void SetValue(int index, OperandValue value)
         {
             if (_variables.TryGetValue(index, out var variable))
             {
@@ -143,6 +149,28 @@ namespace DialogMaker.Core.Executioning.Builders
                 resource is IVariable resourceVariable)
             {
                 resourceVariable.Value = value;
+            }
+        }
+        public void SetValue(int index, IResourceItem resource)
+        {
+            if (_variables.TryGetValue(index, out var variable) && 
+                resource is IVariable otherVariable)
+            {
+                variable.Value = otherVariable.Value;
+            }
+            else if (resource is IVariable newVariable)
+            {
+                _resources.Remove(index);
+                _variables.Add(index, newVariable);
+            }
+            else
+            {
+                _variables.Remove(index);
+
+                if (!_resources.TryAdd(index, resource))
+                {
+                    _resources[index] = resource;
+                }
             }
         }
 

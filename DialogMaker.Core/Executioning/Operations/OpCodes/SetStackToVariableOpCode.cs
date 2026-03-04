@@ -11,7 +11,7 @@ namespace DialogMaker.Core.Executioning
             CheckArgs(context, args, 1);
 
             var value = context.CurrentThread.Pop();
-            context.Resources.SetVariable(args[0], value);
+            context.Resources.SetValue(args[0], value);
         }
 
         #endregion

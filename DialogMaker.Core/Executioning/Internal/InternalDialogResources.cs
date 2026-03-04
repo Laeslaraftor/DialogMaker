@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Common;
+using MessagePack.Resolvers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,10 +14,16 @@ namespace DialogMaker.Core.Executioning.Internal
         public IDialogExecutionResources Resources { get; } = resources;
 
         protected readonly Dictionary<int, IResourceItem> Items = [];
-        protected readonly Dictionary<int, OperandValue> Variables = [];
         protected readonly List<int> UsedGlobalVariables = [];
 
         #region Управление
+
+        public void Reset()
+        {
+            Resources.Reset();
+            Items.Clear();
+            UsedGlobalVariables.Clear();
+        }
 
         public IResourceItem GetItemFromReference(DialogItemReference reference)
         {
@@ -51,14 +58,9 @@ namespace DialogMaker.Core.Executioning.Internal
         }
         public OperandValue GetVariable(int index)
         {
-            if (Variables.TryGetValue(index, out var value))
+            if (Items.TryGetValue(index, out var resource))
             {
-                return value;
-            }
-            if (Items.TryGetValue(index, out var resource) &&
-                resource is IVariable resourceVariable)
-            {
-                return resourceVariable.Value;
+                return DialogRuntimeResources.ToOperandValue(resource);
             }
             if (Metadata.LocalValues.TryGetValue(index, out var localReference))
             {
@@ -69,41 +71,81 @@ namespace DialogMaker.Core.Executioning.Internal
                     throw new InvalidCastException($"Получен неожиданный ресурс из локальной ссылки на ресурс: {item}");
                 }
 
-                Variables.Add(index, variable.Value);
+                Items.Add(index, new LocalVariable(variable.Value));
 
                 return variable.Value;
             }
 
-            value = Resources.GetVariable(index);
+            var value = Resources.GetVariable(index);
             UsedGlobalVariables.Add(index);
-            Variables.Add(index, value);
+            Items.Add(index, new LocalVariable(value));
 
             return value;
         }
-        public virtual void SetVariable(int index, OperandValue value)
+        public virtual void SetValue(int index, OperandValue value)
         {
             SetVariable(index, value, false);
         }
+        public virtual void SetValue(int index, IResourceItem resource)
+        {
+            SetVariable(index, resource, false);
+        }
 
-        protected void SetVariable(int index, OperandValue value, bool onlyLocal)
+        protected void SetVariable(int index, object value, bool onlyLocal)
         {
             if (Metadata.LocalValues.ContainsKey(index) || onlyLocal)
             {
-                if (Items.TryGetValue(index, out var resource) &&
-                    resource is IVariable resourceVariable)
+                if (value is OperandValue operandValue)
                 {
-                    resourceVariable.Value = value;
-                    return;
+                    SetVariable(index, operandValue);
                 }
-                if (!Variables.TryAdd(index, value))
+                else if (value is IResourceItem item)
                 {
-                    Variables[index] = value;
+                    SetVariable(index, item);
                 }
 
                 return;
             }
 
-            Resources.SetVariable(index, value);
+            if (value is IResourceItem resource)
+            {
+                Resources.SetValue(index, resource);
+            }
+            else if (value is OperandValue operandValue)
+            {
+                Resources.SetValue(index, operandValue);
+            }
+            else
+            {
+                throw new ArgumentException($"Недопустимый тип значения: {value?.GetType()}");
+            }
+        }
+        protected void SetVariable(int index, OperandValue value)
+        {
+            if (Items.TryGetValue(index, out var resource) &&
+                resource is IVariable variable)
+            {
+                variable.Value = value;
+            }
+
+            LocalVariable newVariable = new(value);
+
+            if (!Items.TryAdd(index, newVariable))
+            {
+                Items[index] = newVariable;
+            }
+        }
+        protected void SetVariable(int index, IResourceItem value)
+        {
+            if (value is IVariable variable)
+            {
+                SetVariable(index, variable.Value);
+                return;
+            }
+            if (!Items.TryAdd(index, value))
+            {
+                Items[index] = value;
+            }
         }
 
         #endregion

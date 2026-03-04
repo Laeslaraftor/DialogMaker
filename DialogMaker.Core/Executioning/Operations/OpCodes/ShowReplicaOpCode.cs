@@ -33,9 +33,30 @@ namespace DialogMaker.Core.Executioning
                 return null;
             }
 
-            return context.Resources.GetResource(index) as ICharacter;
+            var resource = context.Resources.GetResource(index);
+
+            if (resource is ICharacter character)
+            {
+                return character;
+            }
+            else if (resource is IResourceString stringResource)
+            {
+                return new LocalCharacter(stringResource.Text);
+            }
+            else if (resource is IVariable variable &&
+                     variable.Value.Type == DialogVariableType.String)
+            {
+                var text = variable.Value.ToString().Trim();
+
+                if (!string.IsNullOrEmpty(text))
+                {
+                    return new LocalCharacter(text);
+                }
+            }
+
+            return null;
         }
 
-		#endregion
+        #endregion
     }
 }

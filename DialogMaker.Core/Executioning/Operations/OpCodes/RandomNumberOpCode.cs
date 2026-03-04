@@ -27,7 +27,7 @@ namespace DialogMaker.Core.Executioning
                 result = (float)Helper.LerpUnclamped(minValue, maxValue, RandomInstance.NextDouble());
             }
 
-            context.Resources.SetVariable(args[3], result);
+            context.Resources.SetValue(args[3], result);
         }
 
         #endregion
