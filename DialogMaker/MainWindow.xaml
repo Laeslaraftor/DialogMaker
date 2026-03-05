@@ -24,7 +24,6 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition MinWidth="250" Width="350"/>
@@ -185,10 +184,10 @@
                 </ListView.ItemTemplate>
             </ListView>
         </Border>
-        <lib:ItemTabsView x:Name="_itemTabs"
+        <lib:ItemTabsView x:Name="_itemTabs" Margin="0,0,0,30"
                           Grid.Row="1" Grid.Column="2"
                           CurrentItemChanged="OnItemTabsCurrentItemChanged"/>
-        <TabControl Grid.Row="1">
+        <TabControl Grid.Row="1" Margin="0,0,0,30">
             <TabItem IsSelected="True">
                 <TabItem.Header>
                     <TextBlock Text="Структура" />
@@ -290,43 +289,9 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        <Grid Grid.Row="2" Grid.ColumnSpan="3" Height="30">
-            <Border Background="{DynamicResource TextOnAccentFillColorPrimaryBrush}"
-                    Opacity="0.25"/>
-            <StackPanel Orientation="Horizontal">
-                <Border Width="30">
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#1AFFFFFF"/>
-                                </Trigger>
-                                <Trigger Property="IsMouseOver" Value="False">
-                                    <Setter Property="Background" Value="Transparent"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                    <Grid>
-                        <TextBlock Text="&#xEA8F;" 
-                                   VerticalAlignment="Center"
-                                   HorizontalAlignment="Center"
-                                   FontFamily="{StaticResource SymbolThemeFontFamily}"/>
-                        <Border MinWidth="12" Height="12" CornerRadius="6" Padding="2,0"
-                                HorizontalAlignment="Right" VerticalAlignment="Top"
-                                Background="{DynamicResource SystemFillColorCriticalBrush}">
-                            <TextBlock Text="1" FontSize="10"
-                                       VerticalAlignment="Center" HorizontalAlignment="Center"
-                                       Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
-                        </Border>
-                        <Button Padding="0" Opacity="0"
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Stretch"/>
-                    </Grid>
-                </Border>
-                <TextBlock VerticalAlignment="Center" Text="Всякий текст"/>
-            </StackPanel>
-        </Grid>
+        <lib:LoggerView x:Name="_logger" Panel.ZIndex="10"
+                        Grid.ColumnSpan="3" Grid.Row="1" 
+                        VerticalAlignment="Bottom"/>
         <GridSplitter Grid.Row="1" Grid.Column="1"/>
         <lib:NodeSelector x:Name="_nodeSelector" Panel.ZIndex="100" 
                           Grid.ColumnSpan="100" Grid.RowSpan="100" 

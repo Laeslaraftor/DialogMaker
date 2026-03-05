@@ -68,7 +68,7 @@ namespace DialogMaker.Lib.Converters
             }
             catch (Exception error)
             {
-                error.Alert();
+                error.Log();
             }
 
             EditorChanged?.Invoke(this, new(CollectionItemAction.Add, field));

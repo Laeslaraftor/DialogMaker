@@ -1,7 +1,7 @@
 ﻿using DialogMaker.Core.Editor.Messages;
 using System.Diagnostics;
 
-namespace DialogMaker.Core.Base
+namespace DialogMaker.Core.Editor
 {
     public class ConsoleLogger : ILogger
     {

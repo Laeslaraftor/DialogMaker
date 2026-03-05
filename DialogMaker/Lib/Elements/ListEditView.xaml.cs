@@ -192,7 +192,7 @@ namespace DialogMaker.Lib.Elements
                 catch (Exception error)
                 {
                     _disableSync = false;
-                    error.Alert();
+                    error.Log();
                 }
             }
         }

@@ -648,7 +648,7 @@ namespace DialogMaker.Lib.Controllers
                     }
                     catch (Exception error)
                     {
-                        error.Alert();
+                        error.Log();
                         return false;
                     }
                 }

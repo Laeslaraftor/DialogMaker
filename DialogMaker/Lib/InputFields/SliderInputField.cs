@@ -116,7 +116,7 @@ namespace DialogMaker.Lib.InputFields
                 }
                 catch (Exception error)
                 {
-                    error.Alert();
+                    error.Log();
                 }
             }
         }

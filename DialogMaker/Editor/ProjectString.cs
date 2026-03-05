@@ -128,7 +128,7 @@ namespace DialogMaker.Editor
             }
             catch (Exception error)
             {
-                error.Alert();
+                error.Log();
             }
         }
 
@@ -151,7 +151,7 @@ namespace DialogMaker.Editor
             }
             catch (Exception error)
             {
-                error.Alert();
+                error.Log();
             }
 
             InvokePropertyChanged(nameof(PreviewVariant));

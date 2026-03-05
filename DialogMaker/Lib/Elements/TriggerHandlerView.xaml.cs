@@ -60,7 +60,7 @@ namespace DialogMaker.Lib.Elements
             }
             catch (Exception error)
             {
-                error.Alert();
+                error.Log();
             }
         }
 

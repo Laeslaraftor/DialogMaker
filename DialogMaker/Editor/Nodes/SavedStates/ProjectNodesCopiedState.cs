@@ -21,7 +21,7 @@ namespace DialogMaker.Editor.Nodes
             UpdateIdentifiersMap();
             return dialog.RestoreNode(_savedStates, e =>
             {
-                e.Alert();
+                e.Log();
             });
         }
 

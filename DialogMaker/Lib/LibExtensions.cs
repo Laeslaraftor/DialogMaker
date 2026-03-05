@@ -1,4 +1,5 @@
 ﻿using Acly;
+using DialogMaker.Core.Editor;
 using DialogMaker.Lib;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
@@ -16,6 +17,10 @@ namespace DialogMaker
 {
     public static class LibExtensions
     {
+        public static void Log(this Exception error)
+        {
+            Logger.Log(error);
+        }
         public static void Alert(this Exception error)
         {
             Alerts.Show(error);
@@ -28,7 +33,7 @@ namespace DialogMaker
             }
             catch (Exception error)
             {
-                error.Alert();
+                error.Log();
                 return false;
             }
 

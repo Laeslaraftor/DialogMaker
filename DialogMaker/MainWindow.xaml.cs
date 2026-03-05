@@ -25,6 +25,7 @@ namespace DialogMaker
             _resourcesDragAndDrop = new(this);
             _nodeSelectorController = new(this, _nodeSelector);
             _hotkeysController = new(this);
+            Logger.CurrentLogger = _logger;
 
             DataContext = _model;
             Instance = this;

@@ -21,7 +21,7 @@ namespace DialogMaker.Editor.Runtime
                     }
                     catch (Exception error)
                     {
-                        error.Alert();
+                        error.Log();
                     }
                 }
 

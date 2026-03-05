@@ -1,4 +1,5 @@
 ﻿using Acly;
+using System;
 using System.Collections.Generic;
 
 namespace DialogMaker.Core.Editor.Messages
@@ -18,6 +19,7 @@ namespace DialogMaker.Core.Editor.Messages
             _isReadOnly = readOnly;
             _commands = commands == null ? [] : new(commands);
             Commands = new(_commands);
+            DateTime = DateTime.Now;
         }
 
         public MessageImportance Importance
@@ -72,6 +74,7 @@ namespace DialogMaker.Core.Editor.Messages
                 }
             }
         }
+        public DateTime DateTime { get; }
         public ReferenceReadOnlyList<MessageCommand> Commands { get; }
 
         private readonly EditableCollection<MessageCommand> _commands;

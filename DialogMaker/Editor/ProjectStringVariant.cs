@@ -72,7 +72,7 @@ namespace DialogMaker.Editor
                     }
                     catch (Exception error)
                     {
-                        error.Alert();
+                        error.Log();
                     }
 
                     InvokePropertyChanged(nameof(LanguageIndex));
@@ -151,7 +151,7 @@ namespace DialogMaker.Editor
             }
             catch (Exception error)
             {
-                error.Alert();
+                error.Log();
             }
         }
 

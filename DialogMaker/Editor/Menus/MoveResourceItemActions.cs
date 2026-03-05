@@ -91,7 +91,7 @@ namespace DialogMaker.Editor.Menus
             }
             catch (Exception error)
             {
-                error.Alert();
+                error.Log();
             }
         }
 

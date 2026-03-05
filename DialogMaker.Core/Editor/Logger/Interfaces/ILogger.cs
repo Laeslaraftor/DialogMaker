@@ -1,6 +1,6 @@
 ﻿using DialogMaker.Core.Editor.Messages;
 
-namespace DialogMaker.Core.Base
+namespace DialogMaker.Core.Editor
 {
     public interface ILogger
     {

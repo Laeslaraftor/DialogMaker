@@ -188,7 +188,7 @@ namespace DialogMaker.Lib.Elements
                 }
                 catch (Exception error)
                 {
-                    error.Alert();
+                    error.Log();
                 }
             }
 
@@ -232,7 +232,7 @@ namespace DialogMaker.Lib.Elements
                 }
                 catch (Exception error)
                 {
-                    error.Alert();
+                    error.Log();
                 }
 
                 break;

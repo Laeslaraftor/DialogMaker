@@ -134,7 +134,7 @@ namespace DialogMaker.Editor
                 }
                 catch (Exception error)
                 {
-                    error.Alert();
+                    error.Log();
                 }
             }
         }
@@ -162,7 +162,7 @@ namespace DialogMaker.Editor
             }
             catch (Exception error)
             {
-                error.Alert();
+                error.Log();
             }
         }
         private void ExecuteCreateCharacter(object? parameter)
@@ -173,7 +173,7 @@ namespace DialogMaker.Editor
             }
             catch (Exception error)
             {
-                error.Alert();
+                error.Log();
             }
         }
         private void ExecuteCreateVariable(object? parameter)
@@ -189,7 +189,7 @@ namespace DialogMaker.Editor
             }
             catch (Exception error)
             {
-                error.Alert();
+                error.Log();
             }
         }
         private void ExecuteCreateEmotion(object? parameter)
@@ -200,7 +200,7 @@ namespace DialogMaker.Editor
             }
             catch (Exception error)
             {
-                error.Alert();
+                error.Log();
             }
         }
 

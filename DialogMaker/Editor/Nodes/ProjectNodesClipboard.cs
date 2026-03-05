@@ -69,7 +69,7 @@ namespace DialogMaker.Editor.Nodes
             }
             catch (Exception error)
             {
-                error.Alert();
+                error.Log();
                 return false;
             }
 

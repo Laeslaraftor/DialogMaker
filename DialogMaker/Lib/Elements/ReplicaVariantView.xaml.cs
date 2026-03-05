@@ -42,7 +42,7 @@ namespace DialogMaker.Lib.Elements
             }
             catch (Exception error)
             {
-                error.Alert();
+                error.Log();
             }
 
             Binding languageBinding = new("LanguageIndex")
@@ -98,7 +98,7 @@ namespace DialogMaker.Lib.Elements
             }
             catch (Exception error)
             {
-                error.Alert();
+                error.Log();
             }
         }
         private void OnTextBoxConfirmedText(object sender, ValueChangedEventArgs<string> e)

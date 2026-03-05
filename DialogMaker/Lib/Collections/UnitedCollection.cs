@@ -228,7 +228,7 @@ namespace DialogMaker.Lib
                                 }
                                 catch (Exception error)
                                 {
-                                    error.Alert();
+                                    error.Log();
                                 }
                             }
                         }
