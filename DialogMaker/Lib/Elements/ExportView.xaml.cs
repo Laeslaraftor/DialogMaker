@@ -39,7 +39,7 @@ namespace DialogMaker.Lib.Elements
                 }
                 catch (Exception error)
                 {
-                    Debug.WriteLine(error);
+                    Logger.Log(error);
                 }
 
                 _pathErrorView.Visibility = isCorrect ? Visibility.Collapsed : Visibility.Visible;

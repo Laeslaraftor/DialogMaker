@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using DialogMaker.Core.Editor;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -127,7 +127,7 @@ namespace DialogMaker.Core.Executioning
                 }
                 catch (Exception error)
                 {
-                    Debug.WriteLine(error);
+                    Logger.Log(error);
                 }
 
                 if (_currentCancellationTokenSource == currentTokenSource)
@@ -152,7 +152,7 @@ namespace DialogMaker.Core.Executioning
             }
             catch (Exception error)
             {
-                Debug.WriteLine(error);
+                Logger.Log(error);
             }
 
             _joinedThreads.Clear();

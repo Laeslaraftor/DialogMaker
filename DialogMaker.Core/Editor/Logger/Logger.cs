@@ -4,7 +4,11 @@ namespace DialogMaker.Core.Editor
 {
     public static class Logger
     {
-        public static ILogger CurrentLogger { get; set; } = ConsoleLogger.Instance;
+        public static ILogger CurrentLogger
+        {
+            get => EditorSettings.Logger;
+            set => EditorSettings.Logger = value;
+        }
 
         public static void Log(object message)
         {

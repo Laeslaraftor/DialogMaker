@@ -50,7 +50,7 @@ namespace DialogMaker.Lib.Elements
             }
             catch (Exception error)
             {
-                Debug.WriteLine(error);
+                Logger.Log(error);
             }
 
             return new(position, _diagramSizeReference.RenderSize);
@@ -66,7 +66,7 @@ namespace DialogMaker.Lib.Elements
             }
             catch (Exception error)
             {
-                Debug.WriteLine(error);
+                Logger.Log(error);
                 return;
             }
 

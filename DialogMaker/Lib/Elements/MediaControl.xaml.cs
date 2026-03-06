@@ -1,5 +1,5 @@
 ﻿using Acly.Player;
-using System.Diagnostics;
+using DialogMaker.Core.Editor;
 using System.IO;
 using System.Timers;
 using System.Windows;
@@ -221,7 +221,7 @@ namespace DialogMaker.Lib.Elements
             }
             catch (Exception error)
             {
-                Debug.WriteLine(error);
+                Logger.Log(error);
             }
         }
         private void OnDispatchedTimerElapsed(object? sender, ElapsedEventArgs e)

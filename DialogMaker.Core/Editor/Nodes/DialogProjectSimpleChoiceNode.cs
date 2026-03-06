@@ -5,7 +5,6 @@ using DialogMaker.Core.Executioning.Internal;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Collections.Specialized;
 
@@ -69,7 +68,7 @@ namespace DialogMaker.Core.Editor.Nodes
                     catch (Exception error)
                     {
                         strings.Add(ResourceString.Empty);
-                        Debug.WriteLine(error);
+                        Logger.Log(error);
                     }
                 }
                 else if (variant is IResourceString resourceVariant)
@@ -108,7 +107,7 @@ namespace DialogMaker.Core.Editor.Nodes
                     catch (Exception error)
                     {
                         savedState.Value = ResourceString.Empty;
-                        Debug.WriteLine(error);
+                        Logger.Log(error);
                     }
                 }
                 else
@@ -123,7 +122,33 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             base.Restore(savedState);
 
-            var variants = savedState.GetProperty<IEnumerable<VariantSavedState>>(nameof(Variants));
+            IEnumerable<VariantSavedState>? variants;
+
+            try
+            {
+                variants = savedState.GetProperty<IEnumerable<VariantSavedState>>(nameof(Variants));
+            }
+            catch (Exception error)
+            {
+                try
+                {
+                    var stringVariants = savedState.GetProperty<IEnumerable<string>>(nameof(Variants));
+
+                    if (stringVariants == null)
+                    {
+                        return;
+                    }
+
+                    variants = stringVariants.Select(v => new VariantSavedState()
+                    {
+                        Value = v
+                    });
+                }
+                catch
+                {
+                    throw error;
+                }
+            }
 
             if (variants == null)
             {

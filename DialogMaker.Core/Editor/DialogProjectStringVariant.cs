@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
+using DialogMaker.Core.Editor;
 
 namespace DialogMaker.Core.Editor
 {
@@ -28,7 +28,7 @@ namespace DialogMaker.Core.Editor
                 }
                 catch (Exception error)
                 {
-                    Debug.WriteLine(error);
+                    Logger.Log(error);
                 }
             }
         }

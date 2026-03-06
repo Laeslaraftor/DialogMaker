@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Diagnostics;
+using DialogMaker.Core.Editor;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
@@ -33,7 +33,7 @@ namespace DialogMaker.Core.Editor.Nodes
             }
             catch (Exception error)
             {
-                Debug.WriteLine(error);
+                Logger.Log(error);
             }
         }
         private DialogProjectDialogNode(DialogProjectDialog dialog, Guid id)
@@ -478,7 +478,7 @@ namespace DialogMaker.Core.Editor.Nodes
                         }
                         catch (Exception error)
                         {
-                            Debug.WriteLine(error);
+                            Logger.Log(error);
                         }
                     }
                 }

@@ -1,6 +1,6 @@
 ﻿using MessagePack;
 using System;
-using System.Diagnostics;
+using DialogMaker.Core.Editor;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,7 +25,7 @@ namespace DialogMaker.Core
                 }
                 catch (Exception error)
                 {
-                    Debug.WriteLine(error);
+                    Logger.Log(error);
                 }
             }
             public static async Task RunSafe(Action action, CancellationToken cancellationToken)
@@ -36,7 +36,7 @@ namespace DialogMaker.Core
                 }
                 catch (Exception error)
                 {
-                    Debug.WriteLine(error);
+                    Logger.Log(error);
                 }
             }
             public static async Task RunSafe(Func<Task> action, CancellationToken cancellationToken)
@@ -47,7 +47,7 @@ namespace DialogMaker.Core
                 }
                 catch (Exception error)
                 {
-                    Debug.WriteLine(error);
+                    Logger.Log(error);
                 }
             }
         }

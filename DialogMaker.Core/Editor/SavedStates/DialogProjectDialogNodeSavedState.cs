@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using DialogMaker.Core.Editor;
 using System.Numerics;
 
 namespace DialogMaker.Core.Editor
@@ -130,7 +130,7 @@ namespace DialogMaker.Core.Editor
             }
             catch (Exception error)
             {
-                Debug.WriteLine(error);
+                Logger.Log(error);
             }
 
             return null;

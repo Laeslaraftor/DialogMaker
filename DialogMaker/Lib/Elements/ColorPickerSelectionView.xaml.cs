@@ -1,10 +1,9 @@
 ﻿using DialogMaker.Lib.Controllers;
-using System.Diagnostics;
+using DialogMaker.Core.Editor;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Input;
-using Acly;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -212,7 +211,7 @@ namespace DialogMaker.Lib.Elements
             }
             catch (Exception error)
             {
-                Debug.WriteLine(error);
+                Logger.Log(error);
                 _hexColor.Text = e.OldValue;
             }
         }

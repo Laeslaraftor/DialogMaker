@@ -11,6 +11,9 @@
             <RowDefinition/>
             <RowDefinition Height="30"/>
         </Grid.RowDefinitions>
+        <StackPanel x:Name="_previewMessagesContainer" Width="400"
+                    VerticalAlignment="Bottom" HorizontalAlignment="Left"
+                    Margin="12,0,0,12"/>
         <Border x:Name="_messagesWindow" BorderThickness="1"
                 Visibility="Collapsed"
                 Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
@@ -50,7 +53,8 @@
                         </ListView.ItemsPanel>
                         <ListView.ItemTemplate>
                             <DataTemplate>
-                                <local:MessageView Message="{Binding}" Margin="8,8,8,0"/>
+                                <local:MessageView Message="{Binding}" Margin="8,8,8,0"
+                                                   RemoveRequested="OnMessageViewRemoveRequested"/>
                             </DataTemplate>
                         </ListView.ItemTemplate>
                     </ListView>
@@ -93,8 +97,8 @@
                                 PreviewMouseDown="OnShowMessagesWindowButtonClicked"/>
                     </Grid>
                 </Border>
-                <TextBlock x:Name="_lastMessageText" 
-                           Margin="2,0,0,0"
+                <TextBlock x:Name="_lastMessageText" Margin="2,0,0,0"
+                           Visibility="Collapsed"
                            VerticalAlignment="Center"/>
             </StackPanel>
         </Grid>

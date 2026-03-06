@@ -5,7 +5,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
+using DialogMaker.Core.Editor;
 using System.Linq;
 
 namespace DialogMaker.Core.Editor.Nodes
@@ -165,7 +165,7 @@ namespace DialogMaker.Core.Editor.Nodes
             }
             catch (Exception error)
             {
-                Debug.WriteLine(error);
+                Logger.Log(error);
             }
         }
 

@@ -289,7 +289,7 @@
                 </Grid>
             </TabItem>
         </TabControl>
-        <lib:LoggerView x:Name="_logger" Panel.ZIndex="10"
+        <lib:LoggerView x:Name="_logger" Panel.ZIndex="100"
                         Grid.ColumnSpan="3" Grid.Row="1" 
                         VerticalAlignment="Bottom"/>
         <GridSplitter Grid.Row="1" Grid.Column="1"/>

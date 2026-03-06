@@ -1,9 +1,7 @@
 ﻿using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
+using DialogMaker.Core.Editor;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -88,7 +86,7 @@ namespace DialogMaker.Lib.Elements
             }
             catch (Exception error)
             {
-                Debug.WriteLine(error);
+                Logger.Log(error);
             }
 
             _currentSelectionWindow = window;

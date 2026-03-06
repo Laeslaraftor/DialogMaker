@@ -25,7 +25,7 @@ namespace DialogMaker
             _resourcesDragAndDrop = new(this);
             _nodeSelectorController = new(this, _nodeSelector);
             _hotkeysController = new(this);
-            Logger.CurrentLogger = _logger;
+            EditorSettings.Logger = _logger;
 
             DataContext = _model;
             Instance = this;
@@ -78,7 +78,7 @@ namespace DialogMaker
             }
             catch (Exception error)
             {
-                Debug.WriteLine(error);
+                Logger.Log(error);
             }
 
             _exportView.ProjectController = controller;

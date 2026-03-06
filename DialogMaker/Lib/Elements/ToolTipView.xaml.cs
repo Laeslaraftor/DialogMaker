@@ -57,21 +57,7 @@ namespace DialogMaker.Lib.Elements
                 return;
             }
 
-            ColorsScheme scheme = ColorsScheme.Normal;
-
-            switch (type)
-            {
-                case MessageType.Success:
-                    scheme = ColorsScheme.Success;
-                    break;
-                case MessageType.Warning:
-                    scheme = ColorsScheme.Warning;
-                    break;
-                case MessageType.Error:
-                    scheme = ColorsScheme.Error; 
-                    break;
-            }
-
+            var scheme = GetColorsScheme(type);
             view.SetColorsScheme(scheme);
         }
         private static void OnCommandsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -95,9 +81,28 @@ namespace DialogMaker.Lib.Elements
 
         #endregion
 
+        #region Статика
+
+        public static ColorsScheme GetColorsScheme(MessageImportance importance)
+        {
+            return GetColorsScheme((MessageType)importance);
+        }
+        public static ColorsScheme GetColorsScheme(MessageType type)
+        {
+            return type switch
+            {
+                MessageType.Success => ColorsScheme.Success,
+                MessageType.Warning => ColorsScheme.Warning,
+                MessageType.Error => ColorsScheme.Error,
+                _ => ColorsScheme.Normal,
+            };
+        }
+
+        #endregion
+
         #region Классы
 
-        private struct ColorsScheme(Brush text, Brush background)
+        public struct ColorsScheme(Brush text, Brush background)
         {
             public Brush Text { get; } = text;
             public Brush Background { get; } = background;

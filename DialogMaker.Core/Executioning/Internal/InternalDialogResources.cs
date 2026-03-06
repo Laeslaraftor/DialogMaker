@@ -1,8 +1,7 @@
 ﻿using DialogMaker.Core.Common;
-using MessagePack.Resolvers;
+using DialogMaker.Core.Editor;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 
 namespace DialogMaker.Core.Executioning.Internal
 {
@@ -45,7 +44,7 @@ namespace DialogMaker.Core.Executioning.Internal
                 }
                 catch (Exception error)
                 {
-                    Debug.WriteLine(error);
+                    Logger.Log(error);
                 }
             }
             if (item == null)

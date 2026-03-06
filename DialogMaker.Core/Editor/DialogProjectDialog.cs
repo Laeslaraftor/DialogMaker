@@ -3,7 +3,7 @@ using DialogMaker.Core.Editor.Nodes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
+using DialogMaker.Core.Editor;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -77,7 +77,7 @@ namespace DialogMaker.Core.Editor
                             }
                             catch (Exception error)
                             {
-                                Debug.WriteLine(error);
+                                Logger.Log(error);
                             }
                         }
 
@@ -261,7 +261,7 @@ namespace DialogMaker.Core.Editor
                             }
                             catch (Exception error)
                             {
-                                Debug.WriteLine(error);
+                                Logger.Log(error);
                             }
                         }
                     }

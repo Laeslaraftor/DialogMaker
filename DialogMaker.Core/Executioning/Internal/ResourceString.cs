@@ -1,6 +1,6 @@
 ﻿using DialogMaker.Core.Common;
 using System;
-using System.Diagnostics;
+using DialogMaker.Core.Editor;
 
 namespace DialogMaker.Core.Executioning.Internal
 {
@@ -51,7 +51,7 @@ namespace DialogMaker.Core.Executioning.Internal
                 }
                 catch (Exception error)
                 {
-                    Debug.WriteLine(error);
+                    Logger.Log(error);
                 }
 
                 _triedToFindVoice = true;

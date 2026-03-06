@@ -1,5 +1,5 @@
 ﻿using DialogMaker.Core.Editor.Messages;
-using System.Diagnostics;
+using DialogMaker.Core.Editor;
 
 namespace DialogMaker.Core.Editor
 {
@@ -7,11 +7,11 @@ namespace DialogMaker.Core.Editor
     {
         public void Log(object message)
         {
-            Debug.WriteLine(message);
+            Logger.Log(message);
         }
         public void Log(Message message)
         {
-            Debug.WriteLine($"{message.Title}: {message.Text}");
+            Logger.Log($"{message.Title}: {message.Text}");
         }
 
         #region Статика

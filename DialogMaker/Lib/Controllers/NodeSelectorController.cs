@@ -155,7 +155,7 @@ namespace DialogMaker.Lib.Controllers
             }
             catch (Exception error)
             {
-                Debug.WriteLine(error);
+                Logger.Log(error);
             }
         }
 

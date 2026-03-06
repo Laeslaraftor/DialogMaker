@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
+using DialogMaker.Core.Editor;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -46,7 +46,7 @@ namespace DialogMaker.Core.Editor
                 }
                 catch (Exception error)
                 {
-                    Debug.WriteLine(error);
+                    Logger.Log(error);
                 }
             }
             foreach (var str in savedState.Strings)
@@ -57,7 +57,7 @@ namespace DialogMaker.Core.Editor
                 }
                 catch (Exception error)
                 {
-                    Debug.WriteLine(error);
+                    Logger.Log(error);
                 }
             }
             foreach (var character in savedState.Characters)
@@ -68,7 +68,7 @@ namespace DialogMaker.Core.Editor
                 }
                 catch (Exception error)
                 {
-                    Debug.WriteLine(error);
+                    Logger.Log(error);
                 }
             }
             foreach (var variable in savedState.Variables)
@@ -79,7 +79,7 @@ namespace DialogMaker.Core.Editor
                 }
                 catch (Exception error)
                 {
-                    Debug.WriteLine(error);
+                    Logger.Log(error);
                 }
             }
             foreach (var emotion in savedState.Emotions)
@@ -90,7 +90,7 @@ namespace DialogMaker.Core.Editor
                 }
                 catch (Exception error)
                 {
-                    Debug.WriteLine(error);
+                    Logger.Log(error);
                 }
             }
         }
@@ -397,7 +397,7 @@ namespace DialogMaker.Core.Editor
             }
             catch (Exception error)
             {
-                Debug.WriteLine(error);
+                Logger.Log(error);
             }
 
             return new(owner, flags, folderName);

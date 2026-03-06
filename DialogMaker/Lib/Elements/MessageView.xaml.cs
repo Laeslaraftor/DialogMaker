@@ -1,7 +1,10 @@
-﻿using DialogMaker.Core.Editor.Messages;
+﻿using Acly.Tokens;
+using DialogMaker.Core.Editor.Messages;
+using System.ComponentModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.ComponentModel;
+using System.Windows.Media.Animation;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -12,13 +15,50 @@ namespace DialogMaker.Lib.Elements
             InitializeComponent();
         }
 
+        public event EventHandler<EventArgs>? RemoveRequested;
+
         public Message? Message
         {
             get => GetValue(MessageProperty) as Message;
             set => SetValue(MessageProperty, value);
         }
 
+        private bool _autoRemoveTimerStarted;
+        private Token? _currentAutoRemoveToken;
+
         #region Управление
+
+        public async void StartAutoRemoveTimer(TimeSpan duration)
+        {
+            if (_autoRemoveTimerStarted)
+            {
+                return;
+            }
+
+            Token currentToken = new();
+            _autoRemoveTimerStarted = true;
+            _currentAutoRemoveToken = currentToken;
+
+            DoubleAnimation animation = new(RenderSize.Width, 0, duration);
+            UpdateAutoRemoveClipRect(RenderSize);
+
+            _autoRemoveProgress.Visibility = Visibility.Visible;
+            _autoRemoveProgress.BeginAnimation(WidthProperty, animation);
+
+            await Task.Delay(duration);
+
+            _autoRemoveTimerStarted = false;
+            _autoRemoveProgress.Visibility = Visibility.Hidden;
+
+            if (_currentAutoRemoveToken == currentToken)
+            {
+                RemoveRequested?.Invoke(this, EventArgs.Empty);
+            }
+        }
+        public void CancelAutoRemoveTimer()
+        {
+            _currentAutoRemoveToken = null;
+        }
 
         private void SetMessage(Message? oldValue, Message? newValue)
         {
@@ -82,10 +122,30 @@ namespace DialogMaker.Lib.Elements
             _messageImportance.MessageType = (MessageType)message.Importance;
             _messageImportance.Visibility = Visibility.Visible;
         }
+        private void UpdateAutoRemoveClipRect(Size newSize)
+        {
+            var rect = _autoRemoveProgressClipGeometry.Rect;
+            var size = rect.Size;
+            size.Width = newSize.Width;
+
+            rect.Size = size;
+            _autoRemoveProgressClipGeometry.Rect = rect;
+        }
 
         #endregion
 
         #region События
+
+        protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
+        {
+            base.OnRenderSizeChanged(sizeInfo);
+            UpdateAutoRemoveClipRect(sizeInfo.NewSize);
+        }
+
+        private void OnRemoveButtonClicked(object sender, RoutedEventArgs e)
+        {
+            RemoveRequested?.Invoke(this, e);
+        }
 
         private void OnMessagePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {

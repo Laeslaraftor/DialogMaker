@@ -5,7 +5,8 @@ using System.Windows.Controls;
 using System.Windows;
 using ILogger = DialogMaker.Core.Editor.ILogger;
 using System.Windows.Input;
-using System.Windows.Media;
+using MessagePack;
+using DialogMaker.Lib.Controllers;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -14,6 +15,11 @@ namespace DialogMaker.Lib.Elements
         public LoggerView()
         {
             InitializeComponent();
+
+            _autoRemoveMessages = new(_previewMessagesContainer)
+            {
+                MessagesMargin = new(0, 8, 0, 0)
+            };
             _messages.ItemChanged += OnMessagesItemChanged;
 
             _messagesList.ItemsSource = _messages;
@@ -37,6 +43,7 @@ namespace DialogMaker.Lib.Elements
             set => SetValue(MessagesWindowShowedProperty, value);
         }
 
+        private readonly AutoRemoveMessagesController _autoRemoveMessages;
         private readonly EditableCollection<Message> _messages = [];
         private bool _currentMousePressChangedVisibilityState;
 
@@ -106,6 +113,34 @@ namespace DialogMaker.Lib.Elements
                 message.Read = true;
             }
         }
+        private void SetLastMessage(Message? message)
+        {
+            if (message == null)
+            {
+                _lastMessageText.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            if (string.IsNullOrEmpty(message.Title))
+            {
+                _lastMessageText.Text = message.Text;
+            }
+            else
+            {
+                _lastMessageText.Text = $"{message.Title}: {message.Text}";
+            }
+
+            var scheme = ToolTipView.GetColorsScheme(message.Importance);
+            var foreground = scheme.Text;
+
+            if (message.Importance != MessageImportance.Normal)
+            {
+                foreground = scheme.Background;
+            }
+
+            _lastMessageText.Foreground = foreground;
+            _lastMessageText.Visibility = Visibility.Visible;
+        }
 
         #endregion
 
@@ -147,6 +182,13 @@ namespace DialogMaker.Lib.Elements
             }
         }
 
+        private void OnMessageViewRemoveRequested(object sender, EventArgs e)
+        {
+            if (sender is MessageView view && view.Message != null)
+            {
+                _messages.Remove(view.Message);
+            }
+        }
         private void OnClearButtonClicked(object sender, RoutedEventArgs e)
         {
             _messages.Clear();
@@ -166,15 +208,8 @@ namespace DialogMaker.Lib.Elements
             if (e.Action == CollectionItemAction.Add)
             {
                 e.Item.PropertyChanged += OnMessagePropertyChanged;
-
-                if (string.IsNullOrEmpty(e.Item.Title))
-                {
-                    _lastMessageText.Text = e.Item.Text;
-                }
-                else
-                {
-                    _lastMessageText.Text = $"{e.Item.Title}: {e.Item.Text}";
-                }
+                _autoRemoveMessages.Messages.Add(e.Item);
+                SetLastMessage(e.Item);
             }
             else if (e.Action == CollectionItemAction.Remove)
             {
@@ -182,7 +217,11 @@ namespace DialogMaker.Lib.Elements
 
                 if (_messages.Count == 0)
                 {
-                    _lastMessageText.Text = string.Empty;
+                    SetLastMessage(null);
+                }
+                else
+                {
+                    SetLastMessage(_messages[^1]);
                 }
             }
             if (e.Action != CollectionItemAction.Move)

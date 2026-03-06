@@ -226,7 +226,7 @@ namespace DialogMaker.Lib.Elements
                 catch (InvalidOperationException invalidTry)
                 {
                     tries++;
-                    Debug.WriteLine(invalidTry);
+                    Logger.Log(invalidTry);
                     await Task.Delay(50);
                     continue;
                 }

@@ -1,6 +1,6 @@
 ﻿using Acly;
 using System;
-using System.Diagnostics;
+using DialogMaker.Core.Editor;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -29,7 +29,7 @@ namespace DialogMaker.Core.Editor
                 }
                 catch (Exception error)
                 {
-                    Debug.WriteLine(error);
+                    Logger.Log(error);
                 }
             }
         }
