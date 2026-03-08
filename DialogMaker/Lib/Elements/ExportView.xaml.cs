@@ -117,6 +117,8 @@ namespace DialogMaker.Lib.Elements
 
                         _log.Add(log);
                     });
+
+                    Logger.Log(error);
                 }
 
                 return package;

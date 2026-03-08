@@ -64,19 +64,33 @@ namespace DialogMaker.Core.Editor
                 {
                     InvokePropertyChanging(nameof(Id));
                     _id = value;
+                    bool startSwitchId = _switchItemId;
+
+                    _switchItemId = true;
+                    _finalPath = ResourcePath.CreatePath(this);
+
+                    _switchItemId = startSwitchId;
                     InvokePropertyChanged(nameof(Id));
                 }
             }
         }
         public ResourcePath Path
         {
-            get => field;
+            get
+            {
+                if (_switchItemId)
+                {
+                    return _finalPath;
+                }
+
+                return _projectPath;
+            }
             private set
             {
-                if (field != value)
+                if (_projectPath != value)
                 {
-                    InvokePropertyChanging(nameof(Path)); 
-                    field = value;
+                    InvokePropertyChanging(nameof(Path));
+                    _projectPath = value;
                     InvokePropertyChanged(nameof(Path));
                 } 
             }
@@ -84,9 +98,23 @@ namespace DialogMaker.Core.Editor
         public bool IsSeparated => false;
 
         IResourcesContainer IResource.Container => Resources;
-        string IResourceItem.Id => ProjectId.ToString();
+        string IResourceItem.Id
+        {
+            get
+            {
+                if (_switchItemId)
+                {
+                    return _id;
+                }
 
+                return ProjectId.ToString();
+            }
+        }
+
+        private ResourcePath _projectPath;
+        private ResourcePath _finalPath;
         private string _id = DefaultId;
+        private bool _switchItemId;
 
         #region Управление
 
@@ -125,6 +153,15 @@ namespace DialogMaker.Core.Editor
         public DialogItemReference CreateReference()
         {
             return DialogItemReference.Create(this);
+        }
+
+        DialogItemReference IResourceItem.CreateReference()
+        {
+            _switchItemId = true;
+            var result = DialogItemReference.Create(this);
+            _switchItemId = false;
+
+            return result;
         }
         ResourcePath IResourceItem.GetPath() => Path;
         public abstract IVariable ToVariable();

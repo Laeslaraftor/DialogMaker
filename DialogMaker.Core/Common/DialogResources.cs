@@ -42,11 +42,11 @@ namespace DialogMaker.Core.Common
             var variables = RestoreDictionary(savedState.Variables, i => DialogResourceVariable.Create(this, i));
             var emotions = RestoreDictionary(savedState.Emotions, i => new DialogResourceEmotion(this, i));
 
-            Files = new(Files);
-            Strings = new(Strings);
-            Characters = new(Characters);
-            Variables = new(Variables);
-            Emotions = new(Emotions);
+            Files = new(files);
+            Strings = new(strings);
+            Characters = new(characters);
+            Variables = new(variables);
+            Emotions = new(emotions);
         }
 
         public IDialogResourcesContainer Container { get; }

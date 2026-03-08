@@ -98,8 +98,9 @@ namespace DialogMaker.Core.Executioning
             await _threadManager.Reset(newResources);
             _threadManager.StartThread(new(0, 0));
         }
-
         public void Stop() => _threadManager.Stop();
+        public void Pause() => _threadManager.Pause();
+        public void Resume() => _threadManager.Resume();
 
         protected override void Dispose(bool isDisposing)
         {

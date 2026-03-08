@@ -28,6 +28,10 @@ namespace DialogMaker.Core.Executioning
         {
             _context.Resources.SetValue(_metadata.Outputs[key], value);
         }
+        public void SetOutput(string key, IResourceItem resource)
+        {
+            _context.Resources.SetValue(_metadata.Outputs[key], resource);
+        }
 
         public bool Equals(Trigger other)
         {

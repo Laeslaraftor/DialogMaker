@@ -4,6 +4,7 @@ using System.Windows;
 using Trigger = DialogMaker.Core.Executioning.Trigger;
 using Acly.Tokens;
 using System.Text;
+using DialogMaker.Core;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -55,7 +56,7 @@ namespace DialogMaker.Lib.Elements
             {
                 foreach (var output in _outputs)
                 {
-                    trigger.SetOutput(output.Id, new(output.Value));
+                    trigger.SetOutput(output.Id, new OperandValue(output.Value));
                 }
             }
             catch (Exception error)

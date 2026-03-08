@@ -40,7 +40,7 @@ namespace DialogMaker.Core
                 }
                 if (!container.TryFindChild(id, out var nextContainer))
                 {
-                    throw new ArgumentException($"Не удалось найти владельца ресурсов с идентификатором \"{id}\" в \"{container.Id}\"", nameof(path));
+                    throw new ArgumentException($"Не удалось найти владельца ресурсов с идентификатором \"{id}\" в \"{container.Id}\". Путь: {path}", nameof(path));
                 }
 
                 container = nextContainer;
@@ -51,7 +51,7 @@ namespace DialogMaker.Core
                 return result;
             }
 
-            throw new ArgumentException($"Не удалось найти ресурс с идентификатором \"{itemId}\" в \"{container.Id}\"", nameof(itemId));
+            throw new ArgumentException($"Не удалось найти ресурс с идентификатором \"{itemId}\" в \"{container.Id}\". Путь: {path}", nameof(itemId));
         }
 
         #endregion

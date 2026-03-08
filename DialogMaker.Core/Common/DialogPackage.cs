@@ -18,7 +18,6 @@ namespace DialogMaker.Core.Common
             Folder = folder;
             Id = savedState.Id;
             Name = savedState.Name;
-            Resources = DialogResources.Open(this);
 
             Dictionary<string, DialogLanguage> languages = new(savedState.Languages.Count);
 
@@ -28,6 +27,7 @@ namespace DialogMaker.Core.Common
             }
 
             Languages = new(languages);
+            Resources = DialogResources.Open(this);
 
             if (savedState.CurrentLanguage != null 
                 && languages.TryGetValue(savedState.CurrentLanguage, out var currentLanguage))

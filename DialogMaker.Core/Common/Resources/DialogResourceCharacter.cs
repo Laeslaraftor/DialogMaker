@@ -3,7 +3,7 @@ using DialogMaker.Core.Editor;
 
 namespace DialogMaker.Core.Common
 {
-    public class DialogResourceCharacter : DialogResourceObject
+    public class DialogResourceCharacter : DialogResourceObject, ICharacter
     {
         public DialogResourceCharacter(DialogResources resources, DialogProjectCharacter character) : base(resources, character)
         {

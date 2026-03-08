@@ -4,7 +4,6 @@ using DialogMaker.Lib;
 using DialogMaker.Lib.Controllers;
 using DialogMaker.Lib.Elements;
 using DialogMaker.ViewModels;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;

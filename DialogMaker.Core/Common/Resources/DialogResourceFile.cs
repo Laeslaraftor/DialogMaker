@@ -4,7 +4,7 @@ using System.IO;
 
 namespace DialogMaker.Core.Common
 {
-    public class DialogResourceFile : DialogResourceObject
+    public class DialogResourceFile : DialogResourceObject, IResourceFile
     {
         public DialogResourceFile(DialogResources resources, DialogProjectItem item) : base(resources, item)
         {

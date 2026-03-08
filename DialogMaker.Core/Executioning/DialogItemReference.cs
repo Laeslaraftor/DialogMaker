@@ -344,7 +344,7 @@ namespace DialogMaker.Core.Executioning
                     values += "|";
                 }
 
-                values += Create(str).ToString().Replace("|", @"\|");
+                values += str.CreateReference().ToString().Replace("|", @"\|");
             }
 
             return new(DialogItemType.StringCollection, $"{item.Id}:{values}");

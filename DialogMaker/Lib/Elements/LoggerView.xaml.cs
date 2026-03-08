@@ -86,10 +86,13 @@ namespace DialogMaker.Lib.Elements
                 Log(new(MessageImportance.Normal, string.Empty, message.ToString() ?? string.Empty, null));
             }
         }
-        public void Log(Message message)
+        public async void Log(Message message)
         {
-            _messages.Add(message);
-            _messagesScroll.ScrollToEnd();
+            await Dispatcher.InvokeAsync(() =>
+            {
+                _messages.Add(message);
+                _messagesScroll.ScrollToEnd();
+            });
         }
 
         private void UpdateUnreadCounter()

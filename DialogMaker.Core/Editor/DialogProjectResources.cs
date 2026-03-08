@@ -136,23 +136,43 @@ namespace DialogMaker.Core.Editor
         {
             return Strings.TryGetValue(r => r.ProjectId == id, out result);
         }
+        public bool TryGetString(string id, [NotNullWhen(true)] out DialogProjectString? result)
+        {
+            return Strings.TryGetValue(r => r.Id == id || r.ProjectId.ToString() == id, out result);
+        }
         public bool TryGetItem(Guid id, [NotNullWhen(true)] out DialogProjectItem? result)
         {
             return Items.TryGetValue(i => i.ProjectId == id, out result);
+        }
+        public bool TryGetItem(string id, [NotNullWhen(true)] out DialogProjectItem? result)
+        {
+            return Items.TryGetValue(i => i.Id == id || i.ProjectId.ToString() == id, out result);
         }
         public bool TryGetCharacter(Guid id, [NotNullWhen(true)] out DialogProjectCharacter? result)
         {
             return Characters.TryGetValue(i => i.ProjectId == id, out result);
         }
+        public bool TryGetCharacter(string id, [NotNullWhen(true)] out DialogProjectCharacter? result)
+        {
+            return Characters.TryGetValue(i => i.Id == id || i.ProjectId.ToString() == id, out result);
+        }
         public bool TryGetVariable(Guid id, [NotNullWhen(true)] out DialogProjectVariable? result)
         {
             return Variables.TryGetValue(i => i.ProjectId == id, out result);
+        }
+        public bool TryGetVariable(string id, [NotNullWhen(true)] out DialogProjectVariable? result)
+        {
+            return Variables.TryGetValue(i => i.Id == id || i.ProjectId.ToString() == id, out result);
         }
         public bool TryGetEmotion(Guid id, [NotNullWhen(true)] out DialogProjectEmotion? result)
         {
             return Emotions.TryGetValue(i => i.ProjectId == id, out result);
         }
-        public bool TryGetObject(Guid id, Type resourceType, [NotNullWhen(true)] out DialogProjectResourceObject? result)
+        public bool TryGetEmotion(string id, [NotNullWhen(true)] out DialogProjectEmotion? result)
+        {
+            return Emotions.TryGetValue(i => i.Id == id || i.ProjectId.ToString() == id, out result);
+        }
+        public bool TryGetObject(string id, Type resourceType, [NotNullWhen(true)] out DialogProjectResourceObject? result)
         {
             result = null;
 
@@ -194,7 +214,11 @@ namespace DialogMaker.Core.Editor
 
             return result != null;
         }
-        public bool TryGetObject<T>(Guid id, [NotNullWhen(true)] out T? result)
+        public bool TryGetObject(Guid id, Type resourceType, [NotNullWhen(true)] out DialogProjectResourceObject? result)
+        {
+            return TryGetObject(id.ToString(), resourceType, out result);
+        }
+        public bool TryGetObject<T>(string id, [NotNullWhen(true)] out T? result)
             where T : DialogProjectResourceObject
         {
             result = null;
@@ -205,6 +229,11 @@ namespace DialogMaker.Core.Editor
             }
 
             return false;
+        }
+        public bool TryGetObject<T>(Guid id, [NotNullWhen(true)] out T? result)
+            where T : DialogProjectResourceObject
+        {
+            return TryGetObject<T>(id.ToString(), out result);
         }
         public IEditableList GetObjectsCollection(DialogProjectResourceObject obj)
         {
@@ -236,14 +265,9 @@ namespace DialogMaker.Core.Editor
         {
             result = null;
 
-            if (!Guid.TryParse(id, out var guidId))
-            {
-                return false;
-            }
-
             var resourceType = DialogProjectResourceObject.GetType(type, true);
 
-            if (TryGetObject(guidId, resourceType, out var resource))
+            if (TryGetObject(id, resourceType, out var resource))
             {
                 result = resource;
                 return true;

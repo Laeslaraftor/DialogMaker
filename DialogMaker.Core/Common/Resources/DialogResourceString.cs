@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace DialogMaker.Core.Common
 {
-    public class DialogResourceString : DialogResourceObject
+    public class DialogResourceString : DialogResourceObject, IResourceString
     {
         public DialogResourceString(DialogResources resources, DialogProjectString str) : base(resources, str)
         {
@@ -25,6 +25,7 @@ namespace DialogMaker.Core.Common
             OnPackagePropertyChanged(this, new(DialogPackage.CurrentLanguageProperty));
         }
 
+        public override DialogResourceType ResourceType => DialogResourceType.String;
         public ReadOnlyCollection<DialogResourceStringVariant> Variants { get; }
         public DialogResourceStringVariant? CurrentVariant
         {
@@ -54,8 +55,9 @@ namespace DialogMaker.Core.Common
                 }
             }
         }
+        IResourceFile? IResourceString.Voice => CurrentVariant?.Voice;
+        string IResourceString.Text => Value;
 
-        public override DialogResourceType ResourceType => DialogResourceType.String;
 
         #region Управление
 
