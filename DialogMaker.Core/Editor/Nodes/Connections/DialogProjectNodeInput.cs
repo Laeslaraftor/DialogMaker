@@ -102,6 +102,10 @@ namespace DialogMaker.Core.Editor.Nodes
 
         protected virtual object GetValueToSave()
         {
+            if (Value is DialogProjectReference reference)
+            {
+                return reference.Resolve().CreateReference();
+            }
             if (Value is IResourceItem resource)
             {
                 return resource.CreateReference();

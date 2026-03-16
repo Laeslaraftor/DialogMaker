@@ -109,7 +109,19 @@ namespace DialogMaker.Core.Editor
             }
 
             [Key(1), JsonProperty("eyebrow")]
-            public EyebrowInfo Eyebrow { get; } = new();
+            public EyebrowInfo Eyebrow
+            {
+                get => field;
+                set
+                {
+                    if (field != value)
+                    {
+                        InvokePropertyChanging(nameof(Eyebrow));
+                        field = value;
+                        InvokePropertyChanged(nameof(Eyebrow));
+                    }
+                }
+            } = new();
             [Key(2), JsonProperty("closePercent")]
             [Name("Степень закрытости"), Range(0, 1)]
             public float ClosePercent

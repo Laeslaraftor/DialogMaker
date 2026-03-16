@@ -16,5 +16,13 @@ namespace DialogMaker.Core.Tests
 
             Console.WriteLine(package.Folders.Count);
         }
+        [Test]
+        public void EmotionCheck()
+        {
+            var package = DialogPackage.Open(@"C:\Users\Mdely\OneDrive\Documents\DialogsOutput\test.dpack");
+            var emotion = package.Resources.Emotions["angry"];
+
+            Console.WriteLine(emotion);
+        }
     }
 }

@@ -107,7 +107,8 @@ namespace DialogMaker.Lib.Elements
         {
             if ((e.Key == Key.Enter && !_text.AcceptsReturn) || e.Key == Key.Escape)
             {
-                MainWindow.Instance.ClearFocus();
+                var window = this.GetWindow();
+                window?.ClearFocus();
             }
         }
         private void OnTextTextChanged(object sender, TextChangedEventArgs e)

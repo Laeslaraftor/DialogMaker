@@ -146,6 +146,17 @@ namespace DialogMaker
             }
         }
 
+        extension(Window window)
+        {
+            public void ClearFocus()
+            {
+                Keyboard.ClearFocus();
+                FocusManager.SetFocusedElement(window, null);
+
+                FocusManager.SetFocusedElement(window, window);
+                Keyboard.Focus(window);
+            }
+        }
         extension(DependencyObject dp)
         {
             public bool TryGetParent<T>([NotNullWhen(true)] out T? result)

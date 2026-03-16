@@ -50,11 +50,7 @@ namespace DialogMaker
 
         public void ClearFocus()
         {
-            Keyboard.ClearFocus();
-            FocusManager.SetFocusedElement(this, null);
-
-            FocusManager.SetFocusedElement(this, this);
-            Keyboard.Focus(this);
+            LibExtensions.ClearFocus(this);
         }
 
         private void SetProject(DialogProject? project)

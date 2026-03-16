@@ -105,6 +105,10 @@ namespace DialogMaker.Core.Common
             {
                 return Variables.Values.TryGetValue(v => v.Id == id, out result);
             }
+            if (type == DialogResourceType.Emotion)
+            {
+                return Emotions.Values.TryGetValue(v => v.Id == id, out result);
+            }
 
             return false;
         }

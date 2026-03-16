@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Common;
+using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Core.Executioning.Builders;
 using System.Collections.Generic;
@@ -56,6 +57,10 @@ namespace DialogMaker.Core.Executioning
                 {
                     var value = valuePort.Value;
 
+                    if (value is DialogProjectReference reference)
+                    {
+                        return new(reference.Resolve());
+                    }
                     if (value is IResourceItem resource)
                     {
                         return new(resource);
