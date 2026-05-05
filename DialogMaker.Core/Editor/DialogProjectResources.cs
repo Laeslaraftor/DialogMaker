@@ -92,6 +92,28 @@ namespace DialogMaker.Core.Editor
         public IProjectResourcesOwner Owner { get; }
         public DialogResourcesFlags Flags { get; }
         public string Folder { get; }
+        public string? Description
+        {
+            get
+            {
+                if (!_descriptionLoaded)
+                {
+                    _descriptionLoaded = true;
+                    field = ReadDescription(this);
+                }
+
+                return field;
+            }
+            set
+            {
+                if (field != value)
+                {
+                    OnPropertyChanging(nameof(Description));
+                    field = value;
+                    OnPropertyChanged(nameof(Description));
+                }
+            }
+        }
         public EditableCollection<DialogProjectString> Strings { get; }
         public EditableCollection<DialogProjectItem> Items { get; }
         public EditableCollection<DialogProjectCharacter> Characters { get; }
@@ -100,6 +122,7 @@ namespace DialogMaker.Core.Editor
         public ReadOnlyCollection<DialogProjectResources> InheritedResources { get; }
 
         IResourcesOwner IResourcesContainer.Owner => Owner;
+        private bool _descriptionLoaded;
 
         #region Управление
 
@@ -122,8 +145,10 @@ namespace DialogMaker.Core.Editor
             };
 
             string filePath = Path.Combine(Folder, ResourcesFileName);
+            string descriptionFilePath = Path.Combine(Folder, ResourcesDescriptionFileName);
 
             savedState.Save(filePath);
+            File.WriteAllText(descriptionFilePath, Description);
         }
 
         public bool TryGetString(Guid id, [NotNullWhen(true)] out DialogProjectString? result)
@@ -399,6 +424,7 @@ namespace DialogMaker.Core.Editor
 
         public const string ResourcesFolder = "Resources";
         public const string ResourcesFileName = $"Resources.{JsonData.FileExtension}";
+        public const string ResourcesDescriptionFileName = $"Description.txt";
 
         public static DialogProjectResources Open(IProjectResourcesOwner owner, DialogResourcesFlags flags, string folderName = ResourcesFolder)
         {
@@ -419,6 +445,18 @@ namespace DialogMaker.Core.Editor
             }
 
             return new(owner, flags, folderName);
+        }
+
+        private static string? ReadDescription(DialogProjectResources resources)
+        {
+            string descriptionFilePath = Path.Combine(resources.Folder, ResourcesDescriptionFileName);
+
+            if (!File.Exists(descriptionFilePath))
+            {
+                return null;
+            }
+
+            return File.ReadAllText(descriptionFilePath);
         }
 
         #endregion

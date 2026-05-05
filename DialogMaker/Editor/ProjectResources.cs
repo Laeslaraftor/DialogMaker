@@ -7,6 +7,7 @@ using Microsoft.Win32;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.ComponentModel;
 
 namespace DialogMaker.Editor
 {
@@ -57,6 +58,9 @@ namespace DialogMaker.Editor
             InheritedEmotions = new(inheritEmotions, controller.ResourcesFilter);
             Flags = flags;
             UnsettedFlags = ProjectResourcesFilter.AllFlags & ~flags;
+
+            Original.PropertyChanging += OnOriginalPropertyChanging;
+            Original.PropertyChanged += OnOriginalPropertyChanged;
         }
 
         public ProjectController Controller { get; }
@@ -80,6 +84,11 @@ namespace DialogMaker.Editor
         public ICommand CreateVariableCommand { get; }
         public ICommand CreateEmotionCommand { get; }
         public ICommand AddFileCommand { get; }
+        public string? Description
+        {
+            get => Original.Description;
+            set => Original.Description = value;
+        }
 
         private readonly CollectionSynchronizer<DialogProjectString, ProjectString> _strings;
         private readonly CollectionSynchronizer<DialogProjectCharacter, ProjectCharacter> _characters;
@@ -142,6 +151,9 @@ namespace DialogMaker.Editor
         {
             base.Dispose(isDisposing);
 
+            Original.PropertyChanging -= OnOriginalPropertyChanging;
+            Original.PropertyChanged -= OnOriginalPropertyChanged;
+
             _strings.Dispose();
             _characters.Dispose();
             _variables.Dispose();
@@ -200,6 +212,25 @@ namespace DialogMaker.Editor
             catch (Exception error)
             {
                 error.Log();
+            }
+        }
+
+        #endregion
+
+        #region События
+
+        private void OnOriginalPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(Description))
+            {
+                OnPropertyChanged(e);
+            }
+        }
+        private void OnOriginalPropertyChanging(object? sender, PropertyChangingEventArgs e)
+        {
+            if (e.PropertyName == nameof(Description))
+            {
+                OnPropertyChanging(e);
             }
         }
 

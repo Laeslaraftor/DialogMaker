@@ -22,152 +22,160 @@
                            CurvesThickness="4" CurvesOffset="5" CurvesResolution="24"
                            Dialog="{Binding Dialog}" Redraw="OnDiagramRedraw"
                            SizeChanged="OnDiagramSizeChanged"/>
-        <ScrollViewer Grid.RowSpan="3" Grid.Column="2"
-                      HorizontalScrollBarVisibility="Disabled"
-                      VerticalScrollBarVisibility="Auto"
-                      Margin="4,0,0,0">
-            <StackPanel Margin="0,0,10,0">
-                <local:FlagsViewer Enum="{Binding Project.ResourcesFilter.Flags}"
+        <TabControl Grid.RowSpan="3" Grid.Column="2"
+                    Margin="4,0,0,0">
+            <TabItem Header="Ресурсы">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="0,0,10,0">
+                        <local:FlagsViewer Enum="{Binding Project.ResourcesFilter.Flags}"
                                    SelectedValues="{Binding Project.ResourcesFilter.Flags, Mode=TwoWay}"
                                    ExcludeValues="{Binding Resources.UnsettedFlags}"
                                    Margin="2.5,5,0,5" Spacing="2.5,0">
-                    <local:FlagsViewer.ItemsPanelTemplate>
-                        <ItemsPanelTemplate>
-                            <WrapPanel/>
-                        </ItemsPanelTemplate>
-                    </local:FlagsViewer.ItemsPanelTemplate>
-                </local:FlagsViewer>
-                <local:Entry Placeholder="Поиск..." Margin="5,0,0,0"
+                            <local:FlagsViewer.ItemsPanelTemplate>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </local:FlagsViewer.ItemsPanelTemplate>
+                        </local:FlagsViewer>
+                        <local:Entry Placeholder="Поиск..." Margin="5,0,0,0"
                              Text="{Binding Project.ResourcesFilter.SearchValue}"
                              ConfirmCommand="{Binding Project.ResourcesFilter.SearchCommand}"/>
-                <local:MinimizableView Margin="0,8,0,0">
-                    <local:MinimizableView.Header>
-                        <Grid Margin="6,0,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Строки" FontSize="28"
+                        <local:MinimizableView Margin="0,8,0,0">
+                            <local:MinimizableView.Header>
+                                <Grid Margin="6,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Строки" FontSize="28"
                                        FontWeight="Medium" Margin="0,0,0,8"/>
-                            <Button Content="Создать" Grid.Column="1" VerticalAlignment="Center"
+                                    <Button Content="Создать" Grid.Column="1" VerticalAlignment="Center"
                                     Command="{Binding Resources.CreateStringCommand}"/>
-                        </Grid>
-                    </local:MinimizableView.Header>
-                    <local:MinimizableView.Child>
-                        <ListView Grid.Row="1"
+                                </Grid>
+                            </local:MinimizableView.Header>
+                            <local:MinimizableView.Child>
+                                <ListView Grid.Row="1"
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                   HorizontalContentAlignment="Stretch"
                                   ItemsSource="{Binding Resources.InheritedStrings}">
-                            <ListView.Template>
-                                <ControlTemplate>
-                                    <ItemsPresenter/>
-                                </ControlTemplate>
-                            </ListView.Template>
-                            <ListView.ItemTemplate>
-                                <DataTemplate>
-                                    <local:ReplicaView ProjectString="{Binding}"
+                                    <ListView.Template>
+                                        <ControlTemplate>
+                                            <ItemsPresenter/>
+                                        </ControlTemplate>
+                                    </ListView.Template>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <local:ReplicaView ProjectString="{Binding}"
                                                        IsMinimized="{Binding IsMinimized}"
                                                        ContextMenu="{Binding ContextMenu}"/>
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
-                        </ListView>
-                    </local:MinimizableView.Child>
-                </local:MinimizableView>
-                <local:MinimizableView Margin="0,8,0,0">
-                    <local:MinimizableView.Header>
-                        <Grid Margin="6,0,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Персонажи" FontSize="28"
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </local:MinimizableView.Child>
+                        </local:MinimizableView>
+                        <local:MinimizableView Margin="0,8,0,0">
+                            <local:MinimizableView.Header>
+                                <Grid Margin="6,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Персонажи" FontSize="28"
                                        FontWeight="Medium" Margin="0,0,0,8"/>
-                            <Button Content="Создать" Grid.Column="1" VerticalAlignment="Center"
+                                    <Button Content="Создать" Grid.Column="1" VerticalAlignment="Center"
                                     Command="{Binding Resources.CreateCharacterCommand}"/>
-                        </Grid>
-                    </local:MinimizableView.Header>
-                    <local:MinimizableView.Child>
-                        <ListView Grid.Row="1"
+                                </Grid>
+                            </local:MinimizableView.Header>
+                            <local:MinimizableView.Child>
+                                <ListView Grid.Row="1"
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                   HorizontalContentAlignment="Stretch"
                                   ItemsSource="{Binding Resources.InheritedCharacters}">
-                            <ListView.Template>
-                                <ControlTemplate>
-                                    <ItemsPresenter/>
-                                </ControlTemplate>
-                            </ListView.Template>
-                            <ListView.ItemTemplate>
-                                <DataTemplate>
-                                    <local:CharacterView Character="{Binding}"/>
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
-                        </ListView>
-                    </local:MinimizableView.Child>
-                </local:MinimizableView>
-                <local:MinimizableView Margin="0,8,0,0">
-                    <local:MinimizableView.Header>
-                        <Grid Margin="6,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Переменные" FontSize="28"
+                                    <ListView.Template>
+                                        <ControlTemplate>
+                                            <ItemsPresenter/>
+                                        </ControlTemplate>
+                                    </ListView.Template>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <local:CharacterView Character="{Binding}"/>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </local:MinimizableView.Child>
+                        </local:MinimizableView>
+                        <local:MinimizableView Margin="0,8,0,0">
+                            <local:MinimizableView.Header>
+                                <Grid Margin="6,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Переменные" FontSize="28"
                                        FontWeight="Medium" Margin="0,0,0,8"/>
-                            <local:DropDownButton Text="Создать" Grid.Column="1" VerticalAlignment="Center"
+                                    <local:DropDownButton Text="Создать" Grid.Column="1" VerticalAlignment="Center"
                                                 ContextMenu="{Binding Resources.CreateVariablesContextMenu}"/>
-                        </Grid>
-                    </local:MinimizableView.Header>
-                    <local:MinimizableView.Child>
-                        <ListView Grid.Row="1"
+                                </Grid>
+                            </local:MinimizableView.Header>
+                            <local:MinimizableView.Child>
+                                <ListView Grid.Row="1"
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                   HorizontalContentAlignment="Stretch"
                                   ItemsSource="{Binding Resources.InheritedVariables}">
-                            <ListView.Template>
-                                <ControlTemplate>
-                                    <ItemsPresenter/>
-                                </ControlTemplate>
-                            </ListView.Template>
-                            <ListView.ItemTemplate>
-                                <DataTemplate>
-                                    <local:VariableView Variable="{Binding}"/>
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
-                        </ListView>
-                    </local:MinimizableView.Child>
-                </local:MinimizableView>
-                <local:MinimizableView Margin="0,8,0,0">
-                    <local:MinimizableView.Header>
-                        <Grid Margin="6,0,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="Эмоции" FontSize="28"
+                                    <ListView.Template>
+                                        <ControlTemplate>
+                                            <ItemsPresenter/>
+                                        </ControlTemplate>
+                                    </ListView.Template>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <local:VariableView Variable="{Binding}"/>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </local:MinimizableView.Child>
+                        </local:MinimizableView>
+                        <local:MinimizableView Margin="0,8,0,0">
+                            <local:MinimizableView.Header>
+                                <Grid Margin="6,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Эмоции" FontSize="28"
                                        FontWeight="Medium" Margin="0,0,0,8"/>
-                            <Button Content="Создать" Grid.Column="1" VerticalAlignment="Center"
+                                    <Button Content="Создать" Grid.Column="1" VerticalAlignment="Center"
                                     Command="{Binding Resources.CreateEmotionCommand}"/>
-                        </Grid>
-                    </local:MinimizableView.Header>
-                    <local:MinimizableView.Child>
-                        <ListView Grid.Row="1"
+                                </Grid>
+                            </local:MinimizableView.Header>
+                            <local:MinimizableView.Child>
+                                <ListView Grid.Row="1"
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                   HorizontalContentAlignment="Stretch"
                                   ItemsSource="{Binding Resources.InheritedEmotions}">
-                            <ListView.Template>
-                                <ControlTemplate>
-                                    <ItemsPresenter/>
-                                </ControlTemplate>
-                            </ListView.Template>
-                            <ListView.ItemTemplate>
-                                <DataTemplate>
-                                    <local:EmotionView Emotion="{Binding}"/>
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
-                        </ListView>
-                    </local:MinimizableView.Child>
-                </local:MinimizableView>
-            </StackPanel>
-        </ScrollViewer>
+                                    <ListView.Template>
+                                        <ControlTemplate>
+                                            <ItemsPresenter/>
+                                        </ControlTemplate>
+                                    </ListView.Template>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <local:EmotionView Emotion="{Binding}"/>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </local:MinimizableView.Child>
+                        </local:MinimizableView>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem Header="Описание">
+                <TextBox AcceptsReturn="True"
+                         AcceptsTab="True"
+                         Text="{Binding Resources.Description}"/>
+            </TabItem>
+        </TabControl>
         <Border Grid.RowSpan="3"
                 BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
                 BorderThickness="1,0,1,0"/>
