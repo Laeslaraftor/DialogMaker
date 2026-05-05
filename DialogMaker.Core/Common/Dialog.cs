@@ -1,11 +1,8 @@
 ﻿using DialogMaker.Core.Common.SavedStates;
 using DialogMaker.Core.Editor;
 using DialogMaker.Core.Executioning;
-using System;
 using MessagePack;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 
 namespace DialogMaker.Core.Common
 {
@@ -76,7 +73,7 @@ namespace DialogMaker.Core.Common
             if (IsDisposed)
             {
                 throw new ObjectDisposedException("Невозможно сохранить очищенный диалог");
-            } 
+            }
 
             var filePath = Path.Combine(Folder, $"{Id}.{FileExtension}");
             Dictionary<int, string> resourcesIndexes = new(_indexedResources.Items.Count);

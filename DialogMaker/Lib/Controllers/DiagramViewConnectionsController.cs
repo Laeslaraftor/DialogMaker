@@ -1,17 +1,13 @@
-﻿using Acly;
-using Acly.Numbers;
+﻿using Acly.Numbers;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor;
 using DialogMaker.Lib.Elements;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Shapes;
 
 namespace DialogMaker.Lib.Controllers
 {
@@ -35,7 +31,7 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(CurvesThickness));
+                    OnPropertyChanging(nameof(CurvesThickness));
 
                     field = value;
 
@@ -44,7 +40,7 @@ namespace DialogMaker.Lib.Controllers
                         curve.Line.StrokeThickness = value;
                     }
 
-                    InvokePropertyChanged(nameof(CurvesThickness));
+                    OnPropertyChanged(nameof(CurvesThickness));
                 }
             }
         }
@@ -55,7 +51,7 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(CurvesOffset));
+                    OnPropertyChanging(nameof(CurvesOffset));
 
                     field = value;
 
@@ -64,7 +60,7 @@ namespace DialogMaker.Lib.Controllers
                         curve.Line.Offset = value;
                     }
 
-                    InvokePropertyChanged(nameof(CurvesOffset));
+                    OnPropertyChanged(nameof(CurvesOffset));
                 }
             }
         }
@@ -75,7 +71,7 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(CurvesEasing));
+                    OnPropertyChanging(nameof(CurvesEasing));
 
                     field = value;
 
@@ -84,7 +80,7 @@ namespace DialogMaker.Lib.Controllers
                         curve.Line.Easing = value;
                     }
 
-                    InvokePropertyChanged(nameof(CurvesEasing));
+                    OnPropertyChanged(nameof(CurvesEasing));
                 }
             }
         }
@@ -95,7 +91,7 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(CurvesResolution));
+                    OnPropertyChanging(nameof(CurvesResolution));
 
                     field = value;
 
@@ -104,7 +100,7 @@ namespace DialogMaker.Lib.Controllers
                         curve.Line.Resolution = value;
                     }
 
-                    InvokePropertyChanged(nameof(CurvesResolution));
+                    OnPropertyChanged(nameof(CurvesResolution));
                 }
             }
         }
@@ -115,9 +111,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Dialog));
+                    OnPropertyChanging(nameof(Dialog));
                     field = value;
-                    InvokePropertyChanged(nameof(Dialog));
+                    OnPropertyChanged(nameof(Dialog));
                 }
             }
         }
@@ -310,7 +306,7 @@ namespace DialogMaker.Lib.Controllers
                 if (obj is ISelectable)
                 {
                     touchedSomeElement = true;
-                }                
+                }
             }, callback =>
             {
                 if (!result.IsEmpty || skipCount > 2)
@@ -459,8 +455,8 @@ namespace DialogMaker.Lib.Controllers
 
             if (curve.SetConnection(endPort, _currentCurve.IsStartPortControl) == false || endPort == null)
             {
-                if (endPort == null && 
-                    ((_currentCurve.IsStartPortControl && curveStartPort == null) || 
+                if (endPort == null &&
+                    ((_currentCurve.IsStartPortControl && curveStartPort == null) ||
                     (!_currentCurve.IsStartPortControl && curveEndPort == null)))
                 {
                     ReleasedOnEmptySpace?.Invoke(this, new(e, _currentCurve.IsStartPortControl ? curveEndPort! : curveStartPort!));

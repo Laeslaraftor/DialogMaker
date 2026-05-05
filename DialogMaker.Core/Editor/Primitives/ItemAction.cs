@@ -1,6 +1,4 @@
-﻿using Acly;
-
-namespace DialogMaker.Core.Editor
+﻿namespace DialogMaker.Core.Editor
 {
     public enum ItemAction
     {

@@ -1,5 +1,5 @@
-﻿using System.Windows;
-using DialogMaker.Lib.Elements;
+﻿using DialogMaker.Lib.Elements;
+using System.Windows;
 
 namespace DialogMaker.Lib.InputFields
 {
@@ -20,10 +20,10 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Placeholder));
+                    OnPropertyChanging(nameof(Placeholder));
                     field = value;
                     _view.Text = value;
-                    InvokePropertyChanged(nameof(Placeholder));
+                    OnPropertyChanged(nameof(Placeholder));
                 }
             }
         }
@@ -34,9 +34,9 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Value));
+                    OnPropertyChanging(nameof(Value));
                     field = value;
-                    InvokePropertyChanged(nameof(Value));
+                    OnPropertyChanged(nameof(Value));
                 }
             }
         }

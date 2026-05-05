@@ -4,7 +4,7 @@ namespace DialogMaker.Lib
 {
     public class RelayCommand(Action<object?> execute) : ICommand
     {
-        public RelayCommand(Action<object?> execute, Func<object?, bool> canExecute) 
+        public RelayCommand(Action<object?> execute, Func<object?, bool> canExecute)
             : this(execute)
         {
             _canExecuteMethod = canExecute;

@@ -1,6 +1,4 @@
-﻿using Acly;
-using DialogMaker.Core;
-using DialogMaker.Core.Editor;
+﻿using DialogMaker.Core.Editor;
 using DialogMaker.Editor.Data;
 using DialogMaker.Editor.Filters;
 using DialogMaker.Editor.Nodes;
@@ -62,7 +60,7 @@ namespace DialogMaker.Editor
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(DefaultLanguage));
+                    OnPropertyChanging(nameof(DefaultLanguage));
                     field = value;
                     IsDefaultLanguageSetted = value != null;
 
@@ -71,7 +69,7 @@ namespace DialogMaker.Editor
                         Project.DefaultLanguage = value?.Language;
                     }
 
-                    InvokePropertyChanged(nameof(DefaultLanguage));
+                    OnPropertyChanged(nameof(DefaultLanguage));
                 }
             }
         }
@@ -82,9 +80,9 @@ namespace DialogMaker.Editor
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsDefaultLanguageSetted));
+                    OnPropertyChanging(nameof(IsDefaultLanguageSetted));
                     field = value;
-                    InvokePropertyChanged(nameof(IsDefaultLanguageSetted));
+                    OnPropertyChanged(nameof(IsDefaultLanguageSetted));
                 }
             }
         }
@@ -104,9 +102,9 @@ namespace DialogMaker.Editor
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(LastShowedTabItem));
+                    OnPropertyChanging(nameof(LastShowedTabItem));
                     field = value;
-                    InvokePropertyChanged(nameof(LastShowedTabItem));
+                    OnPropertyChanged(nameof(LastShowedTabItem));
                 }
             }
         }
@@ -198,7 +196,7 @@ namespace DialogMaker.Editor
         private void OnProjectPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             Save();
-            InvokePropertyChanged(e.PropertyName != null ? e.PropertyName : string.Empty);
+            OnPropertyChanged(e.PropertyName != null ? e.PropertyName : string.Empty);
 
             if (e.PropertyName == nameof(DefaultLanguage))
             {

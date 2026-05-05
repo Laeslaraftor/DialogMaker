@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DialogMaker.Core.Executioning
+﻿namespace DialogMaker.Core.Executioning
 {
     public sealed class ImplementationAttribute(Type implementation) : Attribute
     {

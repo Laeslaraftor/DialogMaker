@@ -1,10 +1,5 @@
-﻿using Acly;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.Collections;
 using System.Drawing;
-using System.IO;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -47,9 +42,9 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 if (_name != value)
                 {
-                    InvokePropertyChanging(nameof(Name));
+                    OnPropertyChanging(nameof(Name));
                     _name = value;
-                    InvokePropertyChanged(nameof(Name));
+                    OnPropertyChanged(nameof(Name));
                 }
             }
         }
@@ -261,7 +256,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 port.Disconnect(this);
             }
 
-            InvokePropertyChanged(nameof(ConnectionsCount));
+            OnPropertyChanged(nameof(ConnectionsCount));
         }
 
         private void OnConnectionsListItemChanged(object sender, CollectionItemEventArgs e)

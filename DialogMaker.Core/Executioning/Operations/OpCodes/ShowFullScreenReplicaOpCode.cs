@@ -1,6 +1,4 @@
-using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning.Internal;
-using System.Threading.Tasks;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -23,11 +21,11 @@ namespace DialogMaker.Core.Executioning
         }
 
         #endregion
-		
-		#region Статика
-		
-		public static readonly ShowFullScreenReplicaOpCode Instance = new();
-		
-		#endregion
+
+        #region Статика
+
+        public static readonly ShowFullScreenReplicaOpCode Instance = new();
+
+        #endregion
     }
 }

@@ -1,5 +1,4 @@
 ﻿using DialogMaker.Core.Editor.Nodes;
-using System;
 using System.ComponentModel;
 
 namespace DialogMaker.Core

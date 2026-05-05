@@ -2,7 +2,6 @@
 using DialogMaker.Core.Editor;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Linq;
 
 namespace DialogMaker.Core.Common
 {
@@ -34,10 +33,10 @@ namespace DialogMaker.Core.Common
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(CurrentVariant));
+                    OnPropertyChanging(nameof(CurrentVariant));
                     field = value;
                     Value = value?.Value ?? string.Empty;
-                    InvokePropertyChanged(nameof(CurrentVariant));
+                    OnPropertyChanged(nameof(CurrentVariant));
                 }
             }
         }
@@ -48,9 +47,9 @@ namespace DialogMaker.Core.Common
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Value));
+                    OnPropertyChanging(nameof(Value));
                     field = value;
-                    InvokePropertyChanged(nameof(Value));
+                    OnPropertyChanged(nameof(Value));
 
                 }
             }

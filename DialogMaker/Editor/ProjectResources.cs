@@ -1,5 +1,4 @@
-﻿using Acly;
-using DialogMaker.Core;
+﻿using DialogMaker.Core;
 using DialogMaker.Core.Editor;
 using DialogMaker.Editor.Filters;
 using DialogMaker.Editor.Menus;

@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace DialogMaker.Core.Executioning
+﻿namespace DialogMaker.Core.Executioning
 {
     public class StartThread2OpCode() : OpCode(DialogByteCode.StartThread2)
     {

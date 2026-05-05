@@ -1,6 +1,4 @@
-﻿using Acly;
-using DialogMaker.Core;
-using DialogMaker.Core.Common;
+﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Editor;
 using System.Windows;
 
@@ -18,10 +16,10 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(CanEdit));
+                    OnPropertyChanging(nameof(CanEdit));
                     field = value;
                     SetEnabled(true);
-                    InvokePropertyChanged(nameof(CanEdit));
+                    OnPropertyChanged(nameof(CanEdit));
                 }
             }
         }
@@ -57,7 +55,7 @@ namespace DialogMaker.Lib.InputFields
             }
             if (type == typeof(int))
             {
-                return typeof(IntInputField); 
+                return typeof(IntInputField);
             }
             if (type == typeof(Enum))
             {

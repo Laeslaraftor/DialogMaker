@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core;
-using DialogMaker.Lib.Commands;
+﻿using DialogMaker.Lib.Commands;
 using System.Collections.Specialized;
 using System.Windows;
 
@@ -27,9 +26,9 @@ namespace DialogMaker.Editor.Nodes
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(CanCopy));
+                    OnPropertyChanging(nameof(CanCopy));
                     field = value;
-                    InvokePropertyChanged(nameof(CanCopy));
+                    OnPropertyChanged(nameof(CanCopy));
                 }
             }
         }
@@ -40,9 +39,9 @@ namespace DialogMaker.Editor.Nodes
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(CanPaste));
+                    OnPropertyChanging(nameof(CanPaste));
                     field = value;
-                    InvokePropertyChanged(nameof(CanPaste));
+                    OnPropertyChanged(nameof(CanPaste));
                 }
             }
         }

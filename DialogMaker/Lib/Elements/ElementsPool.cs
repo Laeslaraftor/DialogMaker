@@ -1,6 +1,4 @@
-﻿using DialogMaker.Core;
-
-namespace DialogMaker.Lib.Elements
+﻿namespace DialogMaker.Lib.Elements
 {
     public class ElementsPool(Func<object> fabric) : Disposable
     {

@@ -51,7 +51,7 @@ namespace DialogMaker.Lib.Elements
         }
         private static void OnStatusChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is not ToolTipView view || 
+            if (d is not ToolTipView view ||
                 e.NewValue is not MessageType type)
             {
                 return;

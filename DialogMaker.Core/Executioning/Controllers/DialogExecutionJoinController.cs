@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using DialogMaker.Core.Editor;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using DialogMaker.Core.Editor;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -16,9 +12,9 @@ namespace DialogMaker.Core.Executioning
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsCompleted));
+                    OnPropertyChanging(nameof(IsCompleted));
                     field = value;
-                    InvokePropertyChanged(nameof(IsCompleted));
+                    OnPropertyChanged(nameof(IsCompleted));
                 }
             }
         }
@@ -29,9 +25,9 @@ namespace DialogMaker.Core.Executioning
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsBusy));
+                    OnPropertyChanging(nameof(IsBusy));
                     field = value;
-                    InvokePropertyChanged(nameof(IsBusy));
+                    OnPropertyChanged(nameof(IsBusy));
                 }
             }
         }

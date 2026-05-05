@@ -15,7 +15,7 @@ namespace DialogMaker.Core.Executioning
         #region Статика
 
         public static readonly AddOpCode Instance = new();
-		
-		#endregion
+
+        #endregion
     }
 }

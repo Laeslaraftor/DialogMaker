@@ -18,7 +18,7 @@ namespace DialogMaker.Lib.Elements
         public object? Message
         {
             get => GetValue(MessageProperty);
-            set => SetValue(MessageProperty, value);    
+            set => SetValue(MessageProperty, value);
         }
 
         private readonly TextBlock _textView = new()

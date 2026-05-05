@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core;
-using DialogMaker.Lib;
+﻿using DialogMaker.Lib;
 using DialogMaker.Lib.Controllers;
 using DialogMaker.Lib.Elements;
 using System.ComponentModel;
@@ -47,9 +46,9 @@ namespace DialogMaker.Editor.Runtime
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Name));
+                    OnPropertyChanging(nameof(Name));
                     field = value;
-                    InvokePropertyChanged(nameof(Name));
+                    OnPropertyChanged(nameof(Name));
                 }
             }
         }

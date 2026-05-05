@@ -1,8 +1,5 @@
 ﻿using DialogMaker.Core.Editor.Nodes;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 
 namespace DialogMaker.Core.Executioning.Debugging
 {
@@ -33,9 +30,9 @@ namespace DialogMaker.Core.Executioning.Debugging
 
                 var item = DialogCodeStructureItem.Create(node, p =>
                 {
-                    return p.Node != fromNode && 
-                           !p.Node.IsSeparator && 
-                           !p.Node.IsFunction && 
+                    return p.Node != fromNode &&
+                           !p.Node.IsSeparator &&
+                           !p.Node.IsFunction &&
                            p.ConnectionsCount < 2;
                 });
 

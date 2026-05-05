@@ -1,12 +1,8 @@
 ﻿using DialogMaker.Core.Common.SavedStates;
 using DialogMaker.Core.Editor;
 using MessagePack;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
 
 namespace DialogMaker.Core.Common
 {
@@ -129,10 +125,10 @@ namespace DialogMaker.Core.Common
         {
             base.Dispose(isDisposing);
 
-            DisposeAll(Files.Values);
-            DisposeAll(Strings.Values);
-            DisposeAll(Characters.Values);
-            DisposeAll(Variables.Values);
+            ObjectHelper.DisposeAll(Files.Values);
+            ObjectHelper.DisposeAll(Strings.Values);
+            ObjectHelper.DisposeAll(Characters.Values);
+            ObjectHelper.DisposeAll(Variables.Values);
         }
 
         #endregion

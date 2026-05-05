@@ -1,5 +1,4 @@
-﻿using Acly;
-using DialogMaker.Core;
+﻿using DialogMaker.Core;
 using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor;
@@ -66,9 +65,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(ExtraConverter));
+                    OnPropertyChanging(nameof(ExtraConverter));
                     field = value;
-                    InvokePropertyChanged(nameof(ExtraConverter));
+                    OnPropertyChanged(nameof(ExtraConverter));
                 }
             }
         }
@@ -97,7 +96,7 @@ namespace DialogMaker.Lib.Controllers
             if (!Equals(value, Value))
             {
                 Value = value;
-                InvokePropertyChanged(nameof(Value));
+                OnPropertyChanged(nameof(Value));
             }
         }
         private void OnInstancePropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -114,11 +113,11 @@ namespace DialogMaker.Lib.Controllers
                 InputField.Value = value;
             }
 
-            InvokePropertyChanged(nameof(Value));
+            OnPropertyChanged(nameof(Value));
         }
         private void OnInstancePropertyChanging(object? sender, PropertyChangingEventArgs e)
         {
-            InvokePropertyChanging(nameof(Value));
+            OnPropertyChanging(nameof(Value));
         }
 
         #endregion

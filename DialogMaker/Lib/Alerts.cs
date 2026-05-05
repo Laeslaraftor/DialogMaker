@@ -1,9 +1,7 @@
-﻿using DialogMaker.Core;
-using DialogMaker.Lib.Controllers;
+﻿using DialogMaker.Lib.Controllers;
 using DialogMaker.Lib.Elements;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 
 namespace DialogMaker.Lib
 {
@@ -47,7 +45,7 @@ namespace DialogMaker.Lib
             alert.Message = inputsPanel;
 
             Dictionary<PropertyEditorController, object?> startValues = [];
-            var properties = PropertyEditorController.CreateForAllProperties(instance); 
+            var properties = PropertyEditorController.CreateForAllProperties(instance);
 
             foreach (var property in properties)
             {

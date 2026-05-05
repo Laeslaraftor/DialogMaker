@@ -1,5 +1,4 @@
 ﻿using DialogMaker.Lib;
-using System.Diagnostics;
 
 namespace DialogMaker.Editor.Menus
 {

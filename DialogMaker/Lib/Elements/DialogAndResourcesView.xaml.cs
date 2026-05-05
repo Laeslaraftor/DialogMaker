@@ -1,6 +1,5 @@
 ﻿using DialogMaker.Core.Editor;
 using DialogMaker.Editor;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;

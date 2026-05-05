@@ -37,9 +37,9 @@ namespace DialogMaker.Editor.Menus
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(CommandParameter));
+                    OnPropertyChanging(nameof(CommandParameter));
                     field = value;
-                    InvokePropertyChanged(nameof(CommandParameter));
+                    OnPropertyChanged(nameof(CommandParameter));
                 }
             }
         }
@@ -86,7 +86,7 @@ namespace DialogMaker.Editor.Menus
         protected override void OnContextMenuOpened(ContextMenu menu, ItemCollection items, MenuItem item)
         {
             base.OnContextMenuOpened(menu, items, item);
-            
+
             if (CanExecute != null)
             {
                 CanExecuteChanged?.Invoke(this, EventArgs.Empty);

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-
-namespace DialogMaker.Core.Executioning
+﻿namespace DialogMaker.Core.Executioning
 {
     public class WaitOpCode() : OpCode(DialogByteCode.Wait)
     {

@@ -245,7 +245,7 @@ namespace DialogMaker.Lib.Elements
                     if (field != value)
                     {
                         field = value;
-                        InvokePropertyChanged(nameof(Prefix));
+                        OnPropertyChanged(nameof(Prefix));
                     }
                 }
             }
@@ -257,7 +257,7 @@ namespace DialogMaker.Lib.Elements
                     if (field != value)
                     {
                         field = value;
-                        InvokePropertyChanged(nameof(Item));
+                        OnPropertyChanged(nameof(Item));
                     }
                 }
             }
@@ -270,7 +270,7 @@ namespace DialogMaker.Lib.Elements
                     {
                         field = value;
                         NotStarted = value <= 0;
-                        InvokePropertyChanged(nameof(Progress));
+                        OnPropertyChanged(nameof(Progress));
                     }
                 }
             }
@@ -282,7 +282,7 @@ namespace DialogMaker.Lib.Elements
                     if (field != value)
                     {
                         field = value;
-                        InvokePropertyChanged(nameof(NotStarted));
+                        OnPropertyChanged(nameof(NotStarted));
                     }
                 }
             }
@@ -294,7 +294,7 @@ namespace DialogMaker.Lib.Elements
                     if (field != value)
                     {
                         field = value;
-                        InvokePropertyChanged(nameof(IsError));
+                        OnPropertyChanged(nameof(IsError));
                     }
                 }
             }

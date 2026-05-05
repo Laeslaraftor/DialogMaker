@@ -31,7 +31,7 @@
             {
                 return d;
             }
-            else if(value is int i)
+            else if (value is int i)
             {
                 return i;
             }

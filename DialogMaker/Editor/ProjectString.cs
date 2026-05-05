@@ -1,5 +1,4 @@
-﻿using Acly;
-using DialogMaker.Core.Common;
+﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Editor;
 using DialogMaker.Editor.Menus;
 using DialogMaker.Lib;
@@ -41,7 +40,7 @@ namespace DialogMaker.Editor
 
                 foreach (var variant in Variants)
                 {
-                    if (variant.Language != null && 
+                    if (variant.Language != null &&
                         variant.Language.ProjectId == defaultLanguage.ProjectId)
                     {
                         return variant;
@@ -60,7 +59,7 @@ namespace DialogMaker.Editor
                 if (_isMinimized != value)
                 {
                     _isMinimized = value;
-                    InvokePropertyChanged(nameof(IsMinimized));
+                    OnPropertyChanged(nameof(IsMinimized));
                 }
             }
         }
@@ -140,7 +139,7 @@ namespace DialogMaker.Editor
         {
             if (e.PropertyName == "DefaultLanguage")
             {
-                InvokePropertyChanged(nameof(PreviewVariant));
+                OnPropertyChanged(nameof(PreviewVariant));
             }
         }
         private void OnVariantsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -154,7 +153,7 @@ namespace DialogMaker.Editor
                 error.Log();
             }
 
-            InvokePropertyChanged(nameof(PreviewVariant));
+            OnPropertyChanged(nameof(PreviewVariant));
         }
 
         #endregion

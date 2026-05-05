@@ -1,10 +1,7 @@
-﻿using Acly;
-using DialogMaker.Core.Editor.Collections;
+﻿using DialogMaker.Core.Editor.Collections;
 using DialogMaker.Core.Editor.Messages;
 using DialogMaker.Core.Editor.Nodes.Structs;
 using DialogMaker.Core.Executioning;
-using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 
 namespace DialogMaker.Core.Editor.Nodes
@@ -28,9 +25,9 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(TriggerId));
+                    OnPropertyChanging(nameof(TriggerId));
                     field = value;
-                    InvokePropertyChanged(nameof(TriggerId));
+                    OnPropertyChanged(nameof(TriggerId));
                 }
             }
         }

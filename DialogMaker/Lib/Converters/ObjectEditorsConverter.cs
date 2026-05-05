@@ -1,7 +1,4 @@
-﻿using Acly;
-using DialogMaker.Core;
-using DialogMaker.Lib.InputFields;
-using Newtonsoft.Json.Linq;
+﻿using DialogMaker.Lib.InputFields;
 using System.Collections;
 
 namespace DialogMaker.Lib.Converters
@@ -46,8 +43,8 @@ namespace DialogMaker.Lib.Converters
         {
             var fieldType = FieldType;
 
-            if (SecondCollection.Count > Index && 
-                SecondCollection[Index] is InputField createdField && 
+            if (SecondCollection.Count > Index &&
+                SecondCollection[Index] is InputField createdField &&
                 createdField.GetType() == fieldType)
             {
                 if (createdField.Value != null && Value != null &&
@@ -102,7 +99,7 @@ namespace DialogMaker.Lib.Converters
         protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);
-            Clear();            
+            Clear();
         }
 
         private void Clear(InputField field)

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace DialogMaker.Core.Executioning
+﻿namespace DialogMaker.Core.Executioning
 {
     internal interface IInternalDialogExecutor
     {

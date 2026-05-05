@@ -28,7 +28,7 @@ namespace DialogMaker.Lib.Elements
                 if (_isDisposed != value)
                 {
                     _isDisposed = value;
-                    InvokePropertyChanged(nameof(IsDisposed));
+                    OnPropertyChanged(nameof(IsDisposed));
                 }
             }
         }
@@ -43,7 +43,7 @@ namespace DialogMaker.Lib.Elements
                 if (_color != value)
                 {
                     _color = value;
-                    InvokePropertyChanged(nameof(Color));
+                    OnPropertyChanged(nameof(Color));
                 }
             }
         }
@@ -75,7 +75,7 @@ namespace DialogMaker.Lib.Elements
 
         #region События
 
-        private void InvokePropertyChanged(string propertyName)
+        private void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new(propertyName));
         }

@@ -1,10 +1,9 @@
-﻿using DialogMaker.Core;
-using DialogMaker.Core.Editor;
+﻿using DialogMaker.Core.Editor;
 using DialogMaker.Editor.Menus;
 using DialogMaker.Lib;
+using System.ComponentModel;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.ComponentModel;
 
 namespace DialogMaker.Editor
 {
@@ -44,7 +43,7 @@ namespace DialogMaker.Editor
                 if (Original.Language != value?.Language)
                 {
                     Original.Language = value?.Language;
-                    InvokePropertyChanged(nameof(Language));
+                    OnPropertyChanged(nameof(Language));
                 }
             }
         }
@@ -75,7 +74,7 @@ namespace DialogMaker.Editor
                         error.Log();
                     }
 
-                    InvokePropertyChanged(nameof(LanguageIndex));
+                    OnPropertyChanged(nameof(LanguageIndex));
                 }
             }
         }
@@ -161,11 +160,11 @@ namespace DialogMaker.Editor
 
         private void OnOriginalPropertyChanging(object? sender, PropertyChangingEventArgs e)
         {
-            InvokePropertyChanging(e);
+            OnPropertyChanging(e);
         }
         private void OnOriginalPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            InvokePropertyChanged(e);
+            OnPropertyChanged(e);
         }
 
         #endregion

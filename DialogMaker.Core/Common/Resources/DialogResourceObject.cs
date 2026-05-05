@@ -1,7 +1,6 @@
 ﻿using DialogMaker.Core.Common.SavedStates;
 using DialogMaker.Core.Editor;
 using DialogMaker.Core.Executioning;
-using System;
 
 namespace DialogMaker.Core.Common
 {

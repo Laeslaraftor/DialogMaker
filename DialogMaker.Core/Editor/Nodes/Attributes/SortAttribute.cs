@@ -1,5 +1,4 @@
-﻿using System;
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -36,7 +35,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 }
 
                 return -1;
-            }            
+            }
 
             return SortValue.CompareTo(obj);
         }

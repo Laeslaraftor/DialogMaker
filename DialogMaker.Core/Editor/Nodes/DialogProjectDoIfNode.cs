@@ -1,7 +1,5 @@
 ﻿using DialogMaker.Core.Executioning;
 using DialogMaker.Core.Executioning.Builders;
-using System;
-using System.Collections.Generic;
 using System.Text;
 
 namespace DialogMaker.Core.Editor.Nodes

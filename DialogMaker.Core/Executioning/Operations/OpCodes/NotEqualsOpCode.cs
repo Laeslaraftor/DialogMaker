@@ -14,7 +14,7 @@ namespace DialogMaker.Core.Executioning
         #region Статика
 
         public static readonly NotEqualsOpCode Instance = new();
-		
-		#endregion
+
+        #endregion
     }
 }

@@ -1,9 +1,5 @@
-﻿using MessagePack;
-using System;
-using DialogMaker.Core.Editor;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using DialogMaker.Core.Editor;
+using MessagePack;
 
 namespace DialogMaker.Core
 {

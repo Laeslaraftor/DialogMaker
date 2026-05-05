@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core;
-using DialogMaker.Lib.Controllers;
+﻿using DialogMaker.Lib.Controllers;
 using System.ComponentModel;
 using System.Windows;
 
@@ -46,14 +45,14 @@ namespace DialogMaker.Editor
         {
             if (e.PropertyName == nameof(Value))
             {
-                InvokePropertyChanging(nameof(Value));
+                OnPropertyChanging(nameof(Value));
             }
         }
         private void OnControllerPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(Value))
             {
-                InvokePropertyChanged(nameof(Value));
+                OnPropertyChanged(nameof(Value));
             }
         }
 

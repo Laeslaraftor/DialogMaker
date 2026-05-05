@@ -15,7 +15,7 @@ namespace DialogMaker.Core.Common
         }
         public DialogResourceCharacter(DialogResources resources, DialogResourceCharacterSavedState savedState) : base(resources, savedState)
         {
-            if (savedState.Name != null && 
+            if (savedState.Name != null &&
                 ResourcePath.TryParse(savedState.Name, out var namePath))
             {
                 _namePath = namePath;

@@ -1,6 +1,4 @@
-﻿using Acly;
-using DialogMaker.Core;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Input;
 
 namespace DialogMaker.Lib.Controllers
@@ -23,12 +21,12 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Value));
+                    OnPropertyChanging(nameof(Value));
                     var oldValue = field;
                     field = value;
 
                     ValueChanged?.Invoke(this, new(oldValue, value));
-                    InvokePropertyChanged(nameof(value));
+                    OnPropertyChanged(nameof(value));
                 }
             }
         }
@@ -39,9 +37,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Button));
+                    OnPropertyChanging(nameof(Button));
                     field = value;
-                    InvokePropertyChanged(nameof(Button));
+                    OnPropertyChanged(nameof(Button));
                 }
             }
         }
@@ -52,9 +50,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(ClampValue));
+                    OnPropertyChanging(nameof(ClampValue));
                     field = value;
-                    InvokePropertyChanged(nameof(ClampValue));
+                    OnPropertyChanged(nameof(ClampValue));
                 }
             }
         }

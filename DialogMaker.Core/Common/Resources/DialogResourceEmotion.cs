@@ -5,14 +5,14 @@ namespace DialogMaker.Core.Common
 {
     public class DialogResourceEmotion : DialogResourceObject, IEmotion
     {
-        public DialogResourceEmotion(DialogResources resources, DialogProjectEmotion resourceObject) 
+        public DialogResourceEmotion(DialogResources resources, DialogProjectEmotion resourceObject)
             : base(resources, resourceObject)
         {
             LeftEye = new(resourceObject.LeftEye);
             RightEye = new(resourceObject.RightEye);
             Mouth = new(resourceObject.Mouth);
         }
-        public DialogResourceEmotion(DialogResources resources, DialogResourceEmotionSavedState savedState) 
+        public DialogResourceEmotion(DialogResources resources, DialogResourceEmotionSavedState savedState)
             : base(resources, savedState)
         {
             LeftEye = savedState.LeftEye == null ? new() : new(savedState.LeftEye);
@@ -67,7 +67,7 @@ namespace DialogMaker.Core.Common
 
             IEmotion.IEyebrow IEmotion.IEye.Eyebrow => Eyebrow;
         }
-        public readonly struct MouthInfo(float openPercent, float horizontalStretch, float leftCornerPosition, float rightCornerPosition) 
+        public readonly struct MouthInfo(float openPercent, float horizontalStretch, float leftCornerPosition, float rightCornerPosition)
             : IEmotion.IMouth
         {
             public MouthInfo(IEmotion.IMouth mouth)

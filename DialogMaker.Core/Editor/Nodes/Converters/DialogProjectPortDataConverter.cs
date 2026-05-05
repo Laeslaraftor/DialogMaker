@@ -1,6 +1,5 @@
 ﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning.Internal;
-using System;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -101,7 +100,7 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 return DialogNodePortType.Number;
             }
-            else if (instance is string || 
+            else if (instance is string ||
                      instance is IResourceString)
             {
                 return DialogNodePortType.String;

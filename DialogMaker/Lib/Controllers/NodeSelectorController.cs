@@ -4,7 +4,6 @@ using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor;
 using DialogMaker.Lib.Data;
 using DialogMaker.Lib.Elements;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -38,9 +37,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsBusy));
+                    OnPropertyChanging(nameof(IsBusy));
                     field = value;
-                    InvokePropertyChanged(nameof(IsBusy));
+                    OnPropertyChanged(nameof(IsBusy));
                 }
             }
         }
@@ -98,7 +97,7 @@ namespace DialogMaker.Lib.Controllers
             await Task.Delay(10);
             FocusHelper.SetIgnoreFocusSwitch(NodeSelector, false);
 
-            while (NodeSelector.IsVisible && result == null && 
+            while (NodeSelector.IsVisible && result == null &&
                    !cancellationSource.IsCancellationRequested)
             {
                 await Task.Delay(10);

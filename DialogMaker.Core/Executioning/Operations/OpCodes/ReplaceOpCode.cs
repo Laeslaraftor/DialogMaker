@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-
 namespace DialogMaker.Core.Executioning
 {
     public class ReplaceOpCode() : OpCode(DialogByteCode.Replace)
@@ -12,7 +10,7 @@ namespace DialogMaker.Core.Executioning
 
             var value1 = context.Resources.GetVariable(args[0]);
 
-            if (value1.Value == null || 
+            if (value1.Value == null ||
                 value1.Type != DialogVariableType.String)
             {
                 return;
@@ -29,11 +27,11 @@ namespace DialogMaker.Core.Executioning
         }
 
         #endregion
-		
-		#region Статика
-		
-		public static readonly ReplaceOpCode Instance = new();
-		
-		#endregion
+
+        #region Статика
+
+        public static readonly ReplaceOpCode Instance = new();
+
+        #endregion
     }
 }

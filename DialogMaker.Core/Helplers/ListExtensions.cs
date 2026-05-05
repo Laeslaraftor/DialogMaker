@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading.Tasks;
 
 namespace DialogMaker.Core
 {
@@ -28,7 +25,7 @@ namespace DialogMaker.Core
             });
         }
 
-        public static ReadOnlyDictionary<TKey, ReadOnlyCollection<TValue>> ToReadonly<TKey, TValue>(this IDictionary<TKey, IList<TValue>> dictionary) 
+        public static ReadOnlyDictionary<TKey, ReadOnlyCollection<TValue>> ToReadonly<TKey, TValue>(this IDictionary<TKey, IList<TValue>> dictionary)
             where TKey : notnull
         {
             Dictionary<TKey, ReadOnlyCollection<TValue>> result = [];

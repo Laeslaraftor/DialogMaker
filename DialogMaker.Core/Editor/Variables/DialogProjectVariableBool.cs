@@ -1,7 +1,4 @@
-﻿using System;
-using System.Xml.Schema;
-
-namespace DialogMaker.Core.Editor
+﻿namespace DialogMaker.Core.Editor
 {
     public class DialogProjectVariableBool : DialogProjectVariable<bool>
     {
@@ -18,11 +15,11 @@ namespace DialogMaker.Core.Editor
 
         protected override bool CanConvertValue(object? value)
         {
-            return value == null || 
-                   value is bool || 
-                   value is OperandValue || 
-                   value is int || 
-                   value is double || 
+            return value == null ||
+                   value is bool ||
+                   value is OperandValue ||
+                   value is int ||
+                   value is double ||
                    value is float;
         }
         protected override object? ConvertValue(object? value)

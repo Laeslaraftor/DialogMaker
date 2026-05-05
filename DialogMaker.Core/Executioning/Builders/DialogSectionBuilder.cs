@@ -1,7 +1,4 @@
-﻿using Acly;
-using System;
-
-namespace DialogMaker.Core.Executioning.Builders
+﻿namespace DialogMaker.Core.Executioning.Builders
 {
     public class DialogSectionBuilder
     {
@@ -78,7 +75,7 @@ namespace DialogMaker.Core.Executioning.Builders
         }
         public bool RemoveOperation(OperationBuilder operation)
         {
-            return _operations.Remove(operation); 
+            return _operations.Remove(operation);
         }
 
         public int GetOperationByteCodeIndex(OperationBuilder operation)

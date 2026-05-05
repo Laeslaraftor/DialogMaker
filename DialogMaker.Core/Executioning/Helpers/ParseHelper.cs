@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DialogMaker.Core.Executioning
+﻿namespace DialogMaker.Core.Executioning
 {
     internal static class ParseHelper
     {

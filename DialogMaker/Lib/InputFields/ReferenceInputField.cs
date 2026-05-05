@@ -20,7 +20,7 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Placeholder));
+                    OnPropertyChanging(nameof(Placeholder));
 
                     field = value;
 
@@ -29,7 +29,7 @@ namespace DialogMaker.Lib.InputFields
                         _view.Placeholder = value;
                     }
 
-                    InvokePropertyChanged(nameof(Placeholder));
+                    OnPropertyChanged(nameof(Placeholder));
                 }
             }
         }
@@ -40,7 +40,7 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (field?.Equals(value) != true)
                 {
-                    InvokePropertyChanging(nameof(Value));
+                    OnPropertyChanging(nameof(Value));
                     field = value;
 
                     if (value?.Equals(_view.Item) != true)
@@ -48,7 +48,7 @@ namespace DialogMaker.Lib.InputFields
                         _view.Item = EditorExtensions.ToEditorItem(value);
                     }
 
-                    InvokePropertyChanged(nameof(Value));
+                    OnPropertyChanged(nameof(Value));
                 }
             }
         }
@@ -59,7 +59,7 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (_view.RequestedResourceType != value)
                 {
-                    InvokePropertyChanging(nameof(ResourceType));
+                    OnPropertyChanging(nameof(ResourceType));
 
                     field = value;
 
@@ -68,7 +68,7 @@ namespace DialogMaker.Lib.InputFields
                         _view.RequestedResourceType = value;
                     }
 
-                    InvokePropertyChanged(nameof(ResourceType));
+                    OnPropertyChanged(nameof(ResourceType));
                 }
             }
         }

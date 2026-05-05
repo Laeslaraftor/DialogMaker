@@ -1,15 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
-    public readonly struct DialogNodeInfo(DialogNodeType nodeType, Type type, DialogProjectNodeMetadata metadata, string path, 
-                                          IDictionary<PropertyInfo, DialogProjectNodeMetadata> inputs, 
-                                          IDictionary<PropertyInfo, DialogProjectNodeMetadata> outputs, 
+    public readonly struct DialogNodeInfo(DialogNodeType nodeType, Type type, DialogProjectNodeMetadata metadata, string path,
+                                          IDictionary<PropertyInfo, DialogProjectNodeMetadata> inputs,
+                                          IDictionary<PropertyInfo, DialogProjectNodeMetadata> outputs,
                                           IDictionary<PropertyInfo, DialogProjectNodeMetadata> properties)
         : IEquatable<DialogNodeInfo>, IComparable, IComparable<DialogNodeInfo>
     {
@@ -55,7 +53,7 @@ namespace DialogMaker.Core.Editor.Nodes
         }
         public override int GetHashCode()
         {
-            return HashCode.Combine(NodeType, Type, Metadata, Path, Inputs, Outputs) ;
+            return HashCode.Combine(NodeType, Type, Metadata, Path, Inputs, Outputs);
         }
         public override string ToString()
         {

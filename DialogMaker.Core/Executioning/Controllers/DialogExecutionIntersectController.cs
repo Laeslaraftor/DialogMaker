@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace DialogMaker.Core.Executioning
+﻿namespace DialogMaker.Core.Executioning
 {
     public class DialogExecutionIntersectController(IDialogExecutingThreadManager threadManager, IJoinOperationInfo info)
         : Disposable, IJoinController
@@ -13,9 +10,9 @@ namespace DialogMaker.Core.Executioning
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsCompleted));
+                    OnPropertyChanging(nameof(IsCompleted));
                     field = value;
-                    InvokePropertyChanged(nameof(IsCompleted));
+                    OnPropertyChanged(nameof(IsCompleted));
                 }
             }
         }
@@ -26,9 +23,9 @@ namespace DialogMaker.Core.Executioning
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsBusy));
+                    OnPropertyChanging(nameof(IsBusy));
                     field = value;
-                    InvokePropertyChanged(nameof(IsBusy));
+                    OnPropertyChanged(nameof(IsBusy));
                 }
             }
         }

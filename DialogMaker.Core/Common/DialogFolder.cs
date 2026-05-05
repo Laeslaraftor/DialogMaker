@@ -1,12 +1,8 @@
 ﻿using DialogMaker.Core.Common.SavedStates;
 using DialogMaker.Core.Editor;
 using MessagePack;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
 
 namespace DialogMaker.Core.Common
 {
@@ -30,7 +26,7 @@ namespace DialogMaker.Core.Common
         }
         private DialogFolder(DialogPackage package, DialogProjectPack pack, Dictionary<string, Dialog?> dialogs)
         {
-            Package = package;  
+            Package = package;
             Id = pack.Id;
             Name = pack.Name;
             Folder = Path.Combine(package.Folder, pack.Id);

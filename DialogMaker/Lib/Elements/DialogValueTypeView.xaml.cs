@@ -1,6 +1,5 @@
 ﻿using DialogMaker.Core;
 using DialogMaker.Core.Editor.Nodes;
-using System;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -28,7 +27,7 @@ namespace DialogMaker.Lib.Elements
 
         private static void OnTypeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is DialogValueTypeView view) 
+            if (d is DialogValueTypeView view)
             {
                 view.OnTypeChanged((DialogNodePortType)e.OldValue, (DialogNodePortType)e.NewValue);
             }

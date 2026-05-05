@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core;
-using DialogMaker.Core.Editor.Nodes;
+﻿using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Lib;
 using System.ComponentModel;
 
@@ -15,9 +14,9 @@ namespace DialogMaker.Editor.Data
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Id));
+                    OnPropertyChanging(nameof(Id));
                     field = value;
-                    InvokePropertyChanged(nameof(Id));
+                    OnPropertyChanged(nameof(Id));
                 }
             }
         }
@@ -29,9 +28,9 @@ namespace DialogMaker.Editor.Data
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Name));
+                    OnPropertyChanging(nameof(Name));
                     field = value;
-                    InvokePropertyChanged(nameof(Name));
+                    OnPropertyChanged(nameof(Name));
                 }
             }
         }

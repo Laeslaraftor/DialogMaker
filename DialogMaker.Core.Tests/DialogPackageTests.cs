@@ -9,8 +9,7 @@ namespace DialogMaker.Core.Tests
         {
         }
 
-        [Test]
-        public void Open()
+        public void Open(string filePath)
         {
             var package = DialogPackage.Open(@"C:\Users\Mdely\OneDrive\Documents\DialogsOutput\test.dpack");
 

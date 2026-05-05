@@ -1,11 +1,7 @@
-﻿using Acly;
-using DialogMaker.Core.Common;
+﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning.Internal;
-using System;
 using System.ComponentModel;
-using DialogMaker.Core.Editor;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 
 namespace DialogMaker.Core.Editor
 {
@@ -29,7 +25,7 @@ namespace DialogMaker.Core.Editor
                     catch (Exception error)
                     {
                         Logger.Log(error);
-                    } 
+                    }
                 }
             }
         }
@@ -152,11 +148,11 @@ namespace DialogMaker.Core.Editor
         {
             if (e.PropertyName == "Text")
             {
-                InvokePropertyChanged(nameof(Preview));
+                OnPropertyChanged(nameof(Preview));
                 return;
             }
-            if (sender is not DialogProjectStringVariant variant || 
-                e.PropertyName != "Language" || 
+            if (sender is not DialogProjectStringVariant variant ||
+                e.PropertyName != "Language" ||
                 variant.Language == null)
             {
                 return;
@@ -164,7 +160,7 @@ namespace DialogMaker.Core.Editor
 
             foreach (var otherVariant in Variants)
             {
-                if (otherVariant != variant && 
+                if (otherVariant != variant &&
                     otherVariant.Language == variant.Language)
                 {
                     throw new ArgumentException("Невозможно задать язык, так как вариант для этого языка уже существует", "Language");

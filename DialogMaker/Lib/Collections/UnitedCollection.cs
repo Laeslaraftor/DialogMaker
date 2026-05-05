@@ -1,5 +1,4 @@
-﻿using Acly;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -162,7 +161,7 @@ namespace DialogMaker.Lib
 
                         foreach (T NewItem in e.NewItems)
                         {
-                            if (Filter == null || Filter.Check(Collection, NewItem!))
+                            if (Filter == null || Filter.Check(Collection, NewItem!) && !FilteredItems.Contains(NewItem))
                             {
                                 NewFilteredItems.Add(NewItem);
                             }
@@ -172,7 +171,7 @@ namespace DialogMaker.Lib
                         {
                             int InsertIndex;
 
-                            if (e.NewStartingIndex < FilteredItems.Count)
+                            if (e.NewStartingIndex < FilteredItems.Count && e.NewStartingIndex != -1)
                             {
                                 InsertIndex = e.NewStartingIndex;
                             }
@@ -344,10 +343,10 @@ namespace DialogMaker.Lib
                 CollectionChanged?.Invoke(this, new(NotifyCollectionChangedAction.Reset));
             }
 
-            InvokePropertyChanged(nameof(Count));
+            OnPropertyChanged(nameof(Count));
         }
 
-        protected virtual void InvokePropertyChanged(string propertyName)
+        protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new(propertyName));
         }

@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace DialogMaker.Core
+﻿namespace DialogMaker.Core
 {
     public static class FileExtensions
     {

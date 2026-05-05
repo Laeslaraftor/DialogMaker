@@ -1,17 +1,13 @@
-﻿using Acly;
-using Acly.Numbers;
+﻿using Acly.Numbers;
+using DialogMaker.Core.Editor;
 using DialogMaker.Editor;
 using DialogMaker.Lib.Controllers;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using System.Windows.Input;
-using System.Diagnostics;
-using DialogMaker.Core.Editor;
-using DialogMaker.Lib.Data;
-using DialogMaker.Core.Editor.Nodes;
-using System.ComponentModel;
+using System.Windows.Media;
 
 namespace DialogMaker.Lib.Elements
 {

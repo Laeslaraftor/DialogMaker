@@ -9,7 +9,7 @@ namespace DialogMaker.Core.Common
         {
             String = str;
             Value = variant.Text;
-            
+
             if (variant.Language != null)
             {
                 Language = str.Resources.Package.Languages[variant.Language.Id];

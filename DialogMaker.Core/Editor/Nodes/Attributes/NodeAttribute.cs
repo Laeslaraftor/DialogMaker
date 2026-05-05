@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DialogMaker.Core.Editor.Nodes
+﻿namespace DialogMaker.Core.Editor.Nodes
 {
     public sealed class NodeAttribute(Type nodeType) : Attribute
     {

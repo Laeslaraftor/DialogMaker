@@ -21,12 +21,12 @@ namespace DialogMaker.Lib.InputFields
 
         public bool IsSlider
         {
-            get => _slider.Visibility == Visibility.Visible; 
+            get => _slider.Visibility == Visibility.Visible;
             set
             {
                 if (IsSlider != value)
                 {
-                    InvokePropertyChanging(nameof(IsSlider));
+                    OnPropertyChanging(nameof(IsSlider));
                     _slider.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
                     var secondColumnSize = GridLength.Auto;
 
@@ -38,7 +38,7 @@ namespace DialogMaker.Lib.InputFields
                     _container.ColumnDefinitions[1].Width = secondColumnSize;
                     Grid.SetColumnSpan(Entry, value ? 1 : 2);
                     Grid.SetColumn(Entry, 2 - Grid.GetColumnSpan(Entry));
-                    InvokePropertyChanged(nameof(IsSlider));
+                    OnPropertyChanged(nameof(IsSlider));
                 }
             }
         }
@@ -49,9 +49,9 @@ namespace DialogMaker.Lib.InputFields
             {
                 if ((float)_slider.Minimum != value)
                 {
-                    InvokePropertyChanging(nameof(MinValue));
+                    OnPropertyChanging(nameof(MinValue));
                     _slider.Minimum = value;
-                    InvokePropertyChanged(nameof(MinValue));
+                    OnPropertyChanged(nameof(MinValue));
                 }
             }
         }
@@ -62,9 +62,9 @@ namespace DialogMaker.Lib.InputFields
             {
                 if ((float)_slider.Maximum != value)
                 {
-                    InvokePropertyChanging(nameof(MaxValue));
+                    OnPropertyChanging(nameof(MaxValue));
                     _slider.Maximum = value;
-                    InvokePropertyChanged(nameof(MaxValue));
+                    OnPropertyChanged(nameof(MaxValue));
                 }
             }
         }

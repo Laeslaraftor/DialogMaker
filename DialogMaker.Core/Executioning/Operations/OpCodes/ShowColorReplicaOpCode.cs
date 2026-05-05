@@ -1,6 +1,5 @@
 using DialogMaker.Core.Executioning.Internal;
 using System.Drawing;
-using System.Threading.Tasks;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -27,11 +26,11 @@ namespace DialogMaker.Core.Executioning
         }
 
         #endregion
-		
-		#region Статика
-		
-		public static readonly ShowColorReplicaOpCode Instance = new();
-		
+
+        #region Статика
+
+        public static readonly ShowColorReplicaOpCode Instance = new();
+
         private static Color ToColor(OperandValue value, Color falloff)
         {
             if (value.Type == DialogVariableType.Number &&
@@ -43,6 +42,6 @@ namespace DialogMaker.Core.Executioning
             return falloff;
         }
 
-		#endregion
+        #endregion
     }
 }

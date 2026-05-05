@@ -1,6 +1,4 @@
-﻿using Acly;
-using DialogMaker.Core;
-using DialogMaker.Core.Editor;
+﻿using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor;
 using System.Collections.Specialized;
@@ -20,9 +18,9 @@ namespace DialogMaker.Lib.Data
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsEnabled));
+                    OnPropertyChanging(nameof(IsEnabled));
                     field = value;
-                    InvokePropertyChanged(nameof(IsEnabled));
+                    OnPropertyChanged(nameof(IsEnabled));
                 }
             }
         }
@@ -33,9 +31,9 @@ namespace DialogMaker.Lib.Data
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsEmpty));
+                    OnPropertyChanging(nameof(IsEmpty));
                     field = value;
-                    InvokePropertyChanged(nameof(IsEmpty));
+                    OnPropertyChanged(nameof(IsEmpty));
                 }
             }
         }
@@ -46,9 +44,9 @@ namespace DialogMaker.Lib.Data
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsMinimized));
+                    OnPropertyChanging(nameof(IsMinimized));
                     field = value;
-                    InvokePropertyChanged(nameof(IsMinimized));
+                    OnPropertyChanged(nameof(IsMinimized));
                 }
             }
         }
@@ -59,9 +57,9 @@ namespace DialogMaker.Lib.Data
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsContainer));
+                    OnPropertyChanging(nameof(IsContainer));
                     field = value;
-                    InvokePropertyChanged(nameof(IsContainer));
+                    OnPropertyChanged(nameof(IsContainer));
                 }
             }
         }
@@ -72,9 +70,9 @@ namespace DialogMaker.Lib.Data
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsSelected));
+                    OnPropertyChanging(nameof(IsSelected));
                     field = value;
-                    InvokePropertyChanged(nameof(IsSelected));
+                    OnPropertyChanged(nameof(IsSelected));
                 }
             }
         }
@@ -85,9 +83,9 @@ namespace DialogMaker.Lib.Data
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Name));
+                    OnPropertyChanging(nameof(Name));
                     field = value;
-                    InvokePropertyChanged(nameof(Name));
+                    OnPropertyChanged(nameof(Name));
                 }
             }
         }
@@ -98,7 +96,7 @@ namespace DialogMaker.Lib.Data
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Children));
+                    OnPropertyChanging(nameof(Children));
 
                     field?.ItemChanged -= OnNodeSelectorItemInfoItemChanged;
                     field = value;
@@ -118,7 +116,7 @@ namespace DialogMaker.Lib.Data
                         }
                     }
 
-                    InvokePropertyChanged(nameof(Children));
+                    OnPropertyChanged(nameof(Children));
                 }
             }
         }
@@ -130,9 +128,9 @@ namespace DialogMaker.Lib.Data
             {
                 if (!Equals(field, value))
                 {
-                    InvokePropertyChanging(nameof(Value));
+                    OnPropertyChanging(nameof(Value));
                     field = value;
-                    InvokePropertyChanged(nameof(Value));
+                    OnPropertyChanged(nameof(Value));
                 }
             }
         }
@@ -143,9 +141,9 @@ namespace DialogMaker.Lib.Data
             {
                 if (!Equals(field, value))
                 {
-                    InvokePropertyChanging(nameof(Port));
+                    OnPropertyChanging(nameof(Port));
                     field = value;
-                    InvokePropertyChanged(nameof(Port));
+                    OnPropertyChanged(nameof(Port));
                 }
             }
         }
@@ -169,7 +167,7 @@ namespace DialogMaker.Lib.Data
             var node = dialog.Original.CreateNode(nodeInfo.Value.NodeType);
             node.Position = new()
             {
-                X = (float)position.X, 
+                X = (float)position.X,
                 Y = (float)position.Y
             };
 

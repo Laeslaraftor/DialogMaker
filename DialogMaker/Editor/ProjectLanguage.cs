@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core;
-using DialogMaker.Core.Editor;
+﻿using DialogMaker.Core.Editor;
 using DialogMaker.Editor.Menus;
 using DialogMaker.Lib;
 using System.ComponentModel;
@@ -35,7 +34,7 @@ namespace DialogMaker.Editor
                 }
 
                 field = value;
-                InvokePropertyChanged(nameof(Language));
+                OnPropertyChanged(nameof(Language));
             }
         }
         public DialogProject? Project => Language?.Project;
@@ -80,7 +79,7 @@ namespace DialogMaker.Editor
                 if (field != value)
                 {
                     field = value;
-                    InvokePropertyChanged(nameof(ContextMenu));
+                    OnPropertyChanged(nameof(ContextMenu));
                 }
             }
         }
@@ -92,7 +91,7 @@ namespace DialogMaker.Editor
         private void OnLanguagePropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             Controller?.Save();
-            InvokePropertyChanged(e.PropertyName ?? string.Empty);
+            OnPropertyChanged(e.PropertyName ?? string.Empty);
         }
 
         #endregion

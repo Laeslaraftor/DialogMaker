@@ -1,7 +1,6 @@
 ﻿using DialogMaker.Core.Editor;
 using DialogMaker.Lib.Data;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -75,12 +74,12 @@ namespace DialogMaker.Lib.Elements
         }
         private void OnNodeSelectorGroupBringToViewRequested(object? sender, ItemEventArgs<NodeSelectorItemInfo> e)
         {
-            if (VisualTreeHelper.GetChildrenCount(_itemsList) == 0 || 
+            if (VisualTreeHelper.GetChildrenCount(_itemsList) == 0 ||
                 VisualTreeHelper.GetChild(_itemsList, 0) is not ItemsPresenter content)
             {
                 return;
             }
-            if (VisualTreeHelper.GetChildrenCount(content) == 0 || 
+            if (VisualTreeHelper.GetChildrenCount(content) == 0 ||
                 VisualTreeHelper.GetChild(content, 0) is not Panel panel)
             {
                 return;
@@ -116,7 +115,7 @@ namespace DialogMaker.Lib.Elements
         {
             if (d is NodeSelectorGroup view)
             {
-                view.SetRootItem(e.OldValue as NodeSelectorItemInfo, e.NewValue as NodeSelectorItemInfo);                
+                view.SetRootItem(e.OldValue as NodeSelectorItemInfo, e.NewValue as NodeSelectorItemInfo);
             }
         }
 

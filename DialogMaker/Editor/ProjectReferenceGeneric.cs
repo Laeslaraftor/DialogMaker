@@ -11,7 +11,7 @@ namespace DialogMaker.Editor
             Reference = reference;
             Item = (T)base.Item;
         }
-        public ProjectReference(T item) 
+        public ProjectReference(T item)
             : base(item)
         {
             Reference = item.Original;

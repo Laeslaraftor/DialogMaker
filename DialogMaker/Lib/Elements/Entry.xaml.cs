@@ -131,7 +131,7 @@ namespace DialogMaker.Lib.Elements
         {
             if (d is Entry view)
             {
-                view._placeholder.Text = e.NewValue as string;  
+                view._placeholder.Text = e.NewValue as string;
             }
         }
         private static void OnTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

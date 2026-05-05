@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core;
-using DialogMaker.Core.Common;
+﻿using DialogMaker.Core.Common;
 using DialogMaker.Lib.Controllers;
 using System.Collections.ObjectModel;
 using System.Windows;

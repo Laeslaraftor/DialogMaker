@@ -20,7 +20,7 @@ namespace DialogMaker.Lib.Converters
         {
             if (value is not MessageType type)
             {
-                return MessageImportance.Normal; 
+                return MessageImportance.Normal;
             }
 
             return (MessageImportance)type;

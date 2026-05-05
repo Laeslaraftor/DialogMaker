@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DialogMaker.Core.Editor
+﻿namespace DialogMaker.Core.Editor
 {
     public class DialogProjectLanguage : ObservableObject, ISavable
     {
@@ -28,9 +26,9 @@ namespace DialogMaker.Core.Editor
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Id));
+                    OnPropertyChanging(nameof(Id));
                     field = value;
-                    InvokePropertyChanged(nameof(Id));
+                    OnPropertyChanged(nameof(Id));
                 }
             }
         }
@@ -41,9 +39,9 @@ namespace DialogMaker.Core.Editor
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Name));
+                    OnPropertyChanging(nameof(Name));
                     field = value;
-                    InvokePropertyChanged(nameof(Name));
+                    OnPropertyChanged(nameof(Name));
                 }
             }
         }

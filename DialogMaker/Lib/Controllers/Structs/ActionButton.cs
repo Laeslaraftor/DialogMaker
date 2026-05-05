@@ -1,6 +1,4 @@
-﻿using DialogMaker.Core;
-using System.Windows;
-using System.Windows.Input;
+﻿using System.Windows.Input;
 using System.Windows.Media;
 
 namespace DialogMaker.Lib.Controllers
@@ -17,9 +15,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (_isVisible != value)
                 {
-                    InvokePropertyChanging(nameof(IsVisible));
+                    OnPropertyChanging(nameof(IsVisible));
                     _isVisible = value;
-                    InvokePropertyChanged(nameof(IsVisible));
+                    OnPropertyChanged(nameof(IsVisible));
                 }
             }
         }
@@ -30,9 +28,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (_isEnabled != value)
                 {
-                    InvokePropertyChanging(nameof(IsEnabled));
+                    OnPropertyChanging(nameof(IsEnabled));
                     _isEnabled = value;
-                    InvokePropertyChanged(nameof(IsEnabled));
+                    OnPropertyChanged(nameof(IsEnabled));
                 }
             }
         }
@@ -43,10 +41,10 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Icon));
+                    OnPropertyChanging(nameof(Icon));
                     field = value;
                     CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-                    InvokePropertyChanged(nameof(Icon));
+                    OnPropertyChanged(nameof(Icon));
                 }
             }
         }
@@ -57,9 +55,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Text));
+                    OnPropertyChanging(nameof(Text));
                     field = value;
-                    InvokePropertyChanged(nameof(Text));
+                    OnPropertyChanged(nameof(Text));
                 }
             }
         }
@@ -70,9 +68,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Color));  
+                    OnPropertyChanging(nameof(Color));
                     field = value;
-                    InvokePropertyChanged(nameof(Color));
+                    OnPropertyChanged(nameof(Color));
                 }
             }
         }
@@ -83,9 +81,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(ToolTip));
+                    OnPropertyChanging(nameof(ToolTip));
                     field = value;
-                    InvokePropertyChanged(nameof(ToolTip));
+                    OnPropertyChanged(nameof(ToolTip));
                 }
             }
         }

@@ -1,7 +1,7 @@
 ﻿using DialogMaker.Lib.Elements;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows;
 
 namespace DialogMaker.Lib.Controllers
 {
@@ -29,9 +29,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(MultiselectMouseButton));
+                    OnPropertyChanging(nameof(MultiselectMouseButton));
                     field = value;
-                    InvokePropertyChanged(nameof(MultiselectMouseButton));
+                    OnPropertyChanged(nameof(MultiselectMouseButton));
                 }
             }
         }
@@ -42,9 +42,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(ExtraMouseButton));
+                    OnPropertyChanging(nameof(ExtraMouseButton));
                     field = value;
-                    InvokePropertyChanged(nameof(ExtraMouseButton));
+                    OnPropertyChanged(nameof(ExtraMouseButton));
                 }
             }
         }
@@ -55,9 +55,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(SelectionDepth));
+                    OnPropertyChanging(nameof(SelectionDepth));
                     field = value;
-                    InvokePropertyChanged(nameof(SelectionDepth));
+                    OnPropertyChanged(nameof(SelectionDepth));
                 }
             }
         }
@@ -250,7 +250,7 @@ namespace DialogMaker.Lib.Controllers
         {
             base.OnMouseMove(sender, e);
 
-            if (_lastMouseDownPositionIsMouseMoveControl || 
+            if (_lastMouseDownPositionIsMouseMoveControl ||
                 !e.IsPressed(MultiselectMouseButton))
             {
                 return;

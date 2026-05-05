@@ -1,5 +1,4 @@
-﻿using Acly;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 
 namespace DialogMaker.Lib.Elements

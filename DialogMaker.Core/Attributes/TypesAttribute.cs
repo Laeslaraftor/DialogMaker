@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DialogMaker.Core
+﻿namespace DialogMaker.Core
 {
     public sealed class TypesAttribute(params Type[] types) : Attribute
     {

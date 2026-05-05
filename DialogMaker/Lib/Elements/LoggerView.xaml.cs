@@ -1,12 +1,11 @@
-﻿using Acly;
-using System.ComponentModel;
-using DialogMaker.Core.Editor.Messages;
-using System.Windows.Controls;
-using System.Windows;
-using ILogger = DialogMaker.Core.Editor.ILogger;
-using System.Windows.Input;
-using MessagePack;
+﻿using DialogMaker.Core.Editor.Messages;
 using DialogMaker.Lib.Controllers;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using ILogger = DialogMaker.Core.Editor.ILogger;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -88,11 +87,18 @@ namespace DialogMaker.Lib.Elements
         }
         public async void Log(Message message)
         {
-            await Dispatcher.InvokeAsync(() =>
+            try
             {
-                _messages.Add(message);
-                _messagesScroll.ScrollToEnd();
-            });
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    _messages.Add(message);
+                    _messagesScroll.ScrollToEnd();
+                });
+            }
+            catch (Exception error)
+            {
+                Debug.WriteLine(error);
+            }
         }
 
         private void UpdateUnreadCounter()

@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-
 namespace DialogMaker.Core.Executioning
 {
     public class JumpOpCode() : OpCode(DialogByteCode.Jump)
@@ -13,11 +11,11 @@ namespace DialogMaker.Core.Executioning
         }
 
         #endregion
-		
-		#region Статика
-		
-		public static readonly JumpOpCode Instance = new();
-		
-		#endregion
+
+        #region Статика
+
+        public static readonly JumpOpCode Instance = new();
+
+        #endregion
     }
 }

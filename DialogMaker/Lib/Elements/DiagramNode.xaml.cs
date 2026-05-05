@@ -241,7 +241,7 @@ namespace DialogMaker.Lib.Elements
             {
                 Canvas.SetElementPosition(this, node.Position);
             }
-            else if (e.PropertyName == nameof(IsSelected) && 
+            else if (e.PropertyName == nameof(IsSelected) &&
                      IsSelected != node.IsSelected)
             {
                 IsSelected = node.IsSelected;

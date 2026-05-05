@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using DialogMaker.Core.Editor;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using DialogMaker.Core.Editor;
 
 namespace DialogMaker.Core.Executioning
 {
-    public class DialogThread(IDialogExecutingThreadManager threadManager, Stack<OperandValue> stack, IDialogExecutionResources resources, IDialogExecutingHandler handler, DialogByteCodeData data) 
+    public class DialogThread(IDialogExecutingThreadManager threadManager, Stack<OperandValue> stack, IDialogExecutionResources resources, IDialogExecutingHandler handler, DialogByteCodeData data)
         : Disposable, IDialogExecutionThread
     {
         public IDialogExecutingThreadManager ThreadManager { get; } = threadManager;
@@ -17,9 +13,9 @@ namespace DialogMaker.Core.Executioning
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsPaused));
+                    OnPropertyChanging(nameof(IsPaused));
                     field = value;
-                    InvokePropertyChanged(nameof(IsPaused));
+                    OnPropertyChanged(nameof(IsPaused));
                 }
             }
         }
@@ -30,9 +26,9 @@ namespace DialogMaker.Core.Executioning
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsRunning));
+                    OnPropertyChanging(nameof(IsRunning));
                     field = value;
-                    InvokePropertyChanged(nameof(IsRunning));
+                    OnPropertyChanged(nameof(IsRunning));
                 }
             }
         }
@@ -43,9 +39,9 @@ namespace DialogMaker.Core.Executioning
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(PreviousSection));
+                    OnPropertyChanging(nameof(PreviousSection));
                     field = value;
-                    InvokePropertyChanged(nameof(PreviousSection));
+                    OnPropertyChanged(nameof(PreviousSection));
                 }
             }
         }
@@ -56,10 +52,10 @@ namespace DialogMaker.Core.Executioning
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(CurrentSection));
+                    OnPropertyChanging(nameof(CurrentSection));
                     PreviousSection = field;
                     field = value;
-                    InvokePropertyChanged(nameof(CurrentSection));
+                    OnPropertyChanged(nameof(CurrentSection));
                 }
             }
         }
@@ -70,9 +66,9 @@ namespace DialogMaker.Core.Executioning
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(CurrentOperation));
+                    OnPropertyChanging(nameof(CurrentOperation));
                     field = value;
-                    InvokePropertyChanged(nameof(CurrentOperation));
+                    OnPropertyChanged(nameof(CurrentOperation));
                 }
             }
         }
@@ -80,7 +76,7 @@ namespace DialogMaker.Core.Executioning
 
         private readonly IDialogExecutingHandler _handler = handler;
         private readonly Stack<OperandValue> _stack = stack;
-        private readonly DialogByteCodeData _data =data;
+        private readonly DialogByteCodeData _data = data;
         private CancellationTokenSource? _currentCancellationTokenSource;
 
         #region Управление

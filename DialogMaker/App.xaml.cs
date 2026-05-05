@@ -1,25 +1,42 @@
-﻿using DialogMaker.Core;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Media;
 
 namespace DialogMaker
 {
-    public partial class App : Application, IThreadDispatcher
+    public partial class App : Application, IDispatcher
     {
         public bool CurrentThreadIsMain => Dispatcher.Thread == Thread.CurrentThread;
 
         #region Управление
 
-        public void Execute(Action action)
+        public void Dispatch(Action action)
         {
-            Dispatcher.Invoke(action);
+            try
+            {
+                Dispatcher.Invoke(action);
+            }
+            catch (Exception error)
+            {
+                error.Log();
+            }
+        }
+        public async Task DispatchAsync(Action action)
+        {
+            try
+            {
+                await Dispatcher.InvokeAsync(action);
+            }
+            catch (Exception error)
+            {
+                error.Alert();
+            }
         }
 
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-            Disposable.Dispatcher = this;
+            ObservableObject.SharedDispatcher = this;
         }
 
         #endregion

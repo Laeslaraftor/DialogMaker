@@ -1,7 +1,7 @@
 ﻿using DialogMaker.Core;
 using DialogMaker.Editor;
-using System.Windows.Media;
 using System.Windows;
+using System.Windows.Media;
 
 namespace DialogMaker.Lib.Controllers
 {

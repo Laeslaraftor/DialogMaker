@@ -1,7 +1,4 @@
-﻿using System;
-using DialogMaker.Core.Editor;
-
-namespace DialogMaker.Core.Editor
+﻿namespace DialogMaker.Core.Editor
 {
     public class DialogProjectStringVariant : ObservableObject, ISavable
     {
@@ -14,7 +11,7 @@ namespace DialogMaker.Core.Editor
         {
             Text = savedState.Text;
 
-            if (savedState.LanguageId != null && 
+            if (savedState.LanguageId != null &&
                 Guid.TryParse(savedState.LanguageId, out var languageId) &&
                 replica.Resources.Owner.Project.TryGetLanguage(languageId, out var language))
             {
@@ -41,9 +38,9 @@ namespace DialogMaker.Core.Editor
             {
                 if (_language != value)
                 {
-                    InvokePropertyChanging(nameof(Language));
+                    OnPropertyChanging(nameof(Language));
                     _language = value;
-                    InvokePropertyChanged(nameof(Language));
+                    OnPropertyChanged(nameof(Language));
                 }
             }
         }
@@ -54,9 +51,9 @@ namespace DialogMaker.Core.Editor
             {
                 if (_text != value)
                 {
-                    InvokePropertyChanging(nameof(Text));
+                    OnPropertyChanging(nameof(Text));
                     _text = value;
-                    InvokePropertyChanged(nameof(Text));
+                    OnPropertyChanged(nameof(Text));
                 }
             }
         }
@@ -67,9 +64,9 @@ namespace DialogMaker.Core.Editor
             {
                 if (_voice != value)
                 {
-                    InvokePropertyChanging(nameof(Voice)); 
+                    OnPropertyChanging(nameof(Voice));
                     _voice = value;
-                    InvokePropertyChanged(nameof(Voice));
+                    OnPropertyChanged(nameof(Voice));
                 }
             }
         }

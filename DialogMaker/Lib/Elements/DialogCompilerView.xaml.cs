@@ -1,8 +1,6 @@
 ﻿using DialogMaker.Core.Executioning;
 using DialogMaker.Editor;
 using DialogMaker.Editor.Runtime;
-using DialogMaker.Lib.InputFields;
-using Newtonsoft.Json.Linq;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -62,7 +60,7 @@ namespace DialogMaker.Lib.Elements
 
             Clear();
 
-            IsCompiling = true;            
+            IsCompiling = true;
             DialogCompiler compiler = new(DialogActionsMap.Create(dialog.Original));
 
             try

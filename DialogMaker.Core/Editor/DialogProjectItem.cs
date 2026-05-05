@@ -1,8 +1,5 @@
 ﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning.Internal;
-using System;
-using System.IO;
-using System.Linq;
 using SysPath = System.IO.Path;
 
 namespace DialogMaker.Core.Editor
@@ -56,9 +53,9 @@ namespace DialogMaker.Core.Editor
             {
                 if (field != value && !IsDisposed)
                 {
-                    InvokePropertyChanging(nameof(FilePath));
+                    OnPropertyChanging(nameof(FilePath));
                     field = value;
-                    InvokePropertyChanged(nameof(FilePath));
+                    OnPropertyChanged(nameof(FilePath));
                 }
             }
         }
@@ -75,8 +72,8 @@ namespace DialogMaker.Core.Editor
                     {
                         throw new ArgumentNullException($"Недопустимое название файла!", nameof(value));
                     }
-                        
-                    InvokePropertyChanging(nameof(FileName));
+
+                    OnPropertyChanging(nameof(FileName));
 
                     if (field != null)
                     {
@@ -84,7 +81,7 @@ namespace DialogMaker.Core.Editor
                     }
 
                     field = value;
-                    InvokePropertyChanged(nameof(FileName));
+                    OnPropertyChanged(nameof(FileName));
                 }
             }
         }

@@ -1,7 +1,5 @@
-﻿using DialogMaker.Core;
-using DialogMaker.Editor;
+﻿using DialogMaker.Editor;
 using DialogMaker.Lib.Elements;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 
@@ -23,9 +21,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(CurrentItem));
+                    OnPropertyChanging(nameof(CurrentItem));
                     field = value;
-                    InvokePropertyChanged(nameof(CurrentItem));
+                    OnPropertyChanged(nameof(CurrentItem));
                 }
             }
         }

@@ -1,7 +1,7 @@
-﻿using System.Windows.Controls;
-using System.Windows;
-using DialogMaker.Core;
+﻿using DialogMaker.Core;
 using DialogMaker.Core.Editor.Nodes;
+using System.Windows;
+using System.Windows.Controls;
 
 namespace DialogMaker.Lib.Elements
 {

@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core;
-using DialogMaker.Core.Executioning.Debugging;
+﻿using DialogMaker.Core.Executioning.Debugging;
 using DialogMaker.Editor;
 
 namespace DialogMaker.Lib.Elements
@@ -13,9 +12,9 @@ namespace DialogMaker.Lib.Elements
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Project));
+                    OnPropertyChanging(nameof(Project));
                     field = value;
-                    InvokePropertyChanged(nameof(Project));
+                    OnPropertyChanged(nameof(Project));
                 }
             }
         }
@@ -26,9 +25,9 @@ namespace DialogMaker.Lib.Elements
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Dialog));
+                    OnPropertyChanging(nameof(Dialog));
                     field = value;
-                    InvokePropertyChanged(nameof(Dialog));
+                    OnPropertyChanged(nameof(Dialog));
                 }
             }
         }
@@ -39,9 +38,9 @@ namespace DialogMaker.Lib.Elements
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Resources));
+                    OnPropertyChanging(nameof(Resources));
                     field = value;
-                    InvokePropertyChanged(nameof(Resources));
+                    OnPropertyChanged(nameof(Resources));
                 }
             }
         }
@@ -52,9 +51,9 @@ namespace DialogMaker.Lib.Elements
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Structure));
+                    OnPropertyChanging(nameof(Structure));
                     field = value;
-                    InvokePropertyChanged(nameof(Structure));
+                    OnPropertyChanged(nameof(Structure));
                 }
             }
         }

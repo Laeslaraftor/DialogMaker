@@ -1,6 +1,4 @@
-﻿using Acly;
-using DialogMaker.Core;
-using DialogMaker.Core.Editor;
+﻿using DialogMaker.Core.Editor;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -28,7 +26,7 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(CurrentHotkey));
+                    OnPropertyChanging(nameof(CurrentHotkey));
                     field = value;
 
                     if (value != null)
@@ -37,7 +35,7 @@ namespace DialogMaker.Lib.Controllers
                         HotkeyPressed?.Invoke(this, new(value));
                     }
 
-                    InvokePropertyChanged(nameof(CurrentHotkey));
+                    OnPropertyChanged(nameof(CurrentHotkey));
                 }
             }
         }
@@ -94,8 +92,8 @@ namespace DialogMaker.Lib.Controllers
         }
         private void OnKeyboardKeyUp(object sender, KeyEventArgs e)
         {
-            if (e.Key != Key.System && 
-                !IgnoreFocusedElement() && 
+            if (e.Key != Key.System &&
+                !IgnoreFocusedElement() &&
                 !e.Handled && _pressedKeys.Remove(e.Key))
             {
                 e.Handled = true;

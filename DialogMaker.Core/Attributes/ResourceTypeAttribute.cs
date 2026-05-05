@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DialogMaker.Core.Attributes
+﻿namespace DialogMaker.Core.Attributes
 {
     [AttributeUsage(AttributeTargets.Field)]
     public sealed class ResourceTypeAttribute(Type type) : Attribute

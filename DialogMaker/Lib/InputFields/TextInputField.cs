@@ -22,7 +22,7 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Placeholder));
+                    OnPropertyChanging(nameof(Placeholder));
 
                     field = value;
 
@@ -32,7 +32,7 @@ namespace DialogMaker.Lib.InputFields
                         Entry.ToolTip = value;
                     }
 
-                    InvokePropertyChanged(nameof(Placeholder));
+                    OnPropertyChanged(nameof(Placeholder));
                 }
             }
         }
@@ -42,7 +42,7 @@ namespace DialogMaker.Lib.InputFields
             set
             {
                 if (field?.Equals(value) != true)
-                {   
+                {
                     if (!CanConvert(value))
                     {
                         throw new ArgumentException($"Недопустимый тип! Требуется: {ValueType}, получен: {value?.GetType()}", nameof(value));
@@ -55,7 +55,7 @@ namespace DialogMaker.Lib.InputFields
                         return;
                     }
 
-                    InvokePropertyChanging(nameof(Value));
+                    OnPropertyChanging(nameof(Value));
 
                     field = value;
                     string textValue = ValueToString(value);
@@ -65,7 +65,7 @@ namespace DialogMaker.Lib.InputFields
                         Entry.Text = textValue;
                     }
 
-                    InvokePropertyChanged(nameof(Value));
+                    OnPropertyChanged(nameof(Value));
                 }
             }
         }
@@ -76,10 +76,10 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Multiline));
+                    OnPropertyChanging(nameof(Multiline));
                     field = value;
                     Entry.TextBox.AcceptsReturn = value;
-                    InvokePropertyChanged(nameof(Multiline));
+                    OnPropertyChanged(nameof(Multiline));
                 }
             }
         }

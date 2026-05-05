@@ -1,7 +1,7 @@
 ﻿using DialogMaker.Editor;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.ComponentModel;
 
 namespace DialogMaker.Lib.Elements
 {

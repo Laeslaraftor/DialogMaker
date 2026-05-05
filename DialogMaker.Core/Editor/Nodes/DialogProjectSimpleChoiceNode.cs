@@ -1,11 +1,7 @@
-﻿using Acly;
-using DialogMaker.Core.Common;
+﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning;
 using DialogMaker.Core.Executioning.Internal;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Collections.Specialized;
 
 namespace DialogMaker.Core.Editor.Nodes

@@ -1,10 +1,4 @@
-﻿using Acly;
-using System;
-using System.Collections.Generic;
-using DialogMaker.Core.Editor;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Editor
 {
@@ -14,7 +8,7 @@ namespace DialogMaker.Core.Editor
             : this(projectPath, id, true)
         {
         }
-        public DialogProject(string projectPath, DialogProjectSavedState savedState) 
+        public DialogProject(string projectPath, DialogProjectSavedState savedState)
             : this(projectPath, savedState.Id, false)
         {
             Name = savedState.Name;
@@ -39,7 +33,7 @@ namespace DialogMaker.Core.Editor
                 Languages.Add(new(this, language));
             }
 
-            if (savedState.DefaultLanguage != null && 
+            if (savedState.DefaultLanguage != null &&
                 Guid.TryParse(savedState.DefaultLanguage, out var defaultLanguageId) &&
                 TryGetLanguage(defaultLanguageId, out var defaultLanguage))
             {
@@ -77,9 +71,9 @@ namespace DialogMaker.Core.Editor
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Name));
+                    OnPropertyChanging(nameof(Name));
                     field = value;
-                    InvokePropertyChanged(nameof(Name));
+                    OnPropertyChanged(nameof(Name));
                 }
             }
         }
@@ -95,9 +89,9 @@ namespace DialogMaker.Core.Editor
                         throw new ArgumentException($"Невозможно задать язык по умолчанию, так как его владельцем является другой проект.", nameof(value));
                     }
 
-                    InvokePropertyChanging(nameof(DefaultLanguage));
+                    OnPropertyChanging(nameof(DefaultLanguage));
                     field = value;
-                    InvokePropertyChanged(nameof(DefaultLanguage));
+                    OnPropertyChanged(nameof(DefaultLanguage));
                 }
             }
         }

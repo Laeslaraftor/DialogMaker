@@ -1,7 +1,5 @@
 ﻿using DialogMaker.Core.Executioning.Internal;
-using System;
 using System.ComponentModel;
-using System.Threading.Tasks;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -31,9 +29,9 @@ namespace DialogMaker.Core.Executioning
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsRunning));
+                    OnPropertyChanging(nameof(IsRunning));
                     field = value;
-                    InvokePropertyChanged(nameof(IsRunning));
+                    OnPropertyChanged(nameof(IsRunning));
                 }
             }
         }
@@ -44,9 +42,9 @@ namespace DialogMaker.Core.Executioning
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsPaused));
+                    OnPropertyChanging(nameof(IsPaused));
                     field = value;
-                    InvokePropertyChanged(nameof(IsPaused));
+                    OnPropertyChanged(nameof(IsPaused));
                 }
             }
         }
@@ -58,9 +56,9 @@ namespace DialogMaker.Core.Executioning
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Handler));
+                    OnPropertyChanging(nameof(Handler));
                     field = value;
-                    InvokePropertyChanged(nameof(Handler));
+                    OnPropertyChanged(nameof(Handler));
                 }
             }
         }
@@ -160,7 +158,7 @@ namespace DialogMaker.Core.Executioning
             bool isCompleted = false;
             T? result = default;
 
-            dispatcher.Execute(async () =>
+            dispatcher.Dispatch(async () =>
             {
                 result = await handler(dialogHandler);
                 isCompleted = true;

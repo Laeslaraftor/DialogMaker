@@ -1,13 +1,9 @@
 ﻿using DialogMaker.Core.Common.SavedStates;
 using DialogMaker.Core.Editor;
 using MessagePack;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
 
 namespace DialogMaker.Core.Common
 {
@@ -29,7 +25,7 @@ namespace DialogMaker.Core.Common
             Languages = new(languages);
             Resources = DialogResources.Open(this);
 
-            if (savedState.CurrentLanguage != null 
+            if (savedState.CurrentLanguage != null
                 && languages.TryGetValue(savedState.CurrentLanguage, out var currentLanguage))
             {
                 CurrentLanguage = currentLanguage;
@@ -83,9 +79,9 @@ namespace DialogMaker.Core.Common
                         throw new ArgumentException("Невозможно задать язык из другого пакета диалогов!", nameof(value));
                     }
 
-                    InvokePropertyChanging(nameof(CurrentLanguage));
+                    OnPropertyChanging(nameof(CurrentLanguage));
                     field = value;
-                    InvokePropertyChanged(nameof(CurrentLanguage));
+                    OnPropertyChanged(nameof(CurrentLanguage));
                 }
             }
         }

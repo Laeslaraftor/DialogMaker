@@ -1,15 +1,12 @@
-﻿using Acly;
-using System.Collections.Generic;
-
-namespace DialogMaker.Core.Editor.Nodes
+﻿namespace DialogMaker.Core.Editor.Nodes
 {
     public class DialogProjectNodeOutput : DialogProjectNodePort
     {
-        public DialogProjectNodeOutput(INode node, int portId, DialogNodePortType dataType) 
+        public DialogProjectNodeOutput(INode node, int portId, DialogNodePortType dataType)
             : base(node, portId, dataType)
         {
         }
-        public DialogProjectNodeOutput(INode node, int portId, DialogNodeConnectionType connectionType, DialogNodePortType dataType) 
+        public DialogProjectNodeOutput(INode node, int portId, DialogNodeConnectionType connectionType, DialogNodePortType dataType)
             : base(node, portId, connectionType, dataType)
         {
         }
@@ -24,7 +21,7 @@ namespace DialogMaker.Core.Editor.Nodes
         }
         public override int ConnectionsCount => Connections.Count;
 
-        protected override IEditableList ConnectionsList => Connections; 
+        protected override IEditableList ConnectionsList => Connections;
 
         private EditableCollection<DialogProjectNodeInput>? _connections;
 

@@ -1,7 +1,5 @@
 ﻿using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Core.Executioning.Internal;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace DialogMaker.Core.Executioning.Builders

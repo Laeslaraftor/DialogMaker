@@ -215,7 +215,7 @@ namespace DialogMaker
 
             DependencyObject? pressedElement = VisualTreeHelper.HitTest(this, e.GetPosition(this)).VisualHit;
 
-            if (!IsTextInput(Keyboard.FocusedElement) || 
+            if (!IsTextInput(Keyboard.FocusedElement) ||
                 FocusHelper.GetVisualTreeIgnoreFocusSwitch(Keyboard.FocusedElement as DependencyObject))
             {
                 return;

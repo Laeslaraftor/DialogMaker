@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -16,9 +15,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Size));
+                    OnPropertyChanging(nameof(Size));
                     field = value;
-                    InvokePropertyChanged(nameof(Size));
+                    OnPropertyChanged(nameof(Size));
                 }
             }
         }
@@ -29,9 +28,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Dpi));
+                    OnPropertyChanging(nameof(Dpi));
                     field = value;
-                    InvokePropertyChanged(nameof(Dpi));
+                    OnPropertyChanged(nameof(Dpi));
                 }
             }
         }
@@ -42,9 +41,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(PixelFormat));
+                    OnPropertyChanging(nameof(PixelFormat));
                     field = value;
-                    InvokePropertyChanged(nameof(PixelFormat));
+                    OnPropertyChanged(nameof(PixelFormat));
                 }
             }
         }
@@ -55,13 +54,13 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Renderer));
+                    OnPropertyChanging(nameof(Renderer));
 
                     var oldValue = field;
                     field = value;
 
                     RendererChanged?.Invoke(this, new(oldValue, value));
-                    InvokePropertyChanged(nameof(Renderer));
+                    OnPropertyChanged(nameof(Renderer));
                 }
             }
         }

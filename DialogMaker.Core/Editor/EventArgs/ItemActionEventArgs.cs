@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DialogMaker.Core.Editor
+﻿namespace DialogMaker.Core.Editor
 {
     public class ItemActionEventArgs<T> : EventArgs
     {

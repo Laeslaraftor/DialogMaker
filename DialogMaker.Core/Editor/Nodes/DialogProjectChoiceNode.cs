@@ -1,7 +1,6 @@
 ﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning;
 using DialogMaker.Core.Executioning.Builders;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text;
 
@@ -131,7 +130,7 @@ namespace DialogMaker.Core.Editor.Nodes
 
                 OperationBuilder? emptyOpCode = null;
 
-                if (context.Section.Operations.Count > 0 && 
+                if (context.Section.Operations.Count > 0 &&
                     context.Section.Operations[^1].Code == DialogByteCode.Empty)
                 {
                     emptyOpCode = context.Section.Operations[^1];

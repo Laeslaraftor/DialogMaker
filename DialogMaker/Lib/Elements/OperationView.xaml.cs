@@ -49,7 +49,7 @@ namespace DialogMaker.Lib.Elements
 
         private void OnArgumentItemClicked(object sender, RoutedEventArgs e)
         {
-            if (sender is not Button button || 
+            if (sender is not Button button ||
                 button.CommandParameter is not OperationArgument argument)
             {
                 return;

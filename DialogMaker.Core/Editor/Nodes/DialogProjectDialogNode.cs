@@ -1,14 +1,10 @@
-﻿using Acly;
-using DialogMaker.Core.Common;
+﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Editor.Collections;
 using DialogMaker.Core.Editor.Messages;
 using DialogMaker.Core.Executioning;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using DialogMaker.Core.Editor;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Reflection;
@@ -88,9 +84,9 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Position));
+                    OnPropertyChanging(nameof(Position));
                     field = value;
-                    InvokePropertyChanged(nameof(Position));
+                    OnPropertyChanged(nameof(Position));
                 }
             }
         }
@@ -194,9 +190,9 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Inverted));
+                    OnPropertyChanging(nameof(Inverted));
                     field = value;
-                    InvokePropertyChanged(nameof(Inverted));
+                    OnPropertyChanged(nameof(Inverted));
                 }
             }
         }
@@ -566,6 +562,14 @@ namespace DialogMaker.Core.Editor.Nodes
             }
 
             throw new ArgumentException($"Узел недоступен: {type}", nameof(type));
+        }
+        public static T Create<T>(DialogProjectDialog dialog)
+            where T : DialogProjectDialogNode
+        {
+            var nodeType = typeof(T);
+            var info = AvailableNodes.First(i => i.Value.Type == nodeType);
+
+            return (T)Activator.CreateInstance(info.Value.Type, dialog);
         }
         public static DialogProjectDialogNode Restore(DialogProjectDialog dialog, DialogProjectDialogNodeSavedState savedState)
         {

@@ -24,9 +24,9 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Variable));
+                    OnPropertyChanging(nameof(Variable));
                     field = value;
-                    InvokePropertyChanged(nameof(Variable));
+                    OnPropertyChanged(nameof(Variable));
                 }
             }
         }

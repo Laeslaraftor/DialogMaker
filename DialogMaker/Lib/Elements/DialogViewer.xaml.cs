@@ -1,10 +1,8 @@
 ﻿using DialogMaker.Core;
 using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using Trigger = DialogMaker.Core.Executioning.Trigger;
 
 namespace DialogMaker.Lib.Elements
@@ -16,7 +14,7 @@ namespace DialogMaker.Lib.Elements
             InitializeComponent();
         }
 
-        IThreadDispatcher? IDialogExecutingHandler.Dispatcher => ObservableObject.Dispatcher;
+        Acly.IDispatcher? IDialogExecutingHandler.Dispatcher => ObservableObject.SharedDispatcher;
 
         private readonly ElementsPool<DragView> _blocksPool = new();
         private readonly ElementsPool<TextBlock> _textPool = new();
@@ -99,7 +97,7 @@ namespace DialogMaker.Lib.Elements
             var block = _textPool.GetElement();
             block.TextWrapping = TextWrapping.Wrap;
             block.RemoveFromParent();
-                
+
             var container = GetNewBlock();
             container.Preview = block;
             string? characterText = GetActionText(character, listener, "обращается к");

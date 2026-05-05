@@ -1,5 +1,4 @@
-﻿using Acly;
-using DialogMaker.Core.Editor.Nodes;
+﻿using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Lib;
 using DialogMaker.Lib.Elements;
 using System.Collections;
@@ -54,10 +53,10 @@ namespace DialogMaker.Editor
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Position));
+                    OnPropertyChanging(nameof(Position));
                     field = value;
                     Original.Position = new((float)value.X, (float)value.Y);
-                    InvokePropertyChanged(nameof(Position));
+                    OnPropertyChanged(nameof(Position));
                 }
             }
         }
@@ -78,7 +77,7 @@ namespace DialogMaker.Editor
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsSelected));
+                    OnPropertyChanging(nameof(IsSelected));
                     field = value;
                     bool contains = Dialog.SelectedNodes.Contains(this);
 
@@ -91,7 +90,7 @@ namespace DialogMaker.Editor
                         Dialog.SelectedNodes.Remove(this);
                     }
 
-                    InvokePropertyChanged(nameof(IsSelected));
+                    OnPropertyChanged(nameof(IsSelected));
                 }
             }
         }
@@ -230,7 +229,7 @@ namespace DialogMaker.Editor
             }
             else if (e.PropertyName == nameof(Inverted))
             {
-                InvokePropertyChanged(nameof(Inverted));
+                OnPropertyChanged(nameof(Inverted));
             }
         }
         private void OnNodePropertyChanging(object? sender, PropertyChangingEventArgs e)

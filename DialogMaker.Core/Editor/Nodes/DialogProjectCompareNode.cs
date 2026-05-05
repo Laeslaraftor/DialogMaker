@@ -39,9 +39,9 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Comparison));
+                    OnPropertyChanging(nameof(Comparison));
                     field = value;
-                    InvokePropertyChanged(nameof(Comparison));
+                    OnPropertyChanged(nameof(Comparison));
                 }
             }
         }

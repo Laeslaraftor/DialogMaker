@@ -1,10 +1,5 @@
-﻿using Acly;
-using DialogMaker.Core.Executioning.Internal;
-using System;
-using System.Collections.Generic;
+﻿using DialogMaker.Core.Executioning.Internal;
 using System.ComponentModel;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -31,7 +26,7 @@ namespace DialogMaker.Core.Executioning
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsRunning));
+                    OnPropertyChanging(nameof(IsRunning));
                     field = value;
 
                     if (value)
@@ -43,7 +38,7 @@ namespace DialogMaker.Core.Executioning
                         _dialogHandler.OnDialogExecutingEnded(this, EventArgs.Empty);
                     }
 
-                    InvokePropertyChanged(nameof(IsRunning));
+                    OnPropertyChanged(nameof(IsRunning));
                 }
             }
         }
@@ -54,9 +49,9 @@ namespace DialogMaker.Core.Executioning
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsPaused));
+                    OnPropertyChanging(nameof(IsPaused));
                     field = value;
-                    InvokePropertyChanged(nameof(IsPaused));
+                    OnPropertyChanged(nameof(IsPaused));
                 }
             }
         }

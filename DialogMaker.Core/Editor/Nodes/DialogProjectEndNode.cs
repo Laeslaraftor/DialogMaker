@@ -4,11 +4,11 @@ namespace DialogMaker.Core.Editor.Nodes
 {
     public class DialogProjectEndNode : DialogProjectDialogNode
     {
-        public DialogProjectEndNode(DialogProjectDialog dialog) 
+        public DialogProjectEndNode(DialogProjectDialog dialog)
             : base(dialog)
         {
         }
-        public DialogProjectEndNode(DialogProjectDialog dialog, DialogProjectDialogNodeSavedState savedState) 
+        public DialogProjectEndNode(DialogProjectDialog dialog, DialogProjectDialogNodeSavedState savedState)
             : base(dialog, savedState)
         {
         }
@@ -22,9 +22,9 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(OnlyCurrentThread));
+                    OnPropertyChanging(nameof(OnlyCurrentThread));
                     field = value;
-                    InvokePropertyChanged(nameof(OnlyCurrentThread));
+                    OnPropertyChanged(nameof(OnlyCurrentThread));
                 }
             }
         }

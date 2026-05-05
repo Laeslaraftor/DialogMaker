@@ -1,9 +1,4 @@
-﻿using Acly;
-using System;
-using DialogMaker.Core.Editor;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Editor
 {
@@ -70,9 +65,9 @@ namespace DialogMaker.Core.Editor
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Name));
+                    OnPropertyChanging(nameof(Name));
                     field = value;
-                    InvokePropertyChanged(nameof(Name));
+                    OnPropertyChanged(nameof(Name));
                 }
             }
         }
@@ -93,7 +88,7 @@ namespace DialogMaker.Core.Editor
 
             foreach (var dialog in Dialogs)
             {
-                dialog.Save(); 
+                dialog.Save();
             }
 
             DialogProjectPackSavedState savedState = new()
@@ -172,11 +167,11 @@ namespace DialogMaker.Core.Editor
         #region Статика
 
         public const string FileName = "DialogsPack.json";
-            
+
         public static DialogProjectPack Open(DialogProject project, string packFolder)
         {
             string filePath = Path.Combine(packFolder, FileName);
-            return SavedState.Restore<DialogProjectPack, DialogProjectPackSavedState>(filePath, s => new(project, s));            
+            return SavedState.Restore<DialogProjectPack, DialogProjectPackSavedState>(filePath, s => new(project, s));
         }
 
         #endregion

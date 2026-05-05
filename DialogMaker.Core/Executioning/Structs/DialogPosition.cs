@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DialogMaker.Core.Executioning
+﻿namespace DialogMaker.Core.Executioning
 {
     public readonly struct DialogPosition(int section, int operation) : IEquatable<DialogPosition>, IComparable, IComparable<DialogPosition>
     {
@@ -22,7 +20,7 @@ namespace DialogMaker.Core.Executioning
             {
                 return 1;
             }
-            if (Section == other.Section && 
+            if (Section == other.Section &&
                 Operation == other.Operation)
             {
                 return 0;

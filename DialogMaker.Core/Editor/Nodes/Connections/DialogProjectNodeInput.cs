@@ -1,12 +1,7 @@
-﻿using Acly;
-using DialogMaker.Core.Common;
+﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using DialogMaker.Core.Editor;
-using System.Linq;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -57,7 +52,7 @@ namespace DialogMaker.Core.Editor.Nodes
                     throw new ArgumentException($"Невозможно преобразовать значение из {type} в {DataType}", nameof(value));
                 }
 
-                InvokePropertyChanging(nameof(Value));
+                OnPropertyChanging(nameof(Value));
                 field = value;
                 var valueType = GetValueType(value);
 
@@ -66,7 +61,7 @@ namespace DialogMaker.Core.Editor.Nodes
                     CurrentValueType = valueType.Value;
                 }
 
-                InvokePropertyChanged(nameof(Value));
+                OnPropertyChanged(nameof(Value));
             }
         }
         public virtual Type ReflectionValueType
@@ -84,9 +79,9 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(CurrentValueType));
+                    OnPropertyChanging(nameof(CurrentValueType));
                     field = value;
-                    InvokePropertyChanged(nameof(CurrentValueType));
+                    OnPropertyChanged(nameof(CurrentValueType));
                 }
             }
         }

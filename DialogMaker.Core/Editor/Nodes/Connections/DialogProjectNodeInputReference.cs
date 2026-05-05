@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DialogMaker.Core.Editor.Nodes
+﻿namespace DialogMaker.Core.Editor.Nodes
 {
     public class DialogProjectNodeInputReference(INode node, int portId, DialogResourceType type)
         : DialogProjectNodeInputValue<DialogProjectReference>(node, portId, DialogNodePortType.Object)

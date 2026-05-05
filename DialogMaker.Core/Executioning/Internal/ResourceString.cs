@@ -1,5 +1,4 @@
 ﻿using DialogMaker.Core.Common;
-using System;
 using DialogMaker.Core.Editor;
 
 namespace DialogMaker.Core.Executioning.Internal

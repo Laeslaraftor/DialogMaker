@@ -1,7 +1,5 @@
-﻿using System.IO;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -19,7 +17,7 @@ namespace DialogMaker.Lib.Elements
         public Brush? Color
         {
             get => GetValue(ColorProperty) as Brush;
-            set => SetValue(ColorProperty, value); 
+            set => SetValue(ColorProperty, value);
         }
         public Brush? TextColor
         {
@@ -34,12 +32,12 @@ namespace DialogMaker.Lib.Elements
         public bool IsSelected
         {
             get => (bool)GetValue(IsSelectedProperty);
-            set => SetValue(IsSelectedProperty, value); 
+            set => SetValue(IsSelectedProperty, value);
         }
         public ICommand? ClickCommand
         {
             get => GetValue(ClickCommandProperty) as ICommand;
-            set => SetValue(ClickCommandProperty, value);   
+            set => SetValue(ClickCommandProperty, value);
         }
         public object? ClickCommandParameter
         {

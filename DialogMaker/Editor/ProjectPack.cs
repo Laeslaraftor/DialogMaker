@@ -1,5 +1,4 @@
-﻿using Acly;
-using DialogMaker.Core.Editor;
+﻿using DialogMaker.Core.Editor;
 using DialogMaker.Editor.Menus;
 using DialogMaker.Lib.Controllers;
 using System.Collections;
@@ -74,7 +73,7 @@ namespace DialogMaker.Editor
         {
             if (e.PropertyName == nameof(Name))
             {
-                InvokePropertyChanged(nameof(Name));
+                OnPropertyChanged(nameof(Name));
             }
         }
 

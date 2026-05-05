@@ -82,7 +82,7 @@ namespace DialogMaker.Lib.Elements
         {
             if (d is CloseView view)
             {
-                view._closeButtonContainer.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Collapsed;   
+                view._closeButtonContainer.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Collapsed;
             }
         }
 

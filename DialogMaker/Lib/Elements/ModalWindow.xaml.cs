@@ -17,7 +17,7 @@ namespace DialogMaker.Lib.Elements
         public object? Child
         {
             get => GetValue(ChildProperty);
-            set => SetValue(ChildProperty, value);  
+            set => SetValue(ChildProperty, value);
         }
         public ModalWindowButtons Buttons
         {
@@ -114,8 +114,8 @@ namespace DialogMaker.Lib.Elements
         {
             base.OnMouseMove(e);
 
-            if (e.LeftButton != MouseButtonState.Pressed || 
-                _ignoreDrag || 
+            if (e.LeftButton != MouseButtonState.Pressed ||
+                _ignoreDrag ||
                 e.Handled ||
                 !CanMove)
             {

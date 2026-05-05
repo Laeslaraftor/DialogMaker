@@ -1,6 +1,4 @@
 ﻿using DialogMaker.Core.Common;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace DialogMaker.Core.Executioning.Internal

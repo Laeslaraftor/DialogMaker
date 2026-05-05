@@ -2,8 +2,6 @@
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Core.Editor.Nodes.Structs;
 using DialogMaker.Core.Executioning.Internal;
-using System;
-using System.Collections.Generic;
 
 namespace DialogMaker.Core.Executioning.Builders
 {

@@ -1,11 +1,8 @@
 ﻿using DialogMaker.Lib.Elements;
-using System.Drawing.Printing;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace DialogMaker.Lib.Controllers
 {

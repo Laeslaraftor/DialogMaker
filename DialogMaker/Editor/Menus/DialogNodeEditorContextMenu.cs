@@ -40,7 +40,7 @@ namespace DialogMaker.Editor.Menus
         {
             Resolve(parameter, node =>
             {
-                node.Dialog.RemoveSelectedNodes(); 
+                node.Dialog.RemoveSelectedNodes();
             });
         }
 

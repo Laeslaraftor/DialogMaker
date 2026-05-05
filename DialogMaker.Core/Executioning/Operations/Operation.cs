@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.IO;
+﻿using System.Collections.ObjectModel;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -50,7 +47,7 @@ namespace DialogMaker.Core.Executioning
                 }
             }
 
-            return (Arguments == null && other.Arguments == null) || 
+            return (Arguments == null && other.Arguments == null) ||
                    (Arguments != null && other.Arguments != null);
         }
         public readonly override bool Equals(object obj)

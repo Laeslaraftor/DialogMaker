@@ -1,6 +1,5 @@
 ﻿using Acly.Player;
 using DialogMaker.Core.Editor;
-using System.IO;
 using System.Timers;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,7 +8,7 @@ using Timer = System.Timers.Timer;
 
 namespace DialogMaker.Lib.Elements
 {
-    public partial class MediaControl : UserControl, ISimplePlayer, IDisposable
+    public partial class MediaControl : UserControl, ISimplePlayer<string>, IDisposable
     {
         public MediaControl()
         {
@@ -76,6 +75,11 @@ namespace DialogMaker.Lib.Elements
             get => (bool)GetValue(SourceSettedProperty.DependencyProperty);
             private set => SetValue(SourceSettedProperty, value);
         }
+        public object? Source
+        {
+            get => GetValue(SourceProperty.DependencyProperty);
+            private set => SetValue(SourceProperty, value);
+        }
 
         float ISimplePlayer.Speed
         {
@@ -98,7 +102,7 @@ namespace DialogMaker.Lib.Elements
 
         #region Установка
 
-        public void SetSource(string source)
+        public Task SetSource(string source)
         {
             try
             {
@@ -107,24 +111,14 @@ namespace DialogMaker.Lib.Elements
             catch (Exception error)
             {
                 error.Log();
-                return;
+                return Task.CompletedTask;
             }
 
             SourceSetted = true;
+            Source = source;
             SourceChanged?.Invoke(this);
-        }
 
-        Task ISimplePlayer.SetSource(byte[] Data)
-        {
-            throw new NotImplementedException();
-        }
-        Task ISimplePlayer.SetSource(Stream SourceStream)
-        {
-            throw new NotImplementedException();
-        }
-        async Task ISimplePlayer.SetSource(string SourceUrl)
-        {
-            SetSource(SourceUrl);
+            return Task.CompletedTask;
         }
 
         public void Close()
@@ -186,11 +180,6 @@ namespace DialogMaker.Lib.Elements
             _timer.Dispose();
 
             GC.SuppressFinalize(this);
-        }
-
-        void ISimplePlayer.Release()
-        {
-            Dispose();
         }
 
         #endregion
@@ -364,6 +353,8 @@ namespace DialogMaker.Lib.Elements
             typeof(MediaControl), new(false));
         public static readonly DependencyPropertyKey SourceSettedProperty = DependencyProperty.RegisterReadOnly(nameof(SourceSetted), typeof(bool),
             typeof(MediaControl), new(false, OnSourceSettedChanged));
+        public static readonly DependencyPropertyKey SourceProperty = DependencyProperty.RegisterReadOnly(nameof(Source), typeof(object),
+            typeof(MediaControl), new(null));
 
         #endregion
     }

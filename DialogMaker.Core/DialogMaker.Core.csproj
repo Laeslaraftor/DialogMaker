@@ -4,10 +4,11 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Acly" Version="1.12.6" />
+    <PackageReference Include="Acly" Version="1.14.5" />
     <PackageReference Include="MessagePack" Version="3.1.4" />
     <PackageReference Include="MessagePackAnalyzer" Version="3.1.4">
       <PrivateAssets>all</PrivateAssets>
@@ -18,6 +19,10 @@
 
   <ItemGroup>
     <Folder Include="Editor\Nodes\Primitives\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Acly" />
   </ItemGroup>
 
 </Project>

@@ -1,7 +1,4 @@
-﻿using Acly;
-using DialogMaker.Core.Common;
-using System;
-using System.Collections.Generic;
+﻿using DialogMaker.Core.Common;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Executioning.Builders
@@ -153,7 +150,7 @@ namespace DialogMaker.Core.Executioning.Builders
         }
         public void SetValue(int index, IResourceItem resource)
         {
-            if (_variables.TryGetValue(index, out var variable) && 
+            if (_variables.TryGetValue(index, out var variable) &&
                 resource is IVariable otherVariable)
             {
                 variable.Value = otherVariable.Value;

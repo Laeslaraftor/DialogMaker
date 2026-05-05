@@ -8,7 +8,7 @@ namespace DialogMaker.Editor
 {
     public abstract class ProjectStructureItem : ProjectResourcesOwner, IItemTab
     {
-        public ProjectStructureItem(ProjectController project, IProjectResourcesOwner resourcesOwner) 
+        public ProjectStructureItem(ProjectController project, IProjectResourcesOwner resourcesOwner)
             : base(project, resourcesOwner)
         {
         }

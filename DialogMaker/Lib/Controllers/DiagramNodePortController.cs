@@ -5,7 +5,6 @@ using DialogMaker.Lib.Elements;
 using DialogMaker.Lib.InputFields;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Windows;
 
 namespace DialogMaker.Lib.Controllers
 {

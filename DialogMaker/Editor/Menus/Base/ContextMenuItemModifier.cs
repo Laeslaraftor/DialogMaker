@@ -1,8 +1,7 @@
-﻿using DialogMaker.Core;
-using DialogMaker.Lib;
+﻿using DialogMaker.Lib;
 using DialogMaker.Lib.Elements;
-using System.Windows.Controls;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace DialogMaker.Editor.Menus
 {
@@ -25,9 +24,9 @@ namespace DialogMaker.Editor.Menus
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Icon));
+                    OnPropertyChanging(nameof(Icon));
                     field = value;
-                    InvokePropertyChanged(nameof(Icon));
+                    OnPropertyChanged(nameof(Icon));
                 }
             }
         }
@@ -38,9 +37,9 @@ namespace DialogMaker.Editor.Menus
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Name));
+                    OnPropertyChanging(nameof(Name));
                     field = value;
-                    InvokePropertyChanged(nameof(Name));
+                    OnPropertyChanged(nameof(Name));
                 }
             }
         }
@@ -51,9 +50,9 @@ namespace DialogMaker.Editor.Menus
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Shortcut));
+                    OnPropertyChanging(nameof(Shortcut));
                     field = value;
-                    InvokePropertyChanged(nameof(Shortcut));
+                    OnPropertyChanged(nameof(Shortcut));
                 }
             }
         }

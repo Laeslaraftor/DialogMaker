@@ -1,15 +1,14 @@
-﻿using DialogMaker.Core;
+﻿using Acly.Tokens;
+using DialogMaker.Core;
 using DialogMaker.Core.Editor.Nodes;
+using DialogMaker.Editor;
+using DialogMaker.Lib.Controllers;
 using DialogMaker.Lib.InputFields;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
-using System.ComponentModel;
-using Acly;
-using System.Diagnostics.CodeAnalysis;
-using Acly.Tokens;
-using DialogMaker.Lib.Controllers;
-using DialogMaker.Editor;
 using System.Windows.Media;
 
 namespace DialogMaker.Lib.Elements

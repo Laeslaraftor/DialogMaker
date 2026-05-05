@@ -1,5 +1,4 @@
-﻿using Acly;
-using DialogMaker.Core.Editor;
+﻿using DialogMaker.Core.Editor;
 using DialogMaker.Lib;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
@@ -457,7 +456,7 @@ namespace DialogMaker
         {
             public bool IntersectsWith(Point point)
             {
-                return point.X >= rect.Left && 
+                return point.X >= rect.Left &&
                        point.Y >= rect.Top &&
                        rect.Right >= point.X &&
                        rect.Bottom >= point.Y;

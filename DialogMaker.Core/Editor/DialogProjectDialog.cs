@@ -1,12 +1,6 @@
-﻿using Acly;
-using DialogMaker.Core.Editor.Nodes;
-using System;
-using System.Collections.Generic;
+﻿using DialogMaker.Core.Editor.Nodes;
 using System.ComponentModel;
-using DialogMaker.Core.Editor;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
 
 namespace DialogMaker.Core.Editor
 {
@@ -49,9 +43,9 @@ namespace DialogMaker.Core.Editor
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Name));
+                    OnPropertyChanging(nameof(Name));
                     field = value;
-                    InvokePropertyChanged(nameof(Name));
+                    OnPropertyChanged(nameof(Name));
                 }
             }
         }
@@ -98,9 +92,9 @@ namespace DialogMaker.Core.Editor
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(IsFullLoaded));
+                    OnPropertyChanging(nameof(IsFullLoaded));
                     field = value;
-                    InvokePropertyChanged(nameof(IsFullLoaded));
+                    OnPropertyChanged(nameof(IsFullLoaded));
                 }
             }
         }
@@ -180,6 +174,14 @@ namespace DialogMaker.Core.Editor
         public DialogProjectDialogNode CreateNode(DialogNodeType type)
         {
             var node = DialogProjectDialogNode.Create(this, type);
+            Nodes.Add(node);
+
+            return node;
+        }
+        public T Create<T>()
+            where T : DialogProjectDialogNode
+        {
+            var node = DialogProjectDialogNode.Create<T>(this);
             Nodes.Add(node);
 
             return node;
@@ -310,7 +312,7 @@ namespace DialogMaker.Core.Editor
                 }
             }
 
-            InvokePropertyChanged(nameof(Nodes));
+            OnPropertyChanged(nameof(Nodes));
         }
 
         private void OnNodePropertyChanged(object sender, PropertyChangedEventArgs e)

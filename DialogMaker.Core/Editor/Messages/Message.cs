@@ -1,8 +1,4 @@
-﻿using Acly;
-using System;
-using System.Collections.Generic;
-
-namespace DialogMaker.Core.Editor.Messages
+﻿namespace DialogMaker.Core.Editor.Messages
 {
     public class Message : ObservableObject
     {
@@ -29,9 +25,9 @@ namespace DialogMaker.Core.Editor.Messages
             {
                 if (!_isReadOnly && field != value)
                 {
-                    InvokePropertyChanging(nameof(Importance));
+                    OnPropertyChanging(nameof(Importance));
                     field = value;
-                    InvokePropertyChanged(nameof(Importance));
+                    OnPropertyChanged(nameof(Importance));
                 }
             }
         }
@@ -42,9 +38,9 @@ namespace DialogMaker.Core.Editor.Messages
             {
                 if (!_isReadOnly && field != value)
                 {
-                    InvokePropertyChanging(nameof(Title));
+                    OnPropertyChanging(nameof(Title));
                     field = value;
-                    InvokePropertyChanged(nameof(Title));
+                    OnPropertyChanged(nameof(Title));
                 }
             }
         }
@@ -55,9 +51,9 @@ namespace DialogMaker.Core.Editor.Messages
             {
                 if (!_isReadOnly && field != value)
                 {
-                    InvokePropertyChanging(nameof(Text));
+                    OnPropertyChanging(nameof(Text));
                     field = value;
-                    InvokePropertyChanged(nameof(Text));
+                    OnPropertyChanged(nameof(Text));
                 }
             }
         }
@@ -68,9 +64,9 @@ namespace DialogMaker.Core.Editor.Messages
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Read));
+                    OnPropertyChanging(nameof(Read));
                     field = value;
-                    InvokePropertyChanged(nameof(Read));
+                    OnPropertyChanged(nameof(Read));
                 }
             }
         }

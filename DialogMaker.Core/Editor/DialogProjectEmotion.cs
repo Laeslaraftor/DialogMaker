@@ -1,23 +1,21 @@
-﻿using Acly;
-using DialogMaker.Core.Common;
+﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Core.Executioning.Internal;
 using MessagePack;
 using Newtonsoft.Json;
-using System;
 
 namespace DialogMaker.Core.Editor
 {
     public class DialogProjectEmotion : DialogProjectResourceObject, IEmotion
     {
-        public DialogProjectEmotion(DialogProjectResources resources) 
+        public DialogProjectEmotion(DialogProjectResources resources)
             : base(resources, Guid.NewGuid())
         {
             LeftEye = new();
             RightEye = new();
             Mouth = new();
         }
-        public DialogProjectEmotion(DialogProjectResources resources, DialogProjectEmotionSavedState savedState) 
+        public DialogProjectEmotion(DialogProjectResources resources, DialogProjectEmotionSavedState savedState)
             : base(resources, savedState)
         {
             LeftEye = savedState.LeftEye ?? new();
@@ -75,9 +73,9 @@ namespace DialogMaker.Core.Editor
                     if (field != value)
                     {
                         value = Helper.Clamp(value, -1, 1);
-                        InvokePropertyChanging(nameof(YPosition));
+                        OnPropertyChanging(nameof(YPosition));
                         field = value;
-                        InvokePropertyChanged(nameof(YPosition));
+                        OnPropertyChanged(nameof(YPosition));
                     }
                 }
             }
@@ -91,9 +89,9 @@ namespace DialogMaker.Core.Editor
                     if (field != value)
                     {
                         value = Helper.Clamp(value, -1, 1);
-                        InvokePropertyChanging(nameof(ZRotation));
+                        OnPropertyChanging(nameof(ZRotation));
                         field = value;
-                        InvokePropertyChanged(nameof(ZRotation));
+                        OnPropertyChanged(nameof(ZRotation));
                     }
                 }
             }
@@ -116,9 +114,9 @@ namespace DialogMaker.Core.Editor
                 {
                     if (field != value)
                     {
-                        InvokePropertyChanging(nameof(Eyebrow));
+                        OnPropertyChanging(nameof(Eyebrow));
                         field = value;
-                        InvokePropertyChanged(nameof(Eyebrow));
+                        OnPropertyChanged(nameof(Eyebrow));
                     }
                 }
             } = new();
@@ -132,9 +130,9 @@ namespace DialogMaker.Core.Editor
                     if (field != value)
                     {
                         value = Helper.Clamp01(value);
-                        InvokePropertyChanging(nameof(ClosePercent));
+                        OnPropertyChanging(nameof(ClosePercent));
                         field = value;
-                        InvokePropertyChanged(nameof(ClosePercent));
+                        OnPropertyChanged(nameof(ClosePercent));
                     }
                 }
             }
@@ -164,9 +162,9 @@ namespace DialogMaker.Core.Editor
                     if (field != value)
                     {
                         value = Helper.Clamp01(value);
-                        InvokePropertyChanging(nameof(OpenPercent));
+                        OnPropertyChanging(nameof(OpenPercent));
                         field = value;
-                        InvokePropertyChanged(nameof(OpenPercent));
+                        OnPropertyChanged(nameof(OpenPercent));
                     }
                 }
             }
@@ -180,9 +178,9 @@ namespace DialogMaker.Core.Editor
                     if (field != value)
                     {
                         value = Helper.Clamp01(value);
-                        InvokePropertyChanging(nameof(HorizontalStretchPercent));
+                        OnPropertyChanging(nameof(HorizontalStretchPercent));
                         field = value;
-                        InvokePropertyChanged(nameof(HorizontalStretchPercent));
+                        OnPropertyChanged(nameof(HorizontalStretchPercent));
                     }
                 }
             }
@@ -196,9 +194,9 @@ namespace DialogMaker.Core.Editor
                     if (field != value)
                     {
                         value = Helper.Clamp(value, -1, 1);
-                        InvokePropertyChanging(nameof(LeftCornerYPosition));
+                        OnPropertyChanging(nameof(LeftCornerYPosition));
                         field = value;
-                        InvokePropertyChanged(nameof(LeftCornerYPosition));
+                        OnPropertyChanged(nameof(LeftCornerYPosition));
                     }
                 }
             }
@@ -212,9 +210,9 @@ namespace DialogMaker.Core.Editor
                     if (field != value)
                     {
                         value = Helper.Clamp(value, -1, 1);
-                        InvokePropertyChanging(nameof(RightCornerYPosition));
+                        OnPropertyChanging(nameof(RightCornerYPosition));
                         field = value;
-                        InvokePropertyChanged(nameof(RightCornerYPosition));
+                        OnPropertyChanged(nameof(RightCornerYPosition));
                     }
                 }
             }

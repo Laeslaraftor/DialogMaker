@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-
-namespace DialogMaker.Core.Executioning
+﻿namespace DialogMaker.Core.Executioning
 {
     public abstract class OpCode(DialogByteCode code)
     {

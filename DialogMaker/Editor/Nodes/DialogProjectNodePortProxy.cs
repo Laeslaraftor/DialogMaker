@@ -1,12 +1,8 @@
-﻿using Acly;
-using DialogMaker.Core;
-using DialogMaker.Core.Editor.Nodes;
+﻿using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Lib.Controllers;
 using DialogMaker.Lib.Elements;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Media;
-using System.Xml.Linq;
 using Color = System.Drawing.Color;
 
 namespace DialogMaker.Editor
@@ -45,9 +41,9 @@ namespace DialogMaker.Editor
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Inverted));
+                    OnPropertyChanging(nameof(Inverted));
                     field = value;
-                    InvokePropertyChanged(nameof(Inverted));
+                    OnPropertyChanged(nameof(Inverted));
                 }
             }
         }
@@ -107,12 +103,12 @@ namespace DialogMaker.Editor
         {
             if (e.PropertyName == nameof(ConnectionsCount))
             {
-                InvokePropertyChanged(nameof(IsActive));
-                InvokePropertyChanged(e.PropertyName);
+                OnPropertyChanged(nameof(IsActive));
+                OnPropertyChanged(e.PropertyName);
             }
             else if (e.PropertyName == nameof(Name))
             {
-                InvokePropertyChanged(e);
+                OnPropertyChanged(e);
             }
         }
         private void OnNodePropertyChanged(object? sender, PropertyChangedEventArgs e)

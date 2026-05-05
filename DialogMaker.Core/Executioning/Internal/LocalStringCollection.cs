@@ -1,6 +1,4 @@
 ﻿using DialogMaker.Core.Common;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
 namespace DialogMaker.Core.Executioning.Internal
@@ -26,7 +24,7 @@ namespace DialogMaker.Core.Executioning.Internal
         {
             string value = string.Empty;
 
-           foreach (var str in Strings)
+            foreach (var str in Strings)
             {
                 if (value != string.Empty)
                 {

@@ -1,7 +1,4 @@
-﻿using DialogMaker.Core.Executioning;
-using System;
-
-namespace DialogMaker.Core.Editor
+﻿namespace DialogMaker.Core.Editor
 {
     public class DialogProjectReference : Disposable, ISavable
     {
@@ -29,9 +26,9 @@ namespace DialogMaker.Core.Editor
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(ResourcesPath));
+                    OnPropertyChanging(nameof(ResourcesPath));
                     field = value;
-                    InvokePropertyChanged(nameof(ResourcesPath));
+                    OnPropertyChanged(nameof(ResourcesPath));
                 }
             }
         }

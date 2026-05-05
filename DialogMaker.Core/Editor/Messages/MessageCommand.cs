@@ -1,5 +1,4 @@
-﻿using System;
-using System.Windows.Input;
+﻿using System.Windows.Input;
 
 namespace DialogMaker.Core.Editor.Messages
 {
@@ -27,9 +26,9 @@ namespace DialogMaker.Core.Editor.Messages
             {
                 if (!_isReadOnly && field != value)
                 {
-                    InvokePropertyChanging(nameof(Name));
+                    OnPropertyChanging(nameof(Name));
                     field = value;
-                    InvokePropertyChanged(nameof(Name));
+                    OnPropertyChanged(nameof(Name));
                 }
             }
         }
@@ -40,9 +39,9 @@ namespace DialogMaker.Core.Editor.Messages
             {
                 if (!_isReadOnly && field != value)
                 {
-                    InvokePropertyChanging(nameof(Description));
+                    OnPropertyChanging(nameof(Description));
                     field = value;
-                    InvokePropertyChanged(nameof(Description));
+                    OnPropertyChanged(nameof(Description));
                 }
             }
         }
@@ -53,10 +52,10 @@ namespace DialogMaker.Core.Editor.Messages
             {
                 if (!_isReadOnly && field != value)
                 {
-                    InvokePropertyChanging(nameof(IsEnabled));
+                    OnPropertyChanging(nameof(IsEnabled));
                     field = value;
                     CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-                    InvokePropertyChanged(nameof(IsEnabled));
+                    OnPropertyChanged(nameof(IsEnabled));
                 }
             }
         }

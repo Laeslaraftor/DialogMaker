@@ -1,7 +1,5 @@
 ﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Editor;
-using System;
-using System.Collections.Generic;
 
 namespace DialogMaker.Core.Executioning.Internal
 {

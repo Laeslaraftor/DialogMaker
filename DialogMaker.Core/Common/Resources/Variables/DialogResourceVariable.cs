@@ -1,17 +1,16 @@
 ﻿using DialogMaker.Core.Common.SavedStates;
 using DialogMaker.Core.Editor;
-using System;
 
 namespace DialogMaker.Core.Common
 {
     public abstract class DialogResourceVariable : DialogResourceObject
     {
-        public DialogResourceVariable(DialogResources resources, DialogProjectVariable variable) 
+        public DialogResourceVariable(DialogResources resources, DialogProjectVariable variable)
             : base(resources, variable)
         {
             Value = new(variable.Value);
         }
-        public DialogResourceVariable(DialogResources resources, DialogResourceVariableSavedState savedState) 
+        public DialogResourceVariable(DialogResources resources, DialogResourceVariableSavedState savedState)
             : base(resources, savedState)
         {
             Value = new(savedState.Value);
@@ -26,9 +25,9 @@ namespace DialogMaker.Core.Common
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Value));
+                    OnPropertyChanging(nameof(Value));
                     field = value;
-                    InvokePropertyChanged(nameof(Value));
+                    OnPropertyChanged(nameof(Value));
                 }
             }
         }

@@ -20,7 +20,7 @@ namespace DialogMaker.Editor.Menus
         {
             yield return new ContextMenuAction("Открыть в проводнике",
                 CanExecute, OpenInExplorer, Icons.OpenFolder);
-            yield return new ContextMenuAction("Создать диалог", 
+            yield return new ContextMenuAction("Создать диалог",
                 CanExecute, CreateDialog, Icons.Create);
             yield return ContextMenuSeparator.Instance;
             yield return new ContextMenuAction("Удалить",
@@ -60,7 +60,7 @@ namespace DialogMaker.Editor.Menus
             Resolve(parameter, pack =>
             {
                 pack.Project.RemovePack(pack);
-            });            
+            });
         }
 
         #endregion

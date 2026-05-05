@@ -1,13 +1,10 @@
 ﻿using DialogMaker.Core.Common;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace DialogMaker.Core.Executioning.Internal
 {
     internal class InternalDialogHandler(IInternalDialogExecutor executor) : IDialogExecutingHandler
     {
-        public IThreadDispatcher? Dispatcher { get; }
+        public IDispatcher? Dispatcher { get; }
 
         private readonly IInternalDialogExecutor _executor = executor;
 
@@ -55,7 +52,7 @@ namespace DialogMaker.Core.Executioning.Internal
                     return;
                 }
 
-                dispatcher.Execute(() => action(h));
+                dispatcher.Dispatch(() => action(h));
             });
         }
 

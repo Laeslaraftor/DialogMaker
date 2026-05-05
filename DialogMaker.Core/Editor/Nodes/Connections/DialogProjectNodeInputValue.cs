@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DialogMaker.Core.Editor.Nodes
+﻿namespace DialogMaker.Core.Editor.Nodes
 {
     public class DialogProjectNodeInputValue<T>(INode node, int portId, DialogNodePortType dataType)
         : DialogProjectNodeInputValue(node, portId, dataType), IValuePort<T>

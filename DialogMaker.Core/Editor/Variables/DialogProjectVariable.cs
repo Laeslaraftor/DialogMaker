@@ -1,6 +1,5 @@
 ﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Editor.Nodes;
-using System;
 
 namespace DialogMaker.Core.Editor
 {
@@ -40,9 +39,9 @@ namespace DialogMaker.Core.Editor
                         throw new ArgumentException($"Не удалось конвертировать значение \"{value}\" для переменной типа {Type}", nameof(value));
                     }
 
-                    InvokePropertyChanging(nameof(Value));
+                    OnPropertyChanging(nameof(Value));
                     field = ConvertValue(value);
-                    InvokePropertyChanged(nameof(Value));
+                    OnPropertyChanged(nameof(Value));
                 }
             }
         }
@@ -87,7 +86,7 @@ namespace DialogMaker.Core.Editor
         public static DialogProjectVariable Create(DialogProjectResources resources, DialogVariableType type)
         {
             var objType = GetVariableResourceType(type);
-            return (DialogProjectVariable)Activator.CreateInstance(objType, resources); 
+            return (DialogProjectVariable)Activator.CreateInstance(objType, resources);
         }
         public static DialogProjectVariable Restore(DialogProjectResources resources, DialogProjectVariableSavedState savedState)
         {

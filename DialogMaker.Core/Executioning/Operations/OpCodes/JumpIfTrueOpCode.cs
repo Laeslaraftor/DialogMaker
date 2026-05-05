@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-
 namespace DialogMaker.Core.Executioning
 {
     public class JumpIfTrueOpCode() : OpCode(DialogByteCode.JumpIfTrue)
@@ -19,11 +17,11 @@ namespace DialogMaker.Core.Executioning
         }
 
         #endregion
-		
-		#region Статика
-		
-		public static readonly JumpIfTrueOpCode Instance = new();
-		
-		#endregion
+
+        #region Статика
+
+        public static readonly JumpIfTrueOpCode Instance = new();
+
+        #endregion
     }
 }

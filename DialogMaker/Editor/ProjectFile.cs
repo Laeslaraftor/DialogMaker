@@ -1,7 +1,6 @@
 ﻿using DialogMaker.Core;
 using DialogMaker.Core.Common;
 using DialogMaker.Core.Editor;
-using DialogMaker.Core.Executioning;
 using DialogMaker.Editor.Menus;
 using DialogMaker.Lib;
 using DialogMaker.Lib.Elements;
@@ -98,7 +97,7 @@ namespace DialogMaker.Editor
         protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);
-            
+
             if (_view != null)
             {
                 _viewsPool.Free(_view);

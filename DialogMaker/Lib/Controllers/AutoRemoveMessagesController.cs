@@ -1,6 +1,4 @@
-﻿using Acly;
-using DialogMaker.Core;
-using DialogMaker.Core.Editor.Messages;
+﻿using DialogMaker.Core.Editor.Messages;
 using DialogMaker.Lib.Elements;
 using System.Windows;
 using System.Windows.Controls;
@@ -28,9 +26,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(HoldDuration));
+                    OnPropertyChanging(nameof(HoldDuration));
                     field = value;
-                    InvokePropertyChanged(nameof(HoldDuration));
+                    OnPropertyChanged(nameof(HoldDuration));
                 }
             }
         }
@@ -41,9 +39,9 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(FadeDuration));
+                    OnPropertyChanging(nameof(FadeDuration));
                     field = value;
-                    InvokePropertyChanged(nameof(FadeDuration));
+                    OnPropertyChanged(nameof(FadeDuration));
                 }
             }
         }
@@ -54,7 +52,7 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(MessagesMargin));
+                    OnPropertyChanging(nameof(MessagesMargin));
                     field = value;
 
                     foreach (var view in _addedMessages.Keys)
@@ -62,7 +60,7 @@ namespace DialogMaker.Lib.Controllers
                         view.Margin = MessagesMargin;
                     }
 
-                    InvokePropertyChanged(nameof(MessagesMargin));
+                    OnPropertyChanged(nameof(MessagesMargin));
                 }
             }
         }

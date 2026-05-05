@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Windows.Input;
 
 namespace DialogMaker.Lib.Commands

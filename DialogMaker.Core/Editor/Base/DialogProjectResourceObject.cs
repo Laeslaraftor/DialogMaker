@@ -1,8 +1,6 @@
 ﻿using DialogMaker.Core.Attributes;
 using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning;
-using System;
-using System.Collections.Generic;
 
 namespace DialogMaker.Core.Editor
 {
@@ -35,9 +33,9 @@ namespace DialogMaker.Core.Editor
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Resources));
+                    OnPropertyChanging(nameof(Resources));
                     field = value;
-                    InvokePropertyChanged(nameof(Resources));
+                    OnPropertyChanged(nameof(Resources));
                 }
             }
         }
@@ -62,7 +60,7 @@ namespace DialogMaker.Core.Editor
 
                 if (_id != value)
                 {
-                    InvokePropertyChanging(nameof(Id));
+                    OnPropertyChanging(nameof(Id));
                     _id = value;
                     bool startSwitchId = _switchItemId;
 
@@ -70,7 +68,7 @@ namespace DialogMaker.Core.Editor
                     _finalPath = ResourcePath.CreatePath(this);
 
                     _switchItemId = startSwitchId;
-                    InvokePropertyChanged(nameof(Id));
+                    OnPropertyChanged(nameof(Id));
                 }
             }
         }
@@ -89,10 +87,10 @@ namespace DialogMaker.Core.Editor
             {
                 if (_projectPath != value)
                 {
-                    InvokePropertyChanging(nameof(Path));
+                    OnPropertyChanging(nameof(Path));
                     _projectPath = value;
-                    InvokePropertyChanged(nameof(Path));
-                } 
+                    OnPropertyChanged(nameof(Path));
+                }
             }
         }
         public bool IsSeparated => false;

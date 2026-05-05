@@ -1,9 +1,9 @@
-﻿using DialogMaker.Lib.Controllers;
-using DialogMaker.Core.Editor;
+﻿using DialogMaker.Core.Editor;
+using DialogMaker.Lib.Controllers;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -134,7 +134,7 @@ namespace DialogMaker.Lib.Elements
             {
                 var stop = gradientStops[i];
 
-                if (stop.Color ==  targetColor)
+                if (stop.Color == targetColor)
                 {
                     return stop.Offset;
                 }

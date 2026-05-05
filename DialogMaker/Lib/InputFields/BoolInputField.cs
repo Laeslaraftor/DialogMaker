@@ -12,7 +12,7 @@ namespace DialogMaker.Lib.InputFields
             {
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Left,
-                Margin = new(5,0,0,0)
+                Margin = new(5, 0, 0, 0)
             };
             _box = new();
 
@@ -41,7 +41,7 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Placeholder));
+                    OnPropertyChanging(nameof(Placeholder));
                     field = value;
 
                     if (_placeholder.Text != value)
@@ -49,7 +49,7 @@ namespace DialogMaker.Lib.InputFields
                         _placeholder.Text = value;
                     }
 
-                    InvokePropertyChanged(nameof(Placeholder));
+                    OnPropertyChanged(nameof(Placeholder));
                 }
             }
         }
@@ -60,7 +60,7 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (field?.Equals(value) != true)
                 {
-                    InvokePropertyChanging(nameof(Value));
+                    OnPropertyChanging(nameof(Value));
                     field = value;
 
                     if (!_box.IsChecked.Equals(value))
@@ -68,7 +68,7 @@ namespace DialogMaker.Lib.InputFields
                         _box.IsChecked = value?.Equals(true);
                     }
 
-                    InvokePropertyChanged(nameof(Value));
+                    OnPropertyChanged(nameof(Value));
                 }
             }
         }

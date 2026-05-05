@@ -1,5 +1,4 @@
-﻿using Acly;
-using DialogMaker.Core.Editor;
+﻿using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor.Menus;
 using DialogMaker.Editor.Nodes;
@@ -51,9 +50,9 @@ namespace DialogMaker.Editor
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(LastMouseClickPosition));
+                    OnPropertyChanging(nameof(LastMouseClickPosition));
                     field = value;
-                    InvokePropertyChanged(nameof(LastMouseClickPosition));
+                    OnPropertyChanged(nameof(LastMouseClickPosition));
                 }
             }
         }
@@ -143,7 +142,7 @@ namespace DialogMaker.Editor
             {
                 if (!Equals(CurrentView, value))
                 {
-                    InvokePropertyChanging(nameof(CurrentView));
+                    OnPropertyChanging(nameof(CurrentView));
 
                     if (value != null)
                     {
@@ -161,7 +160,7 @@ namespace DialogMaker.Editor
                         _currentView = null;
                     }
 
-                    InvokePropertyChanged(nameof(CurrentView));
+                    OnPropertyChanged(nameof(CurrentView));
                 }
             }
         }
@@ -423,7 +422,7 @@ namespace DialogMaker.Editor
         {
             if (e.PropertyName == nameof(Name))
             {
-                InvokePropertyChanged(nameof(Name));
+                OnPropertyChanged(nameof(Name));
             }
         }
         private void OnSelectedNodesItemChanged(object? sender, CollectionItemEventArgs<DialogProjectNode> e)

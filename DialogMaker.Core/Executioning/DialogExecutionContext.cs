@@ -1,6 +1,4 @@
-﻿using System.Threading;
-
-namespace DialogMaker.Core.Executioning
+﻿namespace DialogMaker.Core.Executioning
 {
     public readonly struct DialogExecutionContext(IDialogExecutionThread thread, IDialogExecutingThreadManager threadManager, IDialogExecutionResources resources, IDialogExecutingHandler handler, CancellationToken cancellationToken)
     {

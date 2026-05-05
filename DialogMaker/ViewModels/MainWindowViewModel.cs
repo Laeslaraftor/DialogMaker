@@ -1,6 +1,4 @@
-﻿using Acly;
-using DialogMaker.Core;
-using DialogMaker.Editor;
+﻿using DialogMaker.Editor;
 using System.Collections;
 using System.ComponentModel;
 using System.Windows;
@@ -18,7 +16,7 @@ namespace DialogMaker.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    InvokePropertyChanged(nameof(Languages));
+                    OnPropertyChanged(nameof(Languages));
                 }
             }
         }
@@ -30,7 +28,7 @@ namespace DialogMaker.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    InvokePropertyChanged(nameof(CreateProjectCommand));
+                    OnPropertyChanged(nameof(CreateProjectCommand));
                 }
             }
         }
@@ -42,7 +40,7 @@ namespace DialogMaker.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    InvokePropertyChanged(nameof(OpenProjectCommand));
+                    OnPropertyChanged(nameof(OpenProjectCommand));
                 }
             }
         }
@@ -54,7 +52,7 @@ namespace DialogMaker.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    InvokePropertyChanged(nameof(CloseProjectCommand));
+                    OnPropertyChanged(nameof(CloseProjectCommand));
                 }
             }
         }
@@ -66,7 +64,7 @@ namespace DialogMaker.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    InvokePropertyChanged(nameof(ExportProjectCommand));
+                    OnPropertyChanged(nameof(ExportProjectCommand));
                 }
             }
         }
@@ -78,7 +76,7 @@ namespace DialogMaker.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    InvokePropertyChanged(nameof(CanCreatePack));
+                    OnPropertyChanged(nameof(CanCreatePack));
                 }
             }
         }
@@ -90,7 +88,7 @@ namespace DialogMaker.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    InvokePropertyChanged(nameof(CreatePackCommand));
+                    OnPropertyChanged(nameof(CreatePackCommand));
                 }
             }
         }
@@ -113,7 +111,7 @@ namespace DialogMaker.ViewModels
                         UpdateProject(value);
                     }
 
-                    InvokePropertyChanged(nameof(Project));
+                    OnPropertyChanged(nameof(Project));
                 }
             }
         }
@@ -125,7 +123,7 @@ namespace DialogMaker.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    InvokePropertyChanged(nameof(DefaultLanguageVisibility));
+                    OnPropertyChanged(nameof(DefaultLanguageVisibility));
                 }
             }
         }
@@ -137,7 +135,7 @@ namespace DialogMaker.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    InvokePropertyChanged(nameof(GlobalResources));
+                    OnPropertyChanged(nameof(GlobalResources));
                 }
             }
         }

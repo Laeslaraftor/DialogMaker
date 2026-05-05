@@ -1,12 +1,11 @@
 ﻿using MessagePack;
-using System.Collections.Generic;
 
 namespace DialogMaker.Core.Executioning.SavedStates
 {
     [MessagePackObject(SuppressSourceGeneration = false)]
     public class DialogResourcesSavedState()
     {
-        public DialogResourcesSavedState(Dictionary<int, DialogItemReference> references) 
+        public DialogResourcesSavedState(Dictionary<int, DialogItemReference> references)
             : this()
         {
             foreach (var info in references)

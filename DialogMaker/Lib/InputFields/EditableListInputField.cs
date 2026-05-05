@@ -1,5 +1,4 @@
-﻿using Acly;
-using DialogMaker.Lib.Elements;
+﻿using DialogMaker.Lib.Elements;
 using System.Windows;
 
 namespace DialogMaker.Lib.InputFields
@@ -11,9 +10,9 @@ namespace DialogMaker.Lib.InputFields
             get => field ?? string.Empty;
             set
             {
-                if(field != value)
+                if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Placeholder));
+                    OnPropertyChanging(nameof(Placeholder));
                     field = value;
 
                     if (_view.Placeholder?.Equals(value) != true)
@@ -21,7 +20,7 @@ namespace DialogMaker.Lib.InputFields
                         _view.Placeholder = value;
                     }
 
-                    InvokePropertyChanged(nameof(Placeholder));
+                    OnPropertyChanged(nameof(Placeholder));
                 }
             }
         }
@@ -37,7 +36,7 @@ namespace DialogMaker.Lib.InputFields
                         throw new ArgumentException($"Недопустимое значение. Требуется: {typeof(IEditableList)}, получено: {value?.GetType()}", nameof(value));
                     }
 
-                    InvokePropertyChanging(nameof(Placeholder));
+                    OnPropertyChanging(nameof(Placeholder));
                     field = value;
 
                     if (_view.EditableList?.Equals(value) != true)
@@ -45,7 +44,7 @@ namespace DialogMaker.Lib.InputFields
                         _view.EditableList = list;
                     }
 
-                    InvokePropertyChanged(nameof(Placeholder));
+                    OnPropertyChanged(nameof(Placeholder));
                 }
             }
         }
@@ -56,7 +55,7 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(InputFieldHandler));
+                    OnPropertyChanging(nameof(InputFieldHandler));
                     field = value;
 
                     if (_view.InputFieldHandler != value)
@@ -64,7 +63,7 @@ namespace DialogMaker.Lib.InputFields
                         _view.InputFieldHandler = value;
                     }
 
-                    InvokePropertyChanged(nameof(InputFieldHandler));
+                    OnPropertyChanged(nameof(InputFieldHandler));
                 }
             }
         }

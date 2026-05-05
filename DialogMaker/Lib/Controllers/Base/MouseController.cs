@@ -1,6 +1,4 @@
-﻿using DialogMaker.Core;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
@@ -113,7 +111,7 @@ namespace DialogMaker.Lib.Controllers
                 }
             }, callback =>
             {
-                if (result != null || 
+                if (result != null ||
                     maxSkipCount >= skipCount)
                 {
                     return true;
@@ -134,7 +132,7 @@ namespace DialogMaker.Lib.Controllers
         protected virtual async void OnMouseDown(object? sender, MouseButtonEventArgs e)
         {
             MouseDown?.Invoke(this, e);
-            _lastMouseDownElement = await Fetch(e);            
+            _lastMouseDownElement = await Fetch(e);
         }
         protected virtual void OnMouseMove(object? sender, MouseEventArgs e)
         {

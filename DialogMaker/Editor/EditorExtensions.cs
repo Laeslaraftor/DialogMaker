@@ -6,7 +6,6 @@ using DialogMaker.Lib.Elements;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Xml.Linq;
 
 namespace DialogMaker.Editor
 {
@@ -20,7 +19,7 @@ namespace DialogMaker.Editor
             }
             if (projectReference is DialogProjectReference originalReference)
             {
-                return originalReference; 
+                return originalReference;
             }
             if (projectReference is ProjectReference reference)
             {

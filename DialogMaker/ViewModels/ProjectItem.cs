@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Controls;
 
 namespace DialogMaker.ViewModels
@@ -14,7 +13,7 @@ namespace DialogMaker.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    InvokePropertyChanged(nameof(Icon));
+                    OnPropertyChanged(nameof(Icon));
                 }
             }
         }
@@ -26,7 +25,7 @@ namespace DialogMaker.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    InvokePropertyChanged(nameof(Name));
+                    OnPropertyChanged(nameof(Name));
                 }
             }
         }
@@ -38,7 +37,7 @@ namespace DialogMaker.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    InvokePropertyChanged(nameof(Value));
+                    OnPropertyChanged(nameof(Value));
                 }
             }
         }
@@ -50,7 +49,7 @@ namespace DialogMaker.ViewModels
                 if (field != value)
                 {
                     field = value;
-                    InvokePropertyChanged(nameof(ContextMenu));
+                    OnPropertyChanged(nameof(ContextMenu));
                 }
             }
         }

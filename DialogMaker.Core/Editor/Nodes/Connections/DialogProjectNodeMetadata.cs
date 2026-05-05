@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace DialogMaker.Core.Editor.Nodes
+﻿namespace DialogMaker.Core.Editor.Nodes
 {
     public readonly struct DialogProjectNodeMetadata
         : IEquatable<DialogProjectNodeMetadata>, IComparable, IComparable<DialogProjectNodeMetadata>
@@ -70,7 +68,7 @@ namespace DialogMaker.Core.Editor.Nodes
         }
         public bool Equals(DialogProjectNodeMetadata other)
         {
-            return Name == other.Name && 
+            return Name == other.Name &&
                    Description == other.Description &&
                    Equals(SortValue, other.SortValue);
         }

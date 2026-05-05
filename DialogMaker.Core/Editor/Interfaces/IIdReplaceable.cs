@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace DialogMaker.Core.Editor
+﻿namespace DialogMaker.Core.Editor
 {
     public interface IIdReplaceable
     {

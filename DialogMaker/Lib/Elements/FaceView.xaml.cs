@@ -1,7 +1,4 @@
-﻿using Acly;
-using DialogMaker.Lib.Controllers;
-using System.Windows;
-using System.Windows.Automation;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;

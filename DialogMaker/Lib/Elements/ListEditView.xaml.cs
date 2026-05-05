@@ -1,13 +1,12 @@
-﻿using Acly;
+﻿using DialogMaker.Core.Editor;
+using DialogMaker.Editor;
 using DialogMaker.Lib.Converters;
 using DialogMaker.Lib.InputFields;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.ComponentModel;
-using DialogMaker.Editor;
-using DialogMaker.Core.Editor;
 
 namespace DialogMaker.Lib.Elements
 {

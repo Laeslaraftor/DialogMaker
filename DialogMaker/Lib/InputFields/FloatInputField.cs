@@ -1,5 +1,4 @@
-﻿using Acly;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace DialogMaker.Lib.InputFields
@@ -39,7 +38,7 @@ namespace DialogMaker.Lib.InputFields
                 return true;
             }
 
-            var type = value.GetType(); 
+            var type = value.GetType();
 
             return type == typeof(float) ||
                    type == typeof(int) ||

@@ -1,10 +1,10 @@
-﻿using System.Collections.ObjectModel;
-using System.Windows.Controls;
-using System.Windows;
-using Trigger = DialogMaker.Core.Executioning.Trigger;
-using Acly.Tokens;
-using System.Text;
+﻿using Acly.Tokens;
 using DialogMaker.Core;
+using System.Collections.ObjectModel;
+using System.Text;
+using System.Windows;
+using System.Windows.Controls;
+using Trigger = DialogMaker.Core.Executioning.Trigger;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -39,11 +39,11 @@ namespace DialogMaker.Lib.Elements
             foreach (var output in trigger.OutputKeys)
             {
                 _outputs.Add(new(output));
-            } 
+            }
 
             while (_currentTriggerToken == token)
             {
-                if(cancellationToken.IsCancellationRequested)
+                if (cancellationToken.IsCancellationRequested)
                 {
                     _currentTriggerToken = null;
                     return;

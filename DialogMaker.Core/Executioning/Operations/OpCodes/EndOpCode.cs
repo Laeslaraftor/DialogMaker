@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-
 namespace DialogMaker.Core.Executioning
 {
     public class EndOpCode() : OpCode(DialogByteCode.End)
@@ -12,11 +10,11 @@ namespace DialogMaker.Core.Executioning
         }
 
         #endregion
-		
-		#region Статика
-		
-		public static readonly EndOpCode Instance = new();
-		
-		#endregion
+
+        #region Статика
+
+        public static readonly EndOpCode Instance = new();
+
+        #endregion
     }
 }

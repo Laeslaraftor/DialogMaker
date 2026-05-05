@@ -18,22 +18,22 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (_view.Placeholder != value)
                 {
-                    InvokePropertyChanging(nameof(Placeholder));
+                    OnPropertyChanging(nameof(Placeholder));
                     _view.Placeholder = value;
-                    InvokePropertyChanged(nameof(Placeholder));
+                    OnPropertyChanged(nameof(Placeholder));
                 }
             }
         }
         public override object? Value
         {
-            get => _view.Value; 
+            get => _view.Value;
             set
             {
                 if (!Equals(_view.Value, value))
                 {
-                    InvokePropertyChanging(nameof(Value));
+                    OnPropertyChanging(nameof(Value));
                     _view.Value = value;
-                    InvokePropertyChanged(nameof(Value));
+                    OnPropertyChanged(nameof(Value));
                 }
             }
         }
@@ -44,9 +44,9 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (_view.AllowedValues != value)
                 {
-                    InvokePropertyChanging(nameof(AllowedValues));
+                    OnPropertyChanging(nameof(AllowedValues));
                     _view.AllowedValues = value;
-                    InvokePropertyChanged(nameof(AllowedValues));
+                    OnPropertyChanged(nameof(AllowedValues));
                 }
             }
         }
@@ -57,9 +57,9 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (_view.ResourceType != value)
                 {
-                    InvokePropertyChanging(nameof(ResourceType));
+                    OnPropertyChanging(nameof(ResourceType));
                     _view.ResourceType = value;
-                    InvokePropertyChanged(nameof(ResourceType));
+                    OnPropertyChanged(nameof(ResourceType));
                 }
             }
         }
@@ -70,9 +70,9 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (_view.FieldsHandler != value)
                 {
-                    InvokePropertyChanging(nameof(FieldsHandler));
+                    OnPropertyChanging(nameof(FieldsHandler));
                     _view.FieldsHandler = value;
-                    InvokePropertyChanged(nameof(FieldsHandler));
+                    OnPropertyChanged(nameof(FieldsHandler));
                 }
             }
         }
@@ -94,9 +94,9 @@ namespace DialogMaker.Lib.InputFields
 
         private void OnViewValueChanged(object? sender, ValueChangedEventArgs<object> e)
         {
-            InvokePropertyChanging(nameof(Value));
+            OnPropertyChanging(nameof(Value));
             Value = e.NewValue;
-            InvokePropertyChanged(nameof(Value));
+            OnPropertyChanged(nameof(Value));
         }
 
         #endregion

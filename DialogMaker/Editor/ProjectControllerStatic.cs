@@ -1,8 +1,6 @@
 ﻿using DialogMaker.Core.Editor;
 using DialogMaker.Lib;
 using Microsoft.Win32;
-using System.Collections;
-using System.Windows.Controls;
 
 namespace DialogMaker.Editor
 {
@@ -25,7 +23,7 @@ namespace DialogMaker.Editor
 
             if (folderDialog.ShowDialog() == true)
             {
-                return DialogProject.Create(id, folderDialog.FolderName); 
+                return DialogProject.Create(id, folderDialog.FolderName);
             }
 
             return null;

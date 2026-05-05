@@ -1,12 +1,10 @@
 ﻿using DialogMaker.Core.Common;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 
 namespace DialogMaker.Core.Executioning.Internal
 {
-    internal readonly struct TriggerMetadata(string id, IDictionary<string, int> inputs, IDictionary<string, int> outputs) 
+    internal readonly struct TriggerMetadata(string id, IDictionary<string, int> inputs, IDictionary<string, int> outputs)
         : IResourceItem, IEquatable<TriggerMetadata>
     {
         public string Id { get; } = id;
@@ -110,7 +108,7 @@ namespace DialogMaker.Core.Executioning.Internal
         {
             if (dictionary == null || dictionary.Count == 0)
             {
-                return string.Empty; 
+                return string.Empty;
             }
 
             string result = string.Empty;
@@ -134,7 +132,7 @@ namespace DialogMaker.Core.Executioning.Internal
 
             if (string.IsNullOrEmpty(value))
             {
-                return result; 
+                return result;
             }
 
             string currentPair = string.Empty;

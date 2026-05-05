@@ -1,6 +1,5 @@
 ﻿using DialogMaker.Core;
 using DialogMaker.Core.Editor.Nodes;
-using DialogMaker.Editor;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -21,7 +20,7 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Placeholder));
+                    OnPropertyChanging(nameof(Placeholder));
                     field = value;
 
                     if (_view.ToolTip?.Equals(value) != true)
@@ -29,7 +28,7 @@ namespace DialogMaker.Lib.InputFields
                         _view.ToolTip = value;
                     }
 
-                    InvokePropertyChanged(nameof(Placeholder));
+                    OnPropertyChanged(nameof(Placeholder));
                 }
             }
         }
@@ -40,7 +39,7 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Value));
+                    OnPropertyChanging(nameof(Value));
                     field = value;
 
                     if (value != null && _enumValues != null)
@@ -48,7 +47,7 @@ namespace DialogMaker.Lib.InputFields
                         _view.SelectedIndex = _enumValues.IndexOf(value);
                     }
 
-                    InvokePropertyChanged(nameof(Value));
+                    OnPropertyChanged(nameof(Value));
                 }
             }
         }
@@ -59,7 +58,7 @@ namespace DialogMaker.Lib.InputFields
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(EnumType));
+                    OnPropertyChanging(nameof(EnumType));
                     field = value;
 
                     if (value == null)
@@ -75,7 +74,7 @@ namespace DialogMaker.Lib.InputFields
                         Value = _enumValues.GetValue(0);
                     }
 
-                    InvokePropertyChanged(nameof(EnumType));
+                    OnPropertyChanged(nameof(EnumType));
                 }
             }
         }

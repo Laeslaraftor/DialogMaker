@@ -1,7 +1,5 @@
-﻿using Acly;
-using Acly.Numbers;
+﻿using Acly.Numbers;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 

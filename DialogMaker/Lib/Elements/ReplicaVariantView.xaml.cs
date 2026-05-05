@@ -51,7 +51,7 @@ namespace DialogMaker.Lib.Elements
             };
 
             BindingOperations.SetBinding(_comboBox, ComboBox.SelectedIndexProperty, languageBinding);
-                
+
             if (newValue != null)
             {
                 newValue.PropertyChanged += OnVariantPropertyChanged;
@@ -106,7 +106,7 @@ namespace DialogMaker.Lib.Elements
             Variant?.Text = e.NewValue;
         }
 
-        
+
         private static void OnVariantChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is ReplicaVariantView view)

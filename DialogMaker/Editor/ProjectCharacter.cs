@@ -38,7 +38,7 @@ namespace DialogMaker.Editor
                         Original.Name = reference;
                     }
 
-                    InvokePropertyChanged(nameof(Name));
+                    OnPropertyChanged(nameof(Name));
                 }
             }
         }
@@ -70,7 +70,7 @@ namespace DialogMaker.Editor
         {
             base.OnModelPropertyChanged(sender, e);
 
-            if (e.PropertyName == nameof(Name) && 
+            if (e.PropertyName == nameof(Name) &&
                 Name?.Reference != Original.Name)
             {
                 Name = Original.Name == null ? null : new(Project, Original.Name);

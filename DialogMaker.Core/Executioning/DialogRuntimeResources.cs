@@ -1,8 +1,6 @@
 ﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning.Internal;
 using DialogMaker.Core.Executioning.SavedStates;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 

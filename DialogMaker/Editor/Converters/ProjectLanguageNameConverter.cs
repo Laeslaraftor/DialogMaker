@@ -1,6 +1,4 @@
-﻿using Acly;
-
-namespace DialogMaker.Editor
+﻿namespace DialogMaker.Editor
 {
     public class ProjectLanguageNameConverter(ProjectController controller) : IValueConverter<ProjectLanguage, string>
     {
@@ -12,7 +10,7 @@ namespace DialogMaker.Editor
         }
         public ProjectLanguage ConvertBack(string Value)
         {
-            return _controller.Languages.FirstOrDefault(l => l.Name == Value) 
+            return _controller.Languages.FirstOrDefault(l => l.Name == Value)
                 ?? _controller.Languages[0];
         }
     }

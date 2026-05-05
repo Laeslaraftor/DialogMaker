@@ -226,7 +226,7 @@ namespace DialogMaker.Lib.Elements
         }
         private static void OnSpacingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            if (d is not FlagsViewer view || 
+            if (d is not FlagsViewer view ||
                 e.NewValue is not Thickness spacing)
             {
                 return;
@@ -286,7 +286,7 @@ namespace DialogMaker.Lib.Elements
             return value =>
             {
                 return enumValues.Contains(value);
-            };  
+            };
         }
 
         #endregion

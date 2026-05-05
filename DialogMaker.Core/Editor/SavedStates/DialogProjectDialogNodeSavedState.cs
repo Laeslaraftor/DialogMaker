@@ -1,9 +1,6 @@
 ﻿using DialogMaker.Core.Editor.Nodes;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using DialogMaker.Core.Editor;
 using System.Numerics;
 
 namespace DialogMaker.Core.Editor

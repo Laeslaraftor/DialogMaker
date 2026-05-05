@@ -1,5 +1,4 @@
 ﻿using DialogMaker.Core.Executioning;
-using MessagePack;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
@@ -22,9 +21,9 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Event));
+                    OnPropertyChanging(nameof(Event));
                     field = value;
-                    InvokePropertyChanged(nameof(Event));
+                    OnPropertyChanged(nameof(Event));
                 }
             }
         }

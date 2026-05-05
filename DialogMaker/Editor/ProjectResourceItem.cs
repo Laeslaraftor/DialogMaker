@@ -1,14 +1,14 @@
 ﻿using DialogMaker.Core;
+using DialogMaker.Core.Common;
 using DialogMaker.Core.Editor;
+using DialogMaker.Core.Executioning;
 using DialogMaker.Editor.Menus;
 using DialogMaker.Lib;
 using DialogMaker.Lib.Elements;
 using System.ComponentModel;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows;
-using DialogMaker.Core.Common;
-using DialogMaker.Core.Executioning;
 
 namespace DialogMaker.Editor
 {
@@ -131,7 +131,7 @@ namespace DialogMaker.Editor
         protected virtual void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
 #pragma warning disable CS8604 // Возможно, аргумент-ссылка, допускающий значение NULL.
-            InvokePropertyChanged(e.PropertyName);
+            OnPropertyChanged(e.PropertyName);
 #pragma warning restore CS8604 // Возможно, аргумент-ссылка, допускающий значение NULL.
 
             string preview = $"[{Id}] {this}";

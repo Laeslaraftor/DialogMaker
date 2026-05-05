@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace DialogMaker.Core.Executioning
+﻿namespace DialogMaker.Core.Executioning
 {
     public abstract class TwoVariablesOpCode(DialogByteCode code) : OpCode(code)
     {

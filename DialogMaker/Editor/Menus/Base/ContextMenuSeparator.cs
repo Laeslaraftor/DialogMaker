@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
 namespace DialogMaker.Editor.Menus
 {

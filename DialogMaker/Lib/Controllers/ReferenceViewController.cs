@@ -1,5 +1,4 @@
 ﻿using DialogMaker.Lib.Elements;
-using System.Windows.Input;
 
 namespace DialogMaker.Lib.Controllers
 {

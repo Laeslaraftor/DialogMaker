@@ -4,11 +4,11 @@ namespace DialogMaker.Core.Editor.Nodes
 {
     public class DialogProjectEmotionNode : DialogProjectDialogNode
     {
-        public DialogProjectEmotionNode(DialogProjectDialog dialog) 
+        public DialogProjectEmotionNode(DialogProjectDialog dialog)
             : base(dialog)
         {
         }
-        public DialogProjectEmotionNode(DialogProjectDialog dialog, DialogProjectDialogNodeSavedState savedState) 
+        public DialogProjectEmotionNode(DialogProjectDialog dialog, DialogProjectDialogNodeSavedState savedState)
             : base(dialog, savedState)
         {
         }
@@ -49,9 +49,9 @@ namespace DialogMaker.Core.Editor.Nodes
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Character));
+                    OnPropertyChanging(nameof(Character));
                     field = value;
-                    InvokePropertyChanged(nameof(Character));
+                    OnPropertyChanged(nameof(Character));
                 }
             }
         }

@@ -1,5 +1,4 @@
-﻿using Acly;
-using DialogMaker.Core;
+﻿using DialogMaker.Core;
 using DialogMaker.Lib;
 using System.Collections;
 using System.Windows.Input;
@@ -23,9 +22,9 @@ namespace DialogMaker.Editor.Filters
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(SearchValue));
+                    OnPropertyChanging(nameof(SearchValue));
                     field = value;
-                    InvokePropertyChanged(nameof(SearchValue));
+                    OnPropertyChanged(nameof(SearchValue));
                 }
             }
         }
@@ -36,9 +35,9 @@ namespace DialogMaker.Editor.Filters
             {
                 if (field != value)
                 {
-                    InvokePropertyChanging(nameof(Flags));
+                    OnPropertyChanging(nameof(Flags));
                     field = value;
-                    InvokePropertyChanged(nameof(Flags));
+                    OnPropertyChanged(nameof(Flags));
                 }
             }
         }

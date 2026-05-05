@@ -1,7 +1,5 @@
 ﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning.Internal;
-using System;
-using DialogMaker.Core.Editor;
 
 namespace DialogMaker.Core.Editor
 {
@@ -35,9 +33,9 @@ namespace DialogMaker.Core.Editor
             {
                 if (_name != value && !IsDisposed)
                 {
-                    InvokePropertyChanging(nameof(Name));
+                    OnPropertyChanging(nameof(Name));
                     _name = value;
-                    InvokePropertyChanged(nameof(Name));
+                    OnPropertyChanged(nameof(Name));
                 }
             }
         }

@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace DialogMaker.Core.Executioning
+﻿namespace DialogMaker.Core.Executioning
 {
     public class GotoIfTrueOpCode() : OpCode(DialogByteCode.GotoIfTrue)
     {
@@ -11,7 +9,7 @@ namespace DialogMaker.Core.Executioning
             CheckArgs(context, args, 1);
 
             var lastExpression = context.CurrentThread.Pop();
-            
+
             if (lastExpression == true)
             {
                 context.CurrentThread.Goto(args[0]);

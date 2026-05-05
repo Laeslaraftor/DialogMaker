@@ -32,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Acly" Version="1.12.6" />
+    <PackageReference Include="Acly" Version="1.14.5" />
     <PackageReference Include="MessagePack" Version="3.1.4" />
     <PackageReference Include="MessagePackAnalyzer" Version="3.1.4">
       <PrivateAssets>all</PrivateAssets>
@@ -42,6 +42,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DialogMaker.Core\DialogMaker.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Acly" />
   </ItemGroup>
 
 </Project>
