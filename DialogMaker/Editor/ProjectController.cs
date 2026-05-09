@@ -179,7 +179,7 @@ namespace DialogMaker.Editor
 
             if (info != null)
             {
-                Try(() => Project.CreatePack(info.Id, info.Name));
+                TryExecute(() => Project.CreatePack(info.Id, info.Name));
                 Save();
             }
         }
@@ -259,20 +259,6 @@ namespace DialogMaker.Editor
             return false;
         }
 
-        private static bool Try(Action method)
-        {
-            try
-            {
-                method();
-            }
-            catch (Exception error)
-            {
-                error.Log();
-                return false;
-            }
-
-            return true;
-        }
         private static ProjectController ProjectConverter(ProjectResourcesOwner owner)
         {
             if (owner is ProjectController project)

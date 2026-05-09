@@ -8,13 +8,15 @@ namespace DialogMaker.Core.Editor.Nodes
     public readonly struct DialogNodeInfo(DialogNodeType nodeType, Type type, DialogProjectNodeMetadata metadata, string path,
                                           IDictionary<PropertyInfo, DialogProjectNodeMetadata> inputs,
                                           IDictionary<PropertyInfo, DialogProjectNodeMetadata> outputs,
-                                          IDictionary<PropertyInfo, DialogProjectNodeMetadata> properties)
+                                          IDictionary<PropertyInfo, DialogProjectNodeMetadata> properties,
+                                          IList<string> tags)
         : IEquatable<DialogNodeInfo>, IComparable, IComparable<DialogNodeInfo>
     {
         public DialogNodeType NodeType { get; } = nodeType;
         public Type Type { get; } = type;
         public DialogProjectNodeMetadata Metadata { get; } = metadata;
         public string Path { get; } = path;
+        public ReadOnlyCollection<string> Tags { get; } = new(tags);
         public ReadOnlyDictionary<PropertyInfo, DialogProjectNodeMetadata> Inputs { get; } = new(inputs);
         public ReadOnlyDictionary<PropertyInfo, DialogProjectNodeMetadata> Outputs { get; } = new(outputs);
         public ReadOnlyDictionary<PropertyInfo, DialogProjectNodeMetadata> Properties { get; } = new(properties);
@@ -81,9 +83,11 @@ namespace DialogMaker.Core.Editor.Nodes
             var name = type.GetEnumAttribute<NameAttribute>()?.Name ?? type.ToString();
             var description = type.GetEnumAttribute<DescriptionAttribute>()?.Description ?? string.Empty;
             var path = type.GetEnumAttribute<PathAttribute>()?.Path ?? string.Empty;
+            var tagsAttributes = type.GetEnumAttributes<TagsAttribute>();
             Dictionary<PropertyInfo, DialogProjectNodeMetadata> inputs = [];
             Dictionary<PropertyInfo, DialogProjectNodeMetadata> outputs = [];
             Dictionary<PropertyInfo, DialogProjectNodeMetadata> properties = [];
+            List<string> tags = [];
 
             foreach (var property in managedType.GetProperties())
             {
@@ -112,8 +116,12 @@ namespace DialogMaker.Core.Editor.Nodes
 
                 metadataDictionary.Add(property, new(nameAttribute.Name, propertyDescription, sortValue));
             }
+            foreach (var tagsAttribute in tagsAttributes)
+            {
+                tags.AddRange(tagsAttribute.Tags);
+            }
 
-            result = new(type, managedType, new(name, description), path, inputs, outputs, properties);
+            result = new(type, managedType, new(name, description), path, inputs, outputs, properties, tags);
 
             return true;
         }

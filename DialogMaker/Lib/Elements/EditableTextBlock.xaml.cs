@@ -60,6 +60,7 @@ namespace DialogMaker.Lib.Elements
 
                 Visibility editorVisibility = Visibility.Hidden;
 
+                
                 if (value)
                 {
                     editorVisibility = Visibility.Visible;

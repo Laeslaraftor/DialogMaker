@@ -6,13 +6,13 @@ namespace DialogMaker.Editor
     {
         private readonly ProjectString _projectString = projectString;
 
-        public ProjectStringVariant Convert(DialogProjectStringVariant Value)
+        public ProjectStringVariant Convert(DialogProjectStringVariant value)
         {
-            return new(_projectString, Value);
+            return new(_projectString, value);
         }
-        public DialogProjectStringVariant ConvertBack(ProjectStringVariant Value)
+        public DialogProjectStringVariant ConvertBack(ProjectStringVariant value)
         {
-            return Value.Original;
+            return value.Original;
         }
     }
 }

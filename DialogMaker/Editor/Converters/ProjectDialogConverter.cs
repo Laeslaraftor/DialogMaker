@@ -6,15 +6,15 @@ namespace DialogMaker.Editor
     {
         private readonly ProjectPack _pack = pack;
 
-        public ProjectDialog Convert(DialogProjectDialog Value)
+        public ProjectDialog Convert(DialogProjectDialog value)
         {
-            return new(_pack, Value);
+            return new(_pack, value);
         }
 
-        public DialogProjectDialog ConvertBack(ProjectDialog Value)
+        public DialogProjectDialog ConvertBack(ProjectDialog value)
         {
-            Value.Dispose();
-            return Value.Original;
+            value.Dispose();
+            return value.Original;
         }
     }
 }

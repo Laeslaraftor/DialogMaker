@@ -178,7 +178,7 @@ namespace DialogMaker.Core.Editor
 
             return node;
         }
-        public T Create<T>()
+        public T CreateNode<T>()
             where T : DialogProjectDialogNode
         {
             var node = DialogProjectDialogNode.Create<T>(this);

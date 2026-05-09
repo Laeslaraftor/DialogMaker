@@ -204,6 +204,9 @@ namespace DialogMaker.Lib.Elements
             }
 
             ContextMenu = newValue?.EditorContextMenu;
+
+            await Dispatcher.InvokeAsync(() => { });
+
             int tries = 0;
 
             while (2 > tries)

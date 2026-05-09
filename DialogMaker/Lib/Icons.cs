@@ -30,6 +30,8 @@ namespace DialogMaker.Lib
         public const string Language = "\uF2B7";
         public const string Node = "\uE964";
         public const string RightArrow = "\uEBE7";
+        public const string Import = "\xE8B5";
+        public const string Export = "\xEDE1";
         public static FontFamily? Font
         {
             get

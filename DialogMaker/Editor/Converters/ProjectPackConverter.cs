@@ -6,14 +6,14 @@ namespace DialogMaker.Editor
     {
         private readonly ProjectController _controller = controller;
 
-        public ProjectPack Convert(DialogProjectPack Value)
+        public ProjectPack Convert(DialogProjectPack value)
         {
-            return new(_controller, Value);
+            return new(_controller, value);
         }
-        public DialogProjectPack ConvertBack(ProjectPack Value)
+        public DialogProjectPack ConvertBack(ProjectPack value)
         {
-            Value.Dispose();
-            return Value.Original;
+            value.Dispose();
+            return value.Original;
         }
     }
 }

@@ -1,9 +1,11 @@
-﻿namespace DialogMaker.Lib.Elements
+﻿using DialogMaker.Core;
+
+namespace DialogMaker.Lib.Elements
 {
     public enum NodeSelectionMode
     {
-        Default,
-        Input,
-        Output
+        Default = -1,
+        Input = DialogNodePortDirection.Input,
+        Output = DialogNodePortDirection.Output
     }
 }

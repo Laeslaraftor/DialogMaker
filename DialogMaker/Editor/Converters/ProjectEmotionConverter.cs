@@ -6,14 +6,14 @@ namespace DialogMaker.Editor
     {
         private readonly ProjectController _controller = controller;
 
-        public ProjectEmotion Convert(DialogProjectEmotion Value)
+        public ProjectEmotion Convert(DialogProjectEmotion value)
         {
-            return new(_controller, Value);
+            return new(_controller, value);
         }
-        public DialogProjectEmotion ConvertBack(ProjectEmotion Value)
+        public DialogProjectEmotion ConvertBack(ProjectEmotion value)
         {
-            var original = Value.Original;
-            Value.Dispose();
+            var original = value.Original;
+            value.Dispose();
 
             return original;
         }

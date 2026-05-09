@@ -1,14 +1,8 @@
 ﻿namespace DialogMaker.Core.Editor.Nodes
 {
-    public readonly struct DialogProjectNodeMetadata
-        : IEquatable<DialogProjectNodeMetadata>, IComparable, IComparable<DialogProjectNodeMetadata>
+    public readonly struct DialogProjectNodeMetadata(Func<string> nameGetter, string description, IComparable? sortValue)
+                : IEquatable<DialogProjectNodeMetadata>, IComparable, IComparable<DialogProjectNodeMetadata>
     {
-        public DialogProjectNodeMetadata(Func<string> nameGetter, string description, IComparable? sortValue)
-        {
-            Description = description;
-            SortValue = sortValue;
-            _nameGetter = nameGetter;
-        }
         public DialogProjectNodeMetadata(string name, string description, IComparable? sortValue)
             : this(() => name, description, sortValue)
         {
@@ -25,12 +19,16 @@
             : this(name, description, null)
         {
         }
+        public DialogProjectNodeMetadata(string name)
+            : this(name, string.Empty, null)
+        {
+        }
 
         public string Name => _nameGetter?.Invoke() ?? string.Empty;
-        public string Description { get; }
-        public IComparable? SortValue { get; }
+        public string Description { get; } = description;
+        public IComparable? SortValue { get; } = sortValue;
 
-        private readonly Func<string>? _nameGetter;
+        private readonly Func<string>? _nameGetter = nameGetter;
 
         #region Управление
 

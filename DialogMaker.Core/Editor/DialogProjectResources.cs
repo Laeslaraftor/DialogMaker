@@ -10,11 +10,6 @@ namespace DialogMaker.Core.Editor
             Owner = owner;
             Flags = flags;
             Folder = Path.Combine(owner.Folder, folderName);
-            Strings = [];
-            Characters = [];
-            Variables = [];
-            Items = [];
-            Emotions = [];
 
             List<DialogProjectResources> inheritedResources = [];
             var parent = owner.Parent;
@@ -32,61 +27,12 @@ namespace DialogMaker.Core.Editor
         public DialogProjectResources(IProjectResourcesOwner owner, DialogProjectResourcesSavedState savedState, DialogResourcesFlags flags, string folderName = ResourcesFolder)
             : this(owner, flags, folderName)
         {
-            foreach (var item in savedState.Items)
-            {
-                try
-                {
-                    Items.Add(new(this, item));
-                }
-                catch (Exception error)
-                {
-                    Logger.Log(error);
-                }
-            }
-            foreach (var str in savedState.Strings)
-            {
-                try
-                {
-                    Strings.Add(new(this, str));
-                }
-                catch (Exception error)
-                {
-                    Logger.Log(error);
-                }
-            }
-            foreach (var character in savedState.Characters)
-            {
-                try
-                {
-                    Characters.Add(new(this, character));
-                }
-                catch (Exception error)
-                {
-                    Logger.Log(error);
-                }
-            }
-            foreach (var variable in savedState.Variables)
-            {
-                try
-                {
-                    Variables.Add(DialogProjectVariable.Restore(this, variable));
-                }
-                catch (Exception error)
-                {
-                    Logger.Log(error);
-                }
-            }
-            foreach (var emotion in savedState.Emotions)
-            {
-                try
-                {
-                    Emotions.Add(new(this, emotion));
-                }
-                catch (Exception error)
-                {
-                    Logger.Log(error);
-                }
-            }
+            RestoreAll(Items, savedState.Items, s => new(this, s));
+            RestoreAll(Strings, savedState.Strings, s => new(this, s));
+            RestoreAll(Characters, savedState.Characters, s => new(this, s));
+            RestoreAll(Variables, savedState.Variables, s => DialogProjectVariable.Restore(this, s));
+            RestoreAll(Emotions, savedState.Emotions, s => new(this, s));
+            RestoreAll(TriggerPresets, savedState.TriggerPresets, s => new(this, s));
         }
 
         public IProjectResourcesOwner Owner { get; }
@@ -114,11 +60,12 @@ namespace DialogMaker.Core.Editor
                 }
             }
         }
-        public EditableCollection<DialogProjectString> Strings { get; }
-        public EditableCollection<DialogProjectItem> Items { get; }
-        public EditableCollection<DialogProjectCharacter> Characters { get; }
-        public EditableCollection<DialogProjectVariable> Variables { get; }
-        public EditableCollection<DialogProjectEmotion> Emotions { get; }
+        public EditableCollection<DialogProjectString> Strings { get; } = [];
+        public EditableCollection<DialogProjectItem> Items { get; } = [];
+        public EditableCollection<DialogProjectCharacter> Characters { get; } = [];
+        public EditableCollection<DialogProjectVariable> Variables { get; } = [];
+        public EditableCollection<DialogProjectEmotion> Emotions { get; } = [];
+        public EditableCollection<DialogProjectTriggerPreset> TriggerPresets { get; } = [];
         public ReadOnlyCollection<DialogProjectResources> InheritedResources { get; }
 
         IResourcesOwner IResourcesContainer.Owner => Owner;
@@ -141,7 +88,8 @@ namespace DialogMaker.Core.Editor
                 Items = [.. Items.Select(i => (DialogProjectResourceItemSavedState)i.Save())],
                 Characters = [.. Characters.Select(c => (DialogProjectCharacterSavedState)c.Save())],
                 Variables = [.. Variables.Select(v => (DialogProjectVariableSavedState)v.Save())],
-                Emotions = [.. Emotions.Select(v => (DialogProjectEmotionSavedState)v.Save())]
+                Emotions = [.. Emotions.Select(e => (DialogProjectEmotionSavedState)e.Save())],
+                TriggerPresets = [.. TriggerPresets.Select(t => (DialogProjectTriggerPresetSavedState)t.Save())]
             };
 
             string filePath = Path.Combine(Folder, ResourcesFileName);
@@ -191,6 +139,14 @@ namespace DialogMaker.Core.Editor
         {
             return Emotions.TryGetValue(i => i.Id == id || i.ProjectId.ToString() == id, out result);
         }
+        public bool TryGetTriggerPreset(Guid id, [NotNullWhen(true)] out DialogProjectTriggerPreset? result)
+        {
+            return TriggerPresets.TryGetValue(i => i.ProjectId == id, out result);
+        }
+        public bool TryGetTriggerPreset(string id, [NotNullWhen(true)] out DialogProjectTriggerPreset? result)
+        {
+            return TriggerPresets.TryGetValue(i => i.Id == id || i.ProjectId.ToString() == id, out result);
+        }
         public bool TryGetObject(string id, Type resourceType, [NotNullWhen(true)] out DialogProjectResourceObject? result)
         {
             result = null;
@@ -230,6 +186,13 @@ namespace DialogMaker.Core.Editor
                     result = variable;
                 }
             }
+            else if (resourceType == typeof(DialogProjectTriggerPreset))
+            {
+                if (TryGetTriggerPreset(id, out var emotion))
+                {
+                    result = emotion;
+                }
+            }
 
             return result != null;
         }
@@ -252,7 +215,7 @@ namespace DialogMaker.Core.Editor
         public bool TryGetObject<T>(Guid id, [NotNullWhen(true)] out T? result)
             where T : DialogProjectResourceObject
         {
-            return TryGetObject<T>(id.ToString(), out result);
+            return TryGetObject(id.ToString(), out result);
         }
         public IEditableList GetObjectsCollection(DialogProjectResourceObject obj)
         {
@@ -275,6 +238,10 @@ namespace DialogMaker.Core.Editor
             else if (obj is DialogProjectEmotion)
             {
                 return Emotions;
+            }
+            else if (obj is DialogProjectTriggerPreset)
+            {
+                return TriggerPresets;
             }
 
             throw new ArgumentException($"Неизвестный тип ресурса");
@@ -371,6 +338,18 @@ namespace DialogMaker.Core.Editor
             return Emotions.Remove(emotion);
         }
 
+        public DialogProjectTriggerPreset CreateTriggerPreset()
+        {
+            DialogProjectTriggerPreset triggerPreset = new(this);
+            TriggerPresets.Add(triggerPreset);
+
+            return triggerPreset;
+        }
+        public bool RemoveTriggerPreset(DialogProjectTriggerPreset triggerPreset)
+        {
+            return TriggerPresets.Remove(triggerPreset);
+        }
+
         protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);
@@ -389,6 +368,8 @@ namespace DialogMaker.Core.Editor
             Dispose(Items);
             Dispose(Characters);
             Dispose(Variables);
+            Dispose(Emotions);
+            Dispose(TriggerPresets);
         }
 
         #endregion
@@ -457,6 +438,20 @@ namespace DialogMaker.Core.Editor
             }
 
             return File.ReadAllText(descriptionFilePath);
+        }
+        private static void RestoreAll<T, TSavedState>(IList<T> buffer, IEnumerable<TSavedState> savedStates, Func<TSavedState, T> fabric)
+        {
+            foreach (var savedState in savedStates)
+            {
+                try
+                {
+                    buffer.Add(fabric(savedState));
+                }
+                catch (Exception error)
+                {
+                    Logger.Log(error);
+                }
+            }
         }
 
         #endregion

@@ -93,7 +93,7 @@ namespace DialogMaker.Core.Editor
                 }
             }
         }
-        public bool IsSeparated => false;
+        public virtual bool IsSeparated => false;
 
         IResourcesContainer IResource.Container => Resources;
         string IResourceItem.Id
@@ -156,7 +156,7 @@ namespace DialogMaker.Core.Editor
         DialogItemReference IResourceItem.CreateReference()
         {
             _switchItemId = true;
-            var result = DialogItemReference.Create(this);
+            var result = CreateReference();
             _switchItemId = false;
 
             return result;
@@ -180,7 +180,7 @@ namespace DialogMaker.Core.Editor
             }
 
             var currentResources = Resources;
-            var currentPath = Path;
+            ResourcePath currentPath = Path;
 
             if (!currentResources.RemoveItem(this))
             {
@@ -196,7 +196,10 @@ namespace DialogMaker.Core.Editor
 
             resources.AddItem(this);
 
-            PathChanged?.Invoke(this, new(this, currentResources, currentPath));
+            Dispatch(() =>
+            {
+                PathChanged?.Invoke(this, new(this, currentResources, currentPath));
+            });
         }
 
         public ISavedState Save()

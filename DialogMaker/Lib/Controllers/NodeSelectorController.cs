@@ -211,7 +211,16 @@ namespace DialogMaker.Lib.Controllers
                 return null;
             }
 
-            return info.CreateNode(dialog, nodePosition, port);
+            try
+            {
+                return info.CreateNode(dialog, nodePosition, port);
+            }
+            catch (Exception error)
+            {
+                error.Log();
+            }
+
+            return null;
         }
 
         private static NodeSelectorController GetFirstFreeController()

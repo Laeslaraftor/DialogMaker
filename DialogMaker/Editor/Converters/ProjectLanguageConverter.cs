@@ -7,24 +7,24 @@ namespace DialogMaker.Editor
     {
         private readonly ElementsPool<ProjectLanguage> _languages = new(() => new(controller));
 
-        public ProjectLanguage Convert(DialogProjectLanguage Value)
+        public ProjectLanguage Convert(DialogProjectLanguage value)
         {
             var result = _languages.GetElement();
-            result.Language = Value;
+            result.Language = value;
 
             return result;
         }
-        public DialogProjectLanguage ConvertBack(ProjectLanguage Value)
+        public DialogProjectLanguage ConvertBack(ProjectLanguage value)
         {
-            if (Value.Language == null)
+            if (value.Language == null)
             {
-                throw new ArgumentException("Язык не указан", nameof(Value));
+                throw new ArgumentException("Язык не указан", nameof(value));
             }
 
-            var language = Value.Language;
-            Value.Language = null;
+            var language = value.Language;
+            value.Language = null;
 
-            _languages.Free(Value);
+            _languages.Free(value);
 
             return language;
         }

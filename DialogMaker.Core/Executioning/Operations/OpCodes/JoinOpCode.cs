@@ -8,9 +8,8 @@
         {
             CheckArgs(context, args, 1);
 
-            var info = context.Resources.GetResource(args[0]) as IJoinOperationInfo;
 
-            if (info == null)
+            if (context.Resources.GetResource(args[0]) is not IJoinOperationInfo info)
             {
                 throw new DialogExecutionException($"Не удалось получить информацию для объединения потоков");
             }

@@ -29,8 +29,11 @@ namespace DialogMaker.Lib.Elements
                 field.Value.Dispose();
             }
 
-            _createdFields.Clear();
-            _valuesTypeInfo.Clear();
+            Dispatcher.Invoke(() =>
+            {
+                _createdFields.Clear();
+                _valuesTypeInfo.Clear();
+            });
         }
 
         public event EventHandler<ValueChangedEventArgs<object>>? ValueChanged;
@@ -39,6 +42,11 @@ namespace DialogMaker.Lib.Elements
         {
             get => (AllowedObjectValues)GetValue(AllowedValuesProperty);
             set => SetValue(AllowedValuesProperty, value);
+        }
+        public AllowedObjectValues SelectedValueType
+        {
+            get => (AllowedObjectValues)GetValue(SelectedValueTypeProperty);
+            set => SetValue(SelectedValueTypeProperty, value);
         }
         public DialogResourceType? ResourceType
         {
@@ -240,6 +248,21 @@ namespace DialogMaker.Lib.Elements
 
             return result;
         }
+        private void SetValueType(AllowedObjectValues type)
+        {
+            int index = 0;
+
+            foreach (var info in _valuesTypeInfo)
+            {
+                if (info.AllowedValueFlag == type)
+                {
+                    ShowType(index);
+                    return;
+                }
+
+                index++;
+            }
+        }
 
         #endregion
 
@@ -257,6 +280,7 @@ namespace DialogMaker.Lib.Elements
             _skipNextSync = true;
             _lastSelectedValueType = info.Value;
             Value = info.Value.Field.Value;
+            SelectedValueType = info.Value.AllowedValueFlag;
             _skipNextSync = false;
         }
 
@@ -273,6 +297,13 @@ namespace DialogMaker.Lib.Elements
             if (d is ObjectValueInput view)
             {
                 view.SetAllowedValues((AllowedObjectValues)e.NewValue);
+            }
+        }
+        private static void OnSelectedValueTypeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is ObjectValueInput view)
+            {
+                view.SetValueType((AllowedObjectValues)e.NewValue);
             }
         }
         private static void OnResourceTypeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -371,6 +402,8 @@ namespace DialogMaker.Lib.Elements
 
         public static readonly DependencyProperty AllowedValuesProperty = DependencyProperty.Register(nameof(AllowedValues), typeof(AllowedObjectValues),
             typeof(ObjectValueInput), new(AllowedObjectValues.All, OnAllowedValuesChanged));
+        public static readonly DependencyProperty SelectedValueTypeProperty = DependencyProperty.Register(nameof(SelectedValueType), typeof(AllowedObjectValues),
+            typeof(ObjectValueInput), new(AllowedObjectValues.All, OnSelectedValueTypeChanged));
         public static readonly DependencyProperty ResourceTypeProperty = DependencyProperty.Register(nameof(ResourceType), typeof(DialogResourceType?),
             typeof(ObjectValueInput), new(null, OnResourceTypeChanged));
         public static readonly DependencyProperty ValueProperty = DependencyProperty.Register(nameof(Value), typeof(object),

@@ -49,6 +49,7 @@ namespace DialogMaker.Core.Editor.Nodes
             }
         }
         public INode Node { get; }
+        public abstract DialogNodePortDirection Direction { get; }
         public DialogNodeConnectionType ConnectionType { get; }
         public DialogNodePortType DataType { get; }
         public Color Color { get; }

@@ -14,5 +14,7 @@ namespace DialogMaker.Core.Editor
         public DialogProjectVariableSavedState[] Variables { get; set; } = [];
         [JsonProperty("emotions")]
         public DialogProjectEmotionSavedState[] Emotions { get; set; } = [];
+        [JsonProperty("triggerPresets")]
+        public DialogProjectTriggerPresetSavedState[] TriggerPresets { get; set; } = [];
     }
 }

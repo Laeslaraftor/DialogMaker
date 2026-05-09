@@ -2,12 +2,11 @@
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor;
 using System.Collections.Specialized;
-using System.Reflection;
 using System.Windows;
 
 namespace DialogMaker.Lib.Data
 {
-    public class NodeSelectorItemInfo : Disposable
+    public class NodeSelectorItemInfo : Disposable, IComparable
     {
         public event EventHandler<ItemEventArgs<NodeSelectorItemInfo>>? BringToViewRequested;
 
@@ -134,7 +133,7 @@ namespace DialogMaker.Lib.Data
                 }
             }
         }
-        public KeyValuePair<PropertyInfo, DialogProjectNodeMetadata>? Port
+        public NodeSelectorItemInfoPort? Port
         {
             get => field;
             set
@@ -150,21 +149,27 @@ namespace DialogMaker.Lib.Data
 
         #region Управление
 
+        public bool CheckByTag(string? value)
+        {
+            var info = Value;
+
+            if (info == null || value == null)
+            {
+                return false;
+            }
+
+            return info.Value.Tags.FirstOrDefault(t => t.Contains(value, StringComparison.InvariantCultureIgnoreCase)) != null;
+        }
+
         public DialogProjectDialogNode CreateNode(ProjectDialog dialog, DialogProjectNodePortProxy? connection = null)
         {
             return CreateNode(dialog, new(0, 0), connection);
         }
         public DialogProjectDialogNode CreateNode(ProjectDialog dialog, Point position, DialogProjectNodePortProxy? connection = null)
         {
-            var nodeInfo = Value;
             var portInfo = Port;
 
-            if (nodeInfo == null)
-            {
-                throw new InvalidOperationException("Невозможно создать узел, так как отсутствует информация, необходимая для его создания (тип узла)");
-            }
-
-            var node = dialog.Original.CreateNode(nodeInfo.Value.NodeType);
+            var node = CreateNode(dialog);
             node.Position = new()
             {
                 X = (float)position.X,
@@ -173,12 +178,7 @@ namespace DialogMaker.Lib.Data
 
             if (connection != null && portInfo != null)
             {
-                if (portInfo.Value.Key.GetValue(node) is not DialogProjectNodePort port)
-                {
-                    throw new InvalidOperationException($"Невозможно автоматически подключить узел, так как не удалось получить необходимый порт созданного узла: {portInfo.Value.Value.Name}");
-                }
-
-                port.Connect(connection.Original);
+                portInfo.Value.Connect(node, connection);
             }
 
             return node;
@@ -219,6 +219,24 @@ namespace DialogMaker.Lib.Data
             }
 
             return result;
+        }
+        public int CompareTo(object? obj)
+        {
+            if (obj is NodeSelectorItemInfo info)
+            {
+                return Name?.CompareTo(info.Name) ?? -1;
+            }
+
+            return 0;
+        }
+
+        protected virtual DialogProjectDialogNode CreateNode(ProjectDialog dialog)
+        {
+            var nodeInfo = Value;
+
+            return nodeInfo == null
+                ? throw new InvalidOperationException("Невозможно создать узел, так как отсутствует информация, необходимая для его создания (тип узла)")
+                : dialog.Original.CreateNode(nodeInfo.Value.NodeType);
         }
 
         protected override void Dispose(bool isDisposing)

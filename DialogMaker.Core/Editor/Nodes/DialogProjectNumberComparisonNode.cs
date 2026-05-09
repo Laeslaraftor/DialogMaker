@@ -29,7 +29,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 return field;
             }
         }
-        [NodeOutput("Минимум")]
+        [NodeOutput("Результат")]
         public DialogProjectNodeOutputNumber Output
         {
             get

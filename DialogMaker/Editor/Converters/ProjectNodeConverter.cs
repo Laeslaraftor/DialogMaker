@@ -6,14 +6,14 @@ namespace DialogMaker.Editor
     {
         private readonly ProjectDialog _dialog = dialog;
 
-        public DialogProjectNode Convert(DialogProjectDialogNode Value)
+        public DialogProjectNode Convert(DialogProjectDialogNode value)
         {
-            return new(_dialog, Value);
+            return new(_dialog, value);
         }
-        public DialogProjectDialogNode ConvertBack(DialogProjectNode Value)
+        public DialogProjectDialogNode ConvertBack(DialogProjectNode value)
         {
-            Value.Dispose();
-            return Value.Original;
+            value.Dispose();
+            return value.Original;
         }
     }
 }

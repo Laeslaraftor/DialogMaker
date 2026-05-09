@@ -213,7 +213,7 @@ namespace DialogMaker
                 return false;
             }
 
-            DependencyObject? pressedElement = VisualTreeHelper.HitTest(this, e.GetPosition(this)).VisualHit;
+            DependencyObject? pressedElement = VisualTreeHelper.HitTest(this, e.GetPosition(this))?.VisualHit;
 
             if (!IsTextInput(Keyboard.FocusedElement) ||
                 FocusHelper.GetVisualTreeIgnoreFocusSwitch(Keyboard.FocusedElement as DependencyObject))
@@ -269,6 +269,7 @@ namespace DialogMaker
             if (e.NewValue?.TabContent is DialogAndResourcesView newDialogView)
             {
                 _blurredBackgroundBrush.Visual = newDialogView._diagram.Canvas;
+                _nodeSelectorController.NodeSelector.ItemResources = newDialogView.ItemResources;
                 newDialogView.DiagramViewRedraw += OnDialogViewDiagramViewRedraw;
             }
             if (e.NewValue is IActionsItemTab actionItem && actionItem.Actions != null)

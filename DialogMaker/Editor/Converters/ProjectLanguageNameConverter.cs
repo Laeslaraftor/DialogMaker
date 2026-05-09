@@ -4,13 +4,13 @@
     {
         private readonly ProjectController _controller = controller;
 
-        public string Convert(ProjectLanguage Value)
+        public string Convert(ProjectLanguage value)
         {
-            return Value.Name;
+            return value.Name;
         }
-        public ProjectLanguage ConvertBack(string Value)
+        public ProjectLanguage ConvertBack(string value)
         {
-            return _controller.Languages.FirstOrDefault(l => l.Name == Value)
+            return _controller.Languages.FirstOrDefault(l => l.Name == value)
                 ?? _controller.Languages[0];
         }
     }

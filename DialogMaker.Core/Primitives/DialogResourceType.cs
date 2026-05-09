@@ -16,5 +16,7 @@ namespace DialogMaker.Core
         Variable,
         [Name("Эмоция"), ResourceType(typeof(DialogProjectEmotion), IsDev = true)]
         Emotion,
+        [Name("Шаблон события"), ResourceType(typeof(DialogProjectTriggerPreset), IsDev = true)]
+        TriggerPreset,
     }
 }

@@ -20,10 +20,11 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             get
             {
-                _connections ??= new();
+                _connections ??= [];
                 return _connections;
             }
         }
+        public override DialogNodePortDirection Direction => DialogNodePortDirection.Input;
         public override int ConnectionsCount => Connections.Count;
         public virtual bool CanPresetValue { get; }
         [Name("Значение"), Text(AllowMultiline = true)]
@@ -36,7 +37,7 @@ namespace DialogMaker.Core.Editor.Nodes
             }
             set
             {
-                if (field == value)
+                if (Equals(field, value))
                 {
                     return;
                 }
@@ -115,7 +116,6 @@ namespace DialogMaker.Core.Editor.Nodes
 
             if (CanPresetValue)
             {
-                var currentType = GetType();
                 var valueToSave = GetValueToSave();
 
                 result.ValueType = valueToSave?.GetType();
@@ -170,14 +170,9 @@ namespace DialogMaker.Core.Editor.Nodes
 
         protected override bool Validate(DialogProjectNodePort? port)
         {
-            if (port is not DialogProjectNodeOutput output ||
-                (!Multiconnection && Connections.Count > 1) ||
-                Connections.Contains(output))
-            {
-                return false;
-            }
-
-            return true;
+            return !(port is not DialogProjectNodeOutput output ||
+                     (!Multiconnection && Connections.Count > 1) ||
+                     Connections.Contains(output));
         }
 
         public override IEnumerator<DialogProjectNodePort> GetEnumerator()
@@ -217,18 +212,10 @@ namespace DialogMaker.Core.Editor.Nodes
 
             Type objType = value.GetType();
 
-            foreach (var info in _allowedValuesInfo)
+            return _allowedValuesInfo.FirstOrDefault(info =>
             {
-                foreach (var typeInfo in info.Value)
-                {
-                    if (typeInfo.Type == objType)
-                    {
-                        return info.Key;
-                    }
-                }
-            }
-
-            return null;
+                return info.Value.Any(typeInfo => typeInfo.Type == objType);
+            }).Key;
         }
 
         #endregion

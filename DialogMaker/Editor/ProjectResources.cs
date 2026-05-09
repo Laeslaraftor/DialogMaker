@@ -4,10 +4,10 @@ using DialogMaker.Editor.Filters;
 using DialogMaker.Editor.Menus;
 using DialogMaker.Lib;
 using Microsoft.Win32;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.ComponentModel;
 
 namespace DialogMaker.Editor
 {
@@ -24,11 +24,13 @@ namespace DialogMaker.Editor
             Variables = CreateObservable(new ProjectVariableConverter(controller), resources.Variables, out _variables);
             Files = CreateObservable(new ProjectFileConverter(controller), resources.Items, out _files);
             Emotions = CreateObservable(new ProjectEmotionConverter(controller), resources.Emotions, out _emotions);
+            TriggerPresets = CreateObservable(new ProjectTriggerPresetConverter(controller), resources.TriggerPresets, out _triggerPresets);
 
             CreateStringCommand = new RelayCommand(ExecuteCreateString);
             CreateCharacterCommand = new RelayCommand(ExecuteCreateCharacter);
             CreateVariableCommand = new RelayCommand(ExecuteCreateVariable);
             CreateEmotionCommand = new RelayCommand(ExecuteCreateEmotion);
+            CreateTriggerPresetCommand = new RelayCommand(ExecuteCreateTriggerPreset);
             AddFileCommand = new RelayCommand(p => AddFile());
             CreateVariablesContextMenu = new CreateVariableContextMenu(this);
 
@@ -37,6 +39,7 @@ namespace DialogMaker.Editor
             List<ReferenceReadOnlyList<ProjectVariable>> inheritVariables = [Variables];
             List<ReferenceReadOnlyList<ProjectFile>> inheritFiles = [Files];
             List<ReferenceReadOnlyList<ProjectEmotion>> inheritEmotions = [Emotions];
+            List<ReferenceReadOnlyList<ProjectTriggerPreset>> inheritTriggerPresets = [TriggerPresets];
             DialogResourcesFlags flags = resources.Flags;
 
             while (parent != null)
@@ -46,6 +49,7 @@ namespace DialogMaker.Editor
                 inheritVariables.Add(parent.Variables);
                 inheritFiles.Add(parent.Files);
                 inheritEmotions.Add(parent.Emotions);
+                inheritTriggerPresets.Add(parent.TriggerPresets);
 
                 flags |= parent.Flags;
                 parent = parent.Parent;
@@ -56,6 +60,7 @@ namespace DialogMaker.Editor
             InheritedVariables = new(inheritVariables, controller.ResourcesFilter);
             InheritedFiles = new(inheritFiles, controller.ResourcesFilter);
             InheritedEmotions = new(inheritEmotions, controller.ResourcesFilter);
+            InheritedTriggerPresets = new(inheritTriggerPresets, controller.ResourcesFilter);
             Flags = flags;
             UnsettedFlags = ProjectResourcesFilter.AllFlags & ~flags;
 
@@ -73,21 +78,46 @@ namespace DialogMaker.Editor
         public ReferenceReadOnlyList<ProjectVariable> Variables { get; }
         public ReferenceReadOnlyList<ProjectFile> Files { get; }
         public ReferenceReadOnlyList<ProjectEmotion> Emotions { get; }
+        public ReferenceReadOnlyList<ProjectTriggerPreset> TriggerPresets { get; }
         public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectString>, ProjectString> InheritedStrings { get; }
         public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectCharacter>, ProjectCharacter> InheritedCharacters { get; }
         public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectVariable>, ProjectVariable> InheritedVariables { get; }
         public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectFile>, ProjectFile> InheritedFiles { get; }
         public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectEmotion>, ProjectEmotion> InheritedEmotions { get; }
+        public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectTriggerPreset>, ProjectTriggerPreset> InheritedTriggerPresets { get; }
         public ContextMenu CreateVariablesContextMenu { get; }
         public ICommand CreateStringCommand { get; }
         public ICommand CreateCharacterCommand { get; }
         public ICommand CreateVariableCommand { get; }
         public ICommand CreateEmotionCommand { get; }
+        public ICommand CreateTriggerPresetCommand { get; }
         public ICommand AddFileCommand { get; }
         public string? Description
         {
-            get => Original.Description;
-            set => Original.Description = value;
+            get
+            {
+                try
+                {
+                    return Original.Description;
+                }
+                catch (Exception error)
+                {
+                    error.Log();
+                }
+
+                return null;
+            }
+            set
+            {
+                try
+                {
+                    Original.Description = value;
+                }
+                catch (Exception error)
+                {
+                    error.Log();
+                }
+            }
         }
 
         private readonly CollectionSynchronizer<DialogProjectString, ProjectString> _strings;
@@ -95,6 +125,7 @@ namespace DialogMaker.Editor
         private readonly CollectionSynchronizer<DialogProjectVariable, ProjectVariable> _variables;
         private readonly CollectionSynchronizer<DialogProjectItem, ProjectFile> _files;
         private readonly CollectionSynchronizer<DialogProjectEmotion, ProjectEmotion> _emotions;
+        private readonly CollectionSynchronizer<DialogProjectTriggerPreset, ProjectTriggerPreset> _triggerPresets;
 
         #region Управление
 
@@ -159,6 +190,7 @@ namespace DialogMaker.Editor
             _variables.Dispose();
             _files.Dispose();
             _emotions.Dispose();
+            _triggerPresets.Dispose();
         }
 
         #endregion
@@ -167,52 +199,26 @@ namespace DialogMaker.Editor
 
         private void ExecuteCreateString(object? parameter)
         {
-            try
-            {
-                Original.CreateString();
-            }
-            catch (Exception error)
-            {
-                error.Log();
-            }
+            TryExecute(Original.CreateString);
         }
         private void ExecuteCreateCharacter(object? parameter)
         {
-            try
-            {
-                Original.CreateCharacter();
-            }
-            catch (Exception error)
-            {
-                error.Log();
-            }
+            TryExecute(Original.CreateCharacter);
         }
         private void ExecuteCreateVariable(object? parameter)
         {
-            if (parameter is not DialogVariableType type)
+            if (parameter is DialogVariableType type)
             {
-                return;
-            }
-
-            try
-            {
-                Original.CreateVariable(type);
-            }
-            catch (Exception error)
-            {
-                error.Log();
+                TryExecute(() => Original.CreateVariable(type));
             }
         }
         private void ExecuteCreateEmotion(object? parameter)
         {
-            try
-            {
-                Original.CreateEmotion();
-            }
-            catch (Exception error)
-            {
-                error.Log();
-            }
+            TryExecute(Original.CreateEmotion);
+        }
+        private void ExecuteCreateTriggerPreset(object? parameter)
+        {
+            TryExecute(Original.CreateTriggerPreset);
         }
 
         #endregion

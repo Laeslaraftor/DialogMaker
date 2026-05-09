@@ -253,7 +253,8 @@ namespace DialogMaker.Lib.Controllers
             await _window.Fetch(mouse, target =>
             {
                 if (target is FrameworkElement element &&
-                    element.DataContext is ProjectResourceItem projectItem)
+                    element.DataContext is ProjectResourceItem projectItem &&
+                    !projectItem.IsSeparated)
                 {
                     item = projectItem;
                 }

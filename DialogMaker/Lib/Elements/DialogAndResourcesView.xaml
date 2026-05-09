@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:DialogMaker.Lib.Elements"
+             xmlns:editorCore="clr-namespace:DialogMaker.Core.Editor;assembly=DialogMaker.Core"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid x:Name="_mainGrid">
@@ -173,7 +174,55 @@
             <TabItem Header="Описание">
                 <TextBox AcceptsReturn="True"
                          AcceptsTab="True"
+                         TextWrapping="Wrap"
                          Text="{Binding Resources.Description}"/>
+            </TabItem>
+            <TabItem Header="События">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="0,0,10,0">
+                        <local:FlagsViewer Enum="{Binding Project.ResourcesFilter.Flags}"
+                                           SelectedValues="{Binding Project.ResourcesFilter.Flags, Mode=TwoWay}"
+                                           ExcludeValues="{Binding Resources.UnsettedFlags}"
+                                           Margin="2.5,5,0,5" Spacing="2.5,0">
+                            <local:FlagsViewer.ItemsPanelTemplate>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </local:FlagsViewer.ItemsPanelTemplate>
+                        </local:FlagsViewer>
+                        <local:Entry Placeholder="Поиск..." Margin="5,0,0,0"
+                                     Text="{Binding Project.ResourcesFilter.SearchValue}"
+                                     ConfirmCommand="{Binding Project.ResourcesFilter.SearchCommand}"/>
+                        <Grid Margin="6,0,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="События" FontSize="28"
+                                       FontWeight="Medium" Margin="0,0,0,8"/>
+                            <Button Content="Создать" Grid.Column="1" VerticalAlignment="Center"
+                                    Command="{Binding Resources.CreateTriggerPresetCommand}"/>
+                        </Grid>
+                        <ListView Grid.Row="1"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                  HorizontalContentAlignment="Stretch"
+                                  ItemsSource="{Binding Resources.InheritedTriggerPresets}">
+                            <ListView.Template>
+                                <ControlTemplate>
+                                    <ItemsPresenter/>
+                                </ControlTemplate>
+                            </ListView.Template>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <local:TriggerPresetView TriggerPreset="{Binding}"
+                                                             Margin="0,0,0,6"/>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </ScrollViewer>
+
             </TabItem>
         </TabControl>
         <Border Grid.RowSpan="3"

@@ -1,12 +1,14 @@
 ﻿using DialogMaker.Core;
 using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
+using DialogMaker.Editor;
 using DialogMaker.Lib.Data;
 using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using DialogMaker.Lib.Controllers;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -21,9 +23,24 @@ namespace DialogMaker.Lib.Elements
                 _items.Add(item.Copy());
             }
 
+            _eventPresetsController = new();
+            _items.Add(_eventPresetsController.RootEventPresets);
+
             Search(null);
 
+
             _groupsList.ItemsSource = _items;
+        }
+        ~NodeSelector()
+        {
+            try
+            {
+                _eventPresetsController.Dispose();
+            }
+            catch (Exception error)
+            {
+                Logger.Log(error);
+            }
         }
 
         public event EventHandler<ItemEventArgs<NodeSelectorItemInfo>>? NodeSelected;
@@ -48,7 +65,13 @@ namespace DialogMaker.Lib.Elements
             get => (DialogNodeConnectionType)GetValue(PortsTypeProperty);
             set => SetValue(PortsTypeProperty, value);
         }
+        public ProjectResources? ItemResources
+        {
+            get => GetValue(ItemResourcesProperty) as ProjectResources;
+            set => SetValue(ItemResourcesProperty, value);
+        }
 
+        private readonly NodeSelectorEventPresetsController _eventPresetsController = new();
         private readonly ObservableCollection<NodeSelectorItemInfo> _items = [];
 
         #region Управление
@@ -67,11 +90,13 @@ namespace DialogMaker.Lib.Elements
 
             if (value != null)
             {
-                itemPredicate = i => i.Name?.Contains(value, StringComparison.InvariantCultureIgnoreCase) == true;
+                itemPredicate = i => i.CheckByTag(value) ||
+                                     i.Name?.Contains(value, StringComparison.InvariantCultureIgnoreCase) == true;
             }
             if (mode != NodeSelectionMode.Default)
             {
-                GetPortTypes(mode == NodeSelectionMode.Input, out var modeType, out var dataType);
+                var direction = (DialogNodePortDirection)mode;
+                
                 portPredicate = i =>
                 {
                     if (i.Port == null)
@@ -79,11 +104,11 @@ namespace DialogMaker.Lib.Elements
                         return false;
                     }
 
-                    var property = i.Port.Value.Key;
-                    var propertyIsAction = property.PropertyType == dataType;
-                    bool isAssignable = property.PropertyType.IsAssignableTo(modeType);
+                    var portInfo = i.Port.Value;
+                    var propertyIsAction = portInfo.ConnectionType == portsType;
+                    bool isAssignable = portInfo.Direction == direction;
 
-                    return isAssignable && propertyIsAction ^ portsType == DialogNodeConnectionType.Data;
+                    return isAssignable && propertyIsAction;
                 };
             }
 
@@ -210,8 +235,6 @@ namespace DialogMaker.Lib.Elements
         {
             base.OnPreviewKeyDown(e);
 
-            bool handled = true;
-
             if (e.Key == Key.Down)
             {
                 SelectNext()?.RequestBringToView();
@@ -233,12 +256,6 @@ namespace DialogMaker.Lib.Elements
                     return false;
                 });
             }
-            else
-            {
-                handled = false;
-            }
-
-            //e.Handled = handled;
         }
 
         private void OnEntryTextChanged(object sender, TextChangedEventArgs e)
@@ -266,6 +283,14 @@ namespace DialogMaker.Lib.Elements
                 view.Search(view.SearchValue);
             }
         }
+        private static void OnItemResourcesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is NodeSelector view)
+            {
+                view._eventPresetsController.Resources = e.NewValue as ProjectResources;
+                view.Search(view.SearchValue);
+            }
+        }
 
         #endregion
 
@@ -279,15 +304,13 @@ namespace DialogMaker.Lib.Elements
             typeof(NodeSelector), new(NodeSelectionMode.Default, OnFilterValueChanged));
         public static readonly DependencyProperty PortsTypeProperty = DependencyProperty.Register(nameof(PortsType), typeof(DialogNodeConnectionType),
             typeof(NodeSelector), new(DialogNodeConnectionType.Action, OnFilterValueChanged));
+        public static readonly DependencyProperty ItemResourcesProperty = DependencyProperty.Register(nameof(ItemResources), typeof(ProjectResources),
+            typeof(NodeSelector), new(OnItemResourcesChanged));
 
         #endregion
 
         #region Статика
 
-        private static readonly Type _inputActionPort = typeof(DialogProjectNodeInputAction);
-        private static readonly Type _inputPort = typeof(DialogProjectNodeInput);
-        private static readonly Type _outputActionPort = typeof(DialogProjectNodeOutputAction);
-        private static readonly Type _outputPort = typeof(DialogProjectNodeOutput);
         private static ReadOnlyCollection<NodeSelectorItemInfo>? _defaultNodeItems;
 
         private static ReadOnlyCollection<NodeSelectorItemInfo> CreateDefaultItems()
@@ -442,11 +465,6 @@ namespace DialogMaker.Lib.Elements
                     return;
                 }
             }
-        }
-        private static void GetPortTypes(bool isInput, out Type modeType, out Type dataType)
-        {
-            modeType = isInput ? _inputPort : _outputPort;
-            dataType = isInput ? _inputActionPort : _outputActionPort;
         }
 
         #endregion

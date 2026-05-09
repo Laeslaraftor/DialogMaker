@@ -19,6 +19,7 @@
                 return _connections;
             }
         }
+        public override DialogNodePortDirection Direction => DialogNodePortDirection.Output;
         public override int ConnectionsCount => Connections.Count;
 
         protected override IEditableList ConnectionsList => Connections;

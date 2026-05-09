@@ -35,6 +35,7 @@ namespace DialogMaker.Editor
         public ProjectController Project { get; }
         public DialogProjectResourceObject Model { get; }
         public DialogResourceType ResourceType => Model.ResourceType;
+        public bool IsSeparated => Model.IsSeparated;
         public string Id
         {
             get => Model.Id;
@@ -52,7 +53,7 @@ namespace DialogMaker.Editor
 
         IResourcesContainer IResource.Container => Model.Resources;
         DialogResourceType IResourceItem.ResourceType => Model.ResourceType;
-        string IResourceItem.Id => Model.ProjectId.ToString();
+        string IResourceItem.Id => Model.Id;
         bool IResourceItem.IsSeparated => Model.IsSeparated;
 
         private readonly ElementsPool<TextBlock> _previewBlocks = new();
