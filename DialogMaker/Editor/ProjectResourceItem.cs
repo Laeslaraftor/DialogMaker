@@ -131,9 +131,7 @@ namespace DialogMaker.Editor
 
         protected virtual void OnModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-#pragma warning disable CS8604 // Возможно, аргумент-ссылка, допускающий значение NULL.
-            OnPropertyChanged(e.PropertyName);
-#pragma warning restore CS8604 // Возможно, аргумент-ссылка, допускающий значение NULL.
+            OnPropertyChanged(e);
 
             string preview = $"[{Id}] {this}";
 

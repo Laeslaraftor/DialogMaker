@@ -2,13 +2,13 @@
 using DialogMaker.Core.Editor;
 using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Editor;
+using DialogMaker.Lib.Controllers;
 using DialogMaker.Lib.Data;
 using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using DialogMaker.Lib.Controllers;
 
 namespace DialogMaker.Lib.Elements
 {
@@ -96,7 +96,7 @@ namespace DialogMaker.Lib.Elements
             if (mode != NodeSelectionMode.Default)
             {
                 var direction = (DialogNodePortDirection)mode;
-                
+
                 portPredicate = i =>
                 {
                     if (i.Port == null)
@@ -350,6 +350,11 @@ namespace DialogMaker.Lib.Elements
 
             foreach (var info in DialogProjectDialogNode.AvailableNodes.Values)
             {
+                if (info.IsInternal)
+                {
+                    continue;
+                }
+
                 paths.Add(info.Path);
 
                 if (!groups.TryGetValue(info.Path, out var group))

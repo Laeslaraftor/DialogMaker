@@ -25,6 +25,7 @@ namespace DialogMaker.Editor
 
             UpdateInverted();
 
+            port.Disposed += OnOriginalDisposed;
             port.PropertyChanged += OnPortPropertyChanged;
             node.PropertyChanged += OnNodePropertyChanged;
         }
@@ -104,7 +105,7 @@ namespace DialogMaker.Editor
             if (e.PropertyName == nameof(ConnectionsCount))
             {
                 OnPropertyChanged(nameof(IsActive));
-                OnPropertyChanged(e.PropertyName);
+                OnPropertyChanged(e);
             }
             else if (e.PropertyName == nameof(Name))
             {
@@ -117,6 +118,10 @@ namespace DialogMaker.Editor
             {
                 UpdateInverted();
             }
+        }
+        private void OnOriginalDisposed(object? sender, EventArgs e)
+        {
+            Dispose();
         }
 
         #endregion

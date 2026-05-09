@@ -193,5 +193,10 @@ namespace DialogMaker.Core
         [Tags("sticker", "description", "text", "текст", "описание", "стикер")]
         [Tags("ntrcn", "jgbcfybt", "cnbrth")]
         Sticker,
+
+        [Name("Событие"), Node(typeof(DialogProjectCustomTriggerNode))]
+        [Description("Вызвать событие. Событие будет получено обработчиком диалога.")]
+        [InternalNode]
+        CustomTrigger,
     }
 }

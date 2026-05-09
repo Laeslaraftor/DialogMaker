@@ -170,14 +170,22 @@ namespace DialogMaker.Lib.Controllers
             }
             void CheckPort(DialogProjectNodePortProxy port)
             {
-                foreach (var curve in _curves)
+                _curves.RemoveAll(curve =>
                 {
+                    if (curve.StartPort?.IsDisposed == true ||
+                        curve.EndPort?.IsDisposed == true)
+                    {
+                        RemoveCurve(curve, false);
+                        return true;
+                    }
                     if (curve.StartPort == port ||
                         curve.EndPort == port)
                     {
                         curve.SyncPositions();
                     }
-                }
+
+                    return false;
+                });
             }
 
             CheckPorts(node.Inputs);

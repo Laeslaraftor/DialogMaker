@@ -227,16 +227,17 @@ namespace DialogMaker.Editor
             {
                 Position = new(Original.Position.X, Original.Position.Y);
             }
-            else if (e.PropertyName == nameof(Inverted))
+            else if (e.PropertyName == nameof(Inverted) ||
+                     e.PropertyName == nameof(Name))
             {
-                OnPropertyChanged(nameof(Inverted));
+                OnPropertyChanged(e);
             }
         }
         private void OnNodePropertyChanging(object? sender, PropertyChangingEventArgs e)
         {
             if (e.PropertyName == nameof(Inverted))
             {
-                OnPropertyChanging(e.PropertyName);
+                OnPropertyChanging(e);
             }
         }
 

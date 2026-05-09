@@ -192,7 +192,18 @@ namespace DialogMaker.Lib.Controllers
 
         private static async Task<DialogProjectDialogNode?> CreateNode(ProjectDialog dialog, NodeSelectionMode mode, DialogNodeConnectionType type, DialogProjectNodePortProxy? port, MouseEventArgs? mouse, Point nodePosition)
         {
-            var controller = GetFirstFreeController();
+            NodeSelectorController controller;
+
+            try
+            {
+                controller = GetFirstFreeController();
+            }
+            catch (Exception error)
+            {
+                error.Log();
+                return null;
+            }
+
             Point position;
 
             if (mouse != null)

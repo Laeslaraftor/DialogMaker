@@ -1,12 +1,10 @@
 ﻿using DialogMaker.Core.Editor.Collections;
 using DialogMaker.Core.Editor.Messages;
-using DialogMaker.Core.Editor.Nodes.Structs;
-using DialogMaker.Core.Executioning;
 using System.Collections.Specialized;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
-    public class DialogProjectTriggerNode : DialogProjectDialogNode
+    public class DialogProjectTriggerNode : DialogProjectTriggerNodeBase
     {
         public DialogProjectTriggerNode(DialogProjectDialog dialog) : base(dialog)
         {
@@ -61,25 +59,8 @@ namespace DialogMaker.Core.Editor.Nodes
                 return field;
             }
         }
-        [NodeInput("Вход")]
-        public DialogProjectNodeInputAction Input
-        {
-            get
-            {
-                field ??= new(this, 0);
-                return field;
-            }
-        }
-        [NodeOutput("Выход")]
-        public DialogProjectNodeOutputAction Output
-        {
-            get
-            {
-                field ??= new(this, 1);
-                return field;
-            }
-        }
-        public override bool IsUserHandleNode => true;
+
+        protected override string? TriggerName => TriggerId;
 
         private Message InvalidInputNameMessage
         {
@@ -107,47 +88,12 @@ namespace DialogMaker.Core.Editor.Nodes
                 return field;
             }
         }
+
+
         private bool _invalidInputNameMessageAdded;
         private bool _invalidOutputNameMessageAdded;
 
         #region Управление
-
-        public override void Compile(DialogCompilerContext context)
-        {
-            TriggerNodeCompileTimeInfo info = new(TriggerId ?? string.Empty);
-
-            foreach (var message in InternalMessages)
-            {
-                throw new InvalidOperationException(message.Text);
-            }
-
-            foreach (var input in ExtraInputs.Keys)
-            {
-                var parameter = context.RecursiveCompileConnections(input);
-                info.Inputs.Add(input.Name, parameter);
-            }
-            foreach (var output in ExtraOutputs.Keys)
-            {
-                var parameter = context.Resources.GetOrCreateVariable(output);
-                info.Outputs.Add(output.Name, parameter);
-            }
-
-            var opcode = context.Section.CreateOperation(DialogByteCode.Trigger);
-            opcode.Arguments[0] = new(info);
-
-            context.CompileOutputs(Output);
-        }
-        public override string ToString()
-        {
-            var id = TriggerId;
-
-            if (string.IsNullOrEmpty(id))
-            {
-                return "Пустой идентификатор";
-            }
-
-            return $"Идентификатор: {id}";
-        }
 
         protected override void ModifySavedState(DialogProjectDialogNodeSavedState savedState)
         {

@@ -53,15 +53,7 @@
                     </ListView.Template>
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel ContextMenu="{Binding ContextMenu}">
-                                <local:EditableTextBlock Text="{Binding Name, Mode=TwoWay}" 
-                                                         AutoEdit="True" Margin="0,0,0,6"
-                                                         FontSize="18"/>
-                                <local:ObjectValueInput AllowedValues="AllWithoutList"
-                                                        Value="{Binding Value, Mode=TwoWay}" 
-                                                        SelectedValueType="{Binding ValueType, Mode=TwoWay}"
-                                                        Placeholder="Значение"/>
-                            </StackPanel>
+                            <local:TriggerPresetPortView Port="{Binding}"/>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
@@ -80,7 +72,7 @@
                                VerticalAlignment="Center"/>
                     <Button Content="&#xE710;" Grid.Column="1" VerticalAlignment="Center"
                             FontFamily="{StaticResource SymbolThemeFontFamily}"
-                            Command="{Binding CreateInputCommand}"/>
+                            Command="{Binding CreateOutputCommand}"/>
                 </Grid>
             </local:MinimizableView.Header>
             <local:MinimizableView.Child>
@@ -95,15 +87,8 @@
                     </ListView.Template>
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel ContextMenu="{Binding ContextMenu}">
-                                <local:EditableTextBlock Text="{Binding Name, Mode=TwoWay}" 
-                                                         AutoEdit="True" Margin="0,0,0,6"
-                                                         FontSize="18"/>
-                                <local:ObjectValueInput AllowedValues="AllWithoutList"
-                                                        Value="{Binding Value, Mode=TwoWay}" 
-                                                        SelectedValueType="{Binding ValueType, Mode=TwoWay}"
-                                                        Placeholder="Значение"/>
-                            </StackPanel>
+                            <local:TriggerPresetPortView Port="{Binding}"
+                                                         OnlyTypeSelector="True"/>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>

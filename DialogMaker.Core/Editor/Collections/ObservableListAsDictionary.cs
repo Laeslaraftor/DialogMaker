@@ -38,7 +38,7 @@ namespace DialogMaker.Core.Editor.Collections
                 {
                     var pair = ValuesCollection[i];
 
-                    if (Equals(pair.Key, pair.Key))
+                    if (Equals(pair.Key, key))
                     {
                         ValuesCollection[i] = new(key, value);
                         return;
@@ -128,23 +128,22 @@ namespace DialogMaker.Core.Editor.Collections
         {
             ValuesCollection.CopyTo(array, arrayIndex);
         }
-#nullable disable
+
         public bool TryGetValue(TKey key, [NotNullWhen(true)] out TValue value)
         {
-            value = default;
+            value = default!;
 
             foreach (var pair in ValuesCollection)
             {
                 if (Equals(pair.Key, key))
                 {
-                    value = pair.Value;
+                    value = pair.Value!;
                     return true;
                 }
             }
 
             return false;
         }
-#nullable enable
 
         #endregion
 

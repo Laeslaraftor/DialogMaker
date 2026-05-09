@@ -27,7 +27,7 @@ namespace DialogMaker.Lib.Data
             var node = base.CreateNode(dialog);
             var preset = TriggerPreset;
 
-            if (node is DialogProjectTriggerNode triggerNode &&
+            if (node is DialogProjectCustomTriggerNode triggerNode &&
                 preset != null)
             {
                 preset.SetupNode(triggerNode);

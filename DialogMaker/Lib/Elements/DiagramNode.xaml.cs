@@ -250,6 +250,10 @@ namespace DialogMaker.Lib.Elements
             {
                 SetInverted(node.Inverted);
             }
+            else if (e.PropertyName == nameof(Name))
+            {
+                _title.Text = node.Name;
+            }
         }
 
         private static void OnNodeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)

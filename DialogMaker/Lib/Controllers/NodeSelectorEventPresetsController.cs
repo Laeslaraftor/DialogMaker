@@ -250,11 +250,17 @@ namespace DialogMaker.Lib.Controllers
         }
         private void OnPresetPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (sender is ProjectTriggerPreset preset && 
-                _presetItems.TryGetValue(preset, out var item))
+            if (sender is not ProjectTriggerPreset preset)
             {
-                UpdateItem(preset, item);
-                _itemsContainer.Sort();
+                return;
+            }
+            foreach (var info in _presetItems)
+            {
+                if (info.Key.TriggerPreset == preset)
+                {
+                    UpdateItem(preset, info.Value);
+                    _itemsContainer.Sort();
+                }
             }
         }
         private void OnPresetPortPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -302,7 +308,7 @@ namespace DialogMaker.Lib.Controllers
         {
             get
             {
-                _triggerNodeInfo ??= DialogProjectDialogNode.AvailableNodes[DialogNodeType.Trigger];
+                _triggerNodeInfo ??= DialogProjectDialogNode.AvailableNodes[DialogNodeType.CustomTrigger];
                 return _triggerNodeInfo.Value;
             }
         }
@@ -313,7 +319,7 @@ namespace DialogMaker.Lib.Controllers
 
         #region Структуры
 
-        private readonly struct PresetToken
+        private readonly struct PresetToken : IEquatable<PresetToken>
         {
             private PresetToken(ProjectTriggerPreset triggerPreset)
             {
@@ -333,7 +339,7 @@ namespace DialogMaker.Lib.Controllers
             {
                 if (TriggerPreset != null)
                 {
-                    return TriggerPreset.Original.GetHashCode();
+                    return TriggerPreset.GetHashCode();
                 }
                 else if (PortPreset != null)
                 {
@@ -342,8 +348,25 @@ namespace DialogMaker.Lib.Controllers
 
                 return 0;
             }
+            public bool Equals(PresetToken other)
+            {
+                if (other.TriggerPreset != null)
+                {
+                    return Equals((object)other.TriggerPreset);
+                }
+                else if (other.PortPreset != null)
+                {
+                    return Equals((object)other.PortPreset);
+                }
+
+                return false;
+            }
             public override bool Equals([NotNullWhen(true)] object? obj)
             {
+                if (obj is PresetToken token)
+                {
+                    return Equals(token);
+                }
                 if (obj is DialogProjectTriggerPreset triggerPreset)
                 {
                     return triggerPreset == TriggerPreset?.Original;

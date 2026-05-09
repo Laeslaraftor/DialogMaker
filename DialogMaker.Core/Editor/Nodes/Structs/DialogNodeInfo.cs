@@ -5,7 +5,8 @@ using System.Reflection;
 
 namespace DialogMaker.Core.Editor.Nodes
 {
-    public readonly struct DialogNodeInfo(DialogNodeType nodeType, Type type, DialogProjectNodeMetadata metadata, string path,
+    public readonly struct DialogNodeInfo(DialogNodeType nodeType, Type type, bool isInternal,
+                                          DialogProjectNodeMetadata metadata, string path,
                                           IDictionary<PropertyInfo, DialogProjectNodeMetadata> inputs,
                                           IDictionary<PropertyInfo, DialogProjectNodeMetadata> outputs,
                                           IDictionary<PropertyInfo, DialogProjectNodeMetadata> properties,
@@ -16,6 +17,7 @@ namespace DialogMaker.Core.Editor.Nodes
         public Type Type { get; } = type;
         public DialogProjectNodeMetadata Metadata { get; } = metadata;
         public string Path { get; } = path;
+        public bool IsInternal { get; } = isInternal;
         public ReadOnlyCollection<string> Tags { get; } = new(tags);
         public ReadOnlyDictionary<PropertyInfo, DialogProjectNodeMetadata> Inputs { get; } = new(inputs);
         public ReadOnlyDictionary<PropertyInfo, DialogProjectNodeMetadata> Outputs { get; } = new(outputs);
@@ -84,6 +86,7 @@ namespace DialogMaker.Core.Editor.Nodes
             var description = type.GetEnumAttribute<DescriptionAttribute>()?.Description ?? string.Empty;
             var path = type.GetEnumAttribute<PathAttribute>()?.Path ?? string.Empty;
             var tagsAttributes = type.GetEnumAttributes<TagsAttribute>();
+            var isInternal = type.GetEnumAttribute<InternalNodeAttribute>() != null;
             Dictionary<PropertyInfo, DialogProjectNodeMetadata> inputs = [];
             Dictionary<PropertyInfo, DialogProjectNodeMetadata> outputs = [];
             Dictionary<PropertyInfo, DialogProjectNodeMetadata> properties = [];
@@ -121,7 +124,7 @@ namespace DialogMaker.Core.Editor.Nodes
                 tags.AddRange(tagsAttribute.Tags);
             }
 
-            result = new(type, managedType, new(name, description), path, inputs, outputs, properties, tags);
+            result = new(type, managedType, isInternal, new(name, description), path, inputs, outputs, properties, tags);
 
             return true;
         }

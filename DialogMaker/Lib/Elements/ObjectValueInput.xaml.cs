@@ -37,6 +37,7 @@ namespace DialogMaker.Lib.Elements
         }
 
         public event EventHandler<ValueChangedEventArgs<object>>? ValueChanged;
+        public event EventHandler<ValueChangedEventArgs<AllowedObjectValues>>? SelectedValueTypeChanged;
 
         public AllowedObjectValues AllowedValues
         {
@@ -67,6 +68,11 @@ namespace DialogMaker.Lib.Elements
         {
             get => GetValue(FieldsHandlerProperty) as Action<InputField>;
             set => SetValue(FieldsHandlerProperty, value);
+        }
+        public bool OnlyTypeSelector
+        {
+            get => (bool)GetValue(OnlyTypeSelectorProperty);
+            set => SetValue(OnlyTypeSelectorProperty, value);
         }
 
         bool IReferenceView.CanSetReference => AllowedValues.HasFlag(AllowedObjectValues.Resource);
@@ -304,6 +310,7 @@ namespace DialogMaker.Lib.Elements
             if (d is ObjectValueInput view)
             {
                 view.SetValueType((AllowedObjectValues)e.NewValue);
+                view.SelectedValueTypeChanged?.Invoke(d, e);
             }
         }
         private static void OnResourceTypeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -395,6 +402,13 @@ namespace DialogMaker.Lib.Elements
                 handler?.Invoke(field);
             }
         }
+        private static void OnOnlyTypeSelectorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is ObjectValueInput view && e.NewValue is bool value)
+            {
+                view._inputsContainer.Visibility = value ? Visibility.Collapsed : Visibility.Visible;
+            }
+        }
 
         #endregion
 
@@ -412,6 +426,8 @@ namespace DialogMaker.Lib.Elements
             typeof(ObjectValueInput), new(string.Empty, OnPlaceholderChanged));
         public static readonly DependencyProperty FieldsHandlerProperty = DependencyProperty.Register(nameof(FieldsHandler), typeof(Action<InputField>),
             typeof(ObjectValueInput), new(null, OnFieldsHandlerChanged));
+        public static readonly DependencyProperty OnlyTypeSelectorProperty = DependencyProperty.Register(nameof(OnlyTypeSelector), typeof(bool),
+            typeof(ObjectValueInput), new(false, OnOnlyTypeSelectorChanged));
 
         #endregion
 

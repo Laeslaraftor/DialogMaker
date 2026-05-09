@@ -56,41 +56,13 @@ namespace DialogMaker.Core.Editor
 
         #region Управление
 
-        public void SetupNode(DialogProjectTriggerNode node)
+        public void SetupNode(DialogProjectCustomTriggerNode node)
         {
-            node.TriggerId = Id;
-
-            static void Setup(DialogProjectTriggerPresetPort preset, IEnumerable<DialogProjectNodePort> ports)
-            {
-                if (preset.Value == null)
-                {
-                    return;
-                }
-
-                foreach (var port in ports)
-                {
-                    if (port.Name == preset.Name && port is IValuePort valuePort && valuePort.CanPresetValue)
-                    {
-                        valuePort.Value = port;
-                        break;
-                    }
-                }
-            }
-
-            foreach (var input in Inputs)
-            {
-                node.InputsName.Add(input.Name);
-                Setup(input, node.GetInputs().Keys);
-            }
-            foreach (var output in Outputs)
-            {
-                node.InputsName.Add(output.Name);
-                Setup(output, node.GetOutputs().Keys);
-            }
+            node.TriggerPreset = this;
         }
-        public DialogProjectTriggerNode CreateNode(DialogProjectDialog dialog)
+        public DialogProjectCustomTriggerNode CreateNode(DialogProjectDialog dialog)
         {
-            var node = dialog.CreateNode<DialogProjectTriggerNode>();
+            var node = dialog.CreateNode<DialogProjectCustomTriggerNode>();
             SetupNode(node);
 
             return node;
@@ -122,6 +94,10 @@ namespace DialogMaker.Core.Editor
         public override IVariable ToVariable()
         {
             return new LocalVariable(Id);
+        }
+        public override string ToString()
+        {
+            return Id;
         }
 
         protected override DialogProjectResourceObjectSavedState CreateSavedState()

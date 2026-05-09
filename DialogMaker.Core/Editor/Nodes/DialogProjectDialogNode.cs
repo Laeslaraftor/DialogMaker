@@ -62,6 +62,15 @@ namespace DialogMaker.Core.Editor.Nodes
 
                 return field;
             }
+            protected set
+            {
+                if (field != value)
+                {
+                    OnPropertyChanging(nameof(Name));
+                    field = value;
+                    OnPropertyChanged(nameof(Name));
+                }
+            }
         }
         public string Description
         {
@@ -409,6 +418,21 @@ namespace DialogMaker.Core.Editor.Nodes
 
         ISavedState ISavable.Save() => Save();
 
+        protected bool RemoveExtraPort(DialogProjectNodePort port)
+        {
+            port.Dispose();
+
+            if (port is DialogProjectNodeInput input)
+            {
+                return ExtraInputs.Remove(input);
+            }
+            if (port is DialogProjectNodeOutput output)
+            {
+                return ExtraOutputs.Remove(output);
+            }
+
+            return false;
+        }
         protected IEnumerable<DialogProjectNodePort> GetExtraPorts()
         {
             foreach (var port in ExtraInputs.Keys)
@@ -668,7 +692,7 @@ namespace DialogMaker.Core.Editor.Nodes
             }
             foreach (var info in extra)
             {
-                dynamic.Add(info);
+                dynamic.TryAdd(info.Key, info.Value);
             }
         }
 

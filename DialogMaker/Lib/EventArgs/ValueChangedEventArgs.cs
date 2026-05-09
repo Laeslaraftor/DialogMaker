@@ -2,7 +2,7 @@
 
 namespace DialogMaker.Lib
 {
-    public class ValueChangedEventArgs<T>(T oldValue, T newValue) : EventArgs
+    public readonly struct ValueChangedEventArgs<T>(T oldValue, T newValue)
     {
         public ValueChangedEventArgs(DependencyPropertyChangedEventArgs args)
             : this((T)args.OldValue, (T)args.NewValue)

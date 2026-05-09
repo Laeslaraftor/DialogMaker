@@ -4,11 +4,11 @@ namespace DialogMaker.Core.Editor.Nodes
 {
     public class DialogProjectStickerNode : DialogProjectDialogNode
     {
-        public DialogProjectStickerNode(DialogProjectDialog dialog) 
+        public DialogProjectStickerNode(DialogProjectDialog dialog)
             : base(dialog)
         {
         }
-        public DialogProjectStickerNode(DialogProjectDialog dialog, DialogProjectDialogNodeSavedState savedState) 
+        public DialogProjectStickerNode(DialogProjectDialog dialog, DialogProjectDialogNodeSavedState savedState)
             : base(dialog, savedState)
         {
         }
