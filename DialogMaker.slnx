@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/Элементы решения/">
+    <File Path="README.md" />
+  </Folder>
   <Project Path="DialogMaker.Core.Tests/DialogMaker.Core.Tests.csproj" Id="eb76e1d1-05f4-4e13-b305-04f87eaf944f" />
   <Project Path="DialogMaker.Core/DialogMaker.Core.csproj" />
   <Project Path="DialogMaker/DialogMaker.csproj" />

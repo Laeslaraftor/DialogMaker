@@ -45,9 +45,9 @@ namespace DialogMaker.Editor.Filters
 
         #region Управление
 
-        public bool Check(IEnumerable Collection, object Item)
+        public bool Check(IEnumerable collection, object item)
         {
-            if (Item is not ProjectResourceItem item)
+            if (item is not ProjectResourceItem resourceItem)
             {
                 return false;
             }
@@ -60,13 +60,13 @@ namespace DialogMaker.Editor.Filters
             {
                 return true;
             }
-            if (!Flags.HasFlag(item.Model.Resources.Flags))
+            if (!Flags.HasFlag(resourceItem.Model.Resources.Flags))
             {
                 return false;
             }
             if (!isNullSearchValue)
             {
-                return item.ContainsValue(searchValue!);
+                return resourceItem.ContainsValue(searchValue!);
             }
 
             return true;

@@ -6,10 +6,10 @@ namespace DialogMaker.Editor
     public class ProjectFileViewConverter : ICollectionValueConverter<ProjectFile, FileView>
     {
 
-        public FileView Convert(ProjectFile value, int Index, IList firstCollection, IList secondCollection)
+        public FileView Convert(ProjectFile value, int index, IList firstCollection, IList secondCollection)
         {
-            if (Index < secondCollection.Count &&
-                secondCollection[Index] is FileView view)
+            if (index < secondCollection.Count &&
+                secondCollection[index] is FileView view)
             {
                 return view;
             }

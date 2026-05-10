@@ -54,8 +54,6 @@ namespace DialogMaker.Core.Editor.Nodes
         }
         protected override void Restore(DialogProjectDialogNodeSavedState savedState)
         {
-            base.Restore(savedState);
-
             var reference = savedState.RestoreReference<DialogProjectTriggerPreset>(Project, nameof(TriggerPreset));
 
             if (reference != null)
@@ -69,6 +67,8 @@ namespace DialogMaker.Core.Editor.Nodes
                     Logger.Log(error);
                 }
             }
+
+            base.Restore(savedState);
         }
 
         private void SetTriggerPreset(DialogProjectTriggerPreset? oldValue, DialogProjectTriggerPreset? newValue)
