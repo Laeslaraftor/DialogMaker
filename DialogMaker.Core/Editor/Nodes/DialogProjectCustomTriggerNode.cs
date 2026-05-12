@@ -139,16 +139,41 @@ namespace DialogMaker.Core.Editor.Nodes
         }
         private void UpdateInput(DialogProjectTriggerPresetPort preset)
         {
+            Action<DialogProjectNodeInput>? extraHandler = null;
+
+            if (preset.ValueType.HasFlag(AllowedObjectValues.Resource))
+            {
+                extraHandler = port =>
+                {
+                    if (port is DialogProjectNodeInputValue inputValuePort)
+                    {
+                        inputValuePort.SetAllowedValues(preset.AllowedValues);
+                    }
+                };
+            }
+
             try
             {
-                UpdatePortPreset(ExtraInputs, (type, id) =>
+                UpdatePortPreset(ExtraInputs, id =>
                 {
-                    return type switch
+                    return preset.ValueType switch
                     {
                         AllowedObjectValues.Number => new DialogProjectNodeInputNumber(this, id),
                         AllowedObjectValues.String => new DialogProjectNodeInputString(this, id),
                         AllowedObjectValues.Bool => new DialogProjectNodeInputBool(this, id),
                         _ => new DialogProjectNodeInputValue(this, id),
+                    };
+                }, extraHandler, port =>
+                {
+                    return preset.ValueType switch
+                    {
+                        AllowedObjectValues.Number => port is DialogProjectNodeInputNumber,
+                        AllowedObjectValues.String => port is DialogProjectNodeInputString,
+                        AllowedObjectValues.Bool => port is DialogProjectNodeInputBool,
+                        _ => port is DialogProjectNodeInputValue &&
+                             port is not DialogProjectNodeInputNumber &&
+                             port is not DialogProjectNodeInputString &&
+                             port is not DialogProjectNodeInputBool,
                     };
                 }, OnInputPortPresetPropertyChanged, preset);
             }
@@ -173,14 +198,26 @@ namespace DialogMaker.Core.Editor.Nodes
         {
             try
             {
-                UpdatePortPreset(ExtraOutputs, (type, id) =>
+                UpdatePortPreset(ExtraOutputs, id =>
                 {
-                    return type switch
+                    return preset.ValueType switch
                     {
                         AllowedObjectValues.Number => new DialogProjectNodeOutputNumber(this, id),
                         AllowedObjectValues.String => new DialogProjectNodeOutputString(this, id),
                         AllowedObjectValues.Bool => new DialogProjectNodeOutputBool(this, id),
                         _ => new DialogProjectNodeOutputObject(this, id),
+                    };
+                }, null, port =>
+                {
+                    return preset.ValueType switch
+                    {
+                        AllowedObjectValues.Number => port is DialogProjectNodeOutputNumber,
+                        AllowedObjectValues.String => port is DialogProjectNodeOutputString,
+                        AllowedObjectValues.Bool => port is DialogProjectNodeOutputBool,
+                        _ => port is DialogProjectNodeOutputObject &&
+                             port is not DialogProjectNodeOutputNumber &&
+                             port is not DialogProjectNodeOutputString &&
+                             port is not DialogProjectNodeOutputBool,
                     };
                 }, OnOutputPortPresetPropertyChanged, preset);
             }
@@ -213,20 +250,43 @@ namespace DialogMaker.Core.Editor.Nodes
             return new(preset.Name ?? string.Empty);
         }
         private void UpdatePortPreset<TPort>(ObservableListAsDictionary<TPort, DialogProjectNodeMetadata> extraPorts,
-                                             Func<AllowedObjectValues, int, TPort> portsFabric,
+                                             Func<int, TPort> portsFabric,
+                                             Action<TPort>? extraHandler,
+                                             Predicate<TPort> existedPortPredicate,
                                              PropertyChangedEventHandler propertyChangedHandler,
                                              DialogProjectTriggerPresetPort preset)
             where TPort : DialogProjectNodePort
         {
             bool needToAdd = false;
 
-            if (!_presetPorts.TryGetValue(preset, out var somePort))
+            _presetPorts.TryGetValue(preset, out var somePort);
+            TPort? typedPort = null;
+            int currentPortIndex = -1;
+
+            if (somePort is TPort typedPortCheck)
+            {
+                typedPort = typedPortCheck;
+            }
+            if ((typedPort == null && somePort != null) ||
+                (typedPort != null && !existedPortPredicate(typedPort)))
+            {
+                if (typedPort != null)
+                {
+                    currentPortIndex = extraPorts.Keys.IndexOf(typedPort);
+                }
+
+                RemovePort(preset);
+                somePort = null;
+                typedPort = null;
+            }
+
+            if (typedPort == null)
             {
                 int id = GetNextExtraPortId();
                 needToAdd = true;
-                somePort = portsFabric(preset.ValueType, id);
+                typedPort = portsFabric(id);
 
-                if (somePort is IValuePort valuePort &&
+                if (typedPort is IValuePort valuePort &&
                     valuePort.CanPresetValue &&
                     preset.Value != null)
                 {
@@ -235,19 +295,22 @@ namespace DialogMaker.Core.Editor.Nodes
 
                 preset.PropertyChanged += propertyChangedHandler;
             }
-            if (somePort is not TPort typedPort)
-            {
-                throw new InvalidOperationException($"Получен порт неверного типа: {somePort?.GetType().Name}, когда требуется: {nameof(DialogProjectNodeInput)}");
-            }
+
+            extraHandler?.Invoke(typedPort);
 
             var metadata = CreateMetadata(preset);
-            somePort.Name = preset.Name ?? DialogProjectTriggerPresetPort.DefaultName;
+            typedPort.Name = preset.Name ?? DialogProjectTriggerPresetPort.DefaultName;
 
             if (needToAdd)
             {
-                _presetPorts.Add(preset, somePort);
+                _presetPorts.Add(preset, typedPort);
             }
 
+            if (currentPortIndex != -1)
+            {
+                extraPorts.ValuesCollection.Insert(currentPortIndex, new(typedPort, metadata));
+                return;
+            }
             if (!extraPorts.TryAdd(typedPort, metadata))
             {
                 extraPorts[typedPort] = metadata;

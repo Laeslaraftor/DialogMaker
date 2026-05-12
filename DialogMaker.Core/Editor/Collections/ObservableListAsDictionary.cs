@@ -48,7 +48,7 @@ namespace DialogMaker.Core.Editor.Collections
                 throw new ArgumentException("Неизвестный ключ", nameof(key));
             }
         }
-        public ICollection<TKey> Keys
+        public Collection<TKey> Keys
         {
             get
             {
@@ -56,7 +56,7 @@ namespace DialogMaker.Core.Editor.Collections
                 return field;
             }
         }
-        public ICollection<TValue> Values
+        public Collection<TValue> Values
         {
             get
             {
@@ -66,6 +66,9 @@ namespace DialogMaker.Core.Editor.Collections
         }
         public int Count => ValuesCollection.Count;
         public bool IsReadOnly => false;
+        
+        ICollection<TKey> IDictionary<TKey, TValue>.Keys => Keys;
+        ICollection<TValue> IDictionary<TKey, TValue>.Values => Values;
 
         #region Управление
 
@@ -171,7 +174,7 @@ namespace DialogMaker.Core.Editor.Collections
 
         #region Классы
 
-        private abstract class Collection<T> : ICollection<T>
+        public abstract class Collection<T> : ICollection<T>
         {
             public abstract int Count { get; }
             public bool IsReadOnly => true;
@@ -192,6 +195,23 @@ namespace DialogMaker.Core.Editor.Collections
             public bool Remove(T item)
             {
                 throw new InvalidOperationException("Невозможно изменить список");
+            }
+
+            public int IndexOf(T item)
+            {
+                int i = 0;
+
+                foreach (var element in this)
+                {
+                    if (Equals(element, item))
+                    {
+                        return i;
+                    }
+
+                    i++;
+                }
+
+                return -1;
             }
 
             #endregion

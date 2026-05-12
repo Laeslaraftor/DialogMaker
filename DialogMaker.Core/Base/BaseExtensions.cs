@@ -2,14 +2,19 @@
 {
     public static class BaseExtensions
     {
-        public static string Repeat(this string str, int count)
+        extension(string str)
         {
-            for (int i = 0; i < count; i++)
+            public string Repeat(int count)
             {
-                str += str;
-            }
+                string result = string.Empty;
 
-            return str;
+                for (int i = 0; i < count; i++)
+                {
+                    result += str;
+                }
+
+                return result;
+            }
         }
     }
 }

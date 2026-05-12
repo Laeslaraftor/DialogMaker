@@ -44,6 +44,7 @@ namespace DialogMaker.Lib.Controllers
         private readonly EditableCollection<NodeSelectorItemInfo> _itemsContainer = [];
         private readonly ElementsPool<TriggerPresetNodeSelectorItemInfo> _itemsPool = new();
         private readonly Dictionary<PresetToken, TriggerPresetNodeSelectorItemInfo> _presetItems = [];
+        private readonly Dictionary<ProjectTriggerPreset, List<RootItemInfo>> _presetRootItems = [];
 
         #region Управление
 
@@ -93,21 +94,38 @@ namespace DialogMaker.Lib.Controllers
 
         private void CreateItem(ProjectTriggerPreset preset)
         {
-            if (_presetItems.ContainsKey(preset))
+            if (_presetItems.ContainsKey(preset) ||
+                _presetRootItems.ContainsKey(preset))
             {
                 return;
             }
 
+            void SetupItem(ProjectTriggerPreset preset, TriggerPresetNodeSelectorItemInfo item)
+            {
+                item.IsEnabled = true;
+                item.Port = null;
+                item.Value = TriggerNodeInfo;
+                item.TriggerPreset = preset.Original;
+            }
+
             var presetItem = _itemsPool.GetElement();
-            presetItem.IsEnabled = true;
-            presetItem.Port = null;
-            presetItem.Value = TriggerNodeInfo;
-            presetItem.TriggerPreset = preset.Original;
+            var inputItem = _itemsPool.GetElement();
+            var outputItem = _itemsPool.GetElement();
+            List<RootItemInfo> rootItems = [
+                new(presetItem, null),
+                new(inputItem, DialogNodePortDirection.Input),
+                new(outputItem, DialogNodePortDirection.Output)
+            ];
 
-            UpdateItem(preset, presetItem);
+            foreach (var info in rootItems)
+            {
+                SetupItem(preset, info.Item);
+                UpdateItem(preset, info);
+                _itemsContainer.Add(info.Item);
+            }
 
-            _itemsContainer.Add(presetItem);
             _presetItems.Add(preset, presetItem);
+            _presetRootItems.Add(preset, rootItems);
 
             void CreatePorts(DialogNodePortDirection direction, IEnumerable<DialogProjectTriggerPresetPort> ports)
             {
@@ -126,14 +144,19 @@ namespace DialogMaker.Lib.Controllers
         }
         private void RemoveItem(ProjectTriggerPreset preset)
         {
-            if (!_presetItems.TryGetValue(preset, out var presetItem))
+            if (!_presetRootItems.TryGetValue(preset, out var rootItems))
             {
                 return;
             }
 
-            _itemsContainer.Remove(presetItem);
             _presetItems.Remove(preset);
-            _itemsPool.Free(presetItem);
+            _presetRootItems.Remove(preset);
+
+            foreach (var info in rootItems)
+            {
+                _itemsContainer.Remove(info.Item);
+                _itemsPool.Free(info.Item);
+            }
 
             void RemoveAll(IEnumerable<DialogProjectTriggerPresetPort> ports)
             {
@@ -148,25 +171,43 @@ namespace DialogMaker.Lib.Controllers
 
             ClearPreset(preset);
         }
-        private void UpdateItem(ProjectTriggerPreset preset, NodeSelectorItemInfo item)
+        private void UpdateItem(ProjectTriggerPreset preset, RootItemInfo info)
         {
-            item.Name = preset.Id;
+            UpdateItem(preset, info.Item, info.Direction);
+        }
+        private void UpdateItem(ProjectTriggerPreset preset, NodeSelectorItemInfo item, DialogNodePortDirection? direction)
+        {
+            if (direction == null)
+            {
+                item.Name = preset.Id;
+                return;
+            }
+
+            string portName = "Вход";
+
+            if (direction == DialogNodePortDirection.Output)
+            {
+                portName = "Выход";
+            }
+
+            item.Name = $"{preset.Id} → {portName}";
+            item.Port = NodeSelectorItemInfoPort.Create(direction.Value, DialogNodeConnectionType.Action, portName);
         }
         private void UpdateItem(DialogProjectTriggerPresetPort port, NodeSelectorItemInfo item, DialogNodePortDirection? direction = null)
         {
             item.Name = $"{port.TriggerPreset.Id} → {port.Name}";
-            DialogNodePortDirection d = DialogNodePortDirection.Input;
+            DialogNodePortDirection directionValue = DialogNodePortDirection.Input;
 
             if (direction != null)
             {
-                d = direction.Value;
+                directionValue = direction.Value;
             }
             else if (item.Port != null)
             {
-                d = item.Port.Value.Direction;
+                directionValue = item.Port.Value.Direction;
             }
 
-            item.Port = NodeSelectorItemInfoPort.Create(d, DialogNodeConnectionType.Data, port.Name ?? string.Empty);
+            item.Port = NodeSelectorItemInfoPort.Create(directionValue, DialogNodeConnectionType.Data, port.Name ?? string.Empty);
         }
 
         private void AddPort(DialogNodePortDirection direction, DialogProjectTriggerPresetPort port)
@@ -256,9 +297,14 @@ namespace DialogMaker.Lib.Controllers
             }
             foreach (var info in _presetItems)
             {
-                if (info.Key.TriggerPreset == preset)
+                if (info.Key.TriggerPreset == preset &&
+                    _presetRootItems.TryGetValue(preset, out var items))
                 {
-                    UpdateItem(preset, info.Value);
+                    foreach (var item in items)
+                    {
+                        UpdateItem(preset, item);
+                    }
+
                     _itemsContainer.Sort();
                 }
             }
@@ -319,6 +365,11 @@ namespace DialogMaker.Lib.Controllers
 
         #region Структуры
 
+        private readonly struct RootItemInfo(TriggerPresetNodeSelectorItemInfo item, DialogNodePortDirection? direction)
+        {
+            public TriggerPresetNodeSelectorItemInfo Item { get; } = item;
+            public DialogNodePortDirection? Direction { get; } = direction;
+        }
         private readonly struct PresetToken : IEquatable<PresetToken>
         {
             private PresetToken(ProjectTriggerPreset triggerPreset)

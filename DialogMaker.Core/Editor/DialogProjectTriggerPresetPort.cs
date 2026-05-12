@@ -54,10 +54,24 @@ namespace DialogMaker.Core.Editor
                 {
                     OnPropertyChanging(nameof(ValueType));
                     field = value;
+                    UpdateAllowedValues(value);
                     OnPropertyChanged(nameof(ValueType));
                 }
             }
-        }
+        } = AllowedObjectValues.Number;
+        public AllowedObjectValues AllowedValues
+        {
+            get => field;
+            private set
+            {
+                if (field != value)
+                {
+                    OnPropertyChanging(nameof(AllowedValues));
+                    field = value;
+                    OnPropertyChanged(nameof(AllowedValues));
+                }
+            }
+        } = GetAllowedValues(AllowedObjectValues.Number);
 
         private string? _name;
 
@@ -78,6 +92,11 @@ namespace DialogMaker.Core.Editor
             base.Dispose(isDisposing);
 
             TriggerPreset.PropertyChanged -= OnTriggerPresetPropertyChanged;
+        }
+
+        private void UpdateAllowedValues(AllowedObjectValues valueType)
+        {
+            AllowedValues = GetAllowedValues(valueType);
         }
 
         #endregion
@@ -117,6 +136,30 @@ namespace DialogMaker.Core.Editor
                     Logger.Log(error);
                 }
             }
+        }
+
+        private static AllowedObjectValues GetAllowedValues(AllowedObjectValues valueType)
+        {
+            AllowedObjectValues result = AllowedObjectValues.Resource;
+
+            if (valueType == AllowedObjectValues.Resource)
+            {
+                return result;
+            }
+            if (valueType == AllowedObjectValues.Number)
+            {
+                result |= AllowedObjectValues.Number;
+            }
+            else if (valueType == AllowedObjectValues.Bool)
+            {
+                result |= AllowedObjectValues.Bool;
+            }
+            else if (valueType == AllowedObjectValues.String)
+            {
+                result |= AllowedObjectValues.String;
+            }
+
+            return result;
         }
 
         #endregion

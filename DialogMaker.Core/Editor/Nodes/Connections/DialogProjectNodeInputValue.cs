@@ -42,9 +42,18 @@
         }
 
         public override bool CanPresetValue { get; } = canPresetValue;
+        public override AllowedObjectValues AllowedValues => _allowedValues;
+
+        private AllowedObjectValues _allowedValues = AllowedObjectValues.AllWithoutList;
 
         #region Управление
 
+        public void SetAllowedValues(AllowedObjectValues allowedValues)
+        {
+            OnPropertyChanging(nameof(AllowedValues));
+            _allowedValues = allowedValues;
+            OnPropertyChanged(nameof(AllowedValues));
+        }
         public string GetPreview()
         {
             foreach (var connection in this)

@@ -35,6 +35,7 @@ namespace DialogMaker.Editor
             get => Original.ValueType;
             set => Original.ValueType = value;
         }
+        public AllowedObjectValues AllowedValues => Original.AllowedValues;
         public ContextMenu ContextMenu { get; }
 
         #region Управление

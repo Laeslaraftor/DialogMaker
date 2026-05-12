@@ -2,23 +2,6 @@
 
 Библиотека для создания, компиляции и выполнения диалогов. Позволяет делать диалоги, которые симулируют осмысленность. Визуальный редактор [прилагается](../DialogMaker).
 
-## Начало работы
-
-Установите библиотеку через [NuGet](https://www.nuget.org/packages/DialogMaker.Core) или закиньте целый проект в своё решение.
-
-```
-Install-Package DialogMaker.Core 
-```
-
-или
-
-```
-dotnet package add DialogMaker.Core
-```
-
-> [!CAUTION]
-> Этой библиотеки пока нет на NuGet. Это было написано на вырост.
-
 ## Использование для создания диалогов
 Это будет написано когда-нибудь потом в отдельном файле
 
@@ -26,7 +9,7 @@ dotnet package add DialogMaker.Core
 
 1. Открытие экспортированного проекта
 
-```
+```csharp
 using DialogMaker.Core.Common;
 
 // Открываем пакет диалогов
@@ -42,7 +25,7 @@ Dialog dialog = folder["myFirstDialog"];
 
 2. Создание обработчика диалога
 
-```
+```csharp
 using DialogMaker.Core.Executioning;
 
 public class ConsoleDialogHandler : IDialogExecutingHandler
@@ -144,7 +127,7 @@ public class ConsoleDialogHandler : IDialogExecutingHandler
 
 3. Запуск шарманки
 
-```
+```csharp
 // Создаём обработчик и исполнитель
 ConsoleDialogHandler dialogHandler = new();
 DialogExecutor executor = dialog.CreateExecutor();
