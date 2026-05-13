@@ -6,7 +6,7 @@
 
         #region Управление
 
-        public OpCode GetInstance()
+        public T GetInstance<T>()
         {
             if (Implementation == null)
             {
@@ -15,12 +15,12 @@
 
             var property = Implementation.GetProperty("Instance");
 
-            if (property != null && property.GetValue(null) is OpCode result)
+            if (property != null && property.GetValue(null) is T result)
             {
                 return result;
             }
 
-            return (OpCode)Activator.CreateInstance(Implementation);
+            return (T)Activator.CreateInstance(Implementation);
         }
 
         #endregion

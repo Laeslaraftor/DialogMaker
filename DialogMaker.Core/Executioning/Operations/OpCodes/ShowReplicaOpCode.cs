@@ -16,7 +16,7 @@ namespace DialogMaker.Core.Executioning
             var replica = context.Resources.GetVariable(args[2]).ToString();
             ResourceString text = new(args[2], replica);
 
-            await DispatchHandler(context, h => h.ShowReplica(character, listener, text, context.CancellationToken));
+            await DispatchHandler(context, h => h.ShowReplica(character, listener, text, context));
         }
 
         #endregion

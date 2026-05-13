@@ -8,34 +8,34 @@ namespace DialogMaker.Core.Executioning.Internal
 
         private readonly IInternalDialogExecutor _executor = executor;
 
-        public async Task HandleTrigger(Trigger trigger, CancellationToken cancellationToken)
+        public async Task HandleTrigger(Trigger trigger, DialogHandleEventArgs e)
         {
             await _executor.HandleDialog(async h =>
             {
-                await h.HandleTrigger(trigger, cancellationToken);
-            }, cancellationToken);
+                await h.HandleTrigger(trigger, e);
+            }, e);
         }
-        public async Task ShowReplica(ICharacter? character, ICharacter? listener, IResourceString text, CancellationToken cancellationToken)
+        public async Task ShowReplica(ICharacter? character, ICharacter? listener, IResourceString text, DialogHandleEventArgs e)
         {
             await _executor.HandleDialog(async h =>
             {
-                await h.ShowReplica(character, listener, text, cancellationToken);
-            }, cancellationToken);
+                await h.ShowReplica(character, listener, text, e);
+            }, e);
         }
 
-        public async Task<int> ShowChoice(ICharacter? character, ICharacter? listener, IStringCollection variants, CancellationToken cancellationToken)
+        public async Task<int> ShowChoice(ICharacter? character, ICharacter? listener, IStringCollection variants, DialogHandleEventArgs e)
         {
             return await _executor.HandleDialog(async h =>
             {
-                return await h.ShowChoice(character, listener, variants, cancellationToken);
-            }, cancellationToken);
+                return await h.ShowChoice(character, listener, variants, e);
+            }, e);
         }
-        public async Task ShowEmotion(ICharacter? character, IEmotion? emotion, CancellationToken cancellationToken)
+        public async Task ShowEmotion(ICharacter? character, IEmotion? emotion, DialogHandleEventArgs e)
         {
             await _executor.HandleDialog(async h =>
             {
-                await h.ShowEmotion(character, emotion, cancellationToken);
-            }, cancellationToken);
+                await h.ShowEmotion(character, emotion, e);
+            }, e);
         }
 
         #region События

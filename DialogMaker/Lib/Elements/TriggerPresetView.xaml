@@ -6,93 +6,158 @@
              xmlns:local="clr-namespace:DialogMaker.Lib.Elements"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
-    <StackPanel ContextMenu="{Binding ContextMenu}">
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <local:EnumValueView Grid.Column="1" Margin="4,6,0,0"
-                                 HorizontalAlignment="Right"
-                                 VerticalAlignment="Top"
-                                 Value="{Binding Original.Resources.Flags}"/>
-            <StackPanel>
-                <local:EditableTextBlock Text="{Binding Id, Mode=TwoWay}" 
-                                         AutoEdit="True"
-                                         FontSize="18" FontWeight="Medium"/>
-                <local:EditableTextBlock Text="{Binding Original.Description, Mode=TwoWay}" 
-                                         AutoEdit="True" TextWrapping="Wrap"
-                                         Opacity="0.8"/>
-            </StackPanel>
-        </Grid>
-        <local:MinimizableView Margin="0,8,0,0"
-                           IsMinimized="True">
-            <local:MinimizableView.Header>
-                <Grid Margin="6,2,0,2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Входные параметры" FontSize="16"
-                               FontWeight="Medium" Margin="0,0,0,0"
-                               VerticalAlignment="Center"/>
-                    <Button Content="&#xE710;" Grid.Column="1" VerticalAlignment="Center"
-                            FontFamily="{StaticResource SymbolThemeFontFamily}"
-                            Command="{Binding CreateInputCommand}"/>
-                </Grid>
-            </local:MinimizableView.Header>
-            <local:MinimizableView.Child>
-                <ListView Grid.Row="1"
-                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                          HorizontalContentAlignment="Stretch"
-                          ItemsSource="{Binding Inputs}">
-                    <ListView.Template>
-                        <ControlTemplate>
-                            <ItemsPresenter/>
-                        </ControlTemplate>
-                    </ListView.Template>
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <local:TriggerPresetPortView Port="{Binding}"/>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-            </local:MinimizableView.Child>
-        </local:MinimizableView>
-        <local:MinimizableView Margin="0,8,0,0"
+    <Border ContextMenu="{Binding ContextMenu}"
+            CornerRadius="4" BorderThickness="1" Padding="6,4"
+            Background="{DynamicResource ControlOnImageFillColorSecondaryBrush}"
+            BorderBrush="{DynamicResource SurfaceStrokeColorDefaultBrush}">
+        <StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <local:EnumValueView Grid.Column="1" Margin="4,6,0,0"
+                                     HorizontalAlignment="Right"
+                                     VerticalAlignment="Top"
+                                     Value="{Binding Original.Resources.Flags}"/>
+                <StackPanel>
+                    <local:EditableTextBlock Text="{Binding Id, Mode=TwoWay}" 
+                                             AutoEdit="True"
+                                             FontSize="18" FontWeight="Medium"/>
+                    <local:EditableTextBlock Text="{Binding Original.Description, Mode=TwoWay}" 
+                                             AutoEdit="True" TextWrapping="Wrap"
+                                             Opacity="0.8"/>
+                </StackPanel>
+            </Grid>
+            <local:MinimizableView Margin="0,8,0,0"
+                                   IsMinimized="True">
+                <local:MinimizableView.Header>
+                    <Grid Margin="6,2,0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Входы" FontSize="16"
+                                   FontWeight="Medium" Margin="0,0,0,0"
+                                   VerticalAlignment="Center"/>
+                        <ListView Grid.Column="1" ClipToBounds="True"
+                                  Style="{StaticResource NoSelectionListView}"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                  HorizontalContentAlignment="Stretch"
+                                  ItemsSource="{Binding Inputs}">
+                            <ListView.Template>
+                                <ControlTemplate>
+                                    <ItemsPresenter/>
+                                </ControlTemplate>
+                            </ListView.Template>
+                            <ListView.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ListView.ItemsPanel>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name, StringFormat=', {0}'}"
+                                           FontFamily="{StaticResource CascadiaMono}"
+                                           Foreground="{DynamicResource AccentTextFillColorTertiaryBrush}"
+                                           VerticalAlignment="Center" Margin="0,2,0,0">
+                                        <TextBlock.RenderTransform>
+                                            <TranslateTransform X="-6"/>
+                                        </TextBlock.RenderTransform>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <Button Content="&#xE710;" Grid.Column="2" 
+                                VerticalAlignment="Center" Padding="6"
+                                FontFamily="{StaticResource SymbolThemeFontFamily}"
+                                Command="{Binding CreateInputCommand}"/>
+                    </Grid>
+                </local:MinimizableView.Header>
+                <local:MinimizableView.Child>
+                    <ListView Grid.Row="1"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              HorizontalContentAlignment="Stretch"
+                              ItemsSource="{Binding Inputs}">
+                        <ListView.Template>
+                            <ControlTemplate>
+                                <ItemsPresenter/>
+                            </ControlTemplate>
+                        </ListView.Template>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <local:TriggerPresetPortView Port="{Binding}"/>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </local:MinimizableView.Child>
+            </local:MinimizableView>
+            <local:MinimizableView Margin="0,8,0,0"
                    IsMinimized="True">
-            <local:MinimizableView.Header>
-                <Grid Margin="6,2,0,2">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="Выходные параметры" FontSize="16"
-                               FontWeight="Medium" Margin="0,0,0,0"
-                               VerticalAlignment="Center"/>
-                    <Button Content="&#xE710;" Grid.Column="1" VerticalAlignment="Center"
-                            FontFamily="{StaticResource SymbolThemeFontFamily}"
-                            Command="{Binding CreateOutputCommand}"/>
-                </Grid>
-            </local:MinimizableView.Header>
-            <local:MinimizableView.Child>
-                <ListView Grid.Row="1"
-                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                          HorizontalContentAlignment="Stretch"
-                          ItemsSource="{Binding Outputs}">
-                    <ListView.Template>
-                        <ControlTemplate>
-                            <ItemsPresenter/>
-                        </ControlTemplate>
-                    </ListView.Template>
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <local:TriggerPresetPortView Port="{Binding}"
-                                                         OnlyTypeSelector="True"/>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
-            </local:MinimizableView.Child>
-        </local:MinimizableView>
-    </StackPanel>
+                <local:MinimizableView.Header>
+                    <Grid Margin="6,2,0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Выходы" FontSize="16"
+                                   FontWeight="Medium" Margin="0,0,0,0"
+                                   VerticalAlignment="Center"/>
+                        <ListView Grid.Column="1" ClipToBounds="True"
+                              Style="{StaticResource NoSelectionListView}"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              HorizontalContentAlignment="Stretch"
+                              ItemsSource="{Binding Outputs}">
+                            <ListView.Template>
+                                <ControlTemplate>
+                                    <ItemsPresenter/>
+                                </ControlTemplate>
+                            </ListView.Template>
+                            <ListView.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ListView.ItemsPanel>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Name, StringFormat=', {0}'}"
+                                               FontFamily="{StaticResource CascadiaMono}"
+                                               Foreground="{DynamicResource AccentTextFillColorTertiaryBrush}"
+                                               VerticalAlignment="Center" Margin="0,2,0,0">
+                                        <TextBlock.RenderTransform>
+                                            <TranslateTransform X="-6"/>
+                                        </TextBlock.RenderTransform>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <Button Content="&#xE710;" Grid.Column="2" 
+                                VerticalAlignment="Center" Padding="6"
+                                FontFamily="{StaticResource SymbolThemeFontFamily}"
+                                Command="{Binding CreateOutputCommand}"/>
+                    </Grid>
+                </local:MinimizableView.Header>
+                <local:MinimizableView.Child>
+                    <ListView Grid.Row="1"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                              HorizontalContentAlignment="Stretch"
+                              ItemsSource="{Binding Outputs}">
+                        <ListView.Template>
+                            <ControlTemplate>
+                                <ItemsPresenter/>
+                            </ControlTemplate>
+                        </ListView.Template>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <local:TriggerPresetPortView Port="{Binding}"
+                                                             OnlyTypeSelector="True"/>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </local:MinimizableView.Child>
+            </local:MinimizableView>
+        </StackPanel>
+    </Border>
 </UserControl>

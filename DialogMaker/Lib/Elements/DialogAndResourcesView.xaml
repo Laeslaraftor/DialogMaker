@@ -204,9 +204,10 @@
                             <Button Content="Создать" Grid.Column="1" VerticalAlignment="Center"
                                     Command="{Binding Resources.CreateTriggerPresetCommand}"/>
                         </Grid>
-                        <ListView Grid.Row="1"
+                        <ListView Grid.Row="1" Margin="6,0"
                                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                   HorizontalContentAlignment="Stretch"
+                                  Style="{StaticResource NoSelectionListView}"
                                   ItemsSource="{Binding Resources.InheritedTriggerPresets}">
                             <ListView.Template>
                                 <ControlTemplate>

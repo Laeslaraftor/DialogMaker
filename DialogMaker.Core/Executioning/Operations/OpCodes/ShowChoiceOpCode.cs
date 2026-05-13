@@ -18,7 +18,7 @@ namespace DialogMaker.Core.Executioning
                 throw new DialogExecutionException($"Не удалось получить список строк для отображения вариантов ответа");
             }
 
-            var answer = await DispatchHandler(context, h => h.ShowChoice(character, listener, strings, context.CancellationToken));
+            var answer = await DispatchHandler(context, h => h.ShowChoice(character, listener, strings, context));
 
             if (!context.CancellationToken.IsCancellationRequested)
             {

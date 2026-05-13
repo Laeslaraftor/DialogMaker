@@ -14,7 +14,7 @@ namespace DialogMaker.Core.Executioning
             var listener = ShowReplicaOpCode.GetCharacter(context, args[1]);
             var replica = GetString(context, args[2]);
 
-            await DispatchHandler(context, h => h.ShowReplica(character, listener, replica, context.CancellationToken));
+            await DispatchHandler(context, h => h.ShowReplica(character, listener, replica, context));
         }
 
         #endregion

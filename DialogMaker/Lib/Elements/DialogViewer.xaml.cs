@@ -14,7 +14,7 @@ namespace DialogMaker.Lib.Elements
             InitializeComponent();
         }
 
-        Acly.IDispatcher? IDialogExecutingHandler.Dispatcher => ObservableObject.SharedDispatcher;
+        IDispatcher? IDialogExecutingHandler.Dispatcher => ObservableObject.SharedDispatcher;
 
         private readonly ElementsPool<DragView> _blocksPool = new();
         private readonly ElementsPool<TextBlock> _textPool = new();
@@ -32,18 +32,18 @@ namespace DialogMaker.Lib.Elements
             _triggerPool.Clear();
         }
 
-        public async Task ShowReplica(ICharacter? character, ICharacter? listener, IResourceString text, CancellationToken cancellationToken)
+        public async Task ShowReplica(ICharacter? character, ICharacter? listener, IResourceString text, DialogHandleEventArgs e)
         {
             AddElement(character, listener, text.Text);
-            await Task.DelaySafe(200, cancellationToken);
+            await Task.DelaySafe(200, e);
         }
-        public async Task ShowEmotion(ICharacter? character, IEmotion? emotion, CancellationToken cancellationToken)
+        public async Task ShowEmotion(ICharacter? character, IEmotion? emotion, DialogHandleEventArgs e)
         {
             AddElement(null, null, $"{character?.Name} показывает какую то эмоцию");
-            await Task.DelaySafe(200, cancellationToken);
+            await Task.DelaySafe(200, e);
         }
 
-        public async Task<int> ShowChoice(ICharacter? character, ICharacter? listener, IStringCollection variants, CancellationToken cancellationToken)
+        public async Task<int> ShowChoice(ICharacter? character, ICharacter? listener, IStringCollection variants, DialogHandleEventArgs e)
         {
             bool isCompleted = false;
             int result = -1;
@@ -71,9 +71,9 @@ namespace DialogMaker.Lib.Elements
 
             container.BringIntoView();
 
-            while (!isCompleted && !cancellationToken.IsCancellationRequested)
+            while (!isCompleted && !e.IsCancellationRequested)
             {
-                await Task.DelaySafe(50, cancellationToken);
+                await Task.DelaySafe(50, e);
             }
 
             block.ChoiceChanged -= OnBlockChoiceChanged;
@@ -81,7 +81,7 @@ namespace DialogMaker.Lib.Elements
             return result;
         }
 
-        public async Task HandleTrigger(Trigger trigger, CancellationToken cancellationToken)
+        public async Task HandleTrigger(Trigger trigger, DialogHandleEventArgs e)
         {
             var triggerView = _triggerPool.GetElement();
             var container = GetNewBlock();
@@ -89,7 +89,7 @@ namespace DialogMaker.Lib.Elements
 
             container.BringIntoView();
 
-            await triggerView.Handle(trigger, cancellationToken);
+            await triggerView.Handle(trigger, e);
         }
 
         private void AddElement(ICharacter? character, ICharacter? listener, string text)

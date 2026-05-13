@@ -141,7 +141,7 @@ namespace DialogMaker.Core.Executioning
                     throw new ArgumentException($"Атрибут реализации не указан для {code}!", nameof(code));
                 }
 
-                instance = attr.GetInstance();
+                instance = attr.GetInstance<OpCode>();
                 _opCodeInstances.Add(code, instance);
             }
 

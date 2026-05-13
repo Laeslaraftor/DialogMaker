@@ -18,7 +18,7 @@ namespace DialogMaker.Core.Executioning
                 emotion = resourceEmotion;
             }
 
-            await context.Handler.ShowEmotion(character, emotion, context.CancellationToken);
+            await context.Handler.ShowEmotion(character, emotion, context);
         }
 
         #endregion

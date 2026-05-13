@@ -3,7 +3,7 @@ using System.ComponentModel;
 
 namespace DialogMaker.Core.Executioning
 {
-    public class DialogExecutor : Disposable
+    public class DialogExecutor : Disposable, IDialogExecutor
     {
         public DialogExecutor(byte[] code, IDialogExecutionResources resources)
             : this(DialogByteCodeData.Read(code), resources)
@@ -24,7 +24,7 @@ namespace DialogMaker.Core.Executioning
 
         public bool IsRunning
         {
-            get => field;
+            get;
             private set
             {
                 if (field != value)
@@ -37,7 +37,7 @@ namespace DialogMaker.Core.Executioning
         }
         public bool IsPaused
         {
-            get => field;
+            get;
             private set
             {
                 if (field != value)
@@ -51,7 +51,7 @@ namespace DialogMaker.Core.Executioning
         public IDialogExecutionResources Resources { get; }
         public IDialogExecutingHandler? Handler
         {
-            get => field;
+            get;
             set
             {
                 if (field != value)
@@ -66,7 +66,6 @@ namespace DialogMaker.Core.Executioning
         private readonly DialogExecutorThreadManager _threadManager;
         private readonly InternalDialogResources _resources;
         private readonly IsolatedDialogResources _isolatedResources;
-
 
         #region Управление
 

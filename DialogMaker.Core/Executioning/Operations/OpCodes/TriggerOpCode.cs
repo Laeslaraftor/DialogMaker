@@ -19,7 +19,7 @@ namespace DialogMaker.Core.Executioning
 
             var trigger = Trigger.Create(metadata, context);
 
-            await DispatchHandler(context, h => h.HandleTrigger(trigger, context.CancellationToken));
+            await DispatchHandler(context, h => h.HandleTrigger(trigger, context));
         }
 
         #endregion

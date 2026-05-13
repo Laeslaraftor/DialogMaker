@@ -122,6 +122,7 @@ namespace DialogMaker.Core
             return Value.ToString();
         }
         public float ToNumber() => AsNumber(Value);
+        public bool ToBool() => ToNumber() > 0;
         public override int GetHashCode()
         {
             return HashCode.Combine(Type, Value);

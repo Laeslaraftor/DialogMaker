@@ -21,7 +21,7 @@ namespace DialogMaker.Core.Executioning
         public IDialogExecutionResources Resources { get; }
         public bool IsRunning
         {
-            get => field;
+            get;
             private set
             {
                 if (field != value)
@@ -44,7 +44,7 @@ namespace DialogMaker.Core.Executioning
         }
         public bool IsPaused
         {
-            get => field;
+            get;
             private set
             {
                 if (field != value)
@@ -55,6 +55,7 @@ namespace DialogMaker.Core.Executioning
                 }
             }
         }
+        IDialogExecutor IDialogExecutingThreadManager.DialogExecutor => DialogExecutor;
 
         private IDialogExecutionResources CurrentResources
         {
@@ -68,6 +69,7 @@ namespace DialogMaker.Core.Executioning
                 return _specialResources;
             }
         }
+
 
         private readonly Dictionary<string, List<DialogExecutionJoinController>> _joinControllers = [];
         private readonly Dictionary<string, List<DialogExecutionIntersectController>> _intersectControllers = [];

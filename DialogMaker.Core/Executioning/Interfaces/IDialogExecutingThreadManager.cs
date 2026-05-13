@@ -2,6 +2,7 @@
 {
     public interface IDialogExecutingThreadManager
     {
+        public IDialogExecutor DialogExecutor { get; }
         public bool IsRunning { get; }
         public bool IsPaused { get; }
 

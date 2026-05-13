@@ -1,6 +1,7 @@
 ﻿using DialogMaker.Core.Common;
 using DialogMaker.Core.Executioning.Internal;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Executioning
 {
@@ -48,6 +49,52 @@ namespace DialogMaker.Core.Executioning
         public override string ToString()
         {
             return Id;
+        }
+
+        #endregion
+
+        #region Дополнительно
+
+        public OperandValue GetOperandValue(string key)
+        {
+            TryGetOperandValue(key, out var result);
+            return result;
+        }
+        public bool GetBool(string key)
+        {
+            return GetOperandValue(key).ToBool();
+        }
+        public float GetNumber(string key)
+        {
+            return GetOperandValue(key).ToNumber();
+        }
+        public string GetString(string key)
+        {
+            return GetOperandValue(key).ToString();
+        }
+        public bool TryGetOperandValue(string key, [NotNullWhen(true)] out OperandValue result)
+        {
+            return TryGetValue(key, out result);
+        }
+        public bool TryGetResource<T>(string key, [NotNullWhen(true)] out T? result)
+            where T : IResourceItem
+        {
+            return TryGetValue(key, out result);
+        }
+
+        public bool TryGetValue<T>(string key, [NotNullWhen(true)] out T? result)
+        {
+            result = default;
+
+            if (Parameters != null &&
+                Parameters.TryGetValue(key, out var value) &&
+                value is T typedValue)
+            {
+                result = typedValue;
+                return true;
+            }
+
+            return false;
         }
 
         #endregion

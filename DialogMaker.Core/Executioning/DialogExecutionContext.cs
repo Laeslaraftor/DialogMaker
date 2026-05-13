@@ -7,5 +7,14 @@
         public IDialogExecutionResources Resources { get; } = resources;
         public IDialogExecutingHandler Handler { get; } = handler;
         public CancellationToken CancellationToken { get; } = cancellationToken;
+
+        public static implicit operator DialogHandleEventArgs(DialogExecutionContext context)
+        {
+            return new(context.ThreadManager.DialogExecutor, context.CancellationToken);
+        }
+        public static implicit operator CancellationToken(DialogExecutionContext context)
+        {
+            return context.CancellationToken;
+        }
     }
 }
