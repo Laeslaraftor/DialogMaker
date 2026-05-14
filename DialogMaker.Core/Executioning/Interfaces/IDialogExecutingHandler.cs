@@ -11,7 +11,7 @@ namespace DialogMaker.Core.Executioning
         public Task ShowEmotion(ICharacter? character, IEmotion? emotion, DialogHandleEventArgs e);
         public Task HandleTrigger(Trigger trigger, DialogHandleEventArgs e);
 
-        public void OnDialogExecutingStarted(object? sender, EventArgs e);
-        public void OnDialogExecutingEnded(object? sender, EventArgs e);
+        public void OnDialogExecutingStarted(object? sender, ItemEventArgs<IDialogExecutor> e);
+        public void OnDialogExecutingEnded(object? sender, ItemEventArgs<IDialogExecutor> e);
     }
 }

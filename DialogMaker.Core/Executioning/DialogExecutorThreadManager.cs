@@ -31,11 +31,11 @@ namespace DialogMaker.Core.Executioning
 
                     if (value)
                     {
-                        _dialogHandler.OnDialogExecutingStarted(this, EventArgs.Empty);
+                        _dialogHandler.OnDialogExecutingStarted(this, new(DialogExecutor));
                     }
                     else
                     {
-                        _dialogHandler.OnDialogExecutingEnded(this, EventArgs.Empty);
+                        _dialogHandler.OnDialogExecutingEnded(this, new(DialogExecutor));
                     }
 
                     OnPropertyChanged(nameof(IsRunning));

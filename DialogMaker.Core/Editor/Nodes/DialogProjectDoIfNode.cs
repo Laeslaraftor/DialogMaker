@@ -85,7 +85,7 @@ namespace DialogMaker.Core.Editor.Nodes
             }
             else if (trueSections.Count == 0 && falseSections.Count == 1)
             {
-                context.JumpOrGotoOrSkip(TrueOutput[0].Node, value, true);
+                context.JumpOrGotoOrSkip(FalseOutput[0].Node, value, true);
                 context.Section.CreateOperation(DialogByteCode.EndThread);
             }
             else if (trueSections.Count == 0 && falseSections.Count > 1)

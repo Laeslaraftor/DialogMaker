@@ -70,8 +70,13 @@ namespace DialogMaker.Lib.Controllers
                     ClearPort(token.PortPreset);
                 }
             }
+            foreach (var rootItems in _presetRootItems.Values)
+            {
+                ClearPreset(rootItems);
+            }
 
             _presetItems.Clear();
+            _presetRootItems.Clear();
         }
         private void UpdateList()
         {
@@ -152,11 +157,7 @@ namespace DialogMaker.Lib.Controllers
             _presetItems.Remove(preset);
             _presetRootItems.Remove(preset);
 
-            foreach (var info in rootItems)
-            {
-                _itemsContainer.Remove(info.Item);
-                _itemsPool.Free(info.Item);
-            }
+            ClearPreset(rootItems);
 
             void RemoveAll(IEnumerable<DialogProjectTriggerPresetPort> ports)
             {
@@ -242,6 +243,14 @@ namespace DialogMaker.Lib.Controllers
             preset.PropertyChanged -= OnPresetPropertyChanged;
             preset.Original.Inputs.ItemChanged -= OnPresetInputsItemChanged;
             preset.Original.Outputs.ItemChanged -= OnPresetOutputsItemChanged;
+        }
+        private void ClearPreset(IEnumerable<RootItemInfo> rootItems)
+        {
+            foreach (var info in rootItems)
+            {
+                _itemsContainer.Remove(info.Item);
+                _itemsPool.Free(info.Item);
+            }
         }
         private void ClearPort(DialogProjectTriggerPresetPort port)
         {

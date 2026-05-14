@@ -40,35 +40,21 @@ namespace DialogMaker.Core.Executioning.Internal
 
         #region События
 
-        private void InvokeDispatched(Action<IDialogExecutingHandler> action)
+        public async void OnDialogExecutingEnded(object? sender, ItemEventArgs<IDialogExecutor> e)
         {
-            _executor.InvokeDialogHandled(h =>
-            {
-                var dispatcher = h.Dispatcher;
-
-                if (dispatcher == null)
-                {
-                    action(h);
-                    return;
-                }
-
-                dispatcher.Dispatch(() => action(h));
-            });
-        }
-
-        public void OnDialogExecutingEnded(object? sender, EventArgs e)
-        {
-            InvokeDispatched(h =>
+            await _executor.HandleDialog(h =>
             {
                 h.OnDialogExecutingEnded(sender, e);
-            });
+                return Task.CompletedTask;
+            }, CancellationToken.None);
         }
-        public void OnDialogExecutingStarted(object? sender, EventArgs e)
+        public async void OnDialogExecutingStarted(object? sender, ItemEventArgs<IDialogExecutor> e)
         {
-            InvokeDispatched(h =>
+            await _executor.HandleDialog(h =>
             {
                 h.OnDialogExecutingStarted(sender, e);
-            });
+                return Task.CompletedTask;
+            }, CancellationToken.None);
         }
 
         #endregion

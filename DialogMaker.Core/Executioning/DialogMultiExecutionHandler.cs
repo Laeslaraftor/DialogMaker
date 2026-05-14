@@ -9,6 +9,9 @@ namespace DialogMaker.Core.Executioning
             _relayHandler = new(this);
         }
 
+        public event EventHandler<ItemEventArgs<IDialogExecutor>>? DialogStarted;
+        public event EventHandler<ItemEventArgs<IDialogExecutor>>? DialogEnded;
+
         public EditableCollection<IDialogExecutingHandler> DialogHanders { get; } = [];
 
         private readonly HashSet<IDialogExecutor> _executors = [];
@@ -102,19 +105,23 @@ namespace DialogMaker.Core.Executioning
 
         #region События
 
-        protected virtual void OnDialogExecutingStarted(IDialogExecutor sender, EventArgs e)
+        protected virtual void OnDialogExecutingStarted(object? sender, ItemEventArgs<IDialogExecutor> e)
         {
             foreach (var handler in DialogHanders)
             {
                 handler.OnDialogExecutingStarted(sender, e);
             }
+
+            DialogStarted?.Invoke(this, e);
         }
-        protected virtual void OnDialogExecutingEnded(IDialogExecutor sender, EventArgs e)
+        protected virtual void OnDialogExecutingEnded(object? sender, ItemEventArgs<IDialogExecutor> e)
         {
             foreach (var handler in DialogHanders)
             {
                 handler.OnDialogExecutingEnded(sender, e);
             }
+
+            DialogEnded?.Invoke(this, e);
         }
 
         protected virtual void OnExecutorDialogHandled(object sender, DialogExecutorHandleEventArgs e)
@@ -162,19 +169,13 @@ namespace DialogMaker.Core.Executioning
 
             #region События
 
-            public void OnDialogExecutingStarted(object? sender, EventArgs e)
+            public void OnDialogExecutingStarted(object? sender, ItemEventArgs<IDialogExecutor> e)
             {
-                if (sender is IDialogExecutor executor)
-                {
-                    _handler.OnDialogExecutingStarted(executor, e);
-                }
+                _handler.OnDialogExecutingStarted(sender, e);
             }
-            public void OnDialogExecutingEnded(object? sender, EventArgs e)
+            public void OnDialogExecutingEnded(object? sender, ItemEventArgs<IDialogExecutor> e)
             {
-                if (sender is IDialogExecutor executor)
-                {
-                    _handler.OnDialogExecutingEnded(executor, e);
-                }
+                _handler.OnDialogExecutingEnded(sender, e);
             }
 
             #endregion

@@ -3,7 +3,7 @@ using DialogMaker.Core.Editor;
 
 namespace DialogMaker.Core.Common
 {
-    public abstract class DialogResourceVariable : DialogResourceObject
+    public abstract class DialogResourceVariable : DialogResourceObject, IVariable
     {
         public DialogResourceVariable(DialogResources resources, DialogProjectVariable variable)
             : base(resources, variable)
@@ -31,8 +31,18 @@ namespace DialogMaker.Core.Common
                 }
             }
         }
+        public bool IsReadOnly => false;
 
         #region Управление
+
+        public override IVariable ToVariable()
+        {
+            return this;
+        }
+        public override string ToString()
+        {
+            return Value.ToString();
+        }
 
         protected abstract object ConvertValue(object? value);
 

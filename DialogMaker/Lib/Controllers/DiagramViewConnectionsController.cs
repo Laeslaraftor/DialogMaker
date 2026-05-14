@@ -250,6 +250,9 @@ namespace DialogMaker.Lib.Controllers
                 _curves.Remove(curve);
             }
 
+            curve.StartPort = null;
+            curve.EndPort = null;
+
             Canvas.Children.Remove(curve.Line);
             _curvesPool.Free(curve.Line);
         }

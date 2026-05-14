@@ -145,11 +145,11 @@ namespace DialogMaker.Lib.Elements
 
         #region События
 
-        public void OnDialogExecutingEnded(object? sender, EventArgs e)
+        public void OnDialogExecutingEnded(object? sender, ItemEventArgs<IDialogExecutor> e)
         {
             AddElement(null, null, "Диалог завершён");
         }
-        public void OnDialogExecutingStarted(object? sender, EventArgs e)
+        public void OnDialogExecutingStarted(object? sender, ItemEventArgs<IDialogExecutor> e)
         {
             AddElement(null, null, "Диалог начат");
         }

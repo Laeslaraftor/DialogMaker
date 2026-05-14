@@ -1,6 +1,7 @@
 ﻿using DialogMaker.Core.Common.SavedStates;
 using DialogMaker.Core.Editor;
 using DialogMaker.Core.Executioning;
+using DialogMaker.Core.Executioning.Internal;
 
 namespace DialogMaker.Core.Common
 {
@@ -41,9 +42,9 @@ namespace DialogMaker.Core.Common
 
             return ResourcePath.CreatePath(this);
         }
-        public IVariable ToVariable()
+        public virtual IVariable ToVariable()
         {
-            throw new System.NotImplementedException();
+            return new LocalVariable(Id);
         }
 
         public DialogResourceObjectSavedState Save()
