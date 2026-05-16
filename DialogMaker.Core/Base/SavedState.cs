@@ -2,7 +2,7 @@
 
 namespace DialogMaker.Core
 {
-    public static class SavedState
+    internal static class SavedState
     {
         public static T Restore<T, TSavedState>(string filePath) where TSavedState : JsonData
         {
@@ -26,21 +26,7 @@ namespace DialogMaker.Core
             string json = File.ReadAllText(filePath);
             var savedState = JsonConvert.DeserializeObject<TSavedState>(json);
 
-            if (savedState == null)
-            {
-                throw new InvalidDataException("Не удалось прочитать файл");
-            }
-
-            return savedState;
-        }
-
-        public static void Save<TSavedState, TOriginal>(List<TSavedState> buffer, IEnumerable<TOriginal> items) where TSavedState : ISavedState where TOriginal : ISavable
-        {
-            foreach (var item in items)
-            {
-                buffer.Add((TSavedState)item.Save());
-            }
-            ;
+            return savedState ?? throw new InvalidDataException("Не удалось прочитать файл");
         }
     }
 }

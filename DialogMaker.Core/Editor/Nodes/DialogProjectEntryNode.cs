@@ -14,7 +14,9 @@ namespace DialogMaker.Core.Editor.Nodes
         }
 
         public override DialogNodeType NodeType => DialogNodeType.Entry;
-        public override bool IsCodeGenerator => false;
+        public override bool IsCodeGenerator => true;
+        public override bool IsSystem => true;
+        public override bool IsUserHandleNode => true;
         [NodeOutput("Начало")]
         public DialogProjectNodeOutputAction Output
         {
@@ -29,6 +31,7 @@ namespace DialogMaker.Core.Editor.Nodes
 
         public override void Compile(DialogCompilerContext context)
         {
+            context.CompileOutputs(Output, false, true);
         }
 
         #endregion

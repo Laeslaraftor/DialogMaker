@@ -125,10 +125,10 @@ namespace DialogMaker.Core.Common
         {
             base.Dispose(isDisposing);
 
-            ObjectHelper.DisposeAll(Files.Values);
-            ObjectHelper.DisposeAll(Strings.Values);
-            ObjectHelper.DisposeAll(Characters.Values);
-            ObjectHelper.DisposeAll(Variables.Values);
+            DisposeAll(Files.Values);
+            DisposeAll(Strings.Values);
+            DisposeAll(Characters.Values);
+            DisposeAll(Variables.Values);
         }
 
         #endregion

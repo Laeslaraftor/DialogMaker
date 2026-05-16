@@ -32,7 +32,7 @@
         public IJoinOperationInfo JoinInfo { get; } = info;
 
         private readonly IDialogExecutingThreadManager _threadManager = threadManager;
-        private readonly HashSet<IDialogExecutionThread> _joinedThreads = [];
+        private readonly HashSet<int> _joinedThreads = [];
 
         #region Управление
 
@@ -62,7 +62,7 @@
                 throw new DialogExecutionException($"Вошёл неожиданный поток с неожиданным сегментом: {currentSection}");
             }
 
-            _joinedThreads.Add(context.CurrentThread);
+            _joinedThreads.Add(currentSection);
 
             if (_joinedThreads.Count == JoinInfo.InputSections.Count)
             {

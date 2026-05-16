@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Executioning.Internal;
+﻿using DialogMaker.Core.Editor;
+using DialogMaker.Core.Executioning.Internal;
 using System.ComponentModel;
 
 namespace DialogMaker.Core.Executioning
@@ -223,6 +224,24 @@ namespace DialogMaker.Core.Executioning
             _specialResources = newResources;
             _stack.Clear();
             CurrentResources.Reset();
+
+            void ClearControllers(IEnumerable<IEnumerable<IJoinController>> controllersCollections)
+            {
+                foreach (var controllers in controllersCollections)
+                {
+                    Clear(controllers);
+                }
+            }
+            void Clear(IEnumerable<IJoinController> controllers)
+            {
+                foreach (var controller in controllers)
+                {
+                    controller.Clear();
+                }
+            }
+
+            ClearControllers(_joinControllers.Values);
+            ClearControllers(_intersectControllers.Values);
         }
 
         protected override void Dispose(bool isDisposing)
@@ -258,6 +277,7 @@ namespace DialogMaker.Core.Executioning
             {
                 if (!thread.IsRunning && thread.Resources == resources)
                 {
+                    thread.Reset();
                     return thread;
                 }
             }

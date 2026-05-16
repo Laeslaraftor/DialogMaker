@@ -55,7 +55,7 @@ namespace DialogMaker.Editor
         }
         public ProjectLanguage? DefaultLanguage
         {
-            get => field;
+            get;
             set
             {
                 if (field != value)
@@ -75,7 +75,7 @@ namespace DialogMaker.Editor
         }
         public bool IsDefaultLanguageSetted
         {
-            get => field;
+            get;
             set
             {
                 if (field != value)
@@ -85,6 +85,11 @@ namespace DialogMaker.Editor
                     OnPropertyChanged(nameof(IsDefaultLanguageSetted));
                 }
             }
+        }
+        public string? OutputPath
+        {
+            get => Project.GetPreference<string>(nameof(OutputPath));
+            set => Project.SetPreference(nameof(OutputPath), value);
         }
         public ProjectStringConverter StringConverter { get; }
         public ProjectNodesFabric NodesViewFabric { get; } = new();

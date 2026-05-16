@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using Newtonsoft.Json.Linq;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Editor
 {
@@ -39,6 +40,13 @@ namespace DialogMaker.Core.Editor
             {
                 DefaultLanguage = defaultLanguage;
             }
+            if (savedState.Preferences != null)
+            {
+                foreach (var info in savedState.Preferences)
+                {
+                    _preferences.Add(info.Key, info.Value);
+                }
+            }
 
             Resources = DialogProjectResources.OpenOrCreate(this, DialogResourcesFlags.Root);
         }
@@ -61,6 +69,7 @@ namespace DialogMaker.Core.Editor
 
         public event EventHandler<ItemActionEventArgs<DialogProjectPack>>? PacksChanged;
         public event EventHandler<ResourceItemPathChangedEventArgs>? ResourceItemPathChanged;
+        public event EventHandler<PreferenceChangedEventArgs>? PreferenceChanged;
 
         public string ProjectPath { get; }
         public string Id { get; }
@@ -79,7 +88,7 @@ namespace DialogMaker.Core.Editor
         }
         public DialogProjectLanguage? DefaultLanguage
         {
-            get => field;
+            get;
             set
             {
                 if (field != value)
@@ -104,10 +113,10 @@ namespace DialogMaker.Core.Editor
         DialogProject IProjectResourcesOwner.Project => this;
         string IProjectResourcesOwner.Folder => ProjectPath;
         IResourcesOwner IResourcesOwner.Root => this;
-
         IResourcesContainer IResourcesOwner.Resources => Resources;
 
         private readonly List<DialogProjectResourceObject> _registeredResources = [];
+        private readonly Dictionary<string, object?> _preferences = [];
 
         #region Управление
 
@@ -128,6 +137,7 @@ namespace DialogMaker.Core.Editor
                 DefaultLanguage = DefaultLanguage?.ProjectId.ToString(),
                 Packs = [.. Packs.Select(p => p.Id)],
                 Languages = [.. Languages.Select(l => (DialogProjectLanguageSavedState)l.Save())],
+                Preferences = _preferences
             };
 
             string filePath = Path.Combine(ProjectPath, $"{Id}.{FileExtension}");
@@ -205,6 +215,39 @@ namespace DialogMaker.Core.Editor
         public bool RemoveLanguage(DialogProjectLanguage language)
         {
             return Languages.Remove(language);
+        }
+
+        public void SetPreference(string key, object? value)
+        {
+            if (value == null)
+            {
+                _preferences.Remove(key);
+                return;
+            }
+
+            object? oldValue = null;
+
+            if (!_preferences.TryAdd(key, value))
+            {
+                oldValue = _preferences[key];
+                _preferences[key] = value;
+            }
+
+            Dispatch(PreferenceChanged, this, new PreferenceChangedEventArgs(key, oldValue, value));
+        }
+        public T? GetPreference<T>(string key)
+        {
+            if (_preferences.TryGetValue(key, out var value))
+            {
+                if (value is JToken token)
+                {
+                    return token.ToObject<T>();
+                }
+
+                return (T?)value;
+            }
+
+            return default;
         }
 
         public override string ToString()

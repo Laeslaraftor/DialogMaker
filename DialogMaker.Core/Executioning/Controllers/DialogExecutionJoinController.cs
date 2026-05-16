@@ -34,7 +34,7 @@ namespace DialogMaker.Core.Executioning
         public IJoinOperationInfo JoinInfo { get; } = info;
 
         private readonly IDialogExecutingThreadManager _threadManager = threadManager;
-        private readonly HashSet<IDialogExecutionThread> _joinedThreads = [];
+        private readonly HashSet<int> _joinedThreads = [];
         private CancellationTokenSource? _currentCancellationTokenSource;
 
         #region Управление
@@ -78,7 +78,7 @@ namespace DialogMaker.Core.Executioning
                 throw new DialogExecutionException($"Вошёл неожиданный поток с неожиданным сегментом: {currentSection}");
             }
 
-            _joinedThreads.Add(context.CurrentThread);
+            _joinedThreads.Add(currentSection);
 
             if (_joinedThreads.Count > 1)
             {
@@ -173,43 +173,32 @@ namespace DialogMaker.Core.Executioning
         }
         private bool SectionJoined(int section)
         {
-            foreach (var thread in _joinedThreads)
-            {
-                if (thread.PreviousSection == section)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return _joinedThreads.Any(s => s == section);
         }
 
         #endregion
 
         #region Статика
 
-        internal static bool CanJoin(DialogExecutionContext context, IJoinOperationInfo info, IEnumerable<IDialogExecutionThread> joinedThreads, bool isBusy)
+        internal static bool CanJoin(DialogExecutionContext context, IJoinOperationInfo info, IEnumerable<int> joinedThreads, bool isBusy)
         {
             if (info.InputSections.Count == 0)
             {
                 return false;
             }
+
+            int previousSection = context.CurrentThread.PreviousSection;
+
             if (isBusy)
             {
-                foreach (var joinedThread in joinedThreads)
+                if (joinedThreads.Any(s => s == previousSection))
                 {
-                    if (joinedThread.PreviousSection == context.CurrentThread.PreviousSection)
-                    {
-                        return false;
-                    }
+                    return false;
                 }
             }
-            foreach (var input in info.InputSections)
+            if (info.InputSections.Any(s => s == previousSection))
             {
-                if (input == context.CurrentThread.PreviousSection)
-                {
-                    return true;
-                }
+                return true;
             }
 
             return false;

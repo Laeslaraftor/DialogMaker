@@ -257,7 +257,7 @@ namespace DialogMaker.Core.Executioning
             }
             else if (valueType == DialogVariableType.Number)
             {
-                itemValue = OperandValue.StringToNumber(parts[2]);
+                itemValue = OperandValue.ObjectToNumber(parts[2]);
             }
 
             result = new(itemType, new(itemValue));
@@ -283,7 +283,7 @@ namespace DialogMaker.Core.Executioning
             }
             else if (valueType == DialogVariableType.Number)
             {
-                itemValue = OperandValue.StringToNumber(parts[2]);
+                itemValue = OperandValue.ObjectToNumber(parts[2]);
             }
 
             return new(itemType, new(itemValue));

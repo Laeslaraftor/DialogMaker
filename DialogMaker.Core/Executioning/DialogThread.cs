@@ -8,7 +8,7 @@ namespace DialogMaker.Core.Executioning
         public IDialogExecutingThreadManager ThreadManager { get; } = threadManager;
         public bool IsPaused
         {
-            get => field;
+            get;
             set
             {
                 if (field != value)
@@ -21,7 +21,7 @@ namespace DialogMaker.Core.Executioning
         }
         public bool IsRunning
         {
-            get => field;
+            get;
             private set
             {
                 if (field != value)
@@ -34,7 +34,7 @@ namespace DialogMaker.Core.Executioning
         }
         public int PreviousSection
         {
-            get => field;
+            get;
             private set
             {
                 if (field != value)
@@ -47,7 +47,7 @@ namespace DialogMaker.Core.Executioning
         }
         public int CurrentSection
         {
-            get => field;
+            get;
             private set
             {
                 if (field != value)
@@ -61,7 +61,7 @@ namespace DialogMaker.Core.Executioning
         }
         public int CurrentOperation
         {
-            get => field;
+            get;
             private set
             {
                 if (field != value)
@@ -168,6 +168,13 @@ namespace DialogMaker.Core.Executioning
             }
 
             return false;
+        }
+
+        public void Reset()
+        {
+            CurrentSection = 0;
+            PreviousSection = 0;
+            CurrentOperation = 0;
         }
 
         protected override void Dispose(bool isDisposing)

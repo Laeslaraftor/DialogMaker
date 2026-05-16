@@ -25,17 +25,22 @@ namespace DialogMaker.Lib.Elements
             set => SetValue(ProjectControllerProperty, value);
         }
 
-        private string OutputPath
+        private string? OutputPath
         {
             get => _outputPathEntry.Text;
             set
             {
-                _outputPathEntry.Text = value;
+                _outputPathEntry.Text = value ?? string.Empty;
                 bool isCorrect = false;
 
                 try
                 {
                     isCorrect = Directory.Exists(value);
+                    
+                    if (isCorrect)
+                    {
+                        ProjectController?.OutputPath = value;
+                    }
                 }
                 catch (Exception error)
                 {
@@ -219,12 +224,20 @@ namespace DialogMaker.Lib.Elements
             StartExport();
         }
 
+        private static void OnProjectControllerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is ExportView view && e.NewValue is ProjectController controller)
+            {
+                view.OutputPath = controller.OutputPath;
+            }
+        }
+
         #endregion
 
         #region Dependency
 
         public static readonly DependencyProperty ProjectControllerProperty = DependencyProperty.Register(nameof(ProjectController), typeof(ProjectController),
-            typeof(ExportView));
+            typeof(ExportView), new(OnProjectControllerChanged));
 
         #endregion
 

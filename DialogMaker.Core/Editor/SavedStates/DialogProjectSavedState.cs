@@ -11,8 +11,10 @@ namespace DialogMaker.Core.Editor
         [JsonProperty("defaultLanguage")]
         public string? DefaultLanguage { get; set; }
         [JsonProperty("packs")]
-        public string[] Packs { get; set; } = Array.Empty<string>();
+        public string[] Packs { get; set; } = [];
         [JsonProperty("languages")]
-        public DialogProjectLanguageSavedState[] Languages { get; set; } = Array.Empty<DialogProjectLanguageSavedState>();
+        public DialogProjectLanguageSavedState[] Languages { get; set; } = [];
+        [JsonProperty("preferences")]
+        public Dictionary<string, object?>? Preferences { get; set; }
     }
 }

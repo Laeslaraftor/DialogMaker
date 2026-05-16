@@ -1,6 +1,6 @@
 ﻿namespace DialogMaker.Core
 {
-    public static class BaseExtensions
+    internal static class BaseExtensions
     {
         extension(string str)
         {
