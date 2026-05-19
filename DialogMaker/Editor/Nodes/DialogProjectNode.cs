@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Editor.Nodes;
+﻿using DialogMaker.Core.Editor;
+using DialogMaker.Core.Editor.Nodes;
 using DialogMaker.Lib;
 using DialogMaker.Lib.Elements;
 using System.Collections;
@@ -48,7 +49,7 @@ namespace DialogMaker.Editor
         public string Description => Original.Description;
         public Point Position
         {
-            get => field;
+            get;
             set
             {
                 if (field != value)

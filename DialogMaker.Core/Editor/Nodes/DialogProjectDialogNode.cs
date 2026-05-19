@@ -88,7 +88,7 @@ namespace DialogMaker.Core.Editor.Nodes
         public abstract DialogNodeType NodeType { get; }
         public Vector2 Position
         {
-            get => field;
+            get;
             set
             {
                 if (field != value)

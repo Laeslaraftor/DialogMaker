@@ -14,6 +14,11 @@ namespace DialogMaker.Core.Editor
         {
             Name = savedState.Name;
 
+            foreach (var language in savedState.Languages)
+            {
+                Languages.Add(new(this, language));
+            }
+
             foreach (var pack in savedState.Packs)
             {
                 string packFolder = Path.Combine(projectPath, pack);
@@ -27,11 +32,6 @@ namespace DialogMaker.Core.Editor
                 {
                     Logger.Log(error);
                 }
-            }
-
-            foreach (var language in savedState.Languages)
-            {
-                Languages.Add(new(this, language));
             }
 
             if (savedState.DefaultLanguage != null &&

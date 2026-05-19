@@ -49,6 +49,7 @@ namespace DialogMaker.Lib.Elements
             _connections.ReleasedOnEmptySpace += OnConnectionsReleasedOnEmptySpace;
             _dragAndDrop.DragUpdated += OnDragAndDropDragUpdated;
             _dragAndDrop.DragCheck += OnDragAndDropDragCheck;
+            _dragAndDrop.DragEnded += OnDragAndDropDragEnded; 
             _scaleController.ScaleChanged += OnScaleControllerScaleChanged;
 
             _selectionController.EmptyClick += OnSelectionControllerEmptyClick;
@@ -297,10 +298,7 @@ namespace DialogMaker.Lib.Elements
 
             var dialog = Dialog;
 
-            if (dialog != null)
-            {
-                dialog.LastMouseClickPosition = e.GetPosition(_canvas);
-            }
+            dialog?.LastMouseClickPosition = e.GetPosition(_canvas);
         }
 
         private void OnCanvasTranslationXChanged(object? sender, EventArgs e)
@@ -393,6 +391,26 @@ namespace DialogMaker.Lib.Elements
                 e.DragMouseButton = MouseButton.Middle;
             }
         }
+        private void OnDragAndDropDragEnded(object? sender, DragEventArgs<List<FrameworkElement>> e)
+        {
+            var dialog = Dialog;
+
+            if (dialog == null)
+            {
+                return;
+            }
+
+            foreach (var node in dialog.Nodes)
+            {
+                if (node.IsDisposed)
+                {
+                    continue;
+                }
+
+                node.Position = Canvas.GetElementPosition(node.View);
+            }
+        }
+
         private void OnSelectionControllerSelected(object? sender, SelectionEventArgs<ISelectable> e)
         {
             var dialog = Dialog;

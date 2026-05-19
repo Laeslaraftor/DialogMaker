@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core;
 using DialogMaker.Core.Common;
+using DialogMaker.Core.Editor;
 using DialogMaker.Core.Executioning;
 using System.Windows;
 using System.Windows.Controls;
