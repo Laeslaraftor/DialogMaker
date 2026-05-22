@@ -1,11 +1,21 @@
 ﻿using DialogMaker.Core.Common.SavedStates;
 using DialogMaker.Core.Editor;
+using DialogMaker.Core.Executioning.Internal;
 
 namespace DialogMaker.Core.Common
 {
+    /// <summary>
+    /// Ресурс персонажа
+    /// </summary>
     public class DialogResourceCharacter : DialogResourceObject, ICharacter
     {
-        public DialogResourceCharacter(DialogResources resources, DialogProjectCharacter character) : base(resources, character)
+        /// <summary>
+        /// Создать новый экземпляр ресурса персонажа
+        /// </summary>
+        /// <param name="resources">Контейнер ресурсов, который будет содержать этот ресурс</param>
+        /// <param name="character">Персонаж на основе которого будет создан ресурс</param>
+        public DialogResourceCharacter(DialogResources resources, DialogProjectCharacter character) 
+            : base(resources, character)
         {
             if (character.Name != null)
             {
@@ -13,7 +23,13 @@ namespace DialogMaker.Core.Common
                 _namePath = new(character.Name.ResourcesPath, item.Id);
             }
         }
-        public DialogResourceCharacter(DialogResources resources, DialogResourceCharacterSavedState savedState) : base(resources, savedState)
+        /// <summary>
+        /// Создать новый экземпляр ресурса персонажа
+        /// </summary>
+        /// <param name="resources">Контейнер ресурсов, который будет содержать этот ресурс</param>
+        /// <param name="savedState">Сохранённое состояние ресурса персонажа</param>
+        public DialogResourceCharacter(DialogResources resources, DialogResourceCharacterSavedState savedState) 
+            : base(resources, savedState)
         {
             if (savedState.Name != null &&
                 ResourcePath.TryParse(savedState.Name, out var namePath))
@@ -22,8 +38,17 @@ namespace DialogMaker.Core.Common
             }
         }
 
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
         public override DialogResourceType ResourceType => DialogResourceType.Character;
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
         public string Name => NameString?.Value ?? string.Empty;
+        /// <summary>
+        /// Строковой ресурс, представляющий имя персонажа
+        /// </summary>
         public DialogResourceString? NameString
         {
             get
@@ -47,6 +72,27 @@ namespace DialogMaker.Core.Common
 
         #region Управление
 
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><in</returns>
+        public override IVariable ToVariable()
+        {
+            return new LocalVariable(Name);
+        }
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
+        public override string ToString()
+        {
+            return Name;
+        }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
         protected override DialogResourceObjectSavedState CreateSavedState()
         {
             DialogResourceCharacterSavedState result = new();

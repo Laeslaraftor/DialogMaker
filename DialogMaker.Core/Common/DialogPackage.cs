@@ -69,7 +69,7 @@ namespace DialogMaker.Core.Common
         public ReadOnlyDictionary<string, DialogLanguage> Languages { get; }
         public DialogLanguage? CurrentLanguage
         {
-            get => field;
+            get;
             set
             {
                 if (field != value)

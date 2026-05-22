@@ -32,7 +32,7 @@ namespace DialogMaker.Core.Editor
         private DialogProjectString(DialogProjectResources resources, Guid projectId, string? id = null)
             : base(resources, projectId)
         {
-            Variants = new();
+            Variants = [];
 
             id = id?.Trim();
 

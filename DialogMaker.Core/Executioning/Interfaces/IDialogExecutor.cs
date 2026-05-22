@@ -11,7 +11,7 @@
         public IDialogExecutingHandler? Handler { get; }
 
         public void PushIsolatedVariablesToResources();
-        public void Start(bool isolated);
+        public void Start(DialogStartMode mode);
         public void Stop();
         public void Pause();
         public void Resume();

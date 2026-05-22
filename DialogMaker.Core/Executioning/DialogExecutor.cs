@@ -74,7 +74,7 @@ namespace DialogMaker.Core.Executioning
             _isolatedResources.PushGlobalVariables();
         }
 
-        public async void Start(bool isolated)
+        public async void Start(DialogStartMode mode)
         {
             if (IsDisposed)
             {
@@ -87,7 +87,7 @@ namespace DialogMaker.Core.Executioning
 
             IDialogExecutionResources? newResources = null;
 
-            if (isolated)
+            if (mode == DialogStartMode.Isolated)
             {
                 newResources = _isolatedResources;
             }

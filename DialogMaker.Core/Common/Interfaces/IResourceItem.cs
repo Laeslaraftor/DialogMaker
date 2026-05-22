@@ -45,6 +45,9 @@ namespace DialogMaker.Core.Common
 
         #region Константы
 
+        /// <summary>
+        /// Текст исключения, возникающего при попытке получить путь у самостоятельного ресурса
+        /// </summary>
         public const string GetPathExceptionMessage = $"Получение пути недоступно при {nameof(IsSeparated)} установленном как True";
 
         #endregion

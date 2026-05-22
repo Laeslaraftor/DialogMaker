@@ -31,7 +31,7 @@ namespace DialogMaker.Core.Editor
                 }
             }
         }
-        [AllowedTypes(AllowedObjectValues.AllWithoutList, SelectedTypePropertyName = nameof(ValueType))]
+        [AllowedTypes(AllowedObjectValues.AllWithoutList)]
         public object? Value
         {
             get => field;

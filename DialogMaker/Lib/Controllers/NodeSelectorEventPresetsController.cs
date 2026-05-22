@@ -32,8 +32,8 @@ namespace DialogMaker.Lib.Controllers
                 if (field != value)
                 {
                     OnPropertyChanging(nameof(Resources));
-                    field?.InheritedTriggerPresets.CollectionChanged -= OnTriggerPresetsCollectionChanged;
-                    value?.InheritedTriggerPresets.CollectionChanged += OnTriggerPresetsCollectionChanged;
+                    field?.InheritedUnfilteredTriggerPresets.CollectionChanged -= OnTriggerPresetsCollectionChanged;
+                    value?.InheritedUnfilteredTriggerPresets.CollectionChanged += OnTriggerPresetsCollectionChanged;
                     field = value;
                     UpdateList();
                     OnPropertyChanged(nameof(Resources));
@@ -89,7 +89,7 @@ namespace DialogMaker.Lib.Controllers
                 return;
             }
 
-            foreach (var preset in resources.InheritedTriggerPresets)
+            foreach (var preset in resources.InheritedUnfilteredTriggerPresets)
             {
                 CreateItem(preset);
             }

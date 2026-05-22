@@ -1,13 +1,23 @@
 ﻿using DialogMaker.Core.Common.SavedStates;
 using DialogMaker.Core.Editor;
+using DialogMaker.Core.Executioning.Internal;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 
 namespace DialogMaker.Core.Common
 {
+    /// <summary>
+    /// Ресурс строки
+    /// </summary>
     public class DialogResourceString : DialogResourceObject, IResourceString
     {
-        public DialogResourceString(DialogResources resources, DialogProjectString str) : base(resources, str)
+        /// <summary>
+        /// Создать новый экземпляр ресурса строки
+        /// </summary>
+        /// <param name="resources">Контейнер ресурсов, который будет содержать этот ресурс</param>
+        /// <param name="str">Строка на основе которой будет создать ресурс</param>
+        public DialogResourceString(DialogResources resources, DialogProjectString str) 
+            : base(resources, str)
         {
             var variants = str.Variants.Select(v => new DialogResourceStringVariant(this, v)).ToList();
             Variants = new(variants);
@@ -15,7 +25,13 @@ namespace DialogMaker.Core.Common
             resources.Package.PropertyChanged += OnPackagePropertyChanged;
             OnPackagePropertyChanged(this, new(DialogPackage.CurrentLanguageProperty));
         }
-        public DialogResourceString(DialogResources resources, DialogResourceStringSavedState savedState) : base(resources, savedState)
+        /// <summary>
+        /// Создать новый экземпляр ресурса строки
+        /// </summary>
+        /// <param name="resources">Контейнер ресурсов, который будет содержать этот ресурс</param>
+        /// <param name="savedState">Сохранённое состояние строки</param>
+        public DialogResourceString(DialogResources resources, DialogResourceStringSavedState savedState) 
+            : base(resources, savedState)
         {
             var variants = savedState.Variants.Select(v => new DialogResourceStringVariant(this, v)).ToList();
             Variants = new(variants);
@@ -24,11 +40,20 @@ namespace DialogMaker.Core.Common
             OnPackagePropertyChanged(this, new(DialogPackage.CurrentLanguageProperty));
         }
 
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
         public override DialogResourceType ResourceType => DialogResourceType.String;
+        /// <summary>
+        /// Вариации строки
+        /// </summary>
         public ReadOnlyCollection<DialogResourceStringVariant> Variants { get; }
+        /// <summary>
+        /// Текущая используемая вариация строки (зависит от выбранного языка в <see cref="DialogPackage.CurrentLanguage"/>)
+        /// </summary>
         public DialogResourceStringVariant? CurrentVariant
         {
-            get => field;
+            get;
             private set
             {
                 if (field != value)
@@ -40,6 +65,9 @@ namespace DialogMaker.Core.Common
                 }
             }
         }
+        /// <summary>
+        /// Значение строки
+        /// </summary>
         public string Value
         {
             get => field ?? string.Empty;
@@ -60,17 +88,36 @@ namespace DialogMaker.Core.Common
 
         #region Управление
 
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
+        public override IVariable ToVariable()
+        {
+            return new LocalVariable(Value);
+        }
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             return Value;
         }
 
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="isDisposing"><inheritdoc/></param>
         protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);
-
             Resources.Package.PropertyChanged -= OnPackagePropertyChanged;
         }
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
         protected override DialogResourceObjectSavedState CreateSavedState()
         {
             return new DialogResourceStringSavedState()

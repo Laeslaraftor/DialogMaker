@@ -1,5 +1,8 @@
 ﻿namespace DialogMaker.Core.Executioning
 {
+    /// <summary>
+    /// Оп-коды диалога
+    /// </summary>
     public enum DialogByteCode : byte
     {
         /// <summary>

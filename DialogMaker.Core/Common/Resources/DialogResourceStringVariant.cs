@@ -3,8 +3,16 @@ using DialogMaker.Core.Editor;
 
 namespace DialogMaker.Core.Common
 {
+    /// <summary>
+    /// Вариант строки
+    /// </summary>
     public class DialogResourceStringVariant
     {
+        /// <summary>
+        /// Создать новый экземпляр варианта строки
+        /// </summary>
+        /// <param name="str">Ресурс строки, который является владельцем варианта</param>
+        /// <param name="variant">Редактируемый вариант строки на основе которого будет создан новый экземпляр</param>
         public DialogResourceStringVariant(DialogResourceString str, DialogProjectStringVariant variant)
         {
             String = str;
@@ -20,6 +28,11 @@ namespace DialogMaker.Core.Common
                 _voicePath = new(variant.Voice.ResourcesPath, item.Id);
             }
         }
+        /// <summary>
+        /// Создать новый экземпляр варианта строки
+        /// </summary>
+        /// <param name="str">Ресурс строки, который является владельцем варианта</param>
+        /// <param name="savedState">Сохранённое состояние варианта строки</param>
         public DialogResourceStringVariant(DialogResourceString str, DialogResourceStringVariantSavedState savedState)
         {
             String = str;
@@ -35,9 +48,21 @@ namespace DialogMaker.Core.Common
             }
         }
 
+        /// <summary>
+        /// Ресурс строки, который является владельцем варианта
+        /// </summary>
         public DialogResourceString String { get; }
+        /// <summary>
+        /// Язык варианта
+        /// </summary>
         public DialogLanguage? Language { get; }
+        /// <summary>
+        /// Значение варианта
+        /// </summary>
         public string Value { get; }
+        /// <summary>
+        /// Ресурс файла озвучки
+        /// </summary>
         public DialogResourceFile? Voice
         {
             get
@@ -61,6 +86,10 @@ namespace DialogMaker.Core.Common
 
         #region Управление
 
+        /// <summary>
+        /// Получить сохранённое состояние варианта строки
+        /// </summary>
+        /// <returns>Сохранённое состояние варианта строки</returns>
         public DialogResourceStringVariantSavedState Save()
         {
             DialogResourceStringVariantSavedState result = new()

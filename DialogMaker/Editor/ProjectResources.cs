@@ -61,6 +61,7 @@ namespace DialogMaker.Editor
             InheritedFiles = new(inheritFiles, controller.ResourcesFilter);
             InheritedEmotions = new(inheritEmotions, controller.ResourcesFilter);
             InheritedTriggerPresets = new(inheritTriggerPresets, controller.ResourcesFilter);
+            InheritedUnfilteredTriggerPresets = new(inheritTriggerPresets);
             Flags = flags;
             UnsettedFlags = ProjectResourcesFilter.AllFlags & ~flags;
 
@@ -85,6 +86,7 @@ namespace DialogMaker.Editor
         public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectFile>, ProjectFile> InheritedFiles { get; }
         public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectEmotion>, ProjectEmotion> InheritedEmotions { get; }
         public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectTriggerPreset>, ProjectTriggerPreset> InheritedTriggerPresets { get; }
+        public Lib.UnitedCollection<ReferenceReadOnlyList<ProjectTriggerPreset>, ProjectTriggerPreset> InheritedUnfilteredTriggerPresets { get; }
         public ContextMenu CreateVariablesContextMenu { get; }
         public ICommand CreateStringCommand { get; }
         public ICommand CreateCharacterCommand { get; }
