@@ -1,0 +1,43 @@
+﻿outdef 
+{
+	[Port("Новый текущий персонаж")]
+	Resource switchedCharacter;
+}
+
+[Property("Текущий персонаж")] 
+[Description("Переменная из ресурсов с текущим персонажем")]
+Character currentChacracter;
+
+[Property("Переменная как токен отмены")] 
+[Description("Пока эта паременная равна true, будет проводиться проверка на смену текщего персонажа")]
+Variable checkCurrentCharacterEnabled;
+
+var previousCharacter = null;
+
+func waitForCharacterSwitch() 
+{
+	while (previousCharacter == currentCharacter && checkCurrentCharacterEnabled) 
+	{
+		wait(0.1);
+	}
+	if (!checkCurrentCharacterEnabled) 
+	{
+		return null;
+	}
+
+	previousCharacter = currentCharacter;
+
+	return currentCharacter;
+}
+
+while (true) 
+{
+	out.switchedCharacter = await waitForCharacterSwitch();
+
+	if (out.switchedCharacter == null)
+	{
+		break;
+	}
+
+	out.send();
+}

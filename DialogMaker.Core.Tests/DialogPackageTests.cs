@@ -2,23 +2,22 @@
 
 namespace DialogMaker.Core.Tests
 {
-    public class Tests
+    public class DialogPackageTests
     {
         [SetUp]
         public void Setup()
         {
         }
 
-        public void Open(string filePath)
+        public static DialogPackage Open()
         {
             var package = DialogPackage.Open(@"C:\Users\Mdely\OneDrive\Documents\DialogsOutput\test.dpack");
-
-            Console.WriteLine(package.Folders.Count);
+            return package;
         }
         [Test]
         public void EmotionCheck()
         {
-            var package = DialogPackage.Open(@"C:\Users\Mdely\OneDrive\Documents\DialogsOutput\test.dpack");
+            var package = Open();
             var emotion = package.Resources.Emotions["angry"];
 
             Console.WriteLine(emotion);

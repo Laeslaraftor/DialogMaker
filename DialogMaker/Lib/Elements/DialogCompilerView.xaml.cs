@@ -85,6 +85,7 @@ namespace DialogMaker.Lib.Elements
             {
                 _errorView.Text = $"{error.GetType().Name}: {error.Message}";
                 _errorView.Visibility = Visibility.Visible;
+                error.Log();
             }
 
             IsCompiling = false;

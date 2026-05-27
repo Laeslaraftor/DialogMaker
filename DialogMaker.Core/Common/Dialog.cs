@@ -67,6 +67,21 @@ namespace DialogMaker.Core.Common
 
             return executor;
         }
+        public byte[] GetCode()
+        {
+            byte[] code = new byte[_bytecode.Length];
+            ReadCode(code);
+
+            return code;
+        }
+        public void ReadCode(byte[] buffer)
+        {
+            Array.Copy(_bytecode, buffer, Math.Min(buffer.Length, _bytecode.Length));
+        }
+        public void ReadCode(Stream stream)
+        {
+            stream.Write(_bytecode);
+        }
 
         public void Save()
         {

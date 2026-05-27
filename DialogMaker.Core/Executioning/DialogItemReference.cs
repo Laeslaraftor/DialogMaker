@@ -275,15 +275,23 @@ namespace DialogMaker.Core.Executioning
 
             var itemType = Enum.Parse<DialogItemType>(parts[0]);
             var valueType = Enum.Parse<DialogVariableType>(parts[1]);
+            string stringValue = parts[2];
             object itemValue = parts[2];
 
             if (valueType == DialogVariableType.Bool)
             {
-                itemValue = bool.Parse(parts[2]);
+                if (string.IsNullOrEmpty(stringValue))
+                {
+                    itemValue = false;
+                }
+                else
+                {
+                    itemValue = bool.Parse(stringValue);
+                }
             }
             else if (valueType == DialogVariableType.Number)
             {
-                itemValue = OperandValue.ObjectToNumber(parts[2]);
+                itemValue = OperandValue.ObjectToNumber(stringValue);
             }
 
             return new(itemType, new(itemValue));
