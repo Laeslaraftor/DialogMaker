@@ -1,16 +1,60 @@
-﻿outdef 
+﻿enum ResourceType 
 {
-	[Port("Новый текущий персонаж")]
-	Resource switchedCharacter;
+	String,
+	Character,
+	Variable,
+	Emotion
+}
+struct Resource 
+{
+	public string Id { get; }
+	public ResourceType Type { get; }
+}
+struct Character : Resource
+{
+	public string Name { get; }
+}
+struct Variable : Resource
+{
+	public string Value { get; set; }
+}
+struct KeyValuePair
+{
+	KeyValuePair(object key, object value)
+	{
+		Key = key;
+		Value = value;
+	}
+	
+	public object Key { get; }
+	public object Value { get; }
+}
+struct Dictionary
+{
+	public int Count => _values.Length;
+	
+	private	KeyValuePair[] _values = [];
+	
+	public bool ContainsKey(object key) 
+	{
+		if (key == null)
+		{
+			return false;
+		}
+		
+		for (int i = 0; i < Count; i++)
+		{
+			if (_values[i].Key == key)
+			{
+				return true;
+			}
+		}
+		
+		return false;
+	}	
 }
 
-[Property("Текущий персонаж")] 
-[Description("Переменная из ресурсов с текущим персонажем")]
-Character currentChacracter;
-
-[Property("Переменная как токен отмены")] 
-[Description("Пока эта паременная равна true, будет проводиться проверка на смену текщего персонажа")]
-Variable checkCurrentCharacterEnabled;
+extern func wait(number seconds);
 
 var previousCharacter = null;
 

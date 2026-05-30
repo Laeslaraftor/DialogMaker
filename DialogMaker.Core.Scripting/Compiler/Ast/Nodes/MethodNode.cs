@@ -1,0 +1,78 @@
+﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+
+namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
+{
+    /// <summary>
+    /// Method node
+    /// </summary>
+    /// <param name="token">Token that represents method name</param>
+    public class MethodNode(DialogScriptToken token) : InvokableNode(token)
+    {
+        /// <summary>
+        /// Method returning type
+        /// </summary>
+        public TypeInfoNode? ReturnType { get; set; }
+        /// <summary>
+        /// Extern flag
+        /// </summary>
+        public bool IsExtern { get; set; }
+        /// <summary>
+        /// Static flag
+        /// </summary>
+        public bool IsStatic { get; set; }
+        /// <summary>
+        /// Access modifier of this method
+        /// </summary>
+        public DialogScriptAccessModifier Access { get; set; } = DialogScriptAccessModifier.Private;
+
+        #region Статика
+
+        /// <summary>
+        /// Parse method starts with current token
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="memberInfo">Information about method that must be parsed</param>
+        /// <returns>Parsed method</returns>
+        /// <exception cref="ArgumentException">Invalid member info</exception>
+        public static MethodNode Parse(AstParserStream stream, StructNode.MemberInfo memberInfo)
+        {
+            if (memberInfo.MemberType != DialogScriptTypeMember.Method)
+            {
+                throw new ArgumentException($"Invalid member info. Requires info for {DialogScriptTypeMember.Method}, provided: {memberInfo.Type}");
+            }
+
+            MethodNode method = new(memberInfo.Identifier.Token)
+            {
+                Attributes = memberInfo.Attributes,
+                Access = memberInfo.AccessModifier,
+                ReturnType = memberInfo.Type,
+                IsExtern = memberInfo.IsExtern,
+                IsStatic = memberInfo.IsStatic
+            };
+
+            ParseParameters(stream, method.Parameters);
+
+            if (memberInfo.IsExtern)
+            {
+                stream.Eat(DialogScriptTokenType.Semicolon);
+                return method;
+            }
+            if (stream.Check(DialogScriptTokenType.Lambda))
+            {
+                method.Body = BlockStatementNode.Parse(stream, DialogScriptTokenType.Semicolon);
+            }
+            else if (stream.Check(DialogScriptTokenType.LeftBrace))
+            {
+                method.Body = BlockStatementNode.Parse(stream);
+            }
+            else
+            {
+                stream.ThrowPositionException("Required method body");
+            }
+
+            return method;
+        }
+
+        #endregion
+    }
+}
