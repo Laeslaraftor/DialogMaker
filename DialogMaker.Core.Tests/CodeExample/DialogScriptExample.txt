@@ -1,4 +1,6 @@
-﻿enum ResourceType 
+﻿namespace System;
+
+enum ResourceType 
 {
 	String,
 	Character,
@@ -18,24 +20,24 @@ struct Variable : Resource
 {
 	public string Value { get; set; }
 }
-struct KeyValuePair
+struct KeyValuePair<TKey, TValue>
 {
-	KeyValuePair(object key, object value)
+	KeyValuePair(TKey key, TValue value)
 	{
 		Key = key;
 		Value = value;
 	}
 	
-	public object Key { get; }
-	public object Value { get; }
+	public TKey Key { get; }
+	public TValue Value { get; }
 }
-struct Dictionary
+struct Dictionary<TKey, TValue>
 {
 	public int Count => _values.Length;
 	
-	private	KeyValuePair[] _values = [];
+	private	KeyValuePair<TKey, TValue>[] _values = [];
 	
-	public bool ContainsKey(object key) 
+	public bool ContainsKey(TKey key) 
 	{
 		if (key == null)
 		{

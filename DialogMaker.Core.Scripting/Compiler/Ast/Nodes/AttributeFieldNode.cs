@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Attribute field node
     /// </summary>
     /// <param name="token">Token that represents field name</param>
-    public class AttributeFieldNode(DialogScriptToken token) : NamedNode(token)
+    public class AttributeFieldNode(DSharpToken token) : AstNode(token)
     {
         /// <summary>
         /// Type of this field
@@ -37,7 +37,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         public static AttributeFieldNode Parse(AstParserStream stream)
         {
             var type = TypeInfoNode.Parse(stream, true, true);
-            var identifier = stream.Eat(DialogScriptTokenType.Identifier);
+            var identifier = stream.Eat(DSharpTokenType.Identifier);
 
             return new(identifier)
             {

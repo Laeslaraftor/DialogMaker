@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Await node
     /// </summary>
     /// <param name="token">Token that represents await expression</param>
-    public class AwaitExpressionNode(DialogScriptToken token) : ExpressionNode(token)
+    public class AwaitExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Expression to await
@@ -22,7 +22,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Parsed await expression</returns>
         public static AwaitExpressionNode Parse(AstParserStream stream)
         {
-            var awaitToken = stream.Eat(DialogScriptTokenType.Await);
+            var awaitToken = stream.Eat(DSharpTokenType.Await);
             var expression = UnaryExpressionNode.Parse(stream);
 
             return new AwaitExpressionNode(awaitToken)

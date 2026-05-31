@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Break node for stopping loop execution
     /// </summary>
     /// <param name="token">Token that represents break statement</param>
-    public class BreakStatementNode(DialogScriptToken token) : StatementNode(token)
+    public class BreakStatementNode(DSharpToken token) : StatementNode(token)
     {
 
         #region Статика
@@ -18,8 +18,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Parsed break statement</returns>
         public static BreakStatementNode Parse(AstParserStream stream)
         {
-            var token = stream.Eat(DialogScriptTokenType.Break);
-            stream.Eat(DialogScriptTokenType.Semicolon);
+            var token = stream.Eat(DSharpTokenType.Break);
+            stream.Eat(DSharpTokenType.Semicolon);
 
             return new(token);
         }

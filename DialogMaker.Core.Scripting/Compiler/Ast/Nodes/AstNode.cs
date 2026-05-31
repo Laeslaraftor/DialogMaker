@@ -5,26 +5,28 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// <summary>
     /// Root node of abstract syntax tree
     /// </summary>
-    public abstract class AstNode()
+    /// <remarks>
+    /// Create new instance of root node
+    /// </remarks>
+    /// <param name="token">Token that represents this node</param>
+    public abstract class AstNode(DSharpToken token)
     {
         /// <summary>
-        /// Create new instance of root node
+        /// Token that represents this node
         /// </summary>
-        /// <param name="token">Token that represents this node</param>
-        protected AstNode(DialogScriptToken token) : this()
-        {
-            Line = token.Line;
-            Column = token.Column;
-        }
-
+        public DSharpToken Token { get; } = token;
+        /// <summary>
+        /// Name of this node
+        /// </summary>
+        public string Name { get; } = token.Value;
         /// <summary>
         /// Line of this node in source code
         /// </summary>
-        public int Line { get; set; }
+        public int Line { get; set; } = token.Line;
         /// <summary>
         /// Column of this node is source code
         /// </summary>
-        public int Column { get; set; }
+        public int Column { get; set; } = token.Column;
 
         #region Управление
 
@@ -34,7 +36,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
-            return $"line: {Line}, column: {Column}";
+            return $"{GetType().Name}({Name}) at line: {Line}, column: {Column}";
         }
 
         #endregion

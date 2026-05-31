@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Method node
     /// </summary>
     /// <param name="token">Token that represents method name</param>
-    public class MethodNode(DialogScriptToken token) : InvokableNode(token)
+    public class MethodNode(DSharpToken token) : InvokableNode(token)
     {
         /// <summary>
         /// Method returning type
@@ -23,7 +23,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <summary>
         /// Access modifier of this method
         /// </summary>
-        public DialogScriptAccessModifier Access { get; set; } = DialogScriptAccessModifier.Private;
+        public DSharpAccessModifier Access { get; set; } = DSharpAccessModifier.Private;
 
         #region Статика
 
@@ -34,15 +34,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <param name="memberInfo">Information about method that must be parsed</param>
         /// <returns>Parsed method</returns>
         /// <exception cref="ArgumentException">Invalid member info</exception>
-        public static MethodNode Parse(AstParserStream stream, StructNode.MemberInfo memberInfo)
+        public static MethodNode Parse(AstParserStream stream, ObjectDeclarationNode.MemberInfo memberInfo)
         {
-            if (memberInfo.MemberType != DialogScriptTypeMember.Method)
+            if (memberInfo.MemberType != DSharpTypeMember.Method)
             {
-                throw new ArgumentException($"Invalid member info. Requires info for {DialogScriptTypeMember.Method}, provided: {memberInfo.Type}");
+                throw new ArgumentException($"Invalid member info. Requires info for {DSharpTypeMember.Method}, provided: {memberInfo.Type}");
             }
 
             MethodNode method = new(memberInfo.Identifier.Token)
             {
+                Identifier = memberInfo.Identifier,
                 Attributes = memberInfo.Attributes,
                 Access = memberInfo.AccessModifier,
                 ReturnType = memberInfo.Type,
@@ -54,14 +55,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             if (memberInfo.IsExtern)
             {
-                stream.Eat(DialogScriptTokenType.Semicolon);
+                stream.Eat(DSharpTokenType.Semicolon);
                 return method;
             }
-            if (stream.Check(DialogScriptTokenType.Lambda))
+            if (stream.Check(DSharpTokenType.Lambda))
             {
-                method.Body = BlockStatementNode.Parse(stream, DialogScriptTokenType.Semicolon);
+                method.Body = BlockStatementNode.Parse(stream, DSharpTokenType.Semicolon);
             }
-            else if (stream.Check(DialogScriptTokenType.LeftBrace))
+            else if (stream.Check(DSharpTokenType.LeftBrace))
             {
                 method.Body = BlockStatementNode.Parse(stream);
             }

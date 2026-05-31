@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Return statement for returning value from function/method or just stopping it execution
     /// </summary>
     /// <param name="token">Token that represents return statement</param>
-    public class ReturnStatementNode(DialogScriptToken token) : StatementNode(token)
+    public class ReturnStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// Returning expression
@@ -22,15 +22,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Parsed return statement</returns>
         public static ReturnStatementNode Parse(AstParserStream stream)
         {
-            var token = stream.Eat(DialogScriptTokenType.Return);
+            var token = stream.Eat(DSharpTokenType.Return);
             ReturnStatementNode returnStatement = new(token);
 
-            if (!stream.Check(DialogScriptTokenType.Semicolon))
+            if (!stream.Check(DSharpTokenType.Semicolon))
             {
                 returnStatement.Value = ExpressionNode.ParseExpression(stream);
             }
 
-            stream.Eat(DialogScriptTokenType.Semicolon);
+            stream.Eat(DSharpTokenType.Semicolon);
 
             return returnStatement;
         }

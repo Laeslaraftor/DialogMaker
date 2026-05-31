@@ -1,21 +1,18 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
-using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
-using Token = DialogMaker.Core.Scripting.Compiler.Lexer.DialogScriptToken;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast
 {
-    public class AstParser(DialogScriptLexer lexer)
+    public class AstParser(DSharpLexer lexer)
     {
         private readonly AstParserStream _stream = new(lexer);
 
         #region Управление
 
-        public ProgramNode Parse()
+        public DSharpTreeRoot Parse(string treeName)
         {
             _stream.Position = 0;
-            ProgramNode program = new();
+            DSharpTreeRoot program = new(treeName);
             BlockStatementNode.ParseBody(_stream, program.Statements);
 
             return program;

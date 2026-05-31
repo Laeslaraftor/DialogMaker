@@ -5,23 +5,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
     /// <summary>
     /// Script token type
     /// </summary>
-    public enum DialogScriptTokenType
+    public enum DSharpTokenType
     {
-        /// <summary>
-        /// Output ports definition. Properties in this block is readonly and was shown on node as output ports.
-        /// </summary>
-        [Keyword("outdef")]
-        OutDef, 
-        /// <summary>
-        /// Properties definition. Properties in this block is readonly and was shown on node.
-        /// </summary>
-        [Keyword("propdef")]
-        PropDef,
-        /// <summary>
-        /// Input ports definition. Properties in this block is readonly and was shown on node as input ports.
-        /// </summary>
-        [Keyword("indef")]
-        InDef,
         /// <summary>
         /// Function or method
         /// </summary>
@@ -78,18 +63,23 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// <summary>
         /// Extern keyword for function or methods which must me added by compiler or execution handler/
         /// </summary>
-        [Keyword(StructNode.ExternModifier)]
+        [Keyword(ObjectDeclarationNode.ExternModifier)]
         Extern,
         /// <summary>
         /// Static keyword for function or methods which allows to access without object instance
         /// </summary>
-        [Keyword(StructNode.StaticModifier)]
+        [Keyword(ObjectDeclarationNode.StaticModifier)]
         Static,
         /// <summary>
         /// Struct keyword
         /// </summary>
         [Keyword("struct")]
         Struct,
+        /// <summary>
+        /// Struct keyword
+        /// </summary>
+        [Keyword("class")]
+        Class,
         /// <summary>
         /// Enum keyword
         /// </summary>
@@ -160,6 +150,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// </summary>
         [Keyword("=>")]
         Lambda,
+        /// <summary>
+        /// New keyword
+        /// </summary>
+        [Keyword("new")]
+        New,
+        /// <summary>
+        /// Namespace keyword
+        /// </summary>
+        [Keyword("namespace")]
+        Namespace,
 
         /// <summary>
         /// Public access modifier

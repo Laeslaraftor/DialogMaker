@@ -3,25 +3,33 @@
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
     /// <summary>
-    /// Struct node
+    /// Object (class or struct) declaration node
     /// </summary>
-    /// <param name="token">Token that represents struct name</param>
-    public class StructNode(DialogScriptToken token) : NamedNode(token)
+    /// <param name="token">Token that represents object name</param>
+    public class ObjectDeclarationNode(DSharpToken token) : AstNode(token)
     {
         /// <summary>
-        /// Access modifier of this struct
+        /// Identifier (name with generic parameters) of this object type
         /// </summary>
-        public DialogScriptAccessModifier Access { get; set; }
+        public IdentifierExpressionNode? Identifier { get; set; }
         /// <summary>
-        /// Base types of this struct
+        /// Is object struct
         /// </summary>
-        public List<NamedNode> BaseTypes { get; set; } = [];
+        public bool IsStruct { get; set; }
         /// <summary>
-        /// Field of structs
+        /// Access modifier of this object
+        /// </summary>
+        public DSharpAccessModifier Access { get; set; }
+        /// <summary>
+        /// Base types of this object
+        /// </summary>
+        public List<AstNode> BaseTypes { get; set; } = [];
+        /// <summary>
+        /// Field of object
         /// </summary>
         public List<FieldNode> Fields { get; set; } = [];
         /// <summary>
-        /// Methods of structs
+        /// Methods of object
         /// </summary>
         public List<MethodNode> Methods { get; set; } = [];
         /// <summary>
@@ -29,15 +37,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public List<ConstructorNode> Constructors { get; set; } = [];
         /// <summary>
-        /// Children structs
+        /// Children objects structs
         /// </summary>
-        public List<StructNode> Children { get; set; } = [];
+        public List<ObjectDeclarationNode> Children { get; set; } = [];
         /// <summary>
-        /// Children structs
+        /// Children enums of object
         /// </summary>
         public List<EnumNode> ChildrenEnums { get; set; } = [];
         /// <summary>
-        /// Children structs
+        /// Children of object
         /// </summary>
         public List<AttributeNode>? Attributes { get; set; }
 
@@ -62,9 +70,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <param name="stream">Abstract syntax tree parser</param>
         /// <param name="result">Parsed access modifier</param>
         /// <returns>Modifier successfully parsed</returns>
-        public static bool TryParseAccessModifier(AstParserStream stream, out DialogScriptAccessModifier result)
+        public static bool TryParseAccessModifier(AstParserStream stream, out DSharpAccessModifier result)
         {
-            result = DialogScriptAccessModifier.Private;
+            result = DSharpAccessModifier.Private;
             var currentToken = stream.Current;
 
             if (currentToken == null)
@@ -85,17 +93,17 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <param name="token">Token that represents access modifier</param>
         /// <param name="result">Parsed access modifier</param>
         /// <returns>Modifier successfully parsed</returns>
-        public static bool TryParseAccessModifier(DialogScriptToken token, out DialogScriptAccessModifier result)
+        public static bool TryParseAccessModifier(DSharpToken token, out DSharpAccessModifier result)
         {
-            result = DialogScriptAccessModifier.Private;
+            result = DSharpAccessModifier.Private;
 
-            foreach (var access in Enum.GetValues(typeof(DialogScriptAccessModifier)))
+            foreach (var access in Enum.GetValues(typeof(DSharpAccessModifier)))
             {
-                var tokenType = (DialogScriptTokenType)access;
+                var tokenType = (DSharpTokenType)access;
 
                 if (token.Type == tokenType)
                 {
-                    result = (DialogScriptAccessModifier)access;
+                    result = (DSharpAccessModifier)access;
                     return true;
                 }
             }
@@ -114,7 +122,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         {
             memberInfo = new();
             var startPosition = stream.Position;
-            DialogScriptAccessModifier? accessModifier = null;
+            DSharpAccessModifier? accessModifier = null;
             var currentToken = stream.Current ?? throw new Exception("Unable to read member");
 
             if (AttributeNode.TryParse(stream, out var attributeNodes))
@@ -124,11 +132,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             bool IsDefinitionEnded(int offset)
             {
-                return stream.Check(DialogScriptTokenType.LeftBrace, offset) || // { - property getter and setter block
-                       stream.Check(DialogScriptTokenType.LeftParen, offset) || // ( - method or constructor
-                       stream.Check(DialogScriptTokenType.Lambda, offset) ||    // => - property lambda
-                       stream.Check(DialogScriptTokenType.Semicolon, offset) || // ; - property without getter and setter
-                       stream.Check(DialogScriptTokenType.Assign, offset);      // = - assign value to property
+                return stream.Check(DSharpTokenType.LeftBrace, offset) || // { - property getter and setter block
+                       stream.Check(DSharpTokenType.LeftParen, offset) || // ( - method or constructor
+                       stream.Check(DSharpTokenType.Lambda, offset) ||    // => - property lambda
+                       stream.Check(DSharpTokenType.Semicolon, offset) || // ; - property without getter and setter
+                       stream.Check(DSharpTokenType.Assign, offset);      // = - assign value to property
             }
 
             do
@@ -145,7 +153,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     accessModifier = access;
                     eatToken = true;
                 }
-                else if (currentToken.Type == DialogScriptTokenType.Static)
+                else if (currentToken.Type == DSharpTokenType.Static)
                 {
                     if (memberInfo.IsStatic)
                     {
@@ -155,7 +163,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     memberInfo.IsStatic = true;
                     eatToken = true;
                 }
-                else if (currentToken.Type == DialogScriptTokenType.Extern)
+                else if (currentToken.Type == DSharpTokenType.Extern)
                 {
                     if (memberInfo.IsExtern)
                     {
@@ -165,7 +173,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     memberInfo.IsExtern = true;
                     eatToken = true;
                 }
-                else if (currentToken.Type == DialogScriptTokenType.Func)
+                else if (currentToken.Type == DSharpTokenType.Func)
                 {
                     if (memberInfo.Type != null)
                     {
@@ -177,9 +185,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
                 else
                 {
-                    if (stream.Check(DialogScriptTokenType.Identifier) && IsDefinitionEnded(1))
+                    if (stream.Check(DSharpTokenType.Identifier) && IsDefinitionEnded(1))
                     {
-                        memberInfo.Identifier = new(stream.Eat(DialogScriptTokenType.Identifier));
+                        memberInfo.Identifier = IdentifierExpressionNode.Parse(stream);
                         break;
                     }
 
@@ -211,21 +219,21 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 return false;
             }
 
-            memberInfo.AccessModifier = accessModifier ?? DialogScriptAccessModifier.Private;
+            memberInfo.AccessModifier = accessModifier ?? DSharpAccessModifier.Private;
 
-            if (stream.Check(DialogScriptTokenType.LeftParen))
+            if (stream.Check(DSharpTokenType.LeftParen))
             {
                 if (memberInfo.Type == null)
                 {
-                    memberInfo.MemberType = DialogScriptTypeMember.Constructor;
+                    memberInfo.MemberType = DSharpTypeMember.Constructor;
                     return true;
                 }
 
-                memberInfo.MemberType = DialogScriptTypeMember.Method;
+                memberInfo.MemberType = DSharpTypeMember.Method;
                 return true;
             }
 
-            memberInfo.MemberType = DialogScriptTypeMember.Field;
+            memberInfo.MemberType = DSharpTypeMember.Field;
             return true;
         }
         /// <summary>
@@ -235,89 +243,106 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Return true when token is access modifier</returns>
         public static bool IsAccessModifier(AstParserStream stream)
         {
-            return stream.CheckAll<DialogScriptAccessModifier>();
+            return stream.CheckAll<DSharpAccessModifier>();
         }
         /// <summary>
-        /// Check current and next tokens is struct declaration
+        /// Check current and next tokens is object declaration
         /// </summary>
         /// <param name="stream">Abstract syntax tree parser</param>
-        /// <returns>Return true when now struct definition</returns>
-        public static bool IsStructDeclaration(AstParserStream stream)
+        /// <returns>Return true when now object definition</returns>
+        public static bool IsObjectDeclaration(AstParserStream stream)
         {
-            if (stream.Check(DialogScriptTokenType.Struct))
+            bool IsDeclarationKeyword(int offset)
+            {
+                return stream.Check(DSharpTokenType.Struct, offset) ||
+                       stream.Check(DSharpTokenType.Class, offset);
+            }
+
+            if (IsDeclarationKeyword(0))
             {
                 return true;
             }
 
-            return IsAccessModifier(stream) && stream.Check(DialogScriptTokenType.Struct, 1);
+            return IsAccessModifier(stream) && IsDeclarationKeyword(1);
         }
         /// <summary>
-        /// Parse struct node starts with current token
+        /// Parse object node starts with current token
         /// </summary>
         /// <param name="stream">Abstract syntax tree parser stream</param>
-        /// <returns>Parsed struct node</returns>
-        /// <exception cref="Exception">Invalid struct member</exception>
-        public static StructNode Parse(AstParserStream stream)
+        /// <returns>Parsed object node</returns>
+        /// <exception cref="Exception">Invalid object member</exception>
+        public static ObjectDeclarationNode Parse(AstParserStream stream)
         {
             TryParseAccessModifier(stream, out var access);
 
-            stream.Eat(DialogScriptTokenType.Struct);
+            bool isStruct = false;
 
-            var identifier = stream.Eat(DialogScriptTokenType.Identifier);
-            StructNode node = new(identifier)
+            if (stream.Check(DSharpTokenType.Struct))
             {
+                stream.Eat(DSharpTokenType.Struct);
+                isStruct = true;
+            }
+            else
+            {
+                stream.Eat(DSharpTokenType.Class);
+            }
+
+            var identifier = IdentifierExpressionNode.Parse(stream);
+            ObjectDeclarationNode node = new(identifier.Token)
+            {
+                Identifier = identifier,
+                IsStruct = isStruct,
                 Access = access
             };
 
-            if (stream.Check(DialogScriptTokenType.Colon)) 
+            if (stream.Check(DSharpTokenType.Colon))
             {
-                stream.Eat(DialogScriptTokenType.Colon);
+                stream.Eat(DSharpTokenType.Colon);
 
-                while (!stream.Check(DialogScriptTokenType.LeftBrace))
+                while (!stream.Check(DSharpTokenType.LeftBrace))
                 {
                     var type = TypeInfoNode.Parse(stream, false, false);
                     node.BaseTypes.Add(type);
 
-                    if (!ArrayExpressionNode.CheckTokenAfterComma(stream, DialogScriptTokenType.LeftBrace))
+                    if (!ArrayExpressionNode.CheckTokenAfterComma(stream, DSharpTokenType.LeftBrace))
                     {
                         stream.ThrowPositionException("Required base type");
                     }
                 }
             }
 
-            stream.Eat(DialogScriptTokenType.LeftBrace);
+            stream.Eat(DSharpTokenType.LeftBrace);
 
-            while (!stream.Check(DialogScriptTokenType.RightBrace))
+            while (!stream.Check(DSharpTokenType.RightBrace))
             {
-                if (stream.Check(DialogScriptTokenType.Enum))
+                if (stream.Check(DSharpTokenType.Enum))
                 {
                     var enumNode = EnumNode.Parse(stream);
                     node.ChildrenEnums.Add(enumNode);
                 }
-                if (IsStructDeclaration(stream))
+                if (IsObjectDeclaration(stream))
                 {
                     var child = Parse(stream);
                     node.Children.Add(child);
                 }
                 if (!TryStartParseMember(stream, out var memberInfo))
                 {
-                    stream.ThrowPositionException("Invalid struct member");
+                    stream.ThrowPositionException("Invalid object member");
                 }
 
-                if (memberInfo.MemberType == DialogScriptTypeMember.Constructor)
+                var member = ParseMember(stream, memberInfo);
+
+                if (member is ConstructorNode constructor)
                 {
-                    var constructor = ConstructorNode.Parse(stream, memberInfo);
                     node.Constructors.Add(constructor);
                 }
-                else if (memberInfo.MemberType == DialogScriptTypeMember.Field)
+                else if (member is MethodNode method)
                 {
-                    var field = FieldNode.ParseField(stream, memberInfo);
-                    node.Fields.Add(field);
-                }
-                else if (memberInfo.MemberType == DialogScriptTypeMember.Method)
-                {
-                    var method = MethodNode.Parse(stream, memberInfo);
                     node.Methods.Add(method);
+                }
+                else if (member is FieldNode field)
+                {
+                    node.Fields.Add(field);
                 }
                 else
                 {
@@ -325,9 +350,57 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
             }
 
-            stream.Eat(DialogScriptTokenType.RightBrace);
+            stream.Eat(DSharpTokenType.RightBrace);
 
             return node;
+        }
+        /// <summary>
+        /// Parse object member with provided <see cref="MemberInfo"/>
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="memberInfo">Information about member that must be parsed</param>
+        /// <param name="attributes">Attributes of member</param>
+        /// <returns>Parsed member</returns>
+        /// <exception cref="Exception"></exception>
+        public static AstNode ParseMember(AstParserStream stream, MemberInfo memberInfo, List<AttributeNode>? attributes = null)
+        {
+            if (memberInfo.MemberType == DSharpTypeMember.Constructor)
+            {
+                var constructor = ConstructorNode.Parse(stream, memberInfo);
+
+                if (attributes != null)
+                {
+                    constructor.Attributes = attributes;
+                }
+
+                return constructor;
+            }
+            else if (memberInfo.MemberType == DSharpTypeMember.Field)
+            {
+                var field = FieldNode.ParseField(stream, memberInfo);
+
+                if (attributes != null)
+                {
+                    field.Attributes = attributes;
+                }
+
+                return field;
+            }
+            else if (memberInfo.MemberType == DSharpTypeMember.Method)
+            {
+                var method = MethodNode.Parse(stream, memberInfo);
+
+                if (attributes != null)
+                {
+                    method.Attributes = attributes;
+                }
+
+                return method;
+            }
+            else
+            {
+                throw new Exception($"Invalid member type: {memberInfo.MemberType}");
+            }
         }
 
         /// <summary>
@@ -338,11 +411,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             /// <summary>
             /// Type of member
             /// </summary>
-            public DialogScriptTypeMember MemberType { get; set; }
+            public DSharpTypeMember MemberType { get; set; }
             /// <summary>
             /// Access modifier of this member
             /// </summary>
-            public DialogScriptAccessModifier AccessModifier { get; set; }
+            public DSharpAccessModifier AccessModifier { get; set; }
             /// <summary>
             /// Extern flag of member
             /// </summary>

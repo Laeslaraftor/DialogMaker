@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Assignment expression node
     /// </summary>
     /// <param name="token">Token that represents assignment operator</param>
-    public class AssignmentExpressionNode(DialogScriptToken token) : ExpressionNode(token)
+    public class AssignmentExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Left expression of operation
@@ -16,7 +16,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <summary>
         /// Operator of this operation
         /// </summary>
-        public DialogScriptAssignmentOperator Operator { get; set; }
+        public DSharpAssignmentOperator Operator { get; set; }
         /// <summary>
         /// Right expression of operation
         /// </summary>
@@ -47,7 +47,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         {
             result = null;
 
-            if (!stream.CheckAll<DialogScriptAssignmentOperator>())
+            if (!stream.CheckAll<DSharpAssignmentOperator>())
             {
                 return false;
             }
@@ -56,7 +56,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             var right = ParseExpression(stream);
             result = new(op)
             {
-                Operator = (DialogScriptAssignmentOperator)op.Type,
+                Operator = (DSharpAssignmentOperator)op.Type,
                 Right = right,
             };
 

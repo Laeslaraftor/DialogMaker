@@ -3,25 +3,25 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast
 {
-    public class AstParserStream(DialogScriptLexer lexer)
+    public class AstParserStream(DSharpLexer lexer)
     {
-        public DialogScriptToken? Current => Position < _lexer.Tokens.Count ? _lexer.Tokens[Position] : null;
+        public DSharpToken? Current => Position < _lexer.Tokens.Count ? _lexer.Tokens[Position] : null;
         public int Position { get; set; }
 
-        private readonly DialogScriptLexer _lexer = lexer;
+        private readonly DSharpLexer _lexer = lexer;
 
-        public DialogScriptToken? Peek(int offset = 1)
+        public DSharpToken? Peek(int offset = 1)
         {
             return Position + offset < _lexer.Tokens.Count ? _lexer.Tokens[Position + offset] : null;
         }
-        public bool IsEndOfFile() => Current?.Type == DialogScriptTokenType.EndOfFile;
-        public bool Check(DialogScriptTokenType type, int offset = 0) => Peek(offset)?.Type == type;
-        public bool Check(params DialogScriptTokenType[] types) => types.Contains(Current?.Type ?? DialogScriptTokenType.EndOfFile);
+        public bool IsEndOfFile() => Current?.Type == DSharpTokenType.EndOfFile;
+        public bool Check(DSharpTokenType type, int offset = 0) => Peek(offset)?.Type == type;
+        public bool Check(params DSharpTokenType[] types) => types.Contains(Current?.Type ?? DSharpTokenType.EndOfFile);
         public bool CheckAll<T>() where T : struct
         {
             foreach (var value in Enum.GetValues(typeof(T)))
             {
-                if (Check((DialogScriptTokenType)value))
+                if (Check((DSharpTokenType)value))
                 {
                     return true;
                 }
@@ -29,7 +29,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
 
             return false;
         }
-        public DialogScriptToken Eat(DialogScriptTokenType expected)
+        public DSharpToken Eat(DSharpTokenType expected)
         {
             if (Current?.Type == expected)
             {
@@ -47,7 +47,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
             ThrowUnexpectedTokenException(null);
         }
         [DoesNotReturn]
-        public void ThrowUnexpectedTokenException(params DialogScriptTokenType[]? expected)
+        public void ThrowUnexpectedTokenException(params DSharpTokenType[]? expected)
         {
             if (expected != null)
             {

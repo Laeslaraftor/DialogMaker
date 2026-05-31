@@ -1,5 +1,4 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
-using Newtonsoft.Json.Linq;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
@@ -7,8 +6,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents something that can be invoked or called
     /// </summary>
     /// <param name="token">Token that represents name of this node</param>
-    public abstract class InvokableNode(DialogScriptToken token) : NamedNode(token)
+    public abstract class InvokableNode(DSharpToken token) : AstNode(token)
     {
+        /// <summary>
+        /// Identifier (name with generic parameters) of this invokable
+        /// </summary>
+        public IdentifierExpressionNode? Identifier { get; set; }
         /// <summary>
         /// Attributes list of this invokable
         /// </summary>
@@ -31,21 +34,21 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <param name="buffer">Buffer for parsed parameters</param>
         public static void ParseParameters(AstParserStream stream, List<VariableNode> buffer)
         {
-            stream.Eat(DialogScriptTokenType.LeftParen);
+            stream.Eat(DSharpTokenType.LeftParen);
 
-            while (!stream.Check(DialogScriptTokenType.RightParen))
+            while (!stream.Check(DSharpTokenType.RightParen))
             {
                 AttributeNode.TryParse(stream, out var attributes);
                 var variable = VariableNode.ParseVariable(stream, attributes, false);
                 buffer.Add(variable);
 
-                if (!ArrayExpressionNode.CheckTokenAfterComma(stream, DialogScriptTokenType.RightParen))
+                if (!ArrayExpressionNode.CheckTokenAfterComma(stream, DSharpTokenType.RightParen))
                 {
                     stream.ThrowPositionException("Required parameter");
                 }
             }
 
-            stream.Eat(DialogScriptTokenType.RightParen);
+            stream.Eat(DSharpTokenType.RightParen);
         }
         /// <summary>
         /// Parse parameters starts with current token

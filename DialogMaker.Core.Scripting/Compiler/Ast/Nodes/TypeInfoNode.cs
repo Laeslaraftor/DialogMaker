@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// For example: object, string, number, bool, SomeType, Some.Type, object?, object[], SomeType?[]?
     /// </summary>
     /// <param name="token">Token at start of type</param>
-    public class TypeInfoNode(DialogScriptToken token) : NamedNode(token)
+    public class TypeInfoNode(DSharpToken token) : AstNode(token)
     {
         /// <summary>
         /// Flag which indicate when type can be nullable
@@ -21,27 +21,45 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Nullable flags for array dimensions. Size of this list must be equals to <see cref="ArrayDimensions"/>
         /// </summary>
         public List<bool> ArrayNullability { get; set; } = [];
+        public List<TypeInfoNode> GenericParameters { get; set; } = [];
 
         #region Статика
 
         /// <summary>
-        /// Parse type info starts with current token at parser stream
+        /// Check identifier parse availability
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="offset">Token offset</param>
+        /// <returns>Is parse identifier available</returns>
+        /// <exception cref="Exception">Unable to read type identifier</exception>
+        public static bool CanParseIdentifier(AstParserStream stream, int offset = 0)
+        {
+            var current = stream.Peek(offset) ?? throw new Exception("Unable to read type identifier");
+
+            return current.Type == DSharpTokenType.String ||
+                   current.Type == DSharpTokenType.Number ||
+                   current.Type == DSharpTokenType.Bool ||
+                   current.Type == DSharpTokenType.Object ||
+                   current.Type == DSharpTokenType.Var ||
+                   stream.Check(DSharpTokenType.Identifier);
+        }
+        /// <summary>
+        /// Parse type info with only name of type starts with current token at parser stream
         /// </summary>
         /// <param name="stream">Abstract syntax tree parser stream</param>
         /// <param name="canBePrimary">Indicates that parsed type may be primary (object, string, number, bool, var)</param>
-        /// <param name="canBeArray">Indicates that parsed type may be array</param>
         /// <returns>Parsed type node</returns>
         /// <exception cref="Exception">Unable to read type identifier</exception>
-        public static TypeInfoNode Parse(AstParserStream stream, bool canBePrimary, bool canBeArray, bool skipArrayCheck = false)
+        public static TypeInfoNode ParseOnlyIdentifier(AstParserStream stream, bool canBePrimary)
         {
             var current = stream.Current ?? throw new Exception("Unable to read type identifier");
             TypeInfoNode result;
 
-            if (current.Type == DialogScriptTokenType.String ||
-                current.Type == DialogScriptTokenType.Number ||
-                current.Type == DialogScriptTokenType.Bool ||
-                current.Type == DialogScriptTokenType.Object ||
-                current.Type == DialogScriptTokenType.Var)
+            if (current.Type == DSharpTokenType.String ||
+                current.Type == DSharpTokenType.Number ||
+                current.Type == DSharpTokenType.Bool ||
+                current.Type == DSharpTokenType.Object ||
+                current.Type == DSharpTokenType.Var)
             {
                 if (!canBePrimary)
                 {
@@ -73,11 +91,25 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
             }
 
+            return result;
+        }
+        /// <summary>
+        /// Parse type info starts with current token at parser stream
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="canBePrimary">Indicates that parsed type may be primary (object, string, number, bool, var)</param>
+        /// <param name="canBeArray">Indicates that parsed type may be array</param>
+        /// <returns>Parsed type node</returns>
+        /// <exception cref="Exception">Unable to read type identifier</exception>
+        public static TypeInfoNode Parse(AstParserStream stream, bool canBePrimary, bool canBeArray, bool skipArrayCheck = false)
+        {
+            var result = ParseOnlyIdentifier(stream, canBePrimary);
+
             bool CheckNullable()
             {
-                if (stream.Check(DialogScriptTokenType.Question))
+                if (stream.Check(DSharpTokenType.Question))
                 {
-                    stream.Eat(DialogScriptTokenType.Question);
+                    stream.Eat(DSharpTokenType.Question);
                     return true;
                 }
 
@@ -91,20 +123,68 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 return result;
             }
 
-            while (stream.Check(DialogScriptTokenType.LeftBracket))
+            while (stream.Check(DSharpTokenType.LeftBracket))
             {
                 if (!canBeArray)
                 {
                     stream.ThrowPositionException("Array not allowed in this context");
                 }
 
-                stream.Eat(DialogScriptTokenType.LeftBracket);
-                stream.Eat(DialogScriptTokenType.RightBracket);
+                stream.Eat(DSharpTokenType.LeftBracket);
+                stream.Eat(DSharpTokenType.RightBracket);
                 result.ArrayNullability.Add(CheckNullable());
                 result.ArrayDimensions++;
             }
 
             return result;
+        }
+        public static void ParseGenericParameters(AstParserStream stream, List<TypeInfoNode> buffer, bool checkExistence = false)
+        {
+            if (checkExistence)
+            {
+                if (!stream.Check(DSharpTokenType.Less))
+                {
+                    return;
+                }
+
+                int offset = 1;
+
+                while (!stream.Check(DSharpTokenType.Greater, offset))
+                {
+                    if (CanParseIdentifier(stream, offset))
+                    {
+                        return;
+                    }
+                    if (!ArrayExpressionNode.CheckTokenAfterComma(stream, DSharpTokenType.Greater))
+                    {
+                        return;
+                    }
+
+                    offset++;
+                }
+            }
+
+            stream.Eat(DSharpTokenType.Less);
+
+            while (!stream.Check(DSharpTokenType.Greater))
+            {
+                var type = Parse(stream, true, true);
+                buffer.Add(type);
+
+                if (!ArrayExpressionNode.CheckTokenAfterComma(stream, DSharpTokenType.Greater))
+                {
+                    stream.ThrowPositionException("Required type identifier");
+                }
+            }
+
+            stream.Eat(DSharpTokenType.Greater);
+        }
+        public static List<TypeInfoNode> ParseGenericParameters(AstParserStream stream, bool checkExistence = false)
+        {
+            List<TypeInfoNode> buffer = [];
+            ParseGenericParameters(stream, buffer, checkExistence);
+
+            return buffer;
         }
 
         #endregion

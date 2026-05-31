@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents decrement of value by 1
     /// </summary>
     /// <param name="token">Token that represents decrement operator</param>
-    public class DecrementExpressionNode(DialogScriptToken token) : ExpressionNode(token)
+    public class DecrementExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Expression that decrementing

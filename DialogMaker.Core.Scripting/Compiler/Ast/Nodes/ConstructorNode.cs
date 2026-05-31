@@ -6,12 +6,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Constructor node
     /// </summary>
     /// <param name="token">Token that represents name of constructor</param>
-    public class ConstructorNode(DialogScriptToken token) : InvokableNode(token)
+    public class ConstructorNode(DSharpToken token) : InvokableNode(token)
     {
         /// <summary>
         /// Access modifier of this constructor
         /// </summary>
-        public DialogScriptAccessModifier Access { get; set; } = DialogScriptAccessModifier.Private;
+        public DSharpAccessModifier Access { get; set; } = DSharpAccessModifier.Private;
 
         #region Статика
 
@@ -22,22 +22,23 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <param name="memberInfo">Information about constructor that must be parsed</param>
         /// <returns>Parsed constructor</returns>
         /// <exception cref="ArgumentException">Invalid member info</exception>
-        public static ConstructorNode Parse(AstParserStream stream, StructNode.MemberInfo memberInfo)
+        public static ConstructorNode Parse(AstParserStream stream, ObjectDeclarationNode.MemberInfo memberInfo)
         {
-            if (memberInfo.MemberType != DialogScriptTypeMember.Constructor)
+            if (memberInfo.MemberType != DSharpTypeMember.Constructor)
             {
-                throw new ArgumentException($"Invalid member info. Requires info for {DialogScriptTypeMember.Constructor}, provided: {memberInfo.Type}");
+                throw new ArgumentException($"Invalid member info. Requires info for {DSharpTypeMember.Constructor}, provided: {memberInfo.Type}");
             }
 
             ConstructorNode constructor = new(memberInfo.Identifier.Token)
             {
+                Identifier = memberInfo.Identifier,
                 Attributes = memberInfo.Attributes,
                 Access = memberInfo.AccessModifier
             };
 
             ParseParameters(stream, constructor.Parameters);
 
-            if (stream.Check(DialogScriptTokenType.LeftBrace))
+            if (stream.Check(DSharpTokenType.LeftBrace))
             {
                 constructor.Body = BlockStatementNode.Parse(stream);
             }

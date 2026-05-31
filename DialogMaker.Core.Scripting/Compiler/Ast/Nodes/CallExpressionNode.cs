@@ -2,9 +2,19 @@
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
-    public class CallExpressionNode(DialogScriptToken token) : ExpressionNode(token)
+    /// <summary>
+    /// Call expression
+    /// </summary>
+    /// <param name="token">Token that represents calling expression</param>
+    public class CallExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
+        /// <summary>
+        /// Expression that calling
+        /// </summary>
         public ExpressionNode? Callee { get; set; }
+        /// <summary>
+        /// Arguments of calling
+        /// </summary>
         public List<ExpressionNode> Arguments { get; set; } = [];
     }
 }

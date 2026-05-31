@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Variable node
     /// </summary>
     /// <param name="token">Token that represents variable name</param>
-    public class VariableNode(DialogScriptToken token) : NamedNode(token)
+    public class VariableNode(DSharpToken token) : AstNode(token)
     {
         /// <summary>
         /// Attributes of this variable
@@ -34,30 +34,30 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         {
             TypeInfoNode variableType;
 
-            if (stream.Check(DialogScriptTokenType.Var))
+            if (stream.Check(DSharpTokenType.Var))
             {
-                variableType = new(stream.Eat(DialogScriptTokenType.Var));
+                variableType = new(stream.Eat(DSharpTokenType.Var));
             }
             else
             {
                 variableType = TypeInfoNode.Parse(stream, true, true);
             }
 
-            var nameToken = stream.Eat(DialogScriptTokenType.Identifier);
+            var nameToken = stream.Eat(DSharpTokenType.Identifier);
             VariableNode variable = new(nameToken)
             {
                 Type = variableType,
                 Attributes = attributes
             };
 
-            if (stream.Check(DialogScriptTokenType.Assign))
+            if (stream.Check(DSharpTokenType.Assign))
             {
-                stream.Eat(DialogScriptTokenType.Assign);
+                stream.Eat(DSharpTokenType.Assign);
                 variable.Initializer = ExpressionNode.ParseExpression(stream);
             }
             if (eatEnding)
             {
-                stream.Eat(DialogScriptTokenType.Semicolon);
+                stream.Eat(DSharpTokenType.Semicolon);
             }           
 
             return variable;

@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Attribute declaration node
     /// </summary>
     /// <param name="token">Token that represents attribute name</param>
-    public class AttributeDeclarationNode(DialogScriptToken token) : NamedNode(token)
+    public class AttributeDeclarationNode(DSharpToken token) : AstNode(token)
     {
         /// <summary>
         /// Fields of this attribute
@@ -45,25 +45,25 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Parsed attribute declaration</returns>
         public static AttributeDeclarationNode Parse(AstParserStream stream)
         {
-            stream.Eat(DialogScriptTokenType.Attribute);
-            var identifier = stream.Eat(DialogScriptTokenType.Identifier);
+            stream.Eat(DSharpTokenType.Attribute);
+            var identifier = stream.Eat(DSharpTokenType.Identifier);
             AttributeDeclarationNode attribute = new(identifier);
 
-            stream.Eat(DialogScriptTokenType.LeftParen);
+            stream.Eat(DSharpTokenType.LeftParen);
 
-            while (!stream.Check(DialogScriptTokenType.RightParen))
+            while (!stream.Check(DSharpTokenType.RightParen))
             {
                 var field = AttributeFieldNode.Parse(stream);
                 attribute.Fields.Add(field);
 
-                if (!ArrayExpressionNode.CheckTokenAfterComma(stream, DialogScriptTokenType.RightParen))
+                if (!ArrayExpressionNode.CheckTokenAfterComma(stream, DSharpTokenType.RightParen))
                 {
                     stream.ThrowPositionException("Required attribute field");
                 }
             }
 
-            stream.Eat(DialogScriptTokenType.RightParen);
-            stream.Eat(DialogScriptTokenType.Semicolon);
+            stream.Eat(DSharpTokenType.RightParen);
+            stream.Eat(DSharpTokenType.Semicolon);
 
             return attribute;
         }

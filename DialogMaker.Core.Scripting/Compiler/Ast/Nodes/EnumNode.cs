@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents values enumerations
     /// </summary>
     /// <param name="token">Token of values enumeration</param>
-    public class EnumNode(DialogScriptToken token) : NamedNode(token)
+    public class EnumNode(DSharpToken token) : AstNode(token)
     {
         /// <summary>
         /// Values list
@@ -45,22 +45,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Parsed enum node</returns>
         public static EnumNode Parse(AstParserStream stream)
         {
-            stream.Eat(DialogScriptTokenType.Enum);
-            var nameToken = stream.Eat(DialogScriptTokenType.Identifier);
+            stream.Eat(DSharpTokenType.Enum);
+            var nameToken = stream.Eat(DSharpTokenType.Identifier);
             EnumNode enumNode = new(nameToken);
 
-            stream.Eat(DialogScriptTokenType.LeftBrace);
+            stream.Eat(DSharpTokenType.LeftBrace);
 
             int memberIndex = 0;
 
-            while (!stream.Check(DialogScriptTokenType.RightBrace))
+            while (!stream.Check(DSharpTokenType.RightBrace))
             {
-                var memberToken = stream.Eat(DialogScriptTokenType.Identifier);
+                var memberToken = stream.Eat(DSharpTokenType.Identifier);
                 LiteralExpressionNode member;
 
-                if (stream.Check(DialogScriptTokenType.Assign))
+                if (stream.Check(DSharpTokenType.Assign))
                 {
-                    stream.Eat(DialogScriptTokenType.Assign);
+                    stream.Eat(DSharpTokenType.Assign);
                     member = LiteralExpressionNode.Parse(stream);
                 }
                 else
@@ -68,21 +68,21 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     member = new(memberToken)
                     {
                         Value = memberIndex,
-                        Type = DialogScriptLiteralType.Number
+                        Type = DSharpLiteralType.Number
                     };
                 }
 
                 enumNode.Members.Add(member);
 
-                if (stream.Check(DialogScriptTokenType.Comma))
+                if (stream.Check(DSharpTokenType.Comma))
                 {
-                    stream.Eat(DialogScriptTokenType.Comma);
+                    stream.Eat(DSharpTokenType.Comma);
                 }
 
                 memberIndex++;
             }
 
-            stream.Eat(DialogScriptTokenType.RightBrace);
+            stream.Eat(DSharpTokenType.RightBrace);
 
             return enumNode;
         }

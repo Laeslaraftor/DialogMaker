@@ -2,16 +2,16 @@
 {
     internal static class AstExtensions
     {
-        extension(DialogScriptPropertyAccessor accessor)
+        extension(DSharpPropertyAccessor accessor)
         {
-            public DialogScriptPropertyAccessor Invert()
+            public DSharpPropertyAccessor Invert()
             {
-                if (accessor == DialogScriptPropertyAccessor.Getter)
+                if (accessor == DSharpPropertyAccessor.Getter)
                 {
-                    return DialogScriptPropertyAccessor.Setter;
+                    return DSharpPropertyAccessor.Setter;
                 }
 
-                return DialogScriptPropertyAccessor.Getter;
+                return DSharpPropertyAccessor.Getter;
             }
         }
     }

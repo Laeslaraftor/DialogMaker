@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// For statement node
     /// </summary>
     /// <param name="token">Token that represents for keyword</param>
-    public class ForStatementNode(DialogScriptToken token) : StatementNode(token)
+    public class ForStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// Initializer for conditional and incremental variable
@@ -34,20 +34,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Parsed for statement</returns>
         public static ForStatementNode Parse(AstParserStream stream)
         {
-            var forToken = stream.Eat(DialogScriptTokenType.For);
-            stream.Eat(DialogScriptTokenType.LeftParen);
+            var forToken = stream.Eat(DSharpTokenType.For);
+            stream.Eat(DSharpTokenType.LeftParen);
 
             ForStatementNode statement = new(forToken)
             {
                 Initializer = ParseStatement(stream)
             };
 
-            //stream.Eat(DialogScriptTokenType.Semicolon);
+            //stream.Eat(DSharpTokenType.Semicolon);
 
             statement.Condition = ExpressionNode.ParseExpression(stream);
-            stream.Eat(DialogScriptTokenType.Semicolon);
+            stream.Eat(DSharpTokenType.Semicolon);
             statement.Increment = ExpressionNode.ParseExpression(stream);
-            stream.Eat(DialogScriptTokenType.RightParen);
+            stream.Eat(DSharpTokenType.RightParen);
             statement.Body = ParseStatement(stream);
 
             return statement;

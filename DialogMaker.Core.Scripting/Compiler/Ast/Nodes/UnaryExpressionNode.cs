@@ -2,9 +2,9 @@
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
-    public class UnaryExpressionNode(DialogScriptToken token) : ExpressionNode(token)
+    public class UnaryExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
-        public DialogScriptUnaryOperator Operator { get; set; }
+        public DSharpUnaryOperator Operator { get; set; }
         public ExpressionNode? Operand { get; set; }
 
         #region Статика
@@ -16,19 +16,19 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 stream.ThrowPositionException("Invalid token");
             }
 
-            if (stream.CheckAll<DialogScriptUnaryOperator>())
+            if (stream.CheckAll<DSharpUnaryOperator>())
             {
                 var op = stream.Eat(stream.Current.Type);
                 var operand = Parse(stream);
 
                 return new UnaryExpressionNode(op)
                 {
-                    Operator = (DialogScriptUnaryOperator)op.Type,
+                    Operator = (DSharpUnaryOperator)op.Type,
                     Operand = operand,
                 };
             }
 
-            if (stream.Check(DialogScriptTokenType.Await))
+            if (stream.Check(DSharpTokenType.Await))
             {
                 return AwaitExpressionNode.Parse(stream);
             }

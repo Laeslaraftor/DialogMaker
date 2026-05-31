@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents literal value like number, string, boolean or null
     /// </summary>
     /// <param name="token">Literal value token</param>
-    public class LiteralExpressionNode(DialogScriptToken token) : ExpressionNode(token)
+    public class LiteralExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Value of this node
@@ -16,7 +16,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <summary>
         /// Type of literal value
         /// </summary>
-        public DialogScriptLiteralType Type { get; set; }
+        public DSharpLiteralType Type { get; set; }
 
         #region Управление
 
@@ -33,13 +33,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #region Статика
 
-        private static readonly Dictionary<DialogScriptTokenType, LiteralInfo> _literals = new()
+        private static readonly Dictionary<DSharpTokenType, LiteralInfo> _literals = new()
         {
-            [DialogScriptTokenType.NumberLiteral] = new(DialogScriptLiteralType.Number, v => double.Parse(v.Replace(".", ","))),
-            [DialogScriptTokenType.StringLiteral] = new(DialogScriptLiteralType.String, v => v),
-            [DialogScriptTokenType.False] = new(DialogScriptLiteralType.Bool, v => false),
-            [DialogScriptTokenType.True] = new(DialogScriptLiteralType.Bool, v => true),
-            [DialogScriptTokenType.Null] = new(DialogScriptLiteralType.Null, v => null)
+            [DSharpTokenType.NumberLiteral] = new(DSharpLiteralType.Number, v => double.Parse(v.Replace(".", ","))),
+            [DSharpTokenType.StringLiteral] = new(DSharpLiteralType.String, v => v),
+            [DSharpTokenType.False] = new(DSharpLiteralType.Bool, v => false),
+            [DSharpTokenType.True] = new(DSharpLiteralType.Bool, v => true),
+            [DSharpTokenType.Null] = new(DSharpLiteralType.Null, v => null)
         };
 
         /// <summary>
@@ -96,9 +96,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #region Структуры
 
-        private readonly struct LiteralInfo(DialogScriptLiteralType type, Func<string, object?> parser)
+        private readonly struct LiteralInfo(DSharpLiteralType type, Func<string, object?> parser)
         {
-            public DialogScriptLiteralType Type { get; } = type;
+            public DSharpLiteralType Type { get; } = type;
             public Func<string, object?> Parser { get; } = parser;
         }
 

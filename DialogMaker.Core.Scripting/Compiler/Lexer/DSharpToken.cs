@@ -1,16 +1,16 @@
 ﻿namespace DialogMaker.Core.Scripting.Compiler.Lexer
 {
     /// <summary>
-    /// Token of dialog script
+    /// Token of D#
     /// </summary>
-    public class DialogScriptToken(DialogScriptTokenType type, string value, int line, int column)
-        : IEquatable<DialogScriptToken>
+    public class DSharpToken(DSharpTokenType type, string value, int line, int column)
+        : IEquatable<DSharpToken>
     {
 
         /// <summary>
         /// Type of this token
         /// </summary>
-        public DialogScriptTokenType Type { get; } = type;
+        public DSharpTokenType Type { get; } = type;
         /// <summary>
         /// Token value
         /// </summary>
@@ -32,14 +32,14 @@
         /// <param name="l"><inheritdoc/></param>
         /// <param name="r"><inheritdoc/></param>
         /// <returns><inheritdoc/></returns>
-        public static bool operator ==(DialogScriptToken? l, DialogScriptToken? r) => Equals(l, r);
+        public static bool operator ==(DSharpToken? l, DSharpToken? r) => Equals(l, r);
         /// <summary>
         /// <inheritdoc/>
         /// </summary>
         /// <param name="l"><inheritdoc/></param>
         /// <param name="r"><inheritdoc/></param>
         /// <returns><inheritdoc/></returns>
-        public static bool operator !=(DialogScriptToken? l, DialogScriptToken? r) => !Equals(l, r);
+        public static bool operator !=(DSharpToken? l, DSharpToken? r) => !Equals(l, r);
 
         #endregion
 
@@ -60,7 +60,7 @@
         /// <returns><inheritdoc/></returns>
         public override bool Equals(object obj)
         {
-            return obj is DialogScriptToken other &&
+            return obj is DSharpToken other &&
                    Equals(other);
         }
         /// <summary>
@@ -68,7 +68,7 @@
         /// </summary>
         /// <param name="other"><inheritdoc/></param>
         /// <returns><inheritdoc/></returns>
-        public bool Equals(DialogScriptToken? other)
+        public bool Equals(DSharpToken? other)
         {
             if (other == null)
             {

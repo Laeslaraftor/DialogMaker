@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents increment of value by 1
     /// </summary>
     /// <param name="token">Token that represents increment operator</param>
-    public class IncrementExpressionNode(DialogScriptToken token) : ExpressionNode(token)
+    public class IncrementExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Expression that incrementing

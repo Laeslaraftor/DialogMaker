@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Statement node that references to invokable node
     /// </summary>
     /// <param name="token">Token that represent invokable node</param>
-    public class InvokableStatementNode(DialogScriptToken token) : StatementNode(token)
+    public class InvokableStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// Referenced invokable node

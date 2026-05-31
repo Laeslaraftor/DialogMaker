@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Attribute node
     /// </summary>
     /// <param name="token">Token that represents name of attribute</param>
-    public class AttributeNode(DialogScriptToken token) : NamedNode(token)
+    public class AttributeNode(DSharpToken token) : AstNode(token)
     {
         /// <summary>
         /// Type of this attribute
@@ -28,7 +28,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Returns true if attributes successfully parsed</returns>
         public static bool TryParse(AstParserStream stream, [NotNullWhen(true)] out List<AttributeNode>? result)
         {
-            if (!stream.Check(DialogScriptTokenType.LeftBracket))
+            if (!stream.Check(DSharpTokenType.LeftBracket))
             {
                 result = null;
                 return false;
@@ -38,7 +38,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             do
             {
-                stream.Eat(DialogScriptTokenType.LeftBracket);
+                stream.Eat(DSharpTokenType.LeftBracket);
 
                 var attributeType = TypeInfoNode.Parse(stream, false, false);
                 AttributeNode attribute = new(attributeType.Token)
@@ -46,11 +46,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     Type = attributeType
                 };
 
-                if (stream.Check(DialogScriptTokenType.LeftParen))
+                if (stream.Check(DSharpTokenType.LeftParen))
                 {
-                    stream.Eat(DialogScriptTokenType.LeftParen);
+                    stream.Eat(DSharpTokenType.LeftParen);
 
-                    while (!stream.Check(DialogScriptTokenType.RightParen))
+                    while (!stream.Check(DSharpTokenType.RightParen))
                     {
                         var arg = ExpressionNode.ParseLiteralOrArray(stream);
                         attribute.Arguments.Add(arg);
@@ -61,13 +61,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                         }
                     }
 
-                    stream.Eat(DialogScriptTokenType.RightParen);
+                    stream.Eat(DSharpTokenType.RightParen);
                 }
 
                 result.Add(attribute);
-                stream.Eat(DialogScriptTokenType.RightBracket);
+                stream.Eat(DSharpTokenType.RightBracket);
             }
-            while (stream.Check(DialogScriptTokenType.LeftBracket));
+            while (stream.Check(DSharpTokenType.LeftBracket));
 
             return true;
         }

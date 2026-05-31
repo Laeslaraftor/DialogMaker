@@ -6,23 +6,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Base class of all statements
     /// </summary>
     /// <param name="token">Token that represents some statement</param>
-    public abstract class StatementNode(DialogScriptToken token) : AstNode(token)
+    public abstract class StatementNode(DSharpToken token) : AstNode(token)
     {
-        public DialogScriptToken Token { get; } = token;
-
-        #region Управление
-
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
-        public override string ToString()
-        {
-            return $"{GetType().Name}({Token.Value}) at {base.ToString()}";
-        }
-
-        #endregion
-
         #region Статика
 
         /// <summary>
@@ -33,38 +18,26 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <exception cref="Exception"></exception>
         public static StatementNode ParseStatement(AstParserStream stream)
         {
-            if (stream.Check(DialogScriptTokenType.LeftBrace))
+            if (stream.Check(DSharpTokenType.LeftBrace))
             {
                 return BlockStatementNode.Parse(stream);
             }
 
             AttributeNode.TryParse(stream, out var attributes);
 
-            InvokableStatementNode ParseInvokable(Func<AstParserStream, StructNode.MemberInfo, InvokableNode> parser, StructNode.MemberInfo memberInfo)
+            StatementNode ParseObjectMember(ObjectDeclarationNode.MemberInfo memberInfo)
             {
-                var method = parser(stream, memberInfo);
-                method.Attributes = attributes;
+                var member = ObjectDeclarationNode.ParseMember(stream, memberInfo, attributes);
 
-                return new InvokableStatementNode(method.Token)
+                if (member is InvokableNode invokable)
                 {
-                    Invokable = method
-                };
-            }
-            StatementNode ParseStructMember(StructNode.MemberInfo memberInfo)
-            {
-                if (memberInfo.MemberType == DialogScriptTypeMember.Method)
-                {
-                    return ParseInvokable(MethodNode.Parse, memberInfo);
+                    return new InvokableStatementNode(invokable.Token)
+                    {
+                        Invokable = invokable
+                    };
                 }
-                else if (memberInfo.MemberType == DialogScriptTypeMember.Constructor)
+                else if (member is FieldNode field)
                 {
-                    return ParseInvokable(ConstructorNode.Parse, memberInfo);
-                }
-                else if (memberInfo.MemberType == DialogScriptTypeMember.Field)
-                {
-                    var field = FieldNode.ParseField(stream, memberInfo);
-                    field.Attributes = attributes;
-
                     return new VariableStatementNode(field.Token)
                     {
                         Variable = field
@@ -73,18 +46,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
                 throw new Exception($"Invalid member: {memberInfo.MemberType}");
             }
-            StructStatementNode ParseStruct()
+            ObjectDeclarationStatementNode ParseObjectDeclaration()
             {
-                var structNode = StructNode.Parse(stream);
-                structNode.Attributes = attributes;
+                var objectDeclarationNode = ObjectDeclarationNode.Parse(stream);
+                objectDeclarationNode.Attributes = attributes;
 
-                return new StructStatementNode(structNode.Token)
+                return new ObjectDeclarationStatementNode(objectDeclarationNode.Token)
                 {
-                    Struct = structNode
+                    ObjectDeclaration = objectDeclarationNode
                 };
             }
 
-            if (stream.Check(DialogScriptTokenType.Var))
+            if (stream.Check(DSharpTokenType.Namespace))
+            {
+                return NamespaceStatementNode.Parse(stream);
+            }
+            if (stream.Check(DSharpTokenType.Var))
             {
                 var variable = VariableNode.ParseVariable(stream, attributes);
                 variable.Attributes = attributes;
@@ -94,34 +71,39 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     Variable = variable
                 };
             }
-            if (stream.Check(DialogScriptTokenType.Extern) || stream.Check(DialogScriptTokenType.Func))
+            if (stream.Check(DSharpTokenType.Extern) || stream.Check(DSharpTokenType.Func))
             {
-                if (!StructNode.TryStartParseMember(stream, out var memberInfo))
+                if (!ObjectDeclarationNode.TryStartParseMember(stream, out var memberInfo))
                 {
                     stream.ThrowPositionException("Invalid tokens");
                 }
 
-                return ParseInvokable(MethodNode.Parse, memberInfo);
-            }
-            if (StructNode.IsAccessModifier(stream))
-            {
-                if (StructNode.IsStructDeclaration(stream))
+                var method = MethodNode.Parse(stream, memberInfo);
+
+                return new InvokableStatementNode(method.Token)
                 {
-                    ParseStruct();
+                    Invokable = method
+                };
+            }
+            if (ObjectDeclarationNode.IsAccessModifier(stream))
+            {
+                if (ObjectDeclarationNode.IsObjectDeclaration(stream))
+                {
+                    ParseObjectDeclaration();
                 }
 
-                if (!StructNode.TryStartParseMember(stream, out var memberInfo))
+                if (!ObjectDeclarationNode.TryStartParseMember(stream, out var memberInfo))
                 {
                     stream.ThrowPositionException("Invalid tokens");
                 }
 
-                ParseStructMember(memberInfo);
+                ParseObjectMember(memberInfo);
             }
-            if (stream.Check(DialogScriptTokenType.Struct))
+            if (ObjectDeclarationNode.IsObjectDeclaration(stream))
             {
-                return ParseStruct();
+                return ParseObjectDeclaration();
             }
-            if (stream.Check(DialogScriptTokenType.Enum))
+            if (stream.Check(DSharpTokenType.Enum))
             {
                 var enumNode = EnumNode.Parse(stream);
 
@@ -130,41 +112,41 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     Enum = enumNode
                 };
             }
-            if (stream.Check(DialogScriptTokenType.If))
+            if (stream.Check(DSharpTokenType.If))
             {
                 return IfStatementNode.Parse(stream);
             }
-            if (stream.Check(DialogScriptTokenType.While))
+            if (stream.Check(DSharpTokenType.While))
             {
                 return WhileStatementNode.Parse(stream);
             }
-            if (stream.Check(DialogScriptTokenType.For))
+            if (stream.Check(DSharpTokenType.For))
             {
                 return ForStatementNode.Parse(stream);
             }
-            if (stream.Check(DialogScriptTokenType.Return))
+            if (stream.Check(DSharpTokenType.Return))
             {
                 return ReturnStatementNode.Parse(stream);
             }
-            if (stream.Check(DialogScriptTokenType.Break))
+            if (stream.Check(DSharpTokenType.Break))
             {
                 return BreakStatementNode.Parse(stream);
             }
-            if (stream.Check(DialogScriptTokenType.Continue))
+            if (stream.Check(DSharpTokenType.Continue))
             {
                 return ContinueStatementNode.Parse(stream);
             }
-            else if (!(stream.Check(DialogScriptTokenType.Identifier) && stream.Check(DialogScriptTokenType.LeftParen, 1)) &&
-                     StructNode.TryStartParseMember(stream, out var structMemberInfo))
+            else if (!(stream.Check(DSharpTokenType.Identifier) && stream.Check(DSharpTokenType.LeftParen, 1)) &&
+                     ObjectDeclarationNode.TryStartParseMember(stream, out var structMemberInfo))
             {
-                return ParseStructMember(structMemberInfo);
+                return ParseObjectMember(structMemberInfo);
             }
 
             var expression = ExpressionNode.ParseExpression(stream);
 
-            if (!stream.Check(DialogScriptTokenType.RightBrace))
+            if (!stream.Check(DSharpTokenType.RightBrace))
             {
-                stream.Eat(DialogScriptTokenType.Semicolon);
+                stream.Eat(DSharpTokenType.Semicolon);
             }
 
             return new ExpressionStatementNode(expression.Token)

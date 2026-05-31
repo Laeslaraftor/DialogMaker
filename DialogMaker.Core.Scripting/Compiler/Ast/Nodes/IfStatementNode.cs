@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// If statement node
     /// </summary>
     /// <param name="token">Token that represents if keyword</param>
-    public class IfStatementNode(DialogScriptToken token) : StatementNode(token)
+    public class IfStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// Condition for execution "then" branch
@@ -30,21 +30,21 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Parsed if statement</returns>
         public static IfStatementNode Parse(AstParserStream stream)
         {
-            var ifToken = stream.Eat(DialogScriptTokenType.If);
-            stream.Eat(DialogScriptTokenType.LeftParen);
+            var ifToken = stream.Eat(DSharpTokenType.If);
+            stream.Eat(DSharpTokenType.LeftParen);
 
             IfStatementNode statement = new(ifToken)
             {
                 Condition = ExpressionNode.ParseExpression(stream)
             };
 
-            stream.Eat(DialogScriptTokenType.RightParen);
+            stream.Eat(DSharpTokenType.RightParen);
 
             statement.ThenBranch = ParseStatement(stream);
 
-            if (stream.Check(DialogScriptTokenType.Else))
+            if (stream.Check(DSharpTokenType.Else))
             {
-                stream.Eat(DialogScriptTokenType.Else);
+                stream.Eat(DSharpTokenType.Else);
                 statement.ElseBranch = ParseStatement(stream);
             }
 

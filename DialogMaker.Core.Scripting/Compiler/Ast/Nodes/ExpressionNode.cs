@@ -6,9 +6,44 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Base class of all expressions
     /// </summary>
     /// <param name="token">Token that represents some expression</param>
-    public abstract class ExpressionNode(DialogScriptToken token) : NamedNode(token)
+    public abstract class ExpressionNode(DSharpToken token) : AstNode(token)
     {
         #region Статика
+
+        /// <summary>
+        /// Parse expression that wrote with comma separator and write it's into buffer
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="buffer">Buffer for writing parsed expression</param>
+        /// <param name="endToken">Token which indicated end of expressions list</param>
+        /// <param name="noValueAfterCommaMessage">Message about not presenting value after comma</param>
+        public static void ParseExpressions(AstParserStream stream, List<ExpressionNode> buffer, DSharpTokenType endToken, string noValueAfterCommaMessage)
+        {
+            while (!stream.Check(endToken))
+            {
+                var expression = ParseExpression(stream);
+                buffer.Add(expression);
+
+                if (!ArrayExpressionNode.CheckTokenAfterComma(stream))
+                {
+                    stream.ThrowPositionException(noValueAfterCommaMessage);
+                }
+            }
+        }
+        /// <summary>
+        /// Parse expression that wrote with comma separator and write it's into buffer
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="endToken">Token which indicated end of expressions list</param>
+        /// <param name="noValueAfterCommaMessage">Message about not presenting value after comma</param>
+        /// <returns>Parsed expressions</returns>
+        public static List<ExpressionNode> ParseExpressions(AstParserStream stream, DSharpTokenType endToken, string noValueAfterCommaMessage)
+        {
+            List<ExpressionNode> buffer = [];
+            ParseExpressions(stream, buffer, endToken, noValueAfterCommaMessage);
+
+            return buffer;
+        }
 
         /// <summary>
         /// Parse member access or raw type name like instance.SomeProperty, MyType.ContentData
@@ -17,32 +52,30 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Parsed member access node (<see cref="MemberAccessExpressionNode"/>) or identifier node (<see cref="IdentifierExpressionNode"/>)</returns>
         public static ExpressionNode ParseIdentifier(AstParserStream stream)
         {
-            var identifier = stream.Eat(DialogScriptTokenType.Identifier);
+            ExpressionNode root = IdentifierExpressionNode.Parse(stream);
 
-            if (stream.Check(DialogScriptTokenType.Dot))
+            if (stream.Check(DSharpTokenType.Dot))
             {
-                ExpressionNode root = new IdentifierExpressionNode(identifier);
                 MemberAccessExpressionNode memberAccess;
 
                 do
                 {
-                    var accessOperation = stream.Eat(DialogScriptTokenType.Dot);
-                    var memberIdentifier = stream.Eat(DialogScriptTokenType.Identifier);
+                    var accessOperation = stream.Eat(DSharpTokenType.Dot);
 
                     memberAccess = new(accessOperation)
                     {
                         Target = root,
-                        Member = new IdentifierExpressionNode(memberIdentifier)
+                        Member = IdentifierExpressionNode.Parse(stream)
                     };
 
                     root = memberAccess;
                 }
-                while (stream.Check(DialogScriptTokenType.Dot));
+                while (stream.Check(DSharpTokenType.Dot));
 
                 return memberAccess;
             }
 
-            return new IdentifierExpressionNode(identifier);
+            return root;
         }
         /// <summary>
         /// parse member access or raw type name with possibility of method calling, array access, type checking
@@ -55,41 +88,41 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             while (true)
             {
-                if (stream.Check(DialogScriptTokenType.LeftParen))
+                if (stream.Check(DSharpTokenType.LeftParen))
                 {
-                    var callToken = stream.Eat(DialogScriptTokenType.LeftParen);
+                    var callToken = stream.Eat(DSharpTokenType.LeftParen);
                     List<ExpressionNode> args = [];
 
-                    while (!stream.Check(DialogScriptTokenType.RightParen))
+                    while (!stream.Check(DSharpTokenType.RightParen))
                     {
                         args.Add(ParseExpression(stream));
 
-                        if (!ArrayExpressionNode.CheckTokenAfterComma(stream, DialogScriptTokenType.RightParen))
+                        if (!ArrayExpressionNode.CheckTokenAfterComma(stream, DSharpTokenType.RightParen))
                         {
                             stream.ThrowPositionException("Required argument expression");
                         }
                     }
 
-                    stream.Eat(DialogScriptTokenType.RightParen);
+                    stream.Eat(DSharpTokenType.RightParen);
                     expression = new CallExpressionNode(callToken)
                     {
                         Callee = expression,
                         Arguments = args
                     };
                 }
-                else if (stream.Check(DialogScriptTokenType.LeftBracket))
+                else if (stream.Check(DSharpTokenType.LeftBracket))
                 {
-                    var arrayAccessToken = stream.Eat(DialogScriptTokenType.LeftBracket);
+                    var arrayAccessToken = stream.Eat(DSharpTokenType.LeftBracket);
                     var index = ParseExpression(stream);
 
-                    stream.Eat(DialogScriptTokenType.RightBracket);
+                    stream.Eat(DSharpTokenType.RightBracket);
                     expression = new ArrayAccessExpressionNode(arrayAccessToken)
                     {
                         Array = expression,
                         Index = index
                     };
                 }
-                //else if (stream.Check(DialogScriptTokenType.As, DialogScriptTokenType.Is))
+                //else if (stream.Check(DSharpTokenType.As, DSharpTokenType.Is))
                 //{
                 //}
                 else
@@ -107,7 +140,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Parsed literal value or array</returns>
         public static ExpressionNode ParseLiteralOrArray(AstParserStream stream)
         {
-            if (stream.Check(DialogScriptTokenType.LeftBracket))
+            if (stream.Check(DSharpTokenType.LeftBracket))
             {
                 return ArrayExpressionNode.Parse(stream);
             }
@@ -128,25 +161,25 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 assignment.Left = left;
                 return assignment;
             }
-            if (stream.Check(DialogScriptTokenType.Increment))
+            if (stream.Check(DSharpTokenType.Increment))
             {
-                var incrementToken = stream.Eat(DialogScriptTokenType.Increment);
+                var incrementToken = stream.Eat(DSharpTokenType.Increment);
                 return new IncrementExpressionNode(incrementToken)
                 {
                     Expression = left
                 };
             }
-            if (stream.Check(DialogScriptTokenType.Decrement))
+            if (stream.Check(DSharpTokenType.Decrement))
             {
-                var decrementToken = stream.Eat(DialogScriptTokenType.Decrement);
+                var decrementToken = stream.Eat(DSharpTokenType.Decrement);
                 return new DecrementExpressionNode(decrementToken)
                 {
                     Expression = left
                 };
             }
-            while (stream.Check(DialogScriptTokenType.Dot))
+            while (stream.Check(DSharpTokenType.Dot))
             {
-                var accessOperation = stream.Eat(DialogScriptTokenType.Dot);
+                var accessOperation = stream.Eat(DSharpTokenType.Dot);
                 left = new MemberAccessExpressionNode(accessOperation)
                 {
                     Target = left,
@@ -156,30 +189,35 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             return left;
         }
-        
+
         /// <summary>
-        /// Parse primary expression like literal value, array, variable/property access or method/function invocation
+        /// Parse primary expression like literal value, array, variable/property access, 
+        /// method/function invocation or new instance creation
         /// </summary>
         /// <param name="stream"></param>
         /// <returns></returns>
         public static ExpressionNode ParsePrimary(AstParserStream stream)
         {
-            if (stream.Check(DialogScriptTokenType.LeftParen))
+            if (stream.Check(DSharpTokenType.LeftParen))
             {
-                stream.Eat(DialogScriptTokenType.LeftParen);
+                stream.Eat(DSharpTokenType.LeftParen);
                 var expr = ParseExpression(stream);
-                stream.Eat(DialogScriptTokenType.RightParen);
+                stream.Eat(DSharpTokenType.RightParen);
                 return expr;
+            }
+            if (stream.Check(DSharpTokenType.New))
+            {
+                return NewExpressionNode.Parse(stream);
             }
             if (LiteralExpressionNode.TryParse(stream, out var literalExpression))
             {
                 return literalExpression;
             }
-            if (stream.Check(DialogScriptTokenType.LeftBracket))
+            if (stream.Check(DSharpTokenType.LeftBracket))
             {
                 return ArrayExpressionNode.Parse(stream);
             }
-            if (stream.Check(DialogScriptTokenType.Identifier))
+            if (stream.Check(DSharpTokenType.Identifier))
             {
                 return ParseIdentifierAccess(stream);
             }

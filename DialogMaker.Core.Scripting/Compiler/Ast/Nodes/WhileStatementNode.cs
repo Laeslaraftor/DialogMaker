@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// While statement node
     /// </summary>
     /// <param name="token">Token that represents while keyword</param>
-    public class WhileStatementNode(DialogScriptToken token) : StatementNode(token)
+    public class WhileStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// Condition for execution body
@@ -26,23 +26,23 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Parsed while statement</returns>
         public static WhileStatementNode Parse(AstParserStream stream)
         {
-            var whileToken = stream.Eat(DialogScriptTokenType.While);
-            stream.Eat(DialogScriptTokenType.LeftParen);
+            var whileToken = stream.Eat(DSharpTokenType.While);
+            stream.Eat(DSharpTokenType.LeftParen);
 
             WhileStatementNode statement = new(whileToken)
             {
                 Condition = ExpressionNode.ParseExpression(stream)
             };
 
-            stream.Eat(DialogScriptTokenType.RightParen);
+            stream.Eat(DSharpTokenType.RightParen);
             
-            if (!stream.Check(DialogScriptTokenType.Semicolon))
+            if (!stream.Check(DSharpTokenType.Semicolon))
             {
                 statement.Body = ParseStatement(stream);
             }
             else
             {
-                stream.Eat(DialogScriptTokenType.Semicolon);
+                stream.Eat(DSharpTokenType.Semicolon);
             }
 
             return statement;

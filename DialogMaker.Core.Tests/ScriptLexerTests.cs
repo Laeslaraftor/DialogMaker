@@ -24,12 +24,12 @@ namespace DialogMaker.Core.Tests
             var lexer = GetLexer();
             lexer.Tokenize();
             AstParser parser = new(lexer);
-            var program = parser.Parse();
+            var program = parser.Parse("Example");
 
             Console.WriteLine(program.ToString());
         }
 
-        private static DialogScriptLexer GetLexer()
+        private static DSharpLexer GetLexer()
         {
             var script = File.ReadAllText(ScriptPath);
             return new(script);

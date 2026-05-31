@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Block of statements
     /// </summary>
     /// <param name="token">Token that represents start of block</param>
-    public class BlockStatementNode(DialogScriptToken token) : StatementNode(token)
+    public class BlockStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// List of statement
@@ -21,14 +21,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <param name="stream">Abstract syntax tree parser stream</param>
         /// <param name="endWith">Token that indicate end of statements block</param>
         /// <returns>Parsed block of statements</returns>
-        public static BlockStatementNode Parse(AstParserStream stream, DialogScriptTokenType endWith = DialogScriptTokenType.RightBrace, DialogScriptTokenType startWith = DialogScriptTokenType.LeftBrace)
+        public static BlockStatementNode Parse(AstParserStream stream, DSharpTokenType endWith = DSharpTokenType.RightBrace, DSharpTokenType startWith = DSharpTokenType.LeftBrace)
         {
             var blockStartToken = stream.Eat(startWith);
             BlockStatementNode block = new(blockStartToken);
 
             ParseBody(stream, block.Statements, endWith);
             
-            if (endWith != DialogScriptTokenType.Semicolon)
+            if (endWith != DSharpTokenType.Semicolon)
             {
                 stream.Eat(endWith);
             }
@@ -41,13 +41,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <param name="stream">Abstract syntax tree parser stream</param>
         /// <param name="buffer">Buffer of statements</param>
         /// <param name="endWith">Token that indicate end of statements block</param>
-        public static void ParseBody(AstParserStream stream, List<StatementNode> buffer, DialogScriptTokenType endWith = DialogScriptTokenType.RightBrace)
+        public static void ParseBody(AstParserStream stream, List<StatementNode> buffer, DSharpTokenType endWith = DSharpTokenType.RightBrace)
         {
             while (!stream.Check(endWith) && !stream.IsEndOfFile())
             {
                 buffer.Add(ParseStatement(stream));
 
-                if (endWith == DialogScriptTokenType.Semicolon)
+                if (endWith == DSharpTokenType.Semicolon)
                 {
                     break;
                 }
@@ -59,7 +59,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <param name="stream">Abstract syntax tree parser stream</param>
         /// <param name="endWith">Token that indicate end of statements block</param>
         /// <returns>List of parsed statements</returns>
-        public static List<StatementNode> ParseBody(AstParserStream stream, DialogScriptTokenType endWith = DialogScriptTokenType.RightBrace)
+        public static List<StatementNode> ParseBody(AstParserStream stream, DSharpTokenType endWith = DSharpTokenType.RightBrace)
         {
             List<StatementNode> buffer = [];
             ParseBody(stream, buffer, endWith);

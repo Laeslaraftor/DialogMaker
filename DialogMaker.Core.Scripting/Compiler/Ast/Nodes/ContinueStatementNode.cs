@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Continue statement for skipping loop iteration
     /// </summary>
     /// <param name="token">Token that represents continue statement</param>
-    public class ContinueStatementNode(DialogScriptToken token) : StatementNode(token)
+    public class ContinueStatementNode(DSharpToken token) : StatementNode(token)
     {
 
         #region Статика
@@ -18,8 +18,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Parsed continue statement</returns>
         public static ContinueStatementNode Parse(AstParserStream stream)
         {
-            var token = stream.Eat(DialogScriptTokenType.Continue);
-            stream.Eat(DialogScriptTokenType.Semicolon);
+            var token = stream.Eat(DSharpTokenType.Continue);
+            stream.Eat(DSharpTokenType.Semicolon);
 
             return new(token);
         }

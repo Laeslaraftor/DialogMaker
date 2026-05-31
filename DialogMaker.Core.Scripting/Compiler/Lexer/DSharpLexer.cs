@@ -5,15 +5,15 @@ using System.Text;
 namespace DialogMaker.Core.Scripting.Compiler.Lexer
 {
     /// <summary>
-    /// Dialog script lexer
+    /// D# lexer
     /// </summary>
     /// <param name="source"></param>
-    public class DialogScriptLexer(string source) : IEnumerable<DialogScriptToken>
+    public class DSharpLexer(string source) : IEnumerable<DSharpToken>
     {
         /// <summary>
         /// List of script tokens
         /// </summary>
-        public ReferenceReadOnlyList<DialogScriptToken> Tokens
+        public ReferenceReadOnlyList<DSharpToken> Tokens
         {
             get
             {
@@ -26,7 +26,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         private int _position = 0;
         private int _line = 1;
         private int _column = 1;
-        private readonly List<DialogScriptToken> _tokens = [];
+        private readonly List<DSharpToken> _tokens = [];
 
         #region Управление
 
@@ -75,7 +75,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                 ReadOperatorOrPunctuation();
             }
 
-            AddToken(DialogScriptTokenType.EndOfFile, "");
+            AddToken(DSharpTokenType.EndOfFile, "");
         }
 
         #endregion
@@ -124,7 +124,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                 builder.Append(GetNext());
             }
 
-            AddToken(DialogScriptTokenType.Comment, builder.ToString(), startLine, startCol);
+            AddToken(DSharpTokenType.Comment, builder.ToString(), startLine, startCol);
         }
         private void ReadMultiLineComment()
         {
@@ -147,7 +147,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                 builder.Append(GetNext());
             }
 
-            AddToken(DialogScriptTokenType.MultilineComment, builder.ToString(), startLine, startCol);
+            AddToken(DSharpTokenType.MultilineComment, builder.ToString(), startLine, startCol);
         }
         private void ReadString()
         {
@@ -183,7 +183,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
             }
 
             GetNext();
-            AddToken(DialogScriptTokenType.StringLiteral, builder.ToString(), startLine, startCol);
+            AddToken(DSharpTokenType.StringLiteral, builder.ToString(), startLine, startCol);
         }
         private void ReadNumber()
         {
@@ -203,7 +203,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                 builder.Append(GetNext());
             }
 
-            AddToken(DialogScriptTokenType.NumberLiteral, builder.ToString(), startLine, startCol);
+            AddToken(DSharpTokenType.NumberLiteral, builder.ToString(), startLine, startCol);
         }
         private void ReadIdentifierOrKeyword()
         {
@@ -217,7 +217,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
             }
 
             string value = builder.ToString();
-            DialogScriptTokenType type = Keywords.GetValueOrDefault(value, DialogScriptTokenType.Identifier);
+            DSharpTokenType type = Keywords.GetValueOrDefault(value, DSharpTokenType.Identifier);
 
             AddToken(type, value, startLine, startCol);
         }
@@ -234,16 +234,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                     if (next == '=')
                     {
                         GetNext();
-                        AddToken(DialogScriptTokenType.Equal, "==", startLine, startColumn);
+                        AddToken(DSharpTokenType.Equal, "==", startLine, startColumn);
                     }
                     else if (next == '>')
                     {
                         GetNext();
-                        AddToken(DialogScriptTokenType.Lambda, "=>", startLine, startColumn);
+                        AddToken(DSharpTokenType.Lambda, "=>", startLine, startColumn);
                     }
                     else
                     {
-                        AddToken(DialogScriptTokenType.Assign, "=", startLine, startColumn);
+                        AddToken(DSharpTokenType.Assign, "=", startLine, startColumn);
                     }
 
                     break;
@@ -251,11 +251,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                     if (Peek() == '=')
                     {
                         GetNext();
-                        AddToken(DialogScriptTokenType.NotEqual, "!=", startLine, startColumn);
+                        AddToken(DSharpTokenType.NotEqual, "!=", startLine, startColumn);
                     }
                     else
                     {
-                        AddToken(DialogScriptTokenType.Not, "!", startLine, startColumn);
+                        AddToken(DSharpTokenType.Not, "!", startLine, startColumn);
                     }
 
                     break;
@@ -263,11 +263,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                     if (Peek() == '=')
                     {
                         GetNext();
-                        AddToken(DialogScriptTokenType.LessEqual, "<=", startLine, startColumn);
+                        AddToken(DSharpTokenType.LessEqual, "<=", startLine, startColumn);
                     }
                     else
                     {
-                        AddToken(DialogScriptTokenType.Less, "<", startLine, startColumn);
+                        AddToken(DSharpTokenType.Less, "<", startLine, startColumn);
                     }
 
                     break;
@@ -275,11 +275,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                     if (Peek() == '=')
                     {
                         GetNext();
-                        AddToken(DialogScriptTokenType.GreaterEqual, ">=", startLine, startColumn);
+                        AddToken(DSharpTokenType.GreaterEqual, ">=", startLine, startColumn);
                     }
                     else
                     {
-                        AddToken(DialogScriptTokenType.Greater, ">", startLine, startColumn);
+                        AddToken(DSharpTokenType.Greater, ">", startLine, startColumn);
                     }
 
                     break;
@@ -287,30 +287,30 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                     if (Peek() == '&')
                     {
                         GetNext();
-                        AddToken(DialogScriptTokenType.And, "&&", startLine, startColumn);
+                        AddToken(DSharpTokenType.And, "&&", startLine, startColumn);
                     }
                     break;
                 case '|':
                     if (Peek() == '|')
                     {
                         GetNext();
-                        AddToken(DialogScriptTokenType.Or, "||", startLine, startColumn);
+                        AddToken(DSharpTokenType.Or, "||", startLine, startColumn);
                     }
                     break;
                 case '+':
                     if (Peek() == '+')
                     {
                         GetNext();
-                        AddToken(DialogScriptTokenType.Increment, "++", startLine, startColumn);
+                        AddToken(DSharpTokenType.Increment, "++", startLine, startColumn);
                     }
                     else if (Peek() == '=')
                     {
                         GetNext();
-                        AddToken(DialogScriptTokenType.PlusAssign, "+=", startLine, startColumn);
+                        AddToken(DSharpTokenType.PlusAssign, "+=", startLine, startColumn);
                     }
                     else
                     {
-                        AddToken(DialogScriptTokenType.Plus, "+", startLine, startColumn);
+                        AddToken(DSharpTokenType.Plus, "+", startLine, startColumn);
                     }
 
                     break;
@@ -318,16 +318,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                     if (Peek() == '-')
                     {
                         GetNext();
-                        AddToken(DialogScriptTokenType.Decrement, "--", startLine, startColumn);
+                        AddToken(DSharpTokenType.Decrement, "--", startLine, startColumn);
                     }
                     else if (Peek() == '=')
                     {
                         GetNext();
-                        AddToken(DialogScriptTokenType.MinusAssign, "-=", startLine, startColumn);
+                        AddToken(DSharpTokenType.MinusAssign, "-=", startLine, startColumn);
                     }
                     else
                     {
-                        AddToken(DialogScriptTokenType.Minus, "-", startLine, startColumn);
+                        AddToken(DSharpTokenType.Minus, "-", startLine, startColumn);
                     }
 
                     break;
@@ -335,11 +335,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                     if (Peek() == '=')
                     {
                         GetNext();
-                        AddToken(DialogScriptTokenType.MultiplyAssign, "*=", startLine, startColumn);
+                        AddToken(DSharpTokenType.MultiplyAssign, "*=", startLine, startColumn);
                     }
                     else
                     {
-                        AddToken(DialogScriptTokenType.Multiply, "*", startLine, startColumn);
+                        AddToken(DSharpTokenType.Multiply, "*", startLine, startColumn);
                     }
 
                     break;
@@ -347,58 +347,58 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                     if (Peek() == '=')
                     {
                         GetNext();
-                        AddToken(DialogScriptTokenType.MultiplyAssign, "/=", startLine, startColumn);
+                        AddToken(DSharpTokenType.MultiplyAssign, "/=", startLine, startColumn);
                     }
                     else
                     {
-                        AddToken(DialogScriptTokenType.Divide, "/", startLine, startColumn);
+                        AddToken(DSharpTokenType.Divide, "/", startLine, startColumn);
                     }
 
                     break;
                 case '%':
-                    AddToken(DialogScriptTokenType.Mod, "%", startLine, startColumn);
+                    AddToken(DSharpTokenType.Mod, "%", startLine, startColumn);
                     break;
                 case '(':
-                    AddToken(DialogScriptTokenType.LeftParen, "(", startLine, startColumn);
+                    AddToken(DSharpTokenType.LeftParen, "(", startLine, startColumn);
                     break;
                 case ')':
-                    AddToken(DialogScriptTokenType.RightParen, ")", startLine, startColumn);
+                    AddToken(DSharpTokenType.RightParen, ")", startLine, startColumn);
                     break;
                 case '{':
-                    AddToken(DialogScriptTokenType.LeftBrace, "{", startLine, startColumn);
+                    AddToken(DSharpTokenType.LeftBrace, "{", startLine, startColumn);
                     break;
                 case '}':
-                    AddToken(DialogScriptTokenType.RightBrace, "}", startLine, startColumn);
+                    AddToken(DSharpTokenType.RightBrace, "}", startLine, startColumn);
                     break;
                 case '[':
-                    AddToken(DialogScriptTokenType.LeftBracket, "[", startLine, startColumn);
+                    AddToken(DSharpTokenType.LeftBracket, "[", startLine, startColumn);
                     break;
                 case ']':
-                    AddToken(DialogScriptTokenType.RightBracket, "]", startLine, startColumn);
+                    AddToken(DSharpTokenType.RightBracket, "]", startLine, startColumn);
                     break;
                 case ',':
-                    AddToken(DialogScriptTokenType.Comma, ",", startLine, startColumn);
+                    AddToken(DSharpTokenType.Comma, ",", startLine, startColumn);
                     break;
                 case '.':
-                    AddToken(DialogScriptTokenType.Dot, ".", startLine, startColumn);
+                    AddToken(DSharpTokenType.Dot, ".", startLine, startColumn);
                     break;
                 case ';':
-                    AddToken(DialogScriptTokenType.Semicolon, ";", startLine, startColumn);
+                    AddToken(DSharpTokenType.Semicolon, ";", startLine, startColumn);
                     break;
                 case ':':
-                    AddToken(DialogScriptTokenType.Colon, ":", startLine, startColumn);
+                    AddToken(DSharpTokenType.Colon, ":", startLine, startColumn);
                     break;
                 case '@':
-                    AddToken(DialogScriptTokenType.At, "@", startLine, startColumn);
+                    AddToken(DSharpTokenType.At, "@", startLine, startColumn);
                     break;
                 case '?':
-                    AddToken(DialogScriptTokenType.Question, "?", startLine, startColumn);
+                    AddToken(DSharpTokenType.Question, "?", startLine, startColumn);
                     break;
                 default:
                     throw new Exception($"Unknown character '{current}' at {_line}:{_column}");
             }
         }
-        private void AddToken(DialogScriptTokenType type, string value, int line = -1, int column = -1)
+        private void AddToken(DSharpTokenType type, string value, int line = -1, int column = -1)
         {
             _tokens.Add(new(type, value,
                             line == -1 ? _line : line,
@@ -413,7 +413,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// <inheritdoc/>
         /// </summary>
         /// <returns><inheritdoc/></returns>
-        public IEnumerator<DialogScriptToken> GetEnumerator()
+        public IEnumerator<DSharpToken> GetEnumerator()
         {
             return _tokens.GetEnumerator();
         }
@@ -426,21 +426,21 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
 
         #region Статика
 
-        private static ReadOnlyDictionary<string, DialogScriptTokenType> Keywords
+        private static ReadOnlyDictionary<string, DSharpTokenType> Keywords
         {
             get
             {
                 if (field == null)
                 {
-                    Dictionary<string, DialogScriptTokenType> keywords = [];
+                    Dictionary<string, DSharpTokenType> keywords = [];
 
-                    foreach (var tokenType in Enum.GetValues(typeof(DialogScriptTokenType)))
+                    foreach (var tokenType in Enum.GetValues(typeof(DSharpTokenType)))
                     {
                         var keywordAttribute = tokenType.GetEnumAttribute<KeywordAttribute>();
 
                         if (keywordAttribute != null)
                         {
-                            keywords.Add(keywordAttribute.Name, (DialogScriptTokenType)tokenType);
+                            keywords.Add(keywordAttribute.Name, (DSharpTokenType)tokenType);
                         }
                     }
 

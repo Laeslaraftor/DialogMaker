@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represent access to array item
     /// </summary>
     /// <param name="token">Token that represents index</param>
-    public class ArrayAccessExpressionNode(DialogScriptToken token) : ExpressionNode(token)
+    public class ArrayAccessExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Array expression that stores item

@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that references to enum node
     /// </summary>
     /// <param name="token">Token that represents enum name</param>
-    public class EnumStatementNode(DialogScriptToken token) : StatementNode(token)
+    public class EnumStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// Referenced enum node

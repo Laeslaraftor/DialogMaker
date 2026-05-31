@@ -6,12 +6,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Statement that references to struct
     /// </summary>
     /// <param name="token">Token that represents struct name</param>
-    public class StructStatementNode(DialogScriptToken token) : StatementNode(token)
+    public class ObjectDeclarationStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// Referenced struct
         /// </summary>
-        public StructNode? Struct { get; set; }
+        public ObjectDeclarationNode? ObjectDeclaration { get; set; }
 
         #region Управление
 
@@ -21,7 +21,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
-            return Struct?.ToString() ?? base.ToString();
+            return ObjectDeclaration?.ToString() ?? base.ToString();
         }
 
         #endregion
