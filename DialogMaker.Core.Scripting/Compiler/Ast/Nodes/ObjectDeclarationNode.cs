@@ -13,13 +13,25 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public IdentifierExpressionNode? Identifier { get; set; }
         /// <summary>
-        /// Is object struct
+        /// Object type
         /// </summary>
-        public bool IsStruct { get; set; }
+        public DSharpDeclaredObjectType Type { get; set; }
         /// <summary>
         /// Access modifier of this object
         /// </summary>
         public DSharpAccessModifier Access { get; set; }
+        /// <summary>
+        /// Is abstract type
+        /// </summary>
+        public bool IsAbstract { get; set; }
+        /// <summary>
+        /// Is sealed type
+        /// </summary>
+        public bool IsSealed { get; set; }
+        /// <summary>
+        /// Is static type
+        /// </summary>
+        public bool IsStatic { get; set; }
         /// <summary>
         /// Base types of this object
         /// </summary>
@@ -111,6 +123,51 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             return false;
         }
         /// <summary>
+        /// Try parse member mode from current token and eat it on success
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser</param>
+        /// <param name="result">Token that must be represents member mode</param>
+        /// <returns>Member mode successfully parsed</returns>
+        public static bool TryParseMemberMode(AstParserStream stream, out DSharpObjectMemberMode result)
+        {
+            result = DSharpObjectMemberMode.Default;
+            var currentToken = stream.Current;
+
+            if (currentToken == null)
+            {
+                return false;
+            }
+            if (TryParseMemberMode(currentToken, out result))
+            {
+                stream.Eat(currentToken.Type);
+                return true;
+            }
+
+            return false;
+        }
+        /// <summary>
+        /// Try parse member mode from current token
+        /// </summary>
+        /// <param name="result">Token that must be represents member mode</param>
+        /// <returns>Member mode successfully parsed</returns>
+        public static bool TryParseMemberMode(DSharpToken token, out DSharpObjectMemberMode result)
+        {
+            result = DSharpObjectMemberMode.Default;
+
+            if (token.Type == DSharpTokenType.Virtual)
+            {
+                result = DSharpObjectMemberMode.Virtual;
+                return true;
+            }
+            else if (token.Type == DSharpTokenType.Abstract)
+            {
+                result = DSharpObjectMemberMode.Abstract;
+                return true;
+            }
+
+            return false;
+        }
+        /// <summary>
         /// Try to start parse member. This method trying read member modifiers, type and name, then detect what it is.
         /// It restores parser position on fail.
         /// </summary>
@@ -123,6 +180,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             memberInfo = new();
             var startPosition = stream.Position;
             DSharpAccessModifier? accessModifier = null;
+            DSharpObjectMemberMode? mode = null;
             var currentToken = stream.Current ?? throw new Exception("Unable to read member");
 
             if (AttributeNode.TryParse(stream, out var attributeNodes))
@@ -152,6 +210,33 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
                     accessModifier = access;
                     eatToken = true;
+                }
+                else if (TryParseMemberMode(currentToken, out var memberMode))
+                {
+                    if (mode != null)
+                    {
+                        stream.ThrowPositionException("Multiple virtualizing modifiers");
+                    }
+
+                    mode = memberMode;
+                }
+                else if (currentToken.Type == DSharpTokenType.Override)
+                {
+                    if (memberInfo.IsStatic)
+                    {
+                        stream.ThrowPositionException("Multiple override modifiers");
+                    }
+
+                    memberInfo.IsSealed = true;
+                }
+                else if (currentToken.Type == DSharpTokenType.Sealed)
+                {
+                    if (memberInfo.IsStatic)
+                    {
+                        stream.ThrowPositionException("Multiple sealed modifiers");
+                    }
+
+                    memberInfo.IsSealed = true;
                 }
                 else if (currentToken.Type == DSharpTokenType.Static)
                 {
@@ -220,6 +305,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
 
             memberInfo.AccessModifier = accessModifier ?? DSharpAccessModifier.Private;
+            memberInfo.Mode = mode ?? DSharpObjectMemberMode.Default;
 
             if (stream.Check(DSharpTokenType.LeftParen))
             {
@@ -246,6 +332,17 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             return stream.CheckAll<DSharpAccessModifier>();
         }
         /// <summary>
+        /// Check current token is member mode (virtual or abstract)
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser</param>
+        /// <param name="offset">Token offset</param>
+        /// <returns>Return true when token is virtual or abstract</returns>
+        public static bool IsMemberMode(AstParserStream stream, int offset = 0)
+        {
+            return stream.Check(DSharpTokenType.Virtual, offset) ||
+                   stream.Check(DSharpTokenType.Abstract, offset);
+        }
+        /// <summary>
         /// Check current and next tokens is object declaration
         /// </summary>
         /// <param name="stream">Abstract syntax tree parser</param>
@@ -255,7 +352,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             bool IsDeclarationKeyword(int offset)
             {
                 return stream.Check(DSharpTokenType.Struct, offset) ||
-                       stream.Check(DSharpTokenType.Class, offset);
+                       stream.Check(DSharpTokenType.Class, offset) ||
+                       stream.Check(DSharpTokenType.Interface, offset);
+            }
+            bool IsStatic(int offset)
+            {
+                return stream.Check(DSharpTokenType.Static, offset);
             }
 
             if (IsDeclarationKeyword(0))
@@ -263,7 +365,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 return true;
             }
 
-            return IsAccessModifier(stream) && IsDeclarationKeyword(1);
+            bool isAccessModifier = IsAccessModifier(stream);
+
+            return isAccessModifier && IsDeclarationKeyword(1) ||
+                   IsStatic(0) && IsDeclarationKeyword(1) ||
+                   IsMemberMode(stream) && IsDeclarationKeyword(1) ||
+                   isAccessModifier && IsStatic(1) && IsDeclarationKeyword(2) ||
+                   isAccessModifier && IsMemberMode(stream, 1) && IsDeclarationKeyword(2);
         }
         /// <summary>
         /// Parse object node starts with current token
@@ -274,13 +382,37 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         public static ObjectDeclarationNode Parse(AstParserStream stream)
         {
             TryParseAccessModifier(stream, out var access);
+            bool memberModeParsed = TryParseMemberMode(stream, out var memberMode);
+            bool isSealed = false;
+            bool isStatic = false;
 
-            bool isStruct = false;
+            if (memberModeParsed && memberMode == DSharpObjectMemberMode.Virtual)
+            {
+                stream.Position--;
+                stream.ThrowPositionException("Object can not be virtual");
+            }
+            else if (!memberModeParsed && stream.Check(DSharpTokenType.Sealed))
+            {
+                stream.Eat(DSharpTokenType.Sealed);
+                isSealed = true;
+            }
+            if (stream.Check(DSharpTokenType.Static))
+            {
+                stream.Eat(DSharpTokenType.Static);
+                isStatic = true;
+            }
+
+            DSharpDeclaredObjectType objectType = DSharpDeclaredObjectType.Class;
 
             if (stream.Check(DSharpTokenType.Struct))
             {
                 stream.Eat(DSharpTokenType.Struct);
-                isStruct = true;
+                objectType = DSharpDeclaredObjectType.Struct;
+            }
+            else if (stream.Check(DSharpTokenType.Interface))
+            {
+                stream.Eat(DSharpTokenType.Interface);
+                objectType = DSharpDeclaredObjectType.Struct;
             }
             else
             {
@@ -291,8 +423,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             ObjectDeclarationNode node = new(identifier.Token)
             {
                 Identifier = identifier,
-                IsStruct = isStruct,
-                Access = access
+                Type = objectType,
+                IsAbstract = memberMode == DSharpObjectMemberMode.Abstract,
+                IsSealed = isSealed,
+                Access = access,
+                IsStatic = true
             };
 
             if (stream.Check(DSharpTokenType.Colon))
@@ -416,6 +551,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             /// Access modifier of this member
             /// </summary>
             public DSharpAccessModifier AccessModifier { get; set; }
+            /// <summary>
+            /// Member mode
+            /// </summary>
+            public DSharpObjectMemberMode Mode { get; set; }
+            /// <summary>
+            /// Is member override
+            /// </summary>
+            public bool IsOverride { get; set; }
+            /// <summary>
+            /// Is sealed member
+            /// </summary>
+            public bool IsSealed { get; set; }
             /// <summary>
             /// Extern flag of member
             /// </summary>

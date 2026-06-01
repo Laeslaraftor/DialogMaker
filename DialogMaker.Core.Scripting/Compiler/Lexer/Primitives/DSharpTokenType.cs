@@ -81,6 +81,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         [Keyword("class")]
         Class,
         /// <summary>
+        /// Interface keyword
+        /// </summary>
+        [Keyword("interface")]
+        Interface,
+        /// <summary>
         /// Enum keyword
         /// </summary>
         [Keyword("enum")]
@@ -160,6 +165,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// </summary>
         [Keyword("namespace")]
         Namespace,
+        /// <summary>
+        /// Using keyword
+        /// </summary>
+        [Keyword("using")]
+        Using,
 
         /// <summary>
         /// Public access modifier
@@ -176,6 +186,26 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// </summary>
         [Keyword("protected")]
         Protected,
+        /// <summary>
+        /// Virtual keyword
+        /// </summary>
+        [Keyword("virtual")]
+        Virtual,
+        /// <summary>
+        /// Protected keyword
+        /// </summary>
+        [Keyword("abstract")]
+        Abstract,
+        /// <summary>
+        /// Sealed keyword
+        /// </summary>
+        [Keyword("sealed")]
+        Sealed,
+        /// <summary>
+        /// Override keyword
+        /// </summary>
+        [Keyword("override")]
+        Override,
 
         /// <summary>
         /// Assign operator (=)

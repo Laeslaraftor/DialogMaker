@@ -40,6 +40,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Is static flag
         /// </summary>
         public bool IsStatic { get; set; }
+        /// <summary>
+        /// Override flag
+        /// </summary>
+        public bool IsOverride { get; set; }
+        /// <summary>
+        /// Sealed flag
+        /// </summary>
+        public bool IsSealed { get; set; }
+        /// <summary>
+        /// Member mode
+        /// </summary>
+        public DSharpObjectMemberMode Mode { get; set; }
 
         #region Статика
 
@@ -64,7 +76,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 CanRead = true,
                 CanWrite = true,
                 IsStatic = memberInfo.IsStatic,
-                Access = memberInfo.AccessModifier
+                Access = memberInfo.AccessModifier,
+                Mode = memberInfo.Mode,
+                IsOverride = memberInfo.IsOverride,
+                IsSealed = memberInfo.IsSealed
             };
 
             bool ReadGetter()

@@ -1,5 +1,4 @@
 ﻿using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
@@ -15,53 +14,51 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
+        public ReferenceReadOnlyList<DSharpFieldBuilder> GlobalVariables
+        {
+            get
+            {
+                field ??= new(_globalVariables);
+                return field;
+            }
+        }
+        public ReferenceReadOnlyList<DSharpMethodBuilder> GlobalFunctions
+        {
+            get
+            {
+                field ??= new(_globalFunctions);
+                return field;
+            }
+        }
 
         private readonly ObservableCollection<DSharpTypeBuilder> _types = [];
-        private readonly List<DSharpMetadataToken> _typeDefinitions = [];
-        private readonly List<DSharpMetadataToken> _methodsDefinitions = [];
-        private readonly List<DSharpMetadataToken> _fieldsDefinitions = [];
-        private readonly List<DSharpMetadataToken> _propertiesDefinitions = [];
+        private readonly ObservableCollection<DSharpFieldBuilder> _globalVariables = [];
+        private readonly ObservableCollection<DSharpMethodBuilder> _globalFunctions = [];
+        private readonly List<DSharpTypeToken> _typeDefinitions = [];
+        private readonly List<DSharpTypeToken> _methodsDefinitions = [];
+        private readonly List<DSharpTypeToken> _fieldsDefinitions = [];
+        private readonly List<DSharpTypeToken> _propertiesDefinitions = [];
 
         #region Управление
 
-        public DSharpMetadataToken AllocateMetadataToken(DSharpMetadataTokenType type, string name)
+        internal DSharpTypeToken AllocateMetadataToken(DSharpMetadataTokenType type)
         {
-            List<DSharpMetadataToken> tokensBuffer;
+            List<DSharpTypeToken> tokensBuffer;
 
             if (type == DSharpMetadataTokenType.TypeDefinition)
             {
-                if (TryGetReference<DSharpType>(t => null, name, out var referenceToken))
-                {
-                    return referenceToken;
-                }
-
                 tokensBuffer = _typeDefinitions;
             }
             else if (type == DSharpMetadataTokenType.Property)
             {
-                if (TryGetReference(t => t.Properties, name, out var referenceToken))
-                {
-                    return referenceToken;
-                }
-
                 tokensBuffer = _propertiesDefinitions;
             }
             else if (type == DSharpMetadataTokenType.Field)
             {
-                if (TryGetReference(t => t.Fields, name, out var referenceToken))
-                {
-                    return referenceToken;
-                }
-
                 tokensBuffer = _fieldsDefinitions;
             }
             else if (type == DSharpMetadataTokenType.Method)
             {
-                if (TryGetReference(t => t.Methods, name, out var referenceToken))
-                {
-                    return referenceToken;
-                }
-
                 tokensBuffer = _methodsDefinitions;
             }
             else
@@ -69,70 +66,109 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 throw new ArgumentException($"Invalid token type: {type}");
             }
 
-            DSharpMetadataToken token = new(type, tokensBuffer.Count, 0);
+            DSharpTypeToken token = new(type, tokensBuffer.Count, 0);
             tokensBuffer.Add(token);
 
             return token;
         }
-        public bool RemoveDefinition(DSharpMetadataToken metadataToken)
+        internal bool RemoveMember(DSharpMemberInfoBuilder member)
         {
-            // Надо сделать удаление токена со смещением остальных
+            List<DSharpTypeToken> tokens;
+
+            if (member.MetadataToken.Type == DSharpMetadataTokenType.TypeDefinition)
+            {
+                tokens = _typeDefinitions;
+            } 
+            else if (member.MetadataToken.Type == DSharpMetadataTokenType.Method)
+            {
+                tokens = _methodsDefinitions;
+            }
+            else if (member.MetadataToken.Type == DSharpMetadataTokenType.Property)
+            {
+                tokens = _propertiesDefinitions;
+            }
+            else if (member.MetadataToken.Type == DSharpMetadataTokenType.Field)
+            {
+                tokens = _fieldsDefinitions;
+            }
+            else
+            {
+                throw new ArgumentException($"Member with invalid metadata token type: {member.MetadataToken}");
+            }
+
+            bool result = RemoveMember(tokens, member.MetadataToken);
+
+            if (result && member is DSharpTypeBuilder typeBuilder)
+            {
+                _types.Remove(typeBuilder);
+
+                foreach (var type in _types)
+                {
+                    type.BaseTypes.Remove(typeBuilder);
+                }
+            }
+
+            return result;
+        }
+
+        public bool RemoveGlobalVariable(DSharpFieldBuilder variable)
+        {
+            if (_globalVariables.Remove(variable))
+            {
+                return RemoveMember(_fieldsDefinitions, variable.MetadataToken);
+            }
+
             return false;
         }
-        public DSharpTypeBuilder CreateType(DSharpMetadataToken token, string name)
+        public bool RemoveGlobalFunction(DSharpMethodBuilder function)
         {
-            CheckToken(token);
+            if (_globalFunctions.Remove(function))
+            {
+                return RemoveMember(_methodsDefinitions, function.MetadataToken);
+            }
 
-            DSharpTypeBuilder type = new(this, name, token);
-            _types.Add(type);
+            return false;
+        }
+        public bool RemoveType(DSharpTypeBuilder type) => RemoveMember(type);
+        public DSharpTypeBuilder CreateType(string name, DSharpTypeBuilder? parent = null)
+        {
+            return CreateMember(DSharpMetadataTokenType.TypeDefinition, _types, t => new(this, parent, name, t));
+        }
+        public DSharpFieldBuilder CreateGlobalVariable(string name)
+        {
+            return CreateMember(DSharpMetadataTokenType.Field, _globalVariables, t => new(this, null, name, t));
+        }
+        public DSharpMethodBuilder CreateGlobalFunction(string name)
+        {
+            return CreateMember(DSharpMetadataTokenType.Method, _globalFunctions, t => new(this, null, name, t));
+        }
+
+        private T CreateMember<T>(DSharpMetadataTokenType tokenType, IList<T> members, Func<DSharpTypeToken, T> fabric)
+        {
+            var token = AllocateMetadataToken(tokenType);
+            var type = fabric(token);
+            members.Add(type);
 
             return type;
         }
-
-        private void CheckToken(DSharpMetadataToken token)
+        private bool RemoveMember(List<DSharpTypeToken> membersToken, DSharpTypeToken token)
         {
-            if (token.AssemblyIndex != 0)
+            var index = membersToken.IndexOf(token);
+
+            if (index == -1)
             {
-                throw new ArgumentException($"Unable to use token that references to member from other assembly");
-            }
-        }
-        private bool TryGetReference<T>(Func<DSharpType, IEnumerable<T>?> selector, string name, [NotNullWhen(true)] out DSharpMetadataToken referenceToken)
-            where T : DSharpMemberInfo
-        {
-            referenceToken = default;
-            int referenceIndex = 0;
-
-            foreach (var reference in References)
-            {
-                foreach (var type in reference.Types)
-                {
-                    var members = selector(type);
-
-                    if (members == null)
-                    {
-                        if (type.FullName == name)
-                        {
-                            referenceToken = new(type.MetadataToken, referenceIndex);
-                            return true;
-                        }
-                    }
-                    else
-                    {
-                        foreach (var member in members)
-                        {
-                            if (member.FullName == name)
-                            {
-                                referenceToken = new(member.MetadataToken, referenceIndex);
-                                return true;
-                            }
-                        }
-                    }
-                }
-
-                referenceIndex++;
+                return false;
             }
 
-            return false;
+            membersToken.RemoveAt(index);
+            token.Index = -1;
+
+            for (int i = index; i < membersToken.Count; i++)
+            {
+                membersToken[i].Index--;
+            }
+
+            return true;
         }
 
         #endregion

@@ -39,6 +39,10 @@
         /// Flag that set internal access modifier
         /// </summary>
         Internal = 0x0040,
+        /// <summary>
+        /// Flag that set internal access modifier
+        /// </summary>
+        Protected = 0x0050,
 
         /// <summary>
         /// Flag that set marks type as abstract

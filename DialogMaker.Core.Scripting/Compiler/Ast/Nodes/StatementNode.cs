@@ -57,6 +57,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 };
             }
 
+            if (stream.Check(DSharpTokenType.Using))
+            {
+                return UsingStatementNode.Parse(stream);
+            }
             if (stream.Check(DSharpTokenType.Namespace))
             {
                 return NamespaceStatementNode.Parse(stream);

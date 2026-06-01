@@ -21,6 +21,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public bool IsStatic { get; set; }
         /// <summary>
+        /// Override flag
+        /// </summary>
+        public bool IsOverride { get; set; }
+        /// <summary>
+        /// Sealed flag
+        /// </summary>
+        public bool IsSealed { get; set; }
+        /// <summary>
+        /// Member mode
+        /// </summary>
+        public DSharpObjectMemberMode Mode { get; set; }
+        /// <summary>
         /// Access modifier of this method
         /// </summary>
         public DSharpAccessModifier Access { get; set; } = DSharpAccessModifier.Private;
@@ -48,7 +60,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 Access = memberInfo.AccessModifier,
                 ReturnType = memberInfo.Type,
                 IsExtern = memberInfo.IsExtern,
-                IsStatic = memberInfo.IsStatic
+                IsStatic = memberInfo.IsStatic,
+                IsOverride = memberInfo.IsOverride,
+                IsSealed = memberInfo.IsSealed,
+                Mode = memberInfo.Mode
             };
 
             ParseParameters(stream, method.Parameters);

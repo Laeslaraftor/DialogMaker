@@ -11,6 +11,8 @@ namespace DialogMaker.Core.Scripting.Runtime
         public ReadOnlyCollection<string> RequiredAssembliesReferenceName { get; }
         public string Name { get; }
         public ReadOnlyCollection<DSharpType> Types { get; }
+        public ReadOnlyCollection<DSharpFieldInfo> GlobalVariables { get; }
+        public ReadOnlyCollection<DSharpMethodInfo> GlobalFunctions { get; }
 
         private readonly Dictionary<string, DSharpAssembly> _references = [];
 
@@ -23,6 +25,7 @@ namespace DialogMaker.Core.Scripting.Runtime
             if (metadataToken.AssemblyIndex > 0)
             {
                 var referencesAssemblyName = RequiredAssembliesReferenceName[metadataToken.AssemblyIndex - 1];
+                metadataToken = new(metadataToken, 0);
 
                 if (!_references.TryGetValue(referencesAssemblyName, out assembly))
                 {
@@ -36,29 +39,20 @@ namespace DialogMaker.Core.Scripting.Runtime
         {
             return Types.First(t => t.FullName == name);
         }
-        public DSharpPropertyInfo GetProperty(string name)
+        public DSharpFieldInfo GetGlobalVariable(string name)
         {
-            if (!TryFindMember(t => t.Properties, name, out var result))
+            if (!TryGetGlobalVariable(name, out var result))
             {
-                throw new ArgumentException($"Unknown property: {name}", nameof(name));
+                throw new ArgumentException($"Unknown global variable: {name}", nameof(name));
             }
 
             return result;
         }
-        public DSharpFieldInfo GetField(string name)
+        public DSharpMethodInfo GetGlobalFunction(string name)
         {
-            if (!TryFindMember(t => t.Fields, name, out var result))
+            if (!TryGetGlobalFunction(name, out var result))
             {
-                throw new ArgumentException($"Unknown field: {name}", nameof(name));
-            }
-
-            return result;
-        }
-        public DSharpMethodInfo GetMethod(string name)
-        {
-            if (!TryFindMember(t => t.Methods, name, out var result))
-            {
-                throw new ArgumentException($"Unknown method: {name}", nameof(name));
+                throw new ArgumentException($"Unknown global function: {name}", nameof(name));
             }
 
             return result;
@@ -68,36 +62,17 @@ namespace DialogMaker.Core.Scripting.Runtime
             result = Types.FirstOrDefault(t => t.FullName == name);
             return result != null;
         }
-        public bool TryGetProperty(string name, [NotNullWhen(true)] out DSharpPropertyInfo? result)
+        public bool TryGetGlobalVariable(string name, [NotNullWhen(true)] out DSharpFieldInfo? result)
         {
-            return TryFindMember(t => t.Properties, name, out result);
+            result = GlobalVariables.FirstOrDefault(v => v.Name == name);
+            return result != null;
         }
-        public bool TryGetField(string name, [NotNullWhen(true)] out DSharpFieldInfo? result)
+        public bool TryGetGlobalFunction(string name, [NotNullWhen(true)] out DSharpMethodInfo? result)
         {
-            return TryFindMember(t => t.Fields, name, out result);
-        }
-        public bool TryGetMethod(string name, [NotNullWhen(true)] out DSharpMethodInfo? result)
-        {
-            return TryFindMember(t => t.Methods, name, out result);
+            result = GlobalFunctions.FirstOrDefault(f => f.Name == name);
+            return result != null;
         }
 
-        private bool TryFindMember<T>(Func<DSharpType, IEnumerable<T>> selector, string name, [NotNullWhen(true)] out T? result)
-            where T : DSharpMemberInfo
-        {
-            result = default;
-
-            foreach (var type in Types)
-            {
-                result = selector(type).FirstOrDefault(p => p.FullName == name);
-
-                if (result != null)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
         private DSharpMemberInfo GetMember(DSharpAssembly assembly, DSharpMetadataToken metadataToken)
         {
             DSharpMemberInfo Find(Func<DSharpType, IEnumerable<DSharpMemberInfo>> selector)
@@ -113,7 +88,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                     }
                 }
 
-                throw new ArgumentException($"Unknown member with metadata token: {metadataToken}", nameof(metadataToken));
+                throw new ArgumentException($"Unknown member with token: {metadataToken}", nameof(metadataToken));
             }
 
             if (metadataToken.Type == DSharpMetadataTokenType.TypeDefinition)
@@ -126,10 +101,24 @@ namespace DialogMaker.Core.Scripting.Runtime
             }
             else if (metadataToken.Type == DSharpMetadataTokenType.Field)
             {
+                var result = assembly.GlobalVariables.FirstOrDefault(v => v.MetadataToken == metadataToken);
+
+                if (result != null)
+                {
+                    return result;
+                }
+
                 return Find(t => t.Fields);
             }
             else if (metadataToken.Type == DSharpMetadataTokenType.Method)
             {
+                var result = assembly.GlobalFunctions.FirstOrDefault(f => f.MetadataToken == metadataToken);
+
+                if (result != null)
+                {
+                    return result;
+                }
+
                 return Find(t => t.Methods);
             }
 
