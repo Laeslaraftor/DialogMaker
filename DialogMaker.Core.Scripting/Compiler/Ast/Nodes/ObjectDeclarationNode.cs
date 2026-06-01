@@ -35,7 +35,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <summary>
         /// Base types of this object
         /// </summary>
-        public List<AstNode> BaseTypes { get; set; } = [];
+        public List<TypeInfoNode> BaseTypes { get; set; } = [];
         /// <summary>
         /// Field of object
         /// </summary>

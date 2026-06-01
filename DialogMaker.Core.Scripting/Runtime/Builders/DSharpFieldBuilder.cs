@@ -17,7 +17,7 @@
         /// <summary>
         /// Type of value that stored by this field
         /// </summary>
-        public DSharpTypeBuilder? FieldType { get; set; }
+        public DSharpTypeToken? FieldType { get; set; }
         /// <summary>
         /// Is read only flag. This flag means that this field can not be changed at runtime outside of constructor 
         /// </summary>

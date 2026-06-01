@@ -35,9 +35,9 @@ namespace DialogMaker.Core.Scripting.Runtime
 
             return GetMember(assembly, metadataToken);
         }
-        public DSharpType GetType(string name)
+        public DSharpType GetType(string fullName)
         {
-            return Types.First(t => t.FullName == name);
+            return Types.First(t => t.FullName == fullName);
         }
         public DSharpFieldInfo GetGlobalVariable(string name)
         {
@@ -57,9 +57,9 @@ namespace DialogMaker.Core.Scripting.Runtime
 
             return result;
         }
-        public bool TryGetType(string name, [NotNullWhen(true)] out DSharpType? result)
+        public bool TryGetType(string fullName, [NotNullWhen(true)] out DSharpType? result)
         {
-            result = Types.FirstOrDefault(t => t.FullName == name);
+            result = Types.FirstOrDefault(t => t.FullName == fullName);
             return result != null;
         }
         public bool TryGetGlobalVariable(string name, [NotNullWhen(true)] out DSharpFieldInfo? result)

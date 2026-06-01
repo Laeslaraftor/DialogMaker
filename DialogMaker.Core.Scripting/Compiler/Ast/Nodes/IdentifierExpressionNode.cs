@@ -10,6 +10,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     {
         public List<TypeInfoNode> GenericParameters { get; set; } = [];
 
+        #region Управление
+
+        public string GetName(bool simplifyGenerics)
+        {
+            return Name + GenericParameters.GetGenericsName(simplifyGenerics);
+        }
+
+        #endregion
+
         #region Статика
 
         /// <summary>

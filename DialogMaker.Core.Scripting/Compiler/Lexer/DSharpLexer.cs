@@ -61,6 +61,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                     ReadString();
                     continue;
                 }
+                if (current == '\'')
+                {
+                    ReadChar();
+                    continue;
+                }
                 if (char.IsDigit(current) || (current == '-' && char.IsDigit(PeekNext())))
                 {
                     ReadNumber();
@@ -169,6 +174,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                         case 'n': builder.Append('\n'); break;
                         case 't': builder.Append('\t'); break;
                         case 'r': builder.Append('\r'); break;
+                        case '0': builder.Append('\0'); break;
                         case '\\': builder.Append('\\'); break;
                         case '"': builder.Append('"'); break;
                         default: builder.Append(escape); break;
@@ -184,6 +190,42 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
 
             GetNext();
             AddToken(DSharpTokenType.StringLiteral, builder.ToString(), startLine, startCol);
+        }
+        private void ReadChar()
+        {
+            int startLine = _line;
+            int startCol = _column;
+            char value = '\0';
+
+            while (!IsEndOfFile() && Peek() != '\'')
+            {
+                if (Peek() == '\\')
+                {
+                    GetNext();
+                    char escape = Peek();
+
+                    value = escape switch
+                    {
+                        'n' => '\n',
+                        't' => '\t',
+                        'r' => '\r',
+                        '0' => '\0',
+                        '\\' => '\\',
+                        '\'' => '\'',
+                        _ => escape,
+                    };
+                    GetNext();
+                    break;
+                }
+                else
+                {
+                    value = GetNext();
+                    break;
+                }
+            }
+
+            GetNext();
+            AddToken(DSharpTokenType.CharLiteral, value.ToString(), startLine, startCol);
         }
         private void ReadNumber()
         {

@@ -9,7 +9,31 @@
         public override DSharpTypeBuilder? DeclaringType { get; } = declaringType;
         public DSharpObjectType Type { get; set; }
         public string? Namespace { get; set; }
-        public List<DSharpTypeBuilder> BaseTypes { get; } = [];
+        public string FullName
+        {
+            get
+            {
+                string result = Name;
+
+                if (GenericParameters.Count > 0)
+                {
+                    result += "`" + GenericParameters.Count;
+                }
+                if (DeclaringType != null)
+                {
+                    result = $"{DeclaringType.FullName}.{result}";
+                }
+                else if (Namespace != null)
+                {
+                    result = $"{Namespace}.{result}";
+                }
+
+                return result;
+            }
+        }
+        public List<DSharpTypeToken> BaseTypes { get; } = [];
+        public List<DSharpTypeToken> GenericParameters { get; } = [];
+        public List<DSharpTypeToken> GenericTypes { get; } = [];
         public ReferenceReadOnlyList<DSharpMethodBuilder> Constructors
         {
             get

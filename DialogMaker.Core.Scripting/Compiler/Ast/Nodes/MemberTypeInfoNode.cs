@@ -12,5 +12,19 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Member access expression to current type
         /// </summary>
         public MemberAccessExpressionNode? Member { get; set; }
+
+        #region Управление
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="simplifyGenerics"><inheritdoc/></param>
+        /// <returns><inheritdoc/></returns>
+        protected override string GetTypeName(bool simplifyGenerics)
+        {
+            return Member?.GetName(simplifyGenerics) ?? base.GetTypeName(simplifyGenerics);
+        }
+
+        #endregion
     }
 }

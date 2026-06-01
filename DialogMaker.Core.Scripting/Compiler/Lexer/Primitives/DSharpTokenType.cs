@@ -131,6 +131,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         [Keyword("string")]
         String,
         /// <summary>
+        /// Char keyword
+        /// </summary>
+        [Keyword("char")]
+        Char,
+        /// <summary>
         /// Number keyword (int, float, double)
         /// </summary>
         [Keyword("number")]
@@ -186,6 +191,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// </summary>
         [Keyword("protected")]
         Protected,
+        /// <summary>
+        /// Internal access modifier
+        /// </summary>
+        [Keyword("internal")]
+        Internal,
         /// <summary>
         /// Virtual keyword
         /// </summary>
@@ -350,6 +360,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// String value
         /// </summary>
         StringLiteral,
+        /// <summary>
+        /// Char value
+        /// </summary>
+        CharLiteral,
         /// <summary>
         /// Number literal it's just a number
         /// </summary>

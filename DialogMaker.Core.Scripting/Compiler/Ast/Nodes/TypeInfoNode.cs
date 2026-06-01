@@ -21,7 +21,46 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Nullable flags for array dimensions. Size of this list must be equals to <see cref="ArrayDimensions"/>
         /// </summary>
         public List<bool> ArrayNullability { get; set; } = [];
+        /// <summary>
+        /// Generic parameters of this type
+        /// </summary>
         public List<TypeInfoNode> GenericParameters { get; set; } = [];
+
+        #region Управление
+
+        public string GetFullName(bool simplifyGenerics, bool nullable)
+        {
+            string result = GetTypeName(simplifyGenerics);
+
+            if (nullable && IsNullable)
+            {
+                result += "?";
+            }
+
+            result += GenericParameters.GetGenericsName(simplifyGenerics);
+
+            if (!simplifyGenerics)
+            {
+                foreach (var arrayNullable in ArrayNullability)
+                {
+                    result += "[]";
+
+                    if (nullable && arrayNullable)
+                    {
+                        result += "?";
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        protected virtual string GetTypeName(bool simplifyGenerics)
+        {
+            return Name;
+        }
+
+        #endregion
 
         #region Статика
 
@@ -39,6 +78,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             return current.Type == DSharpTokenType.String ||
                    current.Type == DSharpTokenType.Number ||
                    current.Type == DSharpTokenType.Bool ||
+                   current.Type == DSharpTokenType.Char ||
                    current.Type == DSharpTokenType.Object ||
                    current.Type == DSharpTokenType.Var ||
                    stream.Check(DSharpTokenType.Identifier);
@@ -58,6 +98,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             if (current.Type == DSharpTokenType.String ||
                 current.Type == DSharpTokenType.Number ||
                 current.Type == DSharpTokenType.Bool ||
+                current.Type == DSharpTokenType.Char ||
                 current.Type == DSharpTokenType.Object ||
                 current.Type == DSharpTokenType.Var)
             {

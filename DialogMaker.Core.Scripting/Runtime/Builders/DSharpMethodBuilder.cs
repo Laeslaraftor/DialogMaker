@@ -71,6 +71,7 @@
             set;
         }
         public List<DSharpTypeBuilder> Parameters { get; } = [];
+        public List<DSharpTypeToken> GenericParameters { get; } = [];
         public override bool IsStatic
         {
             get => LinkedProperty?.IsStatic ?? base.IsStatic;

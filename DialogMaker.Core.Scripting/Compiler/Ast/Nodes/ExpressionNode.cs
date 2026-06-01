@@ -49,10 +49,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Parse member access or raw type name like instance.SomeProperty, MyType.ContentData
         /// </summary>
         /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="parseGenerics">Flag which indicates that generic parameters must be parsed</param>
         /// <returns>Parsed member access node (<see cref="MemberAccessExpressionNode"/>) or identifier node (<see cref="IdentifierExpressionNode"/>)</returns>
-        public static ExpressionNode ParseIdentifier(AstParserStream stream)
+        public static ExpressionNode ParseIdentifier(AstParserStream stream, bool parseGenerics = true)
         {
-            ExpressionNode root = IdentifierExpressionNode.Parse(stream);
+            ExpressionNode root = IdentifierExpressionNode.Parse(stream, parseGenerics);
 
             if (stream.Check(DSharpTokenType.Dot))
             {
@@ -65,7 +66,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     memberAccess = new(accessOperation)
                     {
                         Target = root,
-                        Member = IdentifierExpressionNode.Parse(stream)
+                        Member = IdentifierExpressionNode.Parse(stream, parseGenerics)
                     };
 
                     root = memberAccess;

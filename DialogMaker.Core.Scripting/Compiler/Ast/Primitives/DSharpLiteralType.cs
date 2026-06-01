@@ -2,11 +2,30 @@
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast
 {
+    /// <summary>
+    /// Literal type
+    /// </summary>
     public enum DSharpLiteralType
     {
+        /// <summary>
+        /// Null value
+        /// </summary>
         Null = DSharpTokenType.Null,
+        /// <summary>
+        /// Number value
+        /// </summary>
         Number = DSharpTokenType.NumberLiteral,
+        /// <summary>
+        /// Boolean value
+        /// </summary>
         Bool = DSharpTokenType.Bool,
-        String = DSharpTokenType.StringLiteral
+        /// <summary>
+        /// String value
+        /// </summary>
+        String = DSharpTokenType.StringLiteral,
+        /// <summary>
+        /// Char value
+        /// </summary>
+        Char = DSharpTokenType.CharLiteral
     }
 }

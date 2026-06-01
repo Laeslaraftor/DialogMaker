@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
@@ -12,7 +13,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <summary>
         /// Value of this node
         /// </summary>
-        public object? Value { get; set; }
+        public DSharpLiteralValue Value { get; set; }
         /// <summary>
         /// Type of literal value
         /// </summary>
@@ -26,7 +27,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
-            return $"Value: {Value ?? "null"}, type: {Type}. {base.ToString()}";
+            return $"Value: {Value}, type: {Type}. {base.ToString()}";
         }
 
         #endregion
@@ -37,6 +38,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         {
             [DSharpTokenType.NumberLiteral] = new(DSharpLiteralType.Number, v => double.Parse(v.Replace(".", ","))),
             [DSharpTokenType.StringLiteral] = new(DSharpLiteralType.String, v => v),
+            [DSharpTokenType.CharLiteral] = new(DSharpLiteralType.Char, v => v.Length == 0 ? '\0' : v[0]),
             [DSharpTokenType.False] = new(DSharpLiteralType.Bool, v => false),
             [DSharpTokenType.True] = new(DSharpLiteralType.Bool, v => true),
             [DSharpTokenType.Null] = new(DSharpLiteralType.Null, v => null)
@@ -96,10 +98,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #region Структуры
 
-        private readonly struct LiteralInfo(DSharpLiteralType type, Func<string, object?> parser)
+        private readonly struct LiteralInfo(DSharpLiteralType type, Func<string, DSharpLiteralValue> parser)
         {
             public DSharpLiteralType Type { get; } = type;
-            public Func<string, object?> Parser { get; } = parser;
+            public Func<string, DSharpLiteralValue> Parser { get; } = parser;
         }
 
         #endregion

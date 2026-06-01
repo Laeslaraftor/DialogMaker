@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
@@ -27,6 +28,46 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             get
             {
                 field ??= new(_globalFunctions);
+                return field;
+            }
+        }
+        public DSharpTypeToken StringType
+        {
+            get
+            {
+                field ??= GetTypeToken(StringTypeFullName);
+                return field;
+            }
+        }
+        public DSharpTypeToken NumberType
+        {
+            get
+            {
+                field ??= GetTypeToken(NumberTypeFullName);
+                return field;
+            }
+        }
+        public DSharpTypeToken CharType
+        {
+            get
+            {
+                field ??= GetTypeToken(CharTypeFullName);
+                return field;
+            }
+        }
+        public DSharpTypeToken BoolType
+        {
+            get
+            {
+                field ??= GetTypeToken(BoolTypeFullName);
+                return field;
+            }
+        }
+        public DSharpTypeToken EnumType
+        {
+            get
+            {
+                field ??= GetTypeToken(EnumTypeFullName);
                 return field;
             }
         }
@@ -104,7 +145,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
                 foreach (var type in _types)
                 {
-                    type.BaseTypes.Remove(typeBuilder);
+                    type.BaseTypes.Remove(typeBuilder.MetadataToken);
                 }
             }
 
@@ -170,6 +211,60 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             return true;
         }
+
+        #endregion
+
+        #region Поиск
+
+        public DSharpTypeToken GetTypeToken(string fullName)
+        {
+            if (TryGetTypeToken(fullName, out var token))
+            {
+                return token;
+            }
+
+            throw new ArgumentException($"Unknown type: {fullName}", nameof(fullName));
+        }
+        public bool TryGetTypeToken(string fullName, [NotNullWhen(true)] out DSharpTypeToken? result)
+        {
+            result = _types.FirstOrDefault(t => t.FullName == fullName);
+
+            if (result != null)
+            {
+                return true;
+            }
+
+            int referenceIndex = 0;
+
+            foreach (var reference in References)
+            {
+                if (reference.TryGetType(fullName, out var referencedType))
+                {
+                    result = new(referencedType.MetadataToken, referenceIndex);
+                    return true;
+                }
+
+                referenceIndex++;
+            }
+
+            return false;
+        }
+        public DSharpTypeBuilder GetType(string fullName)
+        {
+            var type = _types.FirstOrDefault(t => t.FullName == fullName);
+
+            return type ?? throw new ArgumentException($"Unknown type: {fullName}", nameof(fullName));
+        }
+
+        #endregion
+
+        #region Константы
+
+        public const string StringTypeFullName = "System.String";
+        public const string NumberTypeFullName = "System.Number";
+        public const string BoolTypeFullName = "System.Bool";
+        public const string CharTypeFullName = "System.Char";
+        public const string EnumTypeFullName = "System.Enum";
 
         #endregion
     }

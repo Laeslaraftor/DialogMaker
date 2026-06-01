@@ -16,6 +16,15 @@
             : this(metadataToken.Type, metadataToken.Index, metadataToken.AssemblyIndex)
         {
         }
+        /// <summary>
+        /// Create new instance of type token
+        /// </summary>
+        /// <param name="metadataToken">Metadata token that will be used to create new type token</param>
+        /// <param name="assemblyIndex"><inheritdoc cref="DSharpMetadataToken.AssemblyIndex"/></param>
+        public DSharpTypeToken(DSharpMetadataToken metadataToken, int assemblyIndex)
+            : this(metadataToken.Type, metadataToken.Index, assemblyIndex)
+        {
+        }
 
         /// <summary>
         /// <inheritdoc cref="DSharpMetadataToken.Type"/>
@@ -37,6 +46,11 @@
         /// </summary>
         /// <param name="metadataToken"><inheritdoc/></param>
         public static implicit operator DSharpTypeToken(DSharpMetadataToken metadataToken) => new(metadataToken);
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="memberBuilder"><inheritdoc/></param>
+        public static implicit operator DSharpTypeToken(DSharpMemberInfoBuilder memberBuilder) => memberBuilder.MetadataToken;
 
         #endregion
     }
