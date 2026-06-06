@@ -34,6 +34,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// Static flag. This flag means that member can be accessed without object instance
         /// </summary>
         public virtual bool IsStatic { get; set; }
+        /// <summary>
+        /// Access modifier of this member
+        /// </summary>
         public DSharpAccessModifier Access { get; set; } = DSharpAccessModifier.Private;
 
         #region Дополнительно

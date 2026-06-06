@@ -45,6 +45,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         {
             while (!stream.Check(endWith) && !stream.IsEndOfFile())
             {
+                if (stream.Check(DSharpTokenType.MultilineComment) ||
+                    stream.Check(DSharpTokenType.Comment))
+                {
+                    stream.Eat(stream.Current!.Type);
+                    continue;
+                }
+
                 buffer.Add(ParseStatement(stream));
 
                 if (endWith == DSharpTokenType.Semicolon)

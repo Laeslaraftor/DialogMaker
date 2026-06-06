@@ -63,6 +63,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
+        public DSharpTypeToken ObjectType
+        {
+            get
+            {
+                field ??= GetTypeToken(ObjectTypeFullName);
+                return field;
+            }
+        }
         public DSharpTypeToken EnumType
         {
             get
@@ -119,7 +127,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             if (member.MetadataToken.Type == DSharpMetadataTokenType.TypeDefinition)
             {
                 tokens = _typeDefinitions;
-            } 
+            }
             else if (member.MetadataToken.Type == DSharpMetadataTokenType.Method)
             {
                 tokens = _methodsDefinitions;
@@ -151,6 +159,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             return result;
         }
+        internal DSharpTypeBuilder CreateType(string name, bool isGeneric, DSharpTypeBuilder? parent)
+        {
+            if (isGeneric && parent == null)
+            {
+                throw new ArgumentException("Parent type should be specified for generic type");
+            }
+
+            return CreateMember(DSharpMetadataTokenType.TypeDefinition, _types, t => new(this, isGeneric, parent, name, t));
+        }
 
         public bool RemoveGlobalVariable(DSharpFieldBuilder variable)
         {
@@ -173,7 +190,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public bool RemoveType(DSharpTypeBuilder type) => RemoveMember(type);
         public DSharpTypeBuilder CreateType(string name, DSharpTypeBuilder? parent = null)
         {
-            return CreateMember(DSharpMetadataTokenType.TypeDefinition, _types, t => new(this, parent, name, t));
+            return CreateType(name, false, parent);
         }
         public DSharpFieldBuilder CreateGlobalVariable(string name)
         {
@@ -225,12 +242,45 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             throw new ArgumentException($"Unknown type: {fullName}", nameof(fullName));
         }
+        public bool TryGetStandardType(string name, [NotNullWhen(true)] out DSharpTypeToken? result)
+        {
+            if (name == StringTypeFullName || name == StringName)
+            {
+                result = StringType;
+                return true;
+            }
+            if (name == NumberTypeFullName || name == NumberName)
+            {
+                result = NumberType;
+                return true;
+            }
+            if (name == BoolTypeFullName || name == BoolName)
+            {
+                result = BoolType;
+                return true;
+            }
+            if (name == ObjectTypeFullName || name == ObjectName)
+            {
+                result = BoolType;
+                return true;
+            }
+            if (name == CharTypeFullName || name == CharName)
+            {
+                result = CharType;
+                return true;
+            }
+
+            result = null;
+            return false;
+        }
         public bool TryGetTypeToken(string fullName, [NotNullWhen(true)] out DSharpTypeToken? result)
         {
-            result = _types.FirstOrDefault(t => t.FullName == fullName);
+            result = null;
+            var type = _types.FirstOrDefault(t => t.FullName == fullName);
 
-            if (result != null)
+            if (type != null)
             {
+                result = type;
                 return true;
             }
 
@@ -256,15 +306,94 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             return type ?? throw new ArgumentException($"Unknown type: {fullName}", nameof(fullName));
         }
 
+        public object GetType(DSharpTypeToken token)
+        {
+            if (token.AssemblyIndex > 0)
+            {
+                DSharpMetadataToken metadataToken = token;
+                metadataToken = new(token, 0);
+                return References[token.AssemblyIndex - 1].GetMember(metadataToken);
+            }
+
+            if (token.Type == DSharpMetadataTokenType.TypeDefinition)
+            {
+                return _types.First(t => t.MetadataToken == token);
+            }
+            else if (token.Type == DSharpMetadataTokenType.Field)
+            {
+                var globalVariable = _globalVariables.FirstOrDefault(v => v.MetadataToken == token);
+
+                if (globalVariable != null)
+                {
+                    return globalVariable;
+                }
+
+                foreach (var type in _types)
+                {
+                    var field = type.Fields.FirstOrDefault(f => f.MetadataToken == token);
+
+                    if (field != null)
+                    {
+                        return field;
+                    }
+                }
+
+                throw new ArgumentException($"Unable to find field for token: {token}", nameof(token));
+            }
+            else if (token.Type == DSharpMetadataTokenType.Method)
+            {
+                var globalFunction = _globalFunctions.FirstOrDefault(f => f.MetadataToken == token);
+
+                if (globalFunction != null)
+                {
+                    return globalFunction;
+                }
+
+                foreach (var type in _types)
+                {
+                    var method = type.Methods.FirstOrDefault(m => m.MetadataToken == token);
+
+                    if (method != null)
+                    {
+                        return method;
+                    }
+                }
+
+                throw new ArgumentException($"Unable to find method for token: {token}", nameof(token));
+            }
+            else if (token.Type == DSharpMetadataTokenType.Property)
+            {
+                foreach (var type in _types)
+                {
+                    var property = type.Properties.FirstOrDefault(p => p.MetadataToken == token);
+
+                    if (property != null)
+                    {
+                        return property;
+                    }
+                }
+
+                throw new ArgumentException($"Unable to find method for token: {token}", nameof(token));
+            }
+
+            throw new ArgumentException($"Invalid token type: {token}", nameof(token));
+        }
+
         #endregion
 
         #region Константы
 
+        public const string ObjectTypeFullName = "System.Object";
         public const string StringTypeFullName = "System.String";
         public const string NumberTypeFullName = "System.Number";
         public const string BoolTypeFullName = "System.Bool";
         public const string CharTypeFullName = "System.Char";
         public const string EnumTypeFullName = "System.Enum";
+        public const string ObjectName = "object";
+        public const string StringName = "string";
+        public const string NumberName = "number";
+        public const string BoolName = "bool";
+        public const string CharName = "char";
 
         #endregion
     }

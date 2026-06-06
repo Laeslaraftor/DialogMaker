@@ -219,6 +219,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     }
 
                     mode = memberMode;
+                    eatToken = true;
                 }
                 else if (currentToken.Type == DSharpTokenType.Override)
                 {
@@ -228,6 +229,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     }
 
                     memberInfo.IsSealed = true;
+                    eatToken = true;
                 }
                 else if (currentToken.Type == DSharpTokenType.Sealed)
                 {
@@ -237,6 +239,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     }
 
                     memberInfo.IsSealed = true;
+                    eatToken = true;
                 }
                 else if (currentToken.Type == DSharpTokenType.Static)
                 {

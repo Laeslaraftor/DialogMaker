@@ -14,7 +14,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public bool IsNullable { get; set; }
         /// <summary>
-        /// Amount of array dimensions. Type is not array When value equals 0
+        /// Amount of array dimensions. Type is not array when value equals 0
         /// </summary>
         public int ArrayDimensions { get; set; }
         /// <summary>
@@ -65,6 +65,21 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         #region Статика
 
         /// <summary>
+        /// Check token type is standard type identifier
+        /// </summary>
+        /// <param name="type">Token type</param>
+        /// <param name="allowVarToken">Allows to <see cref="DSharpTokenType.Var"/></param>
+        /// <returns>Is token standard type identifier</returns>
+        public static bool IsStandardTypeIdentifier(DSharpTokenType type, bool allowVarToken = true)
+        {
+            return type == DSharpTokenType.String ||
+                   type == DSharpTokenType.Number ||
+                   type == DSharpTokenType.Bool ||
+                   type == DSharpTokenType.Char ||
+                   type == DSharpTokenType.Object ||
+                   type == DSharpTokenType.Var && allowVarToken;
+        }
+        /// <summary>
         /// Check identifier parse availability
         /// </summary>
         /// <param name="stream">Abstract syntax tree parser stream</param>
@@ -75,12 +90,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         {
             var current = stream.Peek(offset) ?? throw new Exception("Unable to read type identifier");
 
-            return current.Type == DSharpTokenType.String ||
-                   current.Type == DSharpTokenType.Number ||
-                   current.Type == DSharpTokenType.Bool ||
-                   current.Type == DSharpTokenType.Char ||
-                   current.Type == DSharpTokenType.Object ||
-                   current.Type == DSharpTokenType.Var ||
+            return IsStandardTypeIdentifier(current.Type) ||
                    stream.Check(DSharpTokenType.Identifier);
         }
         /// <summary>
@@ -95,12 +105,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             var current = stream.Current ?? throw new Exception("Unable to read type identifier");
             TypeInfoNode result;
 
-            if (current.Type == DSharpTokenType.String ||
-                current.Type == DSharpTokenType.Number ||
-                current.Type == DSharpTokenType.Bool ||
-                current.Type == DSharpTokenType.Char ||
-                current.Type == DSharpTokenType.Object ||
-                current.Type == DSharpTokenType.Var)
+            if (IsStandardTypeIdentifier(current.Type))
             {
                 if (!canBePrimary)
                 {
@@ -192,7 +197,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
                 while (!stream.Check(DSharpTokenType.Greater, offset))
                 {
-                    if (CanParseIdentifier(stream, offset))
+                    if (stream.Check(DSharpTokenType.Semicolon, offset) ||
+                        stream.Check(DSharpTokenType.Less, offset) ||
+                        stream.Check(DSharpTokenType.And, offset))
                     {
                         return;
                     }

@@ -29,7 +29,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Parsed identifier expression</returns>
         public static IdentifierExpressionNode Parse(AstParserStream stream, bool parseGenericParameters = true)
         {
-            var token = stream.Eat(DSharpTokenType.Identifier);
+            DSharpToken token;
+            var currentType = stream.Current?.Type ?? throw new ArgumentException("Unable to parse identifier expression");
+
+            if (stream.Check(DSharpTokenType.Identifier) ||
+                TypeInfoNode.IsStandardTypeIdentifier(currentType))
+            {
+                token = stream.Eat(currentType);
+            }
+            else
+            {
+                stream.ThrowPositionException("Required identifier or standard type");
+                return null;
+            }
+
             IdentifierExpressionNode expression = new(token);
 
             if (parseGenericParameters)

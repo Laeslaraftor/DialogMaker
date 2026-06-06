@@ -47,8 +47,13 @@
             }
             set => base.Name = value;
         }
+        /// <summary>
+        /// Namespace that contains this function. 
+        /// This property should be null when method is child of some type
+        /// </summary>
+        public virtual string? Namespace { get; set; }
         public override DSharpTypeBuilder? DeclaringType { get; } = declaringType;
-        public DSharpTypeBuilder? ReturnType
+        public DSharpTypeToken? ReturnType
         {
             get
             {
@@ -70,7 +75,7 @@
             }
             set;
         }
-        public List<DSharpTypeBuilder> Parameters { get; } = [];
+        public List<DSharpMethodBuilderParameter> Parameters { get; } = [];
         public List<DSharpTypeToken> GenericParameters { get; } = [];
         public override bool IsStatic
         {
@@ -102,6 +107,19 @@
                 return LinkedProperty?.IsSealed ?? base.IsSealed;
             }
             set => base.IsSealed = value;
+        }
+        public override bool IsOverride
+        {
+            get
+            {
+                if (LinkedType != null)
+                {
+                    return false;
+                }
+
+                return LinkedProperty?.IsOverride ?? base.IsOverride;
+            }
+            set => base.IsOverride = value;
         }
         public bool IsVirtual
         {

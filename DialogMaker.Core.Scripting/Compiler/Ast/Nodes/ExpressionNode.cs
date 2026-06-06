@@ -222,6 +222,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 return ParseIdentifierAccess(stream);
             }
+            if (TypeInfoNode.CanParseIdentifier(stream) && stream.Check(DSharpTokenType.Dot, 1))
+            {
+                return ParseIdentifier(stream);
+            }
 
             stream.ThrowUnexpectedTokenException();
 

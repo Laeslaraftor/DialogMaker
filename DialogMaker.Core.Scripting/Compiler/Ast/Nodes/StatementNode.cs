@@ -65,7 +65,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 return NamespaceStatementNode.Parse(stream);
             }
-            if (stream.Check(DSharpTokenType.Var))
+            if (VariableNode.IsVariable(stream))
             {
                 var variable = VariableNode.ParseVariable(stream, attributes);
                 variable.Attributes = attributes;
@@ -93,15 +93,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 if (ObjectDeclarationNode.IsObjectDeclaration(stream))
                 {
-                    ParseObjectDeclaration();
+                    return ParseObjectDeclaration();
                 }
-
                 if (!ObjectDeclarationNode.TryStartParseMember(stream, out var memberInfo))
                 {
                     stream.ThrowPositionException("Invalid tokens");
                 }
 
-                ParseObjectMember(memberInfo);
+                return ParseObjectMember(memberInfo);
             }
             if (ObjectDeclarationNode.IsObjectDeclaration(stream))
             {

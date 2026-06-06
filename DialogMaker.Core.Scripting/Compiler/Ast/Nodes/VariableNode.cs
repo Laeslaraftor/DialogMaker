@@ -21,8 +21,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public ExpressionNode? Initializer { get; set; }
 
-        #region Управление
+        #region Статика
 
+        /// <summary>
+        /// Check next tokens is variable definition;
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <returns>Is variable definition</returns>
+        public static bool IsVariable(AstParserStream stream)
+        {
+            bool canParseIdentifier = TypeInfoNode.CanParseIdentifier(stream);
+
+            return canParseIdentifier && stream.Check(DSharpTokenType.Identifier, 1) && stream.Check(DSharpTokenType.Semicolon, 2) ||
+                   canParseIdentifier && stream.Check(DSharpTokenType.Identifier, 1) && stream.Check(DSharpTokenType.Assign, 2);
+        }
         /// <summary>
         /// Parse variable start with current token
         /// </summary>

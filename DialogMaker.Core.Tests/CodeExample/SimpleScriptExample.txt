@@ -1,0 +1,37 @@
+﻿namespace System 
+{
+	public struct Number 
+	{
+	}
+	public class String
+	{
+		public static readonly string Empty = "";
+	}
+	public class Object
+	{
+		public extern Type GetType();
+		public virtual string ToString()
+		{
+			return GetType().Name;
+		}
+	}
+	public class Type 
+	{
+		public string Name { get; }
+		public Type DeclareType { get; }
+	}
+}
+
+string guideText = "awdawd";
+
+string repeat(string str, number count) 
+{
+	string result = string.Empty;
+	
+	for (int i = 0; i < count; i++) 
+	{
+		result += str;
+	}
+	
+	return result;
+}

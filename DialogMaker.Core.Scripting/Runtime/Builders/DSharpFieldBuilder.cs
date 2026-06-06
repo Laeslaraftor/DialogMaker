@@ -11,6 +11,11 @@
         : DSharpMemberInfoBuilder(assembly, name, metadataToken)
     {
         /// <summary>
+        /// Namespace that contains this field. 
+        /// This property should be null when field is child of some type
+        /// </summary>
+        public virtual string? Namespace { get; set; }
+        /// <summary>
         /// Type that declared this field. Empty field means this field is global variable in assembly
         /// </summary>
         public override DSharpTypeBuilder? DeclaringType => declaringType;
@@ -25,6 +30,6 @@
         /// <summary>
         /// Default values that sets at compile time. Other values must be setted in constructor
         /// </summary>
-        public DSharpLiteralValue RawValue { get; set; }
+        public DSharpLiteralValue? RawValue { get; set; }
     }
 }

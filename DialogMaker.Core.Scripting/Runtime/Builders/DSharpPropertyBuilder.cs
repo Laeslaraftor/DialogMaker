@@ -14,7 +14,7 @@
             }
         }
         public override DSharpTypeBuilder DeclaringType { get; } = declaringType;
-        public DSharpTypeBuilder? PropertyType { get; set; }
+        public DSharpTypeToken? PropertyType { get; set; }
         public DSharpMethodBuilder? Getter { get; private set; }
         public DSharpMethodBuilder? Setter { get; private set; }
         public string GetterMethodName { get; private set; } = string.Empty;

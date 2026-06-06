@@ -49,6 +49,11 @@
         /// <summary>
         /// <inheritdoc/>
         /// </summary>
+        /// <param name="token"><inheritdoc/></param>
+        public static implicit operator DSharpMetadataToken(DSharpTypeToken token) => new(token.Type, token.Index, token.AssemblyIndex);
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
         /// <param name="memberBuilder"><inheritdoc/></param>
         public static implicit operator DSharpTypeToken(DSharpMemberInfoBuilder memberBuilder) => memberBuilder.MetadataToken;
 

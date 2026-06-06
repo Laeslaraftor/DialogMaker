@@ -1,8 +1,18 @@
 ﻿namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
-    public class DSharpTypeBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken) 
+    public class DSharpTypeBuilder(DSharpAssemblyBuilder assembly, bool isGeneric, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken) 
         : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken)
     {
+        public DSharpTypeBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken)
+            : this(assembly, false, declaringType, name, metadataToken)
+        {
+        }
+
+        /// <summary>
+        /// Flag that marks this type as generic.
+        /// All generic types is auto generated from generic parameters
+        /// </summary>
+        public bool IsGeneric { get; } = isGeneric;
         /// <summary>
         /// Type that declared this field
         /// </summary>
@@ -15,9 +25,9 @@
             {
                 string result = Name;
 
-                if (GenericParameters.Count > 0)
+                if (GenericTypes.Count > 0)
                 {
-                    result += "`" + GenericParameters.Count;
+                    result += "`" + GenericTypes.Count;
                 }
                 if (DeclaringType != null)
                 {
@@ -28,12 +38,31 @@
                     result = $"{Namespace}.{result}";
                 }
 
+                for (int i = 0; i < ArrayDimensions; i++)
+                {
+                    result += "[]";
+                }
+
                 return result;
             }
         }
         public List<DSharpTypeToken> BaseTypes { get; } = [];
+        /// <summary>
+        /// List of types that must fill generic types. 
+        /// Size of this list must be equals to generic types list or empty
+        /// </summary>
         public List<DSharpTypeToken> GenericParameters { get; } = [];
-        public List<DSharpTypeToken> GenericTypes { get; } = [];
+        /// <summary>
+        /// Generic types that created by this type
+        /// </summary>
+        public ReferenceReadOnlyList<DSharpTypeBuilder> GenericTypes
+        {
+            get
+            {
+                field ??= new(_genericTypes);
+                return field;
+            }
+        }
         public ReferenceReadOnlyList<DSharpMethodBuilder> Constructors
         {
             get
@@ -66,36 +95,80 @@
                 return field;
             }
         }
+        public int ArrayDimensions { get; set; }
 
         private readonly List<DSharpMethodBuilder> _constructors = [];
         private readonly List<DSharpMethodBuilder> _methods = [];
         private readonly List<DSharpPropertyBuilder> _properties = [];
         private readonly List<DSharpFieldBuilder> _fields = [];
+        private readonly List<DSharpTypeBuilder> _genericTypes = [];
 
         #region Управление
 
         internal DSharpMethodBuilder CreateMethod(Func<DSharpTypeToken, DSharpMethodBuilder> fabric)
         {
+            if (IsGeneric)
+            {
+                throw new InvalidOperationException("Generic types can not contains methods");
+            }
+
             return CreateMember(DSharpMetadataTokenType.Method, _methods, fabric);
         }
 
+        public DSharpTypeBuilder CreateGenericType(string name)
+        {
+            var type = Assembly.CreateType(name, true, this);
+            _genericTypes.Add(type);
+
+            return type;
+        }
         public DSharpMethodBuilder CreateConstructor()
         {
+            if (IsGeneric)
+            {
+                throw new InvalidOperationException("Generic types can not contains constructors");
+            }
+
             return CreateMember(DSharpMetadataTokenType.Method, _constructors, t => new(Assembly, this, ConstructorName, t));
         }
         public DSharpMethodBuilder CreateMethod(string name)
         {
+            if (IsGeneric)
+            {
+                throw new InvalidOperationException("Generic types can not contains methods");
+            }
+
             return CreateMethod(t => new(Assembly, this, name, t));
         }
         public DSharpPropertyBuilder CreateProperty(string name)
         {
+            if (IsGeneric)
+            {
+                throw new InvalidOperationException("Generic types can not contains properties");
+            }
+
             return CreateMember(DSharpMetadataTokenType.Property, _properties, t => new(Assembly, this, name, t));
         }
         public DSharpFieldBuilder CreateField(string name)
         {
+            if (IsGeneric)
+            {
+                throw new InvalidOperationException("Generic types can not contains fields");
+            }
+
             return CreateMember(DSharpMetadataTokenType.Field, _fields, t => new(Assembly, this, name, t));
         }
 
+        public bool RemoveGenericType(DSharpTypeBuilder type)
+        {
+            if (RemoveMember(_genericTypes, type))
+            {
+                type.RemoveAllGenericTypes();
+                return true;
+            }
+
+            return false;
+        }
         public bool RemoveConstructor(DSharpMethodBuilder constructor)
         {
             return RemoveMember(_constructors, constructor);
@@ -111,6 +184,22 @@
         public bool RemoveField(DSharpFieldBuilder field)
         {
             return RemoveMember(_fields, field);
+        }
+
+        private void RemoveAllGenericTypes()
+        {
+            if (_genericTypes.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var type in _genericTypes)
+            {
+                Assembly.RemoveType(type);
+                type.RemoveAllGenericTypes();
+            }
+
+            _genericTypes.Clear();
         }
 
         #endregion

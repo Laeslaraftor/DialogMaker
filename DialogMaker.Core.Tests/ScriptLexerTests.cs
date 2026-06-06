@@ -5,7 +5,8 @@ namespace DialogMaker.Core.Tests
 {
     internal class ScriptLexerTests
     {
-        private const string ScriptPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\DialogScriptExample.txt";
+        public const string ScriptPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\DialogScriptExample.txt";
+        public const string SimpleScriptPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\SimpleScriptExample.txt";
 
         [Test]
         public static void Tokenize()
@@ -29,7 +30,7 @@ namespace DialogMaker.Core.Tests
             Console.WriteLine(program.ToString());
         }
 
-        private static DSharpLexer GetLexer()
+        public static DSharpLexer GetLexer()
         {
             var script = File.ReadAllText(ScriptPath);
             return new(script);
