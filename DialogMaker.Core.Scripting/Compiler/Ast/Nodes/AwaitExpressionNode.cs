@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+using System.Text;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
@@ -12,6 +13,28 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Expression to await
         /// </summary>
         public ExpressionNode? Expression { get; set; }
+
+        #region Управление
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
+        public override string ToString()
+        {
+            if (Expression == null)
+            {
+                return base.ToString();
+            }
+
+            StringBuilder builder = new();
+            builder.AppendLine(base.ToString());
+            builder.Append($"Expression: {Expression.ToString().Trim()}");
+
+            return builder.ToString();
+        }
+
+        #endregion
 
         #region Статика
 

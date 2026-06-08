@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+using System.Text;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
@@ -20,6 +21,34 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Branch that executes then condition is false
         /// </summary>
         public StatementNode? ElseBranch { get; set; }
+
+        #region Управление
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
+        public override string ToString()
+        {
+            if (Condition == null || ThenBranch == null)
+            {
+                return base.ToString();
+            }
+
+            StringBuilder builder = new();
+            builder.AppendLine(base.ToString());
+            builder.AppendLine($"Condition: {Condition}");
+            builder.AppendLine($"Then branch: {ThenBranch.ToString().Trim()}");
+
+            if (ElseBranch != null)
+            {
+                builder.AppendLine($"Else branch: {ElseBranch.ToString().Trim()}");
+            }
+
+            return builder.ToString();
+        }
+
+        #endregion
 
         #region Статика
 

@@ -1,9 +1,10 @@
-﻿using System.Collections.ObjectModel;
+﻿using Acly.Tokens;
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
-    public class DSharpAssemblyBuilder(string name, IList<DSharpAssembly> references)
+    public class DSharpAssemblyBuilder(string name, IList<DSharpAssembly> references) : IDSharpAssembly
     {
         public string Name { get; } = name;
         public ReadOnlyCollection<DSharpAssembly> References { get; } = new(references);
@@ -306,22 +307,26 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             return type ?? throw new ArgumentException($"Unknown type: {fullName}", nameof(fullName));
         }
 
-        public object GetType(DSharpTypeToken token)
+        public IDSharpMemberInfo GetType(DSharpTypeToken token)
         {
-            if (token.AssemblyIndex > 0)
+            return GetType((DSharpMetadataToken)token);
+        }
+        public IDSharpMemberInfo GetType(DSharpMetadataToken metadata)
+        {
+            if (metadata.AssemblyIndex > 0)
             {
-                DSharpMetadataToken metadataToken = token;
-                metadataToken = new(token, 0);
-                return References[token.AssemblyIndex - 1].GetMember(metadataToken);
+                DSharpMetadataToken originalToken = metadata;
+                originalToken = new(metadata, 0);
+                return References[metadata.AssemblyIndex - 1].GetType(originalToken);
             }
 
-            if (token.Type == DSharpMetadataTokenType.TypeDefinition)
+            if (metadata.Type == DSharpMetadataTokenType.TypeDefinition)
             {
-                return _types.First(t => t.MetadataToken == token);
+                return _types.First(t => t.MetadataToken == metadata);
             }
-            else if (token.Type == DSharpMetadataTokenType.Field)
+            else if (metadata.Type == DSharpMetadataTokenType.Field)
             {
-                var globalVariable = _globalVariables.FirstOrDefault(v => v.MetadataToken == token);
+                var globalVariable = _globalVariables.FirstOrDefault(v => v.MetadataToken == metadata);
 
                 if (globalVariable != null)
                 {
@@ -330,7 +335,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
                 foreach (var type in _types)
                 {
-                    var field = type.Fields.FirstOrDefault(f => f.MetadataToken == token);
+                    var field = type.Fields.FirstOrDefault(f => f.MetadataToken == metadata);
 
                     if (field != null)
                     {
@@ -338,11 +343,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                     }
                 }
 
-                throw new ArgumentException($"Unable to find field for token: {token}", nameof(token));
+                throw new ArgumentException($"Unable to find field for token: {metadata}", nameof(metadata));
             }
-            else if (token.Type == DSharpMetadataTokenType.Method)
+            else if (metadata.Type == DSharpMetadataTokenType.Method)
             {
-                var globalFunction = _globalFunctions.FirstOrDefault(f => f.MetadataToken == token);
+                var globalFunction = _globalFunctions.FirstOrDefault(f => f.MetadataToken == metadata);
 
                 if (globalFunction != null)
                 {
@@ -351,7 +356,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
                 foreach (var type in _types)
                 {
-                    var method = type.Methods.FirstOrDefault(m => m.MetadataToken == token);
+                    var method = type.Methods.FirstOrDefault(m => m.MetadataToken == metadata);
 
                     if (method != null)
                     {
@@ -359,13 +364,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                     }
                 }
 
-                throw new ArgumentException($"Unable to find method for token: {token}", nameof(token));
+                throw new ArgumentException($"Unable to find method for token: {metadata}", nameof(metadata));
             }
-            else if (token.Type == DSharpMetadataTokenType.Property)
+            else if (metadata.Type == DSharpMetadataTokenType.Property)
             {
                 foreach (var type in _types)
                 {
-                    var property = type.Properties.FirstOrDefault(p => p.MetadataToken == token);
+                    var property = type.Properties.FirstOrDefault(p => p.MetadataToken == metadata);
 
                     if (property != null)
                     {
@@ -373,10 +378,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                     }
                 }
 
-                throw new ArgumentException($"Unable to find method for token: {token}", nameof(token));
+                throw new ArgumentException($"Unable to find method for token: {metadata}", nameof(metadata));
             }
 
-            throw new ArgumentException($"Invalid token type: {token}", nameof(token));
+            throw new ArgumentException($"Invalid token type: {metadata}", nameof(metadata));
         }
 
         #endregion
@@ -386,7 +391,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public const string ObjectTypeFullName = "System.Object";
         public const string StringTypeFullName = "System.String";
         public const string NumberTypeFullName = "System.Number";
-        public const string BoolTypeFullName = "System.Bool";
+        public const string BoolTypeFullName = "System.Boolean";
         public const string CharTypeFullName = "System.Char";
         public const string EnumTypeFullName = "System.Enum";
         public const string ObjectName = "object";

@@ -1,7 +1,7 @@
 ﻿namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
     public class DSharpTypeBuilder(DSharpAssemblyBuilder assembly, bool isGeneric, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken) 
-        : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken)
+        : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken), IDSharpType
     {
         public DSharpTypeBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken)
             : this(assembly, false, declaringType, name, metadataToken)
@@ -201,6 +201,18 @@
 
             _genericTypes.Clear();
         }
+
+        #endregion
+
+        #region Получение членов
+
+        public IDSharpMethodInfo[] GetMethods() => [.. _methods];
+        public IDSharpMethodInfo? GetMethodOrDefault(Predicate<IDSharpMethodInfo> predicate) => _methods.FirstOrDefault(m => predicate(m));
+        public IDSharpPropertyInfo[] GetProperties() => [.. _properties];
+        public IDSharpFieldInfo[] GetFields() => [.._fields];
+        public IDSharpPropertyInfo? GetPropertyOrDefault(Predicate<IDSharpPropertyInfo> predicate) => _properties.FirstOrDefault(p => predicate(p));
+        public IDSharpFieldInfo? GetFieldOrDefault(Predicate<IDSharpFieldInfo> predicate) => _fields.FirstOrDefault(f => predicate(f));
+        public IDSharpType[] GetBaseTypes() => [.. BaseTypes.Select(t => (IDSharpType)Assembly.GetType(t))];
 
         #endregion
 

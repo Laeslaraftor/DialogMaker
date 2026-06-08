@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 
 namespace DialogMaker.Core.Tests
@@ -7,6 +8,7 @@ namespace DialogMaker.Core.Tests
     {
         public const string ScriptPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\DialogScriptExample.txt";
         public const string SimpleScriptPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\SimpleScriptExample.txt";
+        public const string ExpressionsScriptPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\ExpressionsScript.txt";
 
         [Test]
         public static void Tokenize()
@@ -28,11 +30,22 @@ namespace DialogMaker.Core.Tests
             var program = parser.Parse("Example");
 
             Console.WriteLine(program.ToString());
+            Console.WriteLine();
+            Console.WriteLine("Functions:");
+
+            foreach (var statement in program.Statements)
+            {
+                if (statement is InvokableStatementNode invokableStatement)
+                {
+                    Console.WriteLine(invokableStatement.ToString().Trim());
+                    Console.WriteLine();
+                }
+            }
         }
 
-        public static DSharpLexer GetLexer()
+        private static DSharpLexer GetLexer()
         {
-            var script = File.ReadAllText(ScriptPath);
+            var script = File.ReadAllText(ExpressionsScriptPath);
             return new(script);
         }
     }

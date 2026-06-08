@@ -1,6 +1,7 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Runtime.Builders;
+using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Runtime.Compilers
@@ -426,6 +427,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     info.Key.ReturnType = ResolveType(assemblyBuilder, info.Key.DeclaringType?.Namespace, info.Value.ReturnType);
                 }
+
+                CompileMethod(info.Key, info.Value);
             }
             foreach (var info in _createdConstructors)
             {
@@ -446,6 +449,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
         }
 
+        private DSharpTypeToken ResolveType(DSharpMemberInfoBuilder member, TypeInfoNode typeInfo)
+        {
+            return ResolveType(member.Assembly, member.DeclaringType?.Namespace, typeInfo);
+        }
         private DSharpTypeToken ResolveType(DSharpAssemblyBuilder assemblyBuilder, string? @namespace, TypeInfoNode typeInfo)
         {
             string typeName = typeInfo.GetFullName(true, false);

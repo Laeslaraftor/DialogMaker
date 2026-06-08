@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
@@ -17,6 +18,38 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Attribute arguments
         /// </summary>
         public List<ExpressionNode> Arguments { get; set; } = [];
+
+        #region Управление
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
+        public override string ToString()
+        {
+            if (Type == null)
+            {
+                return base.ToString();
+            }
+
+            StringBuilder builder = new();
+            builder.AppendLine(base.ToString());
+            builder.AppendLine($"Type: {Type}");
+            
+            if (Arguments.Count > 0)
+            {
+                builder.AppendLine("Arguments:");
+
+                foreach (var arg in Arguments)
+                {
+                    builder.AppendLine(arg.ToString().Trim());
+                }
+            }
+
+            return builder.ToString();
+        }
+
+        #endregion
 
         #region Статика
 

@@ -52,6 +52,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Member mode
         /// </summary>
         public DSharpObjectMemberMode Mode { get; set; }
+        /// <summary>
+        /// Access modifier for getter accessor
+        /// </summary>
+        public DSharpAccessModifier GetterAccess { get; set; } = DSharpAccessModifier.Public;
+        /// <summary>
+        /// Access modifier for setter accessor
+        /// </summary>
+        public DSharpAccessModifier SetterAccess { get; set; } = DSharpAccessModifier.Public;
 
         #region Статика
 
@@ -84,6 +92,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             bool ReadGetter()
             {
+                if (ObjectDeclarationNode.TryParseAccessModifier(stream, out var access))
+                {
+                    field.GetterAccess = access;
+                }
                 if (TryParseAccessor(stream, DSharpPropertyAccessor.Getter, out var getterBlock))
                 {
                     field.CanRead = true;
@@ -94,6 +106,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
             bool ReadSetter()
             {
+                if (ObjectDeclarationNode.TryParseAccessModifier(stream, out var access))
+                {
+                    field.SetterAccess = access;
+                }
                 if (TryParseAccessor(stream, DSharpPropertyAccessor.Setter, out var setterBlock))
                 {
                     field.CanWrite = true;

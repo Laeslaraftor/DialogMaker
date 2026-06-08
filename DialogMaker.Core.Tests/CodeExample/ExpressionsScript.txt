@@ -1,0 +1,17 @@
+﻿bool testFunction(number value) 
+{
+	if (value > 10)
+	{
+		return true;
+	}
+	
+	return value % 2 == 0;
+}
+number getValue()
+{
+	return 1 + 1;
+}
+
+await testFunction(getValue());
+
+testFunction(2 - 1 + (8 / 4) - 2);

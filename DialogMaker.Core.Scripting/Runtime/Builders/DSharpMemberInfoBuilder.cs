@@ -9,6 +9,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
     /// <param name="name">Name of member</param>
     /// <param name="metadataToken">Metadata token for identifying member in bytecode</param>
     public abstract class DSharpMemberInfoBuilder(DSharpAssemblyBuilder assembly, string name, DSharpTypeToken metadataToken)
+        : IDSharpMemberInfo
     {
         /// <summary>
         /// Assembly that contains this member
@@ -38,6 +39,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// Access modifier of this member
         /// </summary>
         public DSharpAccessModifier Access { get; set; } = DSharpAccessModifier.Private;
+
+        DSharpMetadataToken IDSharpMemberInfo.MetadataToken => MetadataToken;
+        IDSharpType? IDSharpMemberInfo.DeclaringType => DeclaringType;
+        IDSharpAssembly IDSharpMemberInfo.Assembly => Assembly;
 
         #region Дополнительно
 

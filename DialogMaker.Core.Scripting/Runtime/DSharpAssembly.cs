@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
-    public class DSharpAssembly
+    public class DSharpAssembly : IDSharpAssembly
     {
         /// <summary>
         /// List of names that requires for this assembly
@@ -18,7 +18,7 @@ namespace DialogMaker.Core.Scripting.Runtime
 
         #region Управление
 
-        public DSharpMemberInfo GetMember(DSharpMetadataToken metadataToken)
+        public DSharpMemberInfo GetType(DSharpMetadataToken metadataToken)
         {
             DSharpAssembly assembly = this;
 
@@ -123,6 +123,11 @@ namespace DialogMaker.Core.Scripting.Runtime
             }
 
             throw new ArgumentException($"Invalid token type: {metadataToken.Type}", nameof(metadataToken));
+        }
+
+        IDSharpMemberInfo IDSharpAssembly.GetType(DSharpMetadataToken metadataToken)
+        {
+            return GetType(metadataToken);
         }
 
         #endregion

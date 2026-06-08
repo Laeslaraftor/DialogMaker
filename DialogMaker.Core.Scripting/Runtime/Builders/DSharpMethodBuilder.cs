@@ -1,7 +1,7 @@
 ﻿namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
     public class DSharpMethodBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken)
-        : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken)
+        : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken), IDSharpMethodInfo
     {
         public DSharpMethodBuilder(DSharpPropertyBuilder property, bool isSetter, string name, DSharpTypeToken metadataToken)
             : this(property.Assembly, property.DeclaringType, name, metadataToken)
@@ -151,5 +151,30 @@
             }
             set;
         }
+
+        IDSharpType? IDSharpMethodInfo.ReturnType
+        {
+            get
+            {
+                if (ReturnType == null)
+                {
+                    return null;
+                }
+
+                return (IDSharpType)Assembly.GetType(ReturnType);
+            }
+        }
+
+        private DSharpBytecodeBuilder? _bytecodeBuilder;
+
+        #region Управление
+
+        public DSharpBytecodeBuilder GetBytecodeBuilder()
+        {
+            _bytecodeBuilder ??= new(this);
+            return _bytecodeBuilder;
+        }
+
+        #endregion
     }
 }

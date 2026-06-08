@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
@@ -30,7 +31,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
-            return $"{Left}:{Operator}:{Right}. {base.ToString()}";
+            if (Left == null)
+            {
+                return base.ToString();
+            }
+
+            StringBuilder builder = new();
+            builder.AppendLine(base.ToString());
+            builder.AppendLine($"Operator: {((DSharpTokenType)Operator)}");
+            builder.AppendLine($"Left: {Left}");
+
+            if (Right != null)
+            {
+                builder.Append($"Right: {Right}");
+            }
+
+            return builder.ToString();
         }
 
         #endregion

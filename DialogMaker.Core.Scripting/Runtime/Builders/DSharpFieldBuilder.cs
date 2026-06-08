@@ -8,7 +8,7 @@
     /// <param name="name"><inheritdoc/></param>
     /// <param name="metadataToken"><inheritdoc/></param>
     public class DSharpFieldBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken)
-        : DSharpMemberInfoBuilder(assembly, name, metadataToken)
+        : DSharpMemberInfoBuilder(assembly, name, metadataToken), IDSharpFieldInfo
     {
         /// <summary>
         /// Namespace that contains this field. 
@@ -31,5 +31,18 @@
         /// Default values that sets at compile time. Other values must be setted in constructor
         /// </summary>
         public DSharpLiteralValue? RawValue { get; set; }
+
+        IDSharpType IDSharpFieldInfo.FieldType
+        {
+            get
+            {
+                if (FieldType == null)
+                {
+                    throw new InvalidOperationException("Can not get field type while it was not specified");
+                }
+
+                return (IDSharpType)Assembly.GetType(FieldType);
+            }
+        }
     }
 }

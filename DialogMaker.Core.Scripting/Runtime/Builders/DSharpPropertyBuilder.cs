@@ -1,7 +1,7 @@
 ﻿namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
     public class DSharpPropertyBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder declaringType, string name, DSharpTypeToken metadataToken)
-        : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken)
+        : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken), IDSharpPropertyInfo
     {
         public override string Name 
         { 
@@ -20,6 +20,21 @@
         public string GetterMethodName { get; private set; } = string.Empty;
         public string SetterMethodName { get; private set; } = string.Empty;
         public bool IsVirtual { get; set; }
+        public bool CanRead => Getter != null;
+        public bool CanWrite => Setter != null;
+
+        IDSharpType IDSharpPropertyInfo.PropertyType
+        {
+            get
+            {
+                if (PropertyType == null)
+                {
+                    throw new InvalidOperationException("Can not get property type while it was not specified");
+                }
+
+                return (IDSharpType)Assembly.GetType(PropertyType);
+            }
+        }
 
         #region Управление
 
@@ -43,6 +58,11 @@
             }
 
             var setter = DeclaringType.CreateMethod(t => new(this, true, SetterMethodName, t));
+            setter.Parameters.Add(new()
+            {
+                Type = PropertyType,
+                Name = "value"
+            });
             Setter = setter;
 
             return setter;

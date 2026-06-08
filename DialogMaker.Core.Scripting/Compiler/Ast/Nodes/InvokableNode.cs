@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+using System.Text;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
@@ -24,6 +25,45 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Body of this node
         /// </summary>
         public BlockStatementNode? Body { get; set; }
+
+        #region Управление
+
+        public override string ToString()
+        {
+            StringBuilder builder = new();
+            builder.AppendLine(base.ToString());
+            
+            if (Identifier != null)
+            {
+                builder.AppendLine($"Identifier: {Identifier.GetName(false)}");
+            }
+            if (Parameters.Count > 0)
+            {
+                builder.AppendLine("Parameters:");
+
+                foreach (var parameter in Parameters)
+                {
+                    builder.AppendLine(parameter.ToString().Trim());
+                }
+            }
+            if (Attributes != null && Attributes.Count > 0)
+            {
+                builder.AppendLine("Attributes");
+
+                foreach (var attribute in Attributes)
+                {
+                    builder.AppendLine(attribute.ToString().Trim());
+                }
+            }
+            if (Body != null)
+            {
+                builder.AppendLine($"Body: {Body.ToString().Trim()}");
+            }
+
+            return builder.ToString();
+        }
+
+        #endregion
 
         #region Статика
 

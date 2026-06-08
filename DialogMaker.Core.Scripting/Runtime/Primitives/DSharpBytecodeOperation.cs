@@ -14,11 +14,27 @@
         /// </summary>
         Pop,
         /// <summary>
+        /// Remove value from stack with offset
+        /// </summary>
+        PopOffset,
+        /// <summary>
+        /// Load value from argument to stack
+        /// </summary>
+        LoadArgument,
+        /// <summary>
+        /// Store last value from stack to argument variable.
+        /// Stack:
+        /// 0: value
+        /// </summary>
+        StoreArgument,
+        /// <summary>
         /// Load value from local variable to stack
         /// </summary>
         LoadLocal,
         /// <summary>
-        /// Store last value from stack to local variable
+        /// Store last value from stack to local variable.
+        /// Stack:
+        /// 0: value
         /// </summary>
         StoreLocal,
         /// <summary>
@@ -26,22 +42,76 @@
         /// </summary>
         LoadField,
         /// <summary>
-        /// Store last value from stack to field
+        /// Load object instance field value to stack.
+        /// Stack:
+        /// 0: instance
+        /// </summary>
+        LoadInstanceField,
+        /// <summary>
+        /// Store last value from stack to field.
+        /// Stack:
+        /// 0: value
         /// </summary>
         StoreField,
+        /// <summary>
+        /// Store last value from stack to object instance field.
+        /// Stack:
+        /// 0: value,
+        /// 1: instance
+        /// </summary>
+        StoreInstanceField,
         /// <summary>
         /// Load property value to stack
         /// </summary>
         LoadProperty,
         /// <summary>
-        /// Store last value from stack to property
+        /// Load object instance property value to stack.
+        /// Stack:
+        /// 0: instance
+        /// </summary>
+        LoadInstanceProperty,
+        /// <summary>
+        /// Store last value from stack to property.
+        /// Stack:
+        /// 0: value
         /// </summary>
         StoreProperty,
+        /// <summary>
+        /// Store last value from stack to object instance property.
+        /// Stack:
+        /// 0: value,
+        /// 1: instance
+        /// </summary>
+        StoreInstanceProperty,
+        /// <summary>
+        /// Load item value from array to stack.
+        /// Stack:
+        /// 0: index,
+        /// 1: instance
+        /// </summary>
+        LoadArrayItem,
+        /// <summary>
+        /// Store last value from stack to array. 
+        /// Stack:
+        /// 0: index,
+        /// 1: instance,
+        /// 2: value
+        /// </summary>
+        StoreArrayItem,
 
         /// <summary>
-        /// Call function or method
+        /// Call function or static method.
+        /// Stack:
+        /// 0: args...
         /// </summary>
         Call,
+        /// <summary>
+        /// Call method from instance of object that must be placed in bottom of stack. 
+        /// Stack:
+        /// 0: instance,
+        /// 1: args...
+        /// </summary>
+        CallInstance,
         /// <summary>
         /// Jump to instruction
         /// </summary>
@@ -58,6 +128,10 @@
         /// Return from current method or function
         /// </summary>
         Return,
+        /// <summary>
+        /// Await next calling. After this operations needs to call method or function
+        /// </summary>
+        Await,
 
         /// <summary>
         /// Addition math operation (+)
@@ -130,6 +204,10 @@
         /// Create new instance of object, call it's constructor and add it to stack
         /// </summary>
         New,
+        /// <summary>
+        /// Create new instance of array and add it to stack
+        /// </summary>
+        NewArray,
         /// <summary>
         /// Throw exception which must be in last stack value
         /// </summary>
