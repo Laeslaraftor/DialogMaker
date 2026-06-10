@@ -175,6 +175,8 @@
             return _bytecodeBuilder;
         }
 
+        public IDSharpParameterInfo[] GetParameters() => [.. Parameters];
+
         #endregion
     }
 }

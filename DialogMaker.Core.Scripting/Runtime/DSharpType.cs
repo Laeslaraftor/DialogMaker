@@ -21,11 +21,11 @@ namespace DialogMaker.Core.Scripting.Runtime
         #region Управление
 
         public IDSharpMethodInfo[] GetMethods() => [.. Methods];
-        public IDSharpMethodInfo? GetMethodOrDefault(Predicate<IDSharpMethodInfo> predicate) => Methods.FirstOrDefault(m => predicate(m));
+        public IDSharpMethodInfo[] GetMethods(Predicate<IDSharpMethodInfo> predicate) => [.. Methods.Where(m => predicate(m))];
         public IDSharpPropertyInfo[] GetProperties() => [.. Properties];
+        public IDSharpPropertyInfo[] GetProperties(Predicate<IDSharpPropertyInfo> predicate) => [.. Properties.Where(p => predicate(p))];
         public IDSharpFieldInfo[] GetFields() => [.. Fields];
-        public IDSharpPropertyInfo? GetPropertyOrDefault(Predicate<IDSharpPropertyInfo> predicate) => Properties.FirstOrDefault(p => predicate(p));
-        public IDSharpFieldInfo? GetFieldOrDefault(Predicate<IDSharpFieldInfo> predicate) => Fields.FirstOrDefault(f => predicate(f));
+        public IDSharpFieldInfo[] GetFields(Predicate<IDSharpFieldInfo> predicate) => [.. Fields.Where(f => predicate(f))];
         public IDSharpType[] GetBaseTypes() => [.. BaseTypes];
 
         #endregion

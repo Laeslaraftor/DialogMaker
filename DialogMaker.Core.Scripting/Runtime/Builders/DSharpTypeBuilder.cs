@@ -207,12 +207,14 @@
         #region Получение членов
 
         public IDSharpMethodInfo[] GetMethods() => [.. _methods];
-        public IDSharpMethodInfo? GetMethodOrDefault(Predicate<IDSharpMethodInfo> predicate) => _methods.FirstOrDefault(m => predicate(m));
+        public IDSharpMethodInfo[] GetMethods(Predicate<IDSharpMethodInfo> predicate) => [.. _methods.Where(m => predicate(m))];
         public IDSharpPropertyInfo[] GetProperties() => [.. _properties];
+        public IDSharpPropertyInfo[] GetProperties(Predicate<IDSharpPropertyInfo> predicate) => [.. _properties.Where(p => predicate(p))];
         public IDSharpFieldInfo[] GetFields() => [.._fields];
-        public IDSharpPropertyInfo? GetPropertyOrDefault(Predicate<IDSharpPropertyInfo> predicate) => _properties.FirstOrDefault(p => predicate(p));
-        public IDSharpFieldInfo? GetFieldOrDefault(Predicate<IDSharpFieldInfo> predicate) => _fields.FirstOrDefault(f => predicate(f));
+        public IDSharpFieldInfo[] GetFields(Predicate<IDSharpFieldInfo> predicate) => [.. _fields.Where(f => predicate(f))];
         public IDSharpType[] GetBaseTypes() => [.. BaseTypes.Select(t => (IDSharpType)Assembly.GetType(t))];
+        public IDSharpMethodInfo[] GetConstructors() => [.. _constructors];
+        public IDSharpMethodInfo[] GetConstructors(Predicate<IDSharpMethodInfo> predicate) => [.. _constructors.Where(c => predicate(c))];
 
         #endregion
 

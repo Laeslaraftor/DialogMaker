@@ -43,6 +43,15 @@
             return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Push, value);
         }
         /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.Push"/>
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public TypeInstruction Push(DSharpTypeToken type)
+        {
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.Push, type);
+        }
+        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.Pop"/>
         /// </summary>
         /// <returns></returns>
@@ -64,9 +73,9 @@
         /// </summary>
         /// <param name="type">Type of object that needs to instantiate</param>
         /// <returns></returns>
-        public TypeInstruction New(IDSharpType type)
+        public Instruction New()
         {
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.New, type);
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.New);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.NewArray"/>
@@ -222,6 +231,15 @@
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.Call, method);
         }
         /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.AwaitCall"/>
+        /// </summary>
+        /// <param name="method">Method or function that needs to call</param>
+        /// <returns></returns>
+        public TypeInstruction AwaitCall(IDSharpMethodInfo method)
+        {
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.AwaitCall, method);
+        }
+        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.CallInstance"/>
         /// </summary>
         /// <param name="method">Method that needs to call</param>
@@ -229,6 +247,15 @@
         public TypeInstruction CallInstance(IDSharpMethodInfo method)
         {
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.CallInstance, method);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.AwaitCallInstance"/>
+        /// </summary>
+        /// <param name="method">Method that needs to call</param>
+        /// <returns></returns>
+        public TypeInstruction AwaitCallInstance(IDSharpMethodInfo method)
+        {
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.AwaitCallInstance, method);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.Jump"/>
@@ -293,14 +320,6 @@
         public Instruction Throw()
         {
             return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Throw);
-        }
-        /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.Await"/>
-        /// </summary>
-        /// <returns></returns>
-        public Instruction Await()
-        {
-            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Await);
         }
 
         #endregion

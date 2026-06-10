@@ -1,4 +1,5 @@
 ﻿using Acly.Tokens;
+using DialogMaker.Core.Scripting.Compiler.Ast;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 
@@ -306,7 +307,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             return type ?? throw new ArgumentException($"Unknown type: {fullName}", nameof(fullName));
         }
-
+        public IDSharpType GetType(DSharpLiteralType literalType)
+        {
+            return literalType switch
+            {
+                DSharpLiteralType.Null => throw new ArgumentException("Can not get type for null literal value", nameof(literalType)),
+                DSharpLiteralType.String => (IDSharpType)GetType(StringType),
+                DSharpLiteralType.Char => (IDSharpType)GetType(CharType),
+                DSharpLiteralType.Number => (IDSharpType)GetType(NumberType),
+                DSharpLiteralType.Bool => (IDSharpType)GetType(BoolType),
+                _ => throw new ArgumentException($"Invalid literal type: {literalType}", nameof(literalType))
+            };
+        }
         public IDSharpMemberInfo GetType(DSharpTypeToken token)
         {
             return GetType((DSharpMetadataToken)token);

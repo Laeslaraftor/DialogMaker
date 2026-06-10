@@ -11,6 +11,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
         Mod = DSharpTokenType.Mod,
         LogicalOr = DSharpTokenType.Or,
         LogicalAnd = DSharpTokenType.And,
-        LogicalNot = DSharpTokenType.Not,
+        LogicalEquals = DSharpTokenType.Equal,
+        LogicalNotEquals = DSharpTokenType.NotEqual,
+        LogicalLess = DSharpTokenType.Less,
+        LogicalLessOrEquals = DSharpTokenType.LessEqual,
+        LogicalGreater = DSharpTokenType.Greater,
+        LogicalGreaterOrEquals = DSharpTokenType.GreaterEqual,
     }
 }

@@ -6,11 +6,13 @@
         public string FullName { get; }
 
         public IDSharpType[] GetBaseTypes();
+        public IDSharpMethodInfo[] GetConstructors();
+        public IDSharpMethodInfo[] GetConstructors(Predicate<IDSharpMethodInfo> predicate);
         public IDSharpMethodInfo[] GetMethods();
-        public IDSharpMethodInfo? GetMethodOrDefault(Predicate<IDSharpMethodInfo> predicate);
+        public IDSharpMethodInfo[] GetMethods(Predicate<IDSharpMethodInfo> predicate);
         public IDSharpPropertyInfo[] GetProperties();
-        public IDSharpPropertyInfo? GetPropertyOrDefault(Predicate<IDSharpPropertyInfo> predicate);
+        public IDSharpPropertyInfo[] GetProperties(Predicate<IDSharpPropertyInfo> predicate);
         public IDSharpFieldInfo[] GetFields();
-        public IDSharpFieldInfo? GetFieldOrDefault(Predicate<IDSharpFieldInfo> predicate);
+        public IDSharpFieldInfo[] GetFields(Predicate<IDSharpFieldInfo> predicate);
     }
 }

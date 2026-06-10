@@ -106,12 +106,25 @@
         /// </summary>
         Call,
         /// <summary>
+        /// Call and await function or static method.
+        /// Stack:
+        /// 0: args...
+        /// </summary>
+        AwaitCall,
+        /// <summary>
         /// Call method from instance of object that must be placed in bottom of stack. 
         /// Stack:
         /// 0: instance,
         /// 1: args...
         /// </summary>
         CallInstance,
+        /// <summary>
+        /// Call and await method from instance of object that must be placed in bottom of stack. 
+        /// Stack:
+        /// 0: instance,
+        /// 1: args...
+        /// </summary>
+        AwaitCallInstance,
         /// <summary>
         /// Jump to instruction
         /// </summary>
@@ -128,10 +141,6 @@
         /// Return from current method or function
         /// </summary>
         Return,
-        /// <summary>
-        /// Await next calling. After this operations needs to call method or function
-        /// </summary>
-        Await,
 
         /// <summary>
         /// Addition math operation (+)
@@ -201,7 +210,10 @@
         Not,
 
         /// <summary>
-        /// Create new instance of object, call it's constructor and add it to stack
+        /// Create new instance of object, call it's constructor and add it to stack.
+        /// Stack:
+        /// 0: constructor token,
+        /// 1: args...
         /// </summary>
         New,
         /// <summary>
