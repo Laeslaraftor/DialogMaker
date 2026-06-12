@@ -1,5 +1,6 @@
 ﻿using Acly.Tokens;
 using DialogMaker.Core.Scripting.Compiler.Ast;
+using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 
@@ -244,6 +245,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             throw new ArgumentException($"Unknown type: {fullName}", nameof(fullName));
         }
+        public DSharpTypeToken GetTypeToken(IDSharpType type)
+        {
+            if (type is DSharpTypeBuilder builder)
+            {
+                return builder.MetadataToken;
+            }
+
+            int assemblyIndex = References.IndexOf(type.Assembly);
+
+            if (assemblyIndex == -1)
+            {
+                throw new ArgumentException($"Unable to get type token because specified type contains in assembly that not referenced by builder: {type}", nameof(type));
+            }
+
+            return new(type.MetadataToken, assemblyIndex);
+        }
         public bool TryGetStandardType(string name, [NotNullWhen(true)] out DSharpTypeToken? result)
         {
             if (name == StringTypeFullName || name == StringName)
@@ -301,9 +318,24 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             return false;
         }
-        public DSharpTypeBuilder GetType(string fullName)
+        public IDSharpType GetType(string fullName)
         {
-            var type = _types.FirstOrDefault(t => t.FullName == fullName);
+            IDSharpType type = _types.FirstOrDefault(t => t.FullName == fullName);
+
+            if (type != null)
+            {
+                return type;
+            }
+
+            foreach (var assembly in References)
+            {
+                type = assembly.Types.FirstOrDefault(t => t.FullName == fullName);
+
+                if (type != null)
+                {
+                    return type;
+                }
+            }
 
             return type ?? throw new ArgumentException($"Unknown type: {fullName}", nameof(fullName));
         }
@@ -395,6 +427,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             throw new ArgumentException($"Invalid token type: {metadata}", nameof(metadata));
         }
+        public IDSharpType GetType(TypeInfoNode typeInfo)
+        {
+            return GetType(typeInfo.GetFullName(true, false));
+        }
+        public IDSharpFieldInfo[] GetGlobalVariables() => [.. _globalVariables];
+        public IDSharpMethodInfo[] GetGlobalFunctions() => [.. GlobalFunctions];
 
         #endregion
 

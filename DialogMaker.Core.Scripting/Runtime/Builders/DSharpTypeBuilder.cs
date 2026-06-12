@@ -186,6 +186,11 @@
             return RemoveMember(_fields, field);
         }
 
+        public override string ToString()
+        {
+            return FullName;
+        }
+
         private void RemoveAllGenericTypes()
         {
             if (_genericTypes.Count == 0)

@@ -1,0 +1,7 @@
+﻿namespace System
+{
+	public struct Number {}
+}
+	
+
+number value = "Some text: " + ((2 + 2) * (2 + 2));

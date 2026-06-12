@@ -1,18 +1,10 @@
-﻿namespace DialogMaker.Core.Scripting.Runtime.Builders
+﻿using Newtonsoft.Json.Linq;
+
+namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
     public class DSharpPropertyBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder declaringType, string name, DSharpTypeToken metadataToken)
         : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken), IDSharpPropertyInfo
     {
-        public override string Name 
-        { 
-            get => base.Name; 
-            set
-            {
-                base.Name = value;
-                GetterMethodName = $"get_{value}";
-                SetterMethodName = $"set_{value}";
-            }
-        }
         public override DSharpTypeBuilder DeclaringType { get; } = declaringType;
         public DSharpTypeToken? PropertyType { get; set; }
         public DSharpMethodBuilder? Getter { get; private set; }
@@ -58,7 +50,7 @@
             }
 
             var setter = DeclaringType.CreateMethod(t => new(this, true, SetterMethodName, t));
-            setter.Parameters.Add(new()
+            setter.Parameters.Add(new(Assembly)
             {
                 Type = PropertyType,
                 Name = "value"
@@ -87,6 +79,17 @@
             }
 
             return false;
+        }
+
+        #endregion
+
+        #region События
+
+        protected override void OnNameChanged(string name)
+        {
+            base.OnNameChanged(name);
+            GetterMethodName = $"get_{name}";
+            SetterMethodName = $"set_{name}";
         }
 
         #endregion

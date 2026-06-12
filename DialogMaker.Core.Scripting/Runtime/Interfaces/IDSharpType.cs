@@ -4,6 +4,7 @@
     {
         public string? Namespace { get; }
         public string FullName { get; }
+        public int ArrayDimensions { get; }
 
         public IDSharpType[] GetBaseTypes();
         public IDSharpMethodInfo[] GetConstructors();

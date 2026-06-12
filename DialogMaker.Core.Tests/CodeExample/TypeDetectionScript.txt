@@ -1,0 +1,13 @@
+﻿namespace System
+{
+	public class String {}
+	public class Object {}
+	public struct Char {}
+	public struct Boolean {}
+	public struct Number {}
+	
+	public class Type {}
+}
+	
+
+number value = new System.Type();

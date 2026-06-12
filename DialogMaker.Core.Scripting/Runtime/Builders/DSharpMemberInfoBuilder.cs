@@ -5,24 +5,41 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
     /// <summary>
     /// Base class of member builder
     /// </summary>
-    /// <param name="assembly">Assembly that contains this member</param>
-    /// <param name="name">Name of member</param>
-    /// <param name="metadataToken">Metadata token for identifying member in bytecode</param>
-    public abstract class DSharpMemberInfoBuilder(DSharpAssemblyBuilder assembly, string name, DSharpTypeToken metadataToken)
-        : IDSharpMemberInfo
+    public abstract class DSharpMemberInfoBuilder : IDSharpMemberInfo
     {
+        /// <param name="assembly">Assembly that contains this member</param>
+        /// <param name="name">Name of member</param>
+        /// <param name="metadataToken">Metadata token for identifying member in bytecode</param>
+        public DSharpMemberInfoBuilder(DSharpAssemblyBuilder assembly, string name, DSharpTypeToken metadataToken)
+        {
+            Assembly = assembly;
+            Name = name;
+            MetadataToken = metadataToken;
+        }
+
         /// <summary>
         /// Assembly that contains this member
         /// </summary>
-        public DSharpAssemblyBuilder Assembly { get; } = assembly;
+        public DSharpAssemblyBuilder Assembly { get; }
         /// <summary>
         /// Name of this member
         /// </summary>
-        public virtual string Name { get; set; } = name;
+        public virtual string Name
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnNameChanged(value);
+                }
+            }
+        }
         /// <summary>
         /// Metadata token for identifying member in bytecode
         /// </summary>
-        public DSharpTypeToken MetadataToken { get; } = metadataToken;
+        public DSharpTypeToken MetadataToken { get; }
         /// <summary>
         /// Type that declared this member
         /// </summary>
@@ -73,6 +90,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
 
             return false;
+        }
+
+        #endregion
+
+        #region События
+
+        protected virtual void OnNameChanged(string name)
+        {
         }
 
         #endregion

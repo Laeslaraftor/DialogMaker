@@ -1,7 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Runtime.Builders;
-using System.Xml.Linq;
 
 namespace DialogMaker.Core.Scripting.Runtime.Compilers
 {
@@ -11,6 +10,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         {
             if (invokableNode.Body == null)
             {
+                if (method.IsExtern)
+                {
+                    return;
+                }
+
                 throw new ArgumentException($"Invokable node must contains body: {invokableNode}", nameof(invokableNode));
             }
 
@@ -73,6 +77,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         private void CompileValueExpression(DSharpMethodBuilder method, ExpressionNode expression, DSharpMethodCompileSettings settings = default, ExpressionNode? parentExpression = null)
         {
             var code = method.GetBytecodeBuilder();
+            DSharpCompilerContext context = new()
+            {
+                Assembly = method.Assembly,
+                Usings = _usings,
+                TypeResolver = code.ExpressionTypeResolver,
+                CurrentMember = method
+            };
 
             if (expression is IdentifierExpressionNode identifierExpression)
             {
@@ -89,7 +100,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     return;
                 }
 
-                var member = FindAnyAvailableMember(method.DeclaringType, identifierExpression.Name);
+                var member = context.FindAnyAvailableMember(identifierExpression.Name);
+                // Надо как то сделать получение экземпляра при наличии и необходимости
 
                 if (member is IDSharpMethodInfo)
                 {
@@ -112,7 +124,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
                 else
                 {
-                    throw new ArgumentException($"Invalid member: {member}", nameof(expression));
+                    throw new ArgumentException($"Invalid member {member} at expression: {expression}", nameof(expression));
                 }
             }
             else if (expression is MemberAccessExpressionNode memberAccessExpression)
@@ -125,9 +137,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     throw new ArgumentException($"Member must be specified: {memberAccessExpression}", nameof(expression));
                 }
+                if (context.TryResolveMember(memberAccessExpression, out var member))
+                {
+                    Console.WriteLine("Надо как то сделать получение экземпляра при наличии");
+                    return;
+                }
 
-                CompileValueExpression(method, memberAccessExpression.Target, settings);
-                CompileValueExpression(method, memberAccessExpression.Member, settings);
+                throw new ArgumentException($"Unable to handle member access: {expression}", nameof(expression));
             }
             else if (expression is CallExpressionNode callExpression)
             {
@@ -145,7 +161,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 if (callExpression.Callee is IdentifierExpressionNode identifier)
                 {
-                    var callingMethod = FindAnyAvailableMember<IDSharpMethodInfo>(method.DeclaringType, identifier.Name);
+                    var callingMethod = context.FindAnyAvailableMember<IDSharpMethodInfo>(identifier.Name);
 
                     if (callingMethod.ReturnType != null)
                     {
@@ -171,7 +187,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                         throw new ArgumentException($"Method name must be identifier: {memberMethod}", nameof(expression));
                     }
 
-                    var callingMethod = FindAnyAvailableMember<IDSharpMethodInfo>(method.DeclaringType, methodIdentifier.Name);
+                    var callingMethod = context.FindAnyAvailableMember<IDSharpMethodInfo>(methodIdentifier.Name);
 
                     if (callingMethod.ReturnType != null)
                     {
@@ -294,205 +310,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
         #region Поиск членов
 
-        private T FindAnyAvailableMember<T>(IDSharpType? type, string name)
-            where T : IDSharpMemberInfo
-        {
-            var members = FindAvailableMembers<T>(type, name);
-
-            if (members.Count > 0)
-            {
-                return members[0];
-            }
-
-            throw new ArgumentException($"Unknown member: {name}", nameof(name));
-        }
-        private IDSharpMemberInfo FindAnyAvailableMember(IDSharpType? type, string name)
-        {
-            return FindAnyAvailableMember<IDSharpMemberInfo>(type, name);
-        }
-        private List<T> FindAvailableMembers<T>(IDSharpType? type, string name)
-            where T : IDSharpMemberInfo
-        {
-            List<T> result = [];
-
-            bool Add(IDSharpMemberInfo member)
-            {
-                if (member is T typedMember)
-                {
-                    result.Add(typedMember);
-                    return true;
-                }
-
-                return false;
-            }
-            int AddRange(IEnumerable<IDSharpMemberInfo> members)
-            {
-                int count = 0;
-
-                foreach (var member in members)
-                {
-                    if (Add(member))
-                    {
-                        count++;
-                    }
-                }
-
-                return count;
-            }
-
-            if (type == null)
-            {
-                var variable = _assemblyBuilder.GlobalVariables.FirstOrDefault(f => f.Name == name);
-
-                if (variable == null)
-                {
-                    foreach (var function in _assemblyBuilder.GlobalFunctions.Where(f => f.Name == name))
-                    {
-                        result.Add(function);
-                    }
-                }
-                else
-                {
-                    result.Add(variable);
-                }
-
-                return result;
-            }
-
-            int FindMember(IDSharpType type, Predicate<IDSharpMemberInfo> predicate)
-            {
-                var properties = type.GetProperties(predicate);
-                var fields = type.GetFields(predicate);
-                var methods = type.GetMethods(predicate);
-                var constructors = type.GetConstructors(predicate);
-
-                return AddRange(properties) + AddRange(fields) + AddRange(methods);
-            }
-            int FindBaseTypeMember(IDSharpType type, Predicate<IDSharpMemberInfo> predicate)
-            {
-                int count = 0;
-
-                foreach (var baseType in type.GetBaseTypes())
-                {
-                    count += FindMember(baseType, predicate);
-                    count += FindBaseTypeMember(baseType, predicate);
-                }
-
-                return count;
-            }
-            int FindInDeclaringType(IDSharpType type)
-            {
-                if (type.DeclaringType == null)
-                {
-                    return 0;
-                }
-
-                type = type.DeclaringType;
-                int count = FindMember(type, m => m.Name == name && m.IsStatic);
-
-                return count + FindInDeclaringType(type);
-            }
-
-            FindMember(type, m => m.Name == name);
-            FindBaseTypeMember(type, m => m.Name == name && m.Access == DSharpAccessModifier.Public ||
-                                                            m.Access == DSharpAccessModifier.Protected);
-            FindInDeclaringType(type);
-
-            return result;
-        }
-        private IDSharpMethodInfo? FindConstructor(IDSharpType type, params IEnumerable<DSharpTypeToken>? parameters)
-        {
-            var members = FindAvailableMembers<IDSharpMethodInfo>(type, DSharpTypeBuilder.ConstructorName);
-
-            if (members.Count == 0)
-            {
-                if (parameters == null)
-                {
-                    throw new ArgumentException($"Unable to find any constructor at {type}");
-                }
-
-                return null;
-            }
-
-            try
-            {
-                return FindMethod(type, members, parameters);
-            }
-            catch (Exception error)
-            {
-                throw new ArgumentException($"Unable to find constructor", error);
-            }
-        }
-        private IDSharpMethodInfo FindMethod(IDSharpType type, string name, params IEnumerable<DSharpTypeToken>? parameters)
-        {
-            var members = FindAvailableMembers<IDSharpMethodInfo>(type, name);
-
-            if (members.Count == 0)
-            {
-                throw new ArgumentException($"Unable to find any method with name {name} at {type}", nameof(name));
-            }
-
-            try
-            {
-                return FindMethod(type, members, parameters);
-            }
-            catch (Exception error)
-            {
-                throw new ArgumentException($"Unable to find method {name}", error);
-            }
-        }
-        private IDSharpMethodInfo FindMethod(IDSharpType type, IEnumerable<IDSharpMethodInfo> members, params IEnumerable<DSharpTypeToken>? parameters)
-        {
-            if (!members.Any())
-            {
-                throw new ArgumentException($"Members enumeration is empty", nameof(members));
-            }
-            if (parameters == null || !parameters.Any())
-            {
-                return members.First();
-            }
-
-            int parameterIndex = 0;
-            Dictionary<IDSharpMethodInfo, IDSharpParameterInfo[]> methodParameters = [];
-            List<IDSharpMethodInfo> methods = [.. members];
-
-            foreach (var parameter in parameters)
-            {
-                if (_assemblyBuilder.GetType(parameter) is not IDSharpType parameterType)
-                {
-                    throw new ArgumentException($"Parameter type must be a type on parameter with index {parameterIndex}", nameof(parameters));
-                }
-
-                methods.RemoveAll(method =>
-                {
-                    if (!methodParameters.TryGetValue(method, out var p))
-                    {
-                        p = method.GetParameters();
-                        methodParameters.Add(method, p);
-                    }
-
-                    if (parameterIndex >= p.Length)
-                    {
-                        return true;
-                    }
-
-                    return parameterType != p[parameterIndex];
-                });
-
-                parameterIndex++;
-            }
-
-            if (methods.Count == 1)
-            {
-                return methods[0];
-            }
-            else if (methods.Count > 1)
-            {
-                throw new ArgumentException($"Multiple methods with same parameters type was found at {type}", nameof(members));
-            }
-
-            throw new ArgumentException($"Unable to find overload for method at {type}", nameof(members));
-        }
 
         #endregion
 

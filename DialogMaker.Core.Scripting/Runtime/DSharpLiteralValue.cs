@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core.Scripting.Runtime
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+
+namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
     /// Literal value of D#
@@ -57,7 +59,7 @@
         /// <summary>
         /// Is literal value empty
         /// </summary>
-        public bool IsNull => _stringValue == null && _numberValue == null && _boolValue == null;
+        public bool IsNull => _stringValue == null && _numberValue == null && _boolValue == null && _charValue == null;
         /// <summary>
         /// Is literal value string
         /// </summary>
@@ -81,6 +83,36 @@
         private readonly char? _charValue;
 
         #region Управление
+
+        /// <summary>
+        /// Get literal value type
+        /// </summary>
+        /// <returns>Type of literal value</returns>
+        public DSharpLiteralType GetValueType()
+        {
+            if (IsNull)
+            {
+                return DSharpLiteralType.Null;
+            }
+            else if (IsString)
+            {
+                return DSharpLiteralType.String;
+            }
+            else if (IsNumber)
+            {
+                return DSharpLiteralType.Number;
+            }
+            else if (IsChar)
+            {
+                return DSharpLiteralType.Char;
+            }
+            else if (IsBool)
+            {
+                return DSharpLiteralType.Bool;
+            }
+
+            throw new InvalidDataException("Invalid literal value");
+        }
 
         /// <summary>
         /// Get string value of this literal value

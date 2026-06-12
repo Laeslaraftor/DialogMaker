@@ -18,6 +18,8 @@ namespace DialogMaker.Core.Scripting.Runtime
         public ReadOnlyCollection<DSharpFieldInfo> Fields { get; }
         public ReadOnlyCollection<DSharpMethodInfo> Methods { get; }
 
+        public int ArrayDimensions => throw new NotImplementedException();
+
         #region Управление
 
         public IDSharpMethodInfo[] GetMethods() => [.. Methods];
@@ -27,6 +29,16 @@ namespace DialogMaker.Core.Scripting.Runtime
         public IDSharpFieldInfo[] GetFields() => [.. Fields];
         public IDSharpFieldInfo[] GetFields(Predicate<IDSharpFieldInfo> predicate) => [.. Fields.Where(f => predicate(f))];
         public IDSharpType[] GetBaseTypes() => [.. BaseTypes];
+
+        public IDSharpMethodInfo[] GetConstructors()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IDSharpMethodInfo[] GetConstructors(Predicate<IDSharpMethodInfo> predicate)
+        {
+            throw new NotImplementedException();
+        }
 
         #endregion
     }

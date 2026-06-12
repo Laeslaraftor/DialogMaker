@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core.Scripting.Runtime.Builders
+﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+
+namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
     /// <summary>
     /// Class that designed for building bytecode for methods and functions
@@ -447,6 +449,29 @@
         #endregion
 
         #region Дополнительно
+
+        /// <summary>
+        /// Resolve expression type
+        /// </summary>
+        /// <param name="expression">Expression that contains type</param>
+        /// <returns>Resolved type</returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public IDSharpType? ExpressionTypeResolver(ExpressionNode expression)
+        {
+            if (expression is IdentifierExpressionNode identifier)
+            {
+                var variable = LocalVariables.FirstOrDefault(v => v.Name == identifier.Name);
+                
+                if (variable.Type == null)
+                {
+                    throw new InvalidOperationException($"Type of local variable ({variable.Name}) not specified in {Method}");
+                }
+
+                return Method.Assembly.GetType(variable.Type) as IDSharpType;
+            }
+
+            return null;
+        }
 
         private T CreateInstruction<T>(params object[] parameters)
             where T : Instruction

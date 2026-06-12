@@ -32,6 +32,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
             }
         }
+        private DSharpCompilerContext Context => new()
+        {
+            Assembly = _assemblyBuilder,
+            Usings = _usings,
+            ResolvedTypes = _resolvedTypes
+        };
 
         private string? _currentNamespaceIdentifier;
 
@@ -240,7 +246,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             field.Access = fieldNode.Access;
             field.IsStatic = fieldNode.IsStatic;
             field.IsReadOnly = field.IsReadOnly;
-            
+
             if (TryGetLiteralValue(fieldNode.Initializer, out var rawValue))
             {
                 field.RawValue = rawValue;
@@ -379,7 +385,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             {
                 foreach (var baseType in info.Value.BaseTypes)
                 {
-                    var typeToken = ResolveType(assemblyBuilder, info.Key.Namespace, baseType);
+                    var typeToken = ResolveType(info.Key, baseType);
                     info.Key.BaseTypes.Add(typeToken);
                 }
             }
@@ -387,27 +393,30 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             {
                 if (info.Value.Type != null)
                 {
-                    info.Key.FieldType = ResolveType(assemblyBuilder, info.Key.Namespace ?? info.Key.DeclaringType?.Namespace, info.Value.Type);
+                    info.Key.FieldType = ResolveType(info.Key, info.Value.Type);
                 }
             }
             foreach (var info in _createdGlobalVariables)
             {
                 if (info.Value.Type != null)
                 {
-                    info.Key.FieldType = ResolveType(assemblyBuilder, info.Key.Namespace, info.Value.Type);
+                    info.Key.FieldType = ResolveType(info.Key, info.Value.Type);
                 }
             }
             foreach (var info in _createdProperties)
             {
                 if (info.Value.Type != null)
                 {
-                    info.Key.PropertyType = ResolveType(assemblyBuilder, info.Key.DeclaringType.Namespace, info.Value.Type);
+                    info.Key.PropertyType = ResolveType(info.Key, info.Value.Type);
                 }
 
                 CompileProperty(info.Key, info.Value);
             }
             foreach (var info in _createdMethods)
             {
+                var context = Context;
+                context.CurrentMember = info.Key;
+
                 foreach (var parameter in info.Value.Parameters)
                 {
                     if (parameter.Type == null)
@@ -415,8 +424,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                         throw new InvalidOperationException($"Parameter must have a type: {parameter}");
                     }
 
-                    var type = ResolveType(assemblyBuilder, info.Key.DeclaringType?.Namespace, parameter.Type);
-                    info.Key.Parameters.Add(new()
+                    var type = context.ResolveType(parameter.Type);
+                    info.Key.Parameters.Add(new(assemblyBuilder)
                     {
                         Name = parameter.Name,
                         Type = type
@@ -425,13 +434,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 if (info.Value.ReturnType != null && info.Value.ReturnType.Name != "func")
                 {
-                    info.Key.ReturnType = ResolveType(assemblyBuilder, info.Key.DeclaringType?.Namespace, info.Value.ReturnType);
+                    info.Key.ReturnType = context.ResolveType(info.Value.ReturnType);
                 }
 
                 CompileMethod(info.Key, info.Value);
             }
             foreach (var info in _createdConstructors)
             {
+                var context = Context;
+                context.CurrentMember = info.Key;
+
                 foreach (var parameter in info.Value.Parameters)
                 {
                     if (parameter.Type == null)
@@ -439,8 +451,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                         throw new InvalidOperationException($"Parameter must have a type: {parameter}");
                     }
 
-                    var type = ResolveType(assemblyBuilder, info.Key.DeclaringType?.Namespace, parameter.Type);
-                    info.Key.Parameters.Add(new()
+                    var type = context.ResolveType(parameter.Type);
+                    info.Key.Parameters.Add(new(assemblyBuilder)
                     {
                         Name = parameter.Name,
                         Type = type
@@ -451,56 +463,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
         private DSharpTypeToken ResolveType(DSharpMemberInfoBuilder member, TypeInfoNode typeInfo)
         {
-            return ResolveType(member.Assembly, member.DeclaringType?.Namespace, typeInfo);
-        }
-        private DSharpTypeToken ResolveType(DSharpAssemblyBuilder assemblyBuilder, string? @namespace, TypeInfoNode typeInfo)
-        {
-            string typeName = typeInfo.GetFullName(true, false);
-            var resolvedType = TryResolveType(assemblyBuilder, @namespace, typeName);
-
-            if (resolvedType != null)
-            {
-                return resolvedType;
-            }
-
-            foreach (var @using in _usings)
-            {
-                resolvedType = TryResolveType(assemblyBuilder, @using, typeName);
-
-                if (resolvedType != null)
-                {
-                    return resolvedType;
-                }
-            }
-
-            throw new ArgumentException($"Unable to resolve type: {typeName}", nameof(typeInfo));
-        }
-        private DSharpTypeToken? TryResolveType(DSharpAssemblyBuilder assemblyBuilder, string? @namespace, string typeName)
-        {
-            var fullName = $"{@namespace}.{typeName}";
-
-            if (_resolvedTypes.TryGetValue(typeName, out var token) ||
-                _resolvedTypes.TryGetValue(fullName, out token))
-            {
-                return token;
-            }
-            if (assemblyBuilder.TryGetStandardType(typeName, out token) ||
-                assemblyBuilder.TryGetTypeToken(typeName, out token))
-            {
-                _resolvedTypes.Add(typeName, token);
-                return token;
-            }
-            if (@namespace == null)
-            {
-                return null;
-            }
-            if (assemblyBuilder.TryGetTypeToken(fullName, out token))
-            {
-                _resolvedTypes.Add(fullName, token);
-                return token;
-            }
-
-            return null;
+            var context = Context;
+            context.CurrentMember = member;
+            return context.ResolveType(typeInfo);
         }
 
         #endregion

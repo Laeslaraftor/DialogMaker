@@ -9,6 +9,8 @@ namespace DialogMaker.Core.Tests
         public const string ScriptPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\DialogScriptExample.txt";
         public const string SimpleScriptPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\SimpleScriptExample.txt";
         public const string ExpressionsScriptPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\ExpressionsScript.txt";
+        public const string MathScriptPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\MathScript.txt";
+        public const string TypeDetectionScriptPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\TypeDetectionScript.txt";
 
         [Test]
         public static void Tokenize()
@@ -45,7 +47,7 @@ namespace DialogMaker.Core.Tests
 
         private static DSharpLexer GetLexer()
         {
-            var script = File.ReadAllText(ExpressionsScriptPath);
+            var script = File.ReadAllText(MathScriptPath);
             return new(script);
         }
     }

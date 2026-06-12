@@ -201,11 +201,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         {
             if (stream.Check(DSharpTokenType.LeftParen))
             {
-                stream.Eat(DSharpTokenType.LeftParen);
-                var expr = ParseExpression(stream);
-                stream.Eat(DSharpTokenType.RightParen);
-                return expr;
+                return ParenContainedExpressionNode.Parse(stream);
             }
+            //if (stream.Check(DSharpTokenType.LeftParen))
+            //{
+            //    stream.Eat(DSharpTokenType.LeftParen);
+            //    var expr = ParseExpression(stream);
+            //    stream.Eat(DSharpTokenType.RightParen);
+            //    return expr;
+            //}
             if (stream.Check(DSharpTokenType.New))
             {
                 return NewExpressionNode.Parse(stream);
@@ -225,10 +229,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             if (TypeInfoNode.CanParseIdentifier(stream) && stream.Check(DSharpTokenType.Dot, 1))
             {
                 return ParseIdentifier(stream);
-            }
-            if (stream.Check(DSharpTokenType.LeftParen))
-            {
-                return ParenContainedExpressionNode.Parse(stream);
             }
 
             stream.ThrowUnexpectedTokenException();

@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+using System.Text;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
@@ -20,6 +21,43 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Initializer for this variable
         /// </summary>
         public ExpressionNode? Initializer { get; set; }
+
+        #region Управление
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
+        public override string ToString()
+        {
+            if (Type == null)
+            {
+                return base.ToString();
+            }
+
+            StringBuilder builder = new();
+            builder.AppendLine(base.ToString());
+            builder.AppendLine($"Type: {Type}");
+
+            if (Attributes != null && Attributes.Count > 0)
+            {
+                builder.AppendLine("Attributes:");
+
+                foreach (var attribute in Attributes)
+                {
+                    builder.AppendLine(attribute.ToString());
+                }
+            }
+            if (Initializer != null)
+            {
+                builder.AppendLine("Initializer:");
+                builder.Append(Initializer.ToString());
+            }
+
+            return builder.ToString().TrimEnd();
+        }
+
+        #endregion
 
         #region Статика
 

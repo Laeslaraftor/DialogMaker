@@ -130,6 +130,16 @@ namespace DialogMaker.Core.Scripting.Runtime
             return GetType(metadataToken);
         }
 
+        public IDSharpFieldInfo[] GetGlobalVariables()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IDSharpMethodInfo[] GetGlobalFunctions()
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
     }
 }
