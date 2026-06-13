@@ -87,7 +87,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 Access = memberInfo.AccessModifier,
                 Mode = memberInfo.Mode,
                 IsOverride = memberInfo.IsOverride,
-                IsSealed = memberInfo.IsSealed
+                IsSealed = memberInfo.IsSealed,
+                Type = memberInfo.Type
             };
 
             bool ReadGetter()

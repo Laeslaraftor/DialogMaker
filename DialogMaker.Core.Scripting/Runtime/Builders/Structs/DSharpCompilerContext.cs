@@ -26,10 +26,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
         public DSharpAssemblyBuilder? Assembly { get; set; }
         public IEnumerable<string>? Usings { get; set; }
-        public Func<ExpressionNode, IDSharpType?>? TypeResolver { get; set; }
+        public Func<object, IDSharpType?>? TypeResolver { get; set; }
         public IDSharpMemberInfo? CurrentMember { get; set; }
         public Dictionary<string, DSharpTypeToken>? ResolvedTypes { get; set; }
         public ExpressionNode? ParentExpression { get; set; }
+        public DSharpBytecodeBuilder.Instruction? CurrentLoopStartInstruction { get; set; }
+        public DSharpBytecodeBuilder.Instruction? CurrentLoopEndInstruction { get; set; }
 
         #region Управление
 
@@ -258,6 +260,30 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             {
                 return true;
             }
+            if (CurrentMember is DSharpMethodBuilder method)
+            {
+                var parameter = method.Parameters.FirstOrDefault(p => p.Name == name);
+
+                if (parameter?.Type != null)
+                {
+                    result = parameter.Type;
+                    return true;
+                }
+            }
+            if (Assembly != null && TypeResolver != null)
+            {
+                var type = TypeResolver(name);
+
+                if (type != null)
+                {
+                    result = Assembly.GetTypeToken(type);
+
+                    if (result != null)
+                    {
+                        return true;
+                    }
+                }
+            }
             if (CurrentMember?.DeclaringType?.Namespace != null)
             {
                 result = InternalTryResolveType(CurrentMember.DeclaringType.Namespace, name);
@@ -306,10 +332,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
             else if (members.Count > 1)
             {
-                throw new ArgumentException($"Found multiple members with the same name {name} in {CurrentMember}", nameof(name));
+                throw new ArgumentException($"Found multiple members with the same name \"{name}\" in {CurrentMember}", nameof(name));
             }
 
-            throw new ArgumentException($"Unknown member: {name}", nameof(name));
+            throw new ArgumentException($"Unknown member \"{name}\" at {CurrentMember}", nameof(name));
         }
         public readonly List<T> FindAvailableMembers<T>(string name)
             where T : IDSharpMemberInfo
@@ -347,7 +373,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 {
                     Add(Assembly.GetType(typeToken));
                     return result;
-                
                 }
                 var variable = Assembly.GetGlobalVariables().FirstOrDefault(f => f.Name == name);
                 var functions = Assembly.GetGlobalFunctions().Where(f => f.Name == name);
@@ -430,6 +455,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             {
                 throw new ArgumentException($"Unable to find constructor", error);
             }
+        }
+        public readonly IDSharpMethodInfo FindMethod(CallExpressionNode callExpression)
+        {
+            if (callExpression.Callee is not IdentifierExpressionNode identifier)
+            {
+                throw new ArgumentException($"Invalid method or function identifier: {callExpression}", nameof(callExpression));
+            }
+
+            var name = identifier.GetName(true);
+            DSharpMetadataToken[] parameters = new DSharpMetadataToken[callExpression.Arguments.Count];
+
+            return FindMethod(name, true, parameters);
         }
         public readonly IDSharpMethodInfo FindMethod(string name, bool matchByParametersCount, params IEnumerable<DSharpMetadataToken>? parameters)
         {

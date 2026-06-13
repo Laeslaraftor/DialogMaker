@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core.Scripting.Runtime
+﻿using DialogMaker.Core.Scripting.Runtime.Builders;
+
+namespace DialogMaker.Core.Scripting.Runtime
 {
     public static class DSharpMetadataExtensions
     {
@@ -27,6 +29,36 @@
             public IDSharpMethodInfo GetMethod(string name)
             {
                 return type.GetMethodOrDefault(name) ?? throw new ArgumentException($"Unable to find method {name} at {type}");
+            }
+
+            /// <summary>
+            /// Check is current type available to assign variable with destination type
+            /// </summary>
+            /// <param name="destination">Destination type</param>
+            /// <returns>Is type assignable to destination type</returns>
+            public bool IsAssignableTo(IDSharpType destination)
+            {
+                if (type == destination ||
+                    destination.FullName == DSharpAssemblyBuilder.ObjectTypeFullName)
+                {
+                    return true;
+                }
+
+                bool ContainsInBaseType(IDSharpType currentType)
+                {
+                    foreach (var baseType in currentType.GetBaseTypes())
+                    {
+                        if (baseType == destination ||
+                            ContainsInBaseType(baseType))
+                        {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }
+
+                return ContainsInBaseType(type);
             }
         }
     }

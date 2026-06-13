@@ -20,6 +20,8 @@ namespace DialogMaker.Core.Scripting.Runtime
 
         public int ArrayDimensions => throw new NotImplementedException();
 
+        public DSharpObjectType ObjectType => throw new NotImplementedException();
+
         #region Управление
 
         public IDSharpMethodInfo[] GetMethods() => [.. Methods];

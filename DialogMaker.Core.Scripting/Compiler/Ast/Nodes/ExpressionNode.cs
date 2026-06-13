@@ -55,6 +55,19 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         {
             ExpressionNode root = IdentifierExpressionNode.Parse(stream, parseGenerics);
 
+            /*
+            MemberAccess 
+            {
+                Left = identifier,
+                Right = MemberAccess
+                {
+                    Left = identifier,
+                    Right = identifier/MemberAccess
+                }
+            }
+
+             */
+
             if (stream.Check(DSharpTokenType.Dot))
             {
                 MemberAccessExpressionNode memberAccess;

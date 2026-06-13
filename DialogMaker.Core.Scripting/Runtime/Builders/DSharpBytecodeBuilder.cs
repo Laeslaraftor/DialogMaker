@@ -42,7 +42,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns></returns>
         public Instruction Push(DSharpLiteralValue value)
         {
-            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Push, value);
+            return CreateInstruction<LiteralInstruction>(this, DSharpBytecodeOperation.Push, value);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.Push"/>
@@ -83,11 +83,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <inheritdoc cref="DSharpBytecodeOperation.NewArray"/>
         /// </summary>
         /// <param name="type">Type of array items that needs to instantiate</param>
-        /// <param name="size">Size of array</param>
         /// <returns></returns>
-        public SizedTypeInstruction NewArray(IDSharpType type, int size)
+        public TypeInstruction NewArray(IDSharpType type)
         {
-            return CreateInstruction<SizedTypeInstruction>(this, DSharpBytecodeOperation.New, type, size);
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.NewArray, type);
         }
 
         /// <summary>
@@ -200,6 +199,72 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public TypeInstruction StoreInstanceProperty(IDSharpPropertyInfo member)
         {
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreInstanceProperty, member);
+        }
+        /// <summary>
+        /// Auto load for specified member.
+        /// </summary>
+        /// <param name="propertyOrField">Property or field</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public TypeInstruction LoadPropertyOrField(IDSharpMemberInfo propertyOrField)
+        {
+            if (propertyOrField is IDSharpPropertyInfo property)
+            {
+                if (!property.CanWrite)
+                {
+                    throw new InvalidOperationException($"Unable to read value from property because it have not getter: \"{property}\"");
+                }
+                if (propertyOrField.IsStatic)
+                {
+                    return LoadProperty(property);
+                }
+
+                return LoadInstanceProperty(property);
+            }
+            else if (propertyOrField is IDSharpFieldInfo field)
+            {
+                if (propertyOrField.IsStatic)
+                {
+                    return LoadField(field);
+                }
+
+                return LoadInstanceField(field);
+            }
+
+            throw new ArgumentException($"Expected property or field, got: \"{propertyOrField}\"", nameof(propertyOrField));
+        }
+        /// <summary>
+        /// Auto store for specified member.
+        /// </summary>
+        /// <param name="propertyOrField">Property or field</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public TypeInstruction StorePropertyOrField(IDSharpMemberInfo propertyOrField)
+        {
+            if (propertyOrField is IDSharpPropertyInfo property)
+            {
+                if (!property.CanWrite)
+                {
+                    throw new InvalidOperationException($"Unable to write value to property because it have not setter: \"{property}\"");
+                }
+                if (propertyOrField.IsStatic)
+                {
+                    return StoreProperty(property);
+                }
+
+                return StoreInstanceProperty(property);
+            }
+            else if (propertyOrField is IDSharpFieldInfo field)
+            {
+                if (propertyOrField.IsStatic)
+                {
+                    return StoreField(field);
+                }
+
+                return StoreInstanceField(field);
+            }
+
+            throw new ArgumentException($"Expected property or field, got: \"{propertyOrField}\"", nameof(propertyOrField));
         }
 
         /// <summary>
@@ -323,6 +388,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Throw);
         }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.Empty"/>
+        /// </summary>
+        /// <param name="forceNew">Create new instruction without checking last</param>
+        /// <returns></returns>
+        public Instruction Empty(bool forceNew = false)
+        {
+            if (!forceNew && Instructions.Count > 0 &&
+                Instructions[^1].Operation == DSharpBytecodeOperation.Empty)
+            {
+                return Instructions[^1];
+            }
+
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Empty);
+        }
 
         #endregion
 
@@ -445,6 +525,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Mod);
         }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.Increment"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction Increment()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Increment);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.Decrement"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction Decrement()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Decrement);
+        }
 
         #endregion
 
@@ -453,18 +549,28 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <summary>
         /// Resolve expression type
         /// </summary>
-        /// <param name="expression">Expression that contains type</param>
+        /// <param name="value">Value that contains type info or name</param>
         /// <returns>Resolved type</returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public IDSharpType? ExpressionTypeResolver(ExpressionNode expression)
+        public IDSharpType? ExpressionTypeResolver(object value)
         {
-            if (expression is IdentifierExpressionNode identifier)
+            string? variableName = null;
+
+            if (value is string str)
             {
-                var variable = LocalVariables.FirstOrDefault(v => v.Name == identifier.Name);
+                variableName = str;
+            }
+            else if (value is IdentifierExpressionNode identifier)
+            {
+                variableName = identifier.GetName(false);
+            }
+            if (variableName != null)
+            {
+                var variable = LocalVariables.FirstOrDefault(v => v.Name == variableName);
                 
                 if (variable.Type == null)
                 {
-                    throw new InvalidOperationException($"Type of local variable ({variable.Name}) not specified in {Method}");
+                    throw new InvalidOperationException($"Type of local variable ({variableName}) not specified in {Method}");
                 }
 
                 return Method.Assembly.GetType(variable.Type) as IDSharpType;

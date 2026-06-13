@@ -34,7 +34,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
-        public DSharpTypeToken StringType
+        public DSharpTypeToken StringToken
         {
             get
             {
@@ -42,7 +42,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
-        public DSharpTypeToken NumberType
+        public DSharpTypeToken NumberToken
         {
             get
             {
@@ -50,7 +50,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
-        public DSharpTypeToken CharType
+        public DSharpTypeToken CharToken
         {
             get
             {
@@ -58,7 +58,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
-        public DSharpTypeToken BoolType
+        public DSharpTypeToken BoolToken
         {
             get
             {
@@ -66,7 +66,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
-        public DSharpTypeToken ObjectType
+        public DSharpTypeToken ObjectToken
         {
             get
             {
@@ -74,11 +74,75 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
-        public DSharpTypeToken EnumType
+        public DSharpTypeToken EnumToken
         {
             get
             {
                 field ??= GetTypeToken(EnumTypeFullName);
+                return field;
+            }
+        }
+        public DSharpTypeToken ArrayBaseToken
+        {
+            get
+            {
+                field ??= GetTypeToken(ArrayTypeFullName);
+                return field;
+            }
+        }
+        public IDSharpType StringType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(StringToken);
+                return field;
+            }
+        }
+        public IDSharpType NumberType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(NumberToken);
+                return field;
+            }
+        }
+        public IDSharpType CharType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(CharToken);
+                return field;
+            }
+        }
+        public IDSharpType BoolType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(BoolToken);
+                return field;
+            }
+        }
+        public IDSharpType ObjectType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(ObjectToken);
+                return field;
+            }
+        }
+        public IDSharpType EnumType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(EnumToken);
+                return field;
+            }
+        }
+        public IDSharpType ArrayBaseType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(ArrayBaseToken);
                 return field;
             }
         }
@@ -162,7 +226,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             return result;
         }
-        internal DSharpTypeBuilder CreateType(string name, bool isGeneric, DSharpTypeBuilder? parent)
+        internal DSharpTypeBuilder CreateType(string name, bool isGeneric, IDSharpType? parent)
         {
             if (isGeneric && parent == null)
             {
@@ -191,7 +255,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             return false;
         }
         public bool RemoveType(DSharpTypeBuilder type) => RemoveMember(type);
-        public DSharpTypeBuilder CreateType(string name, DSharpTypeBuilder? parent = null)
+        public DSharpTypeBuilder CreateType(string name, IDSharpType? parent = null)
         {
             return CreateType(name, false, parent);
         }
@@ -202,6 +266,98 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public DSharpMethodBuilder CreateGlobalFunction(string name)
         {
             return CreateMember(DSharpMetadataTokenType.Method, _globalFunctions, t => new(this, null, name, t));
+        }
+        public DSharpTypeBuilder FillGeneric(IDSharpType genericType, params IEnumerable<IDSharpType> genericParameters)
+        {
+            var genericsCount = genericParameters.Count();
+            var genericTypes = genericType.GetGenericTypes();
+
+            if (genericTypes.Length != genericsCount)
+            {
+                throw new ArgumentException($"Generic parameters count must match to amount of generic types in filling type", nameof(genericParameters));
+            }
+
+            var newType = CreateType(genericType.Name, genericType.DeclaringType);
+            newType.IsStatic = genericType.IsStatic;
+            newType.IsAbstract = genericType.IsAbstract;
+            newType.ObjectType = genericType.ObjectType;
+            newType.IsSealed = genericType.IsSealed;
+            newType.Namespace = genericType.Namespace;
+
+            DSharpTypeToken ReplaceOrGetToken(IDSharpType type)
+            {
+                if (type.IsGeneric)
+                {
+                    int index = genericTypes.IndexOf(type);
+                    return newType.GenericParameters[index];
+                }
+
+                return GetTypeToken(type);
+            }
+
+            foreach (var genericParameter in genericParameters)
+            {
+                var token = GetTypeToken(genericParameter);
+                newType.GenericParameters.Add(token);
+            }
+            foreach (var field in genericType.GetFields())
+            {
+                var newField = newType.CreateField(field.Name);
+                newField.IsReadOnly = field.IsReadOnly;
+                newField.IsStatic = field.IsStatic;
+                newField.RawValue = field.RawValue;
+                newField.FieldType = ReplaceOrGetToken(field.FieldType);
+            }
+            foreach (var property in genericType.GetProperties())
+            {
+                var newProperty = newType.CreateProperty(property.Name);
+                newProperty.IsStatic = property.IsStatic;
+                newProperty.IsVirtual = property.IsVirtual;
+                newProperty.IsSealed = property.IsSealed;
+                newProperty.IsOverride = property.IsOverride;
+                newProperty.PropertyType = ReplaceOrGetToken(property.PropertyType);
+
+                if (property.GetterMethod != null)
+                {
+                    newProperty.CreateGetter();
+                }
+                if (property.SetterMethod != null)
+                {
+                    newProperty.CreateSetter();
+                }
+
+                // копирование кода с заменой типов локальных переменных
+            }
+            foreach (var method in genericType.GetMethods())
+            {
+                var newMethod = newType.CreateMethod(method.Name);
+                newMethod.IsStatic = method.IsStatic;
+                newMethod.IsVirtual = method.IsVirtual;
+                newMethod.IsSealed = method.IsSealed;
+                newMethod.IsOverride = method.IsOverride;
+
+                if (method.ReturnType != null)
+                {
+                    newMethod.ReturnType = ReplaceOrGetToken(method.ReturnType);
+                }
+
+                foreach (var parameter in method.GetParameters())
+                {
+                    newMethod.Parameters.Add(new(this)
+                    {
+                        Name = parameter.Name,
+                        Type = ReplaceOrGetToken(parameter.Type)
+                    });
+                }
+
+                // копирование кода с заменой типов локальных переменных
+            }
+
+            return newType;
+        }
+        public DSharpTypeBuilder CreateArray(IDSharpType elementType)
+        {
+            return FillGeneric(ArrayBaseType, elementType);
         }
 
         private T CreateMember<T>(DSharpMetadataTokenType tokenType, IList<T> members, Func<DSharpTypeToken, T> fabric)
@@ -265,27 +421,27 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             if (name == StringTypeFullName || name == StringName)
             {
-                result = StringType;
+                result = StringToken;
                 return true;
             }
             if (name == NumberTypeFullName || name == NumberName)
             {
-                result = NumberType;
+                result = NumberToken;
                 return true;
             }
             if (name == BoolTypeFullName || name == BoolName)
             {
-                result = BoolType;
+                result = BoolToken;
                 return true;
             }
             if (name == ObjectTypeFullName || name == ObjectName)
             {
-                result = BoolType;
+                result = ObjectToken;
                 return true;
             }
             if (name == CharTypeFullName || name == CharName)
             {
-                result = CharType;
+                result = CharToken;
                 return true;
             }
 
@@ -344,10 +500,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             return literalType switch
             {
                 DSharpLiteralType.Null => throw new ArgumentException("Can not get type for null literal value", nameof(literalType)),
-                DSharpLiteralType.String => (IDSharpType)GetType(StringType),
-                DSharpLiteralType.Char => (IDSharpType)GetType(CharType),
-                DSharpLiteralType.Number => (IDSharpType)GetType(NumberType),
-                DSharpLiteralType.Bool => (IDSharpType)GetType(BoolType),
+                DSharpLiteralType.String => (IDSharpType)GetType(StringToken),
+                DSharpLiteralType.Char => (IDSharpType)GetType(CharToken),
+                DSharpLiteralType.Number => (IDSharpType)GetType(NumberToken),
+                DSharpLiteralType.Bool => (IDSharpType)GetType(BoolToken),
                 _ => throw new ArgumentException($"Invalid literal type: {literalType}", nameof(literalType))
             };
         }
@@ -444,6 +600,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public const string BoolTypeFullName = "System.Boolean";
         public const string CharTypeFullName = "System.Char";
         public const string EnumTypeFullName = "System.Enum";
+        public const string ArrayTypeFullName = "System.Array`1";
         public const string ObjectName = "object";
         public const string StringName = "string";
         public const string NumberName = "number";

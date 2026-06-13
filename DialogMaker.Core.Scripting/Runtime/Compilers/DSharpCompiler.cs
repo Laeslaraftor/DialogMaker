@@ -6,9 +6,20 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Runtime.Compilers
 {
-    public partial class DSharpCompiler(DSharpAssemblyBuilder assemblyBuilder)
+    public partial class DSharpCompiler
     {
-        private readonly DSharpAssemblyBuilder _assemblyBuilder = assemblyBuilder;
+        public DSharpCompiler(DSharpAssemblyBuilder assemblyBuilder)
+        {
+            _assemblyBuilder = assemblyBuilder;
+            _context = new()
+            {
+                Assembly = _assemblyBuilder,
+                Usings = _usings,
+                ResolvedTypes = _resolvedTypes
+            };
+        }
+
+        private readonly DSharpAssemblyBuilder _assemblyBuilder;
         private readonly List<string> _usings = [];
         private readonly Dictionary<DSharpTypeBuilder, ObjectDeclarationNode> _createdTypes = [];
         private readonly Dictionary<DSharpFieldBuilder, FieldNode> _createdFields = [];
@@ -32,12 +43,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
             }
         }
-        private DSharpCompilerContext Context => new()
-        {
-            Assembly = _assemblyBuilder,
-            Usings = _usings,
-            ResolvedTypes = _resolvedTypes
-        };
+        private DSharpCompilerContext _context;
 
         private string? _currentNamespaceIdentifier;
 
@@ -64,7 +70,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             foreach (var enumValue in _enumValues.Keys)
             {
-                enumValue.FieldType = _assemblyBuilder.NumberType;
+                enumValue.FieldType = _assemblyBuilder.NumberToken;
             }
         }
 
@@ -173,7 +179,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             var type = assemblyBuilder.CreateType(declaration.Identifier.Name, parent);
             type.IsStatic = declaration.IsStatic;
             type.IsAbstract = declaration.IsAbstract;
-            type.Type = (DSharpObjectType)declaration.Type;
+            type.ObjectType = (DSharpObjectType)declaration.Type;
             type.Access = declaration.Access;
             type.Namespace = CurrentNamespace?.Identifier?.Name;
 
@@ -379,7 +385,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         {
             foreach (var enumType in _enumTypes.Keys)
             {
-                enumType.BaseTypes.Add(assemblyBuilder.EnumType);
+                enumType.BaseTypes.Add(assemblyBuilder.EnumToken);
             }
             foreach (var info in _createdTypes)
             {
@@ -414,7 +420,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
             foreach (var info in _createdMethods)
             {
-                var context = Context;
+                var context = _context;
                 context.CurrentMember = info.Key;
 
                 foreach (var parameter in info.Value.Parameters)
@@ -441,7 +447,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
             foreach (var info in _createdConstructors)
             {
-                var context = Context;
+                var context = _context;
                 context.CurrentMember = info.Key;
 
                 foreach (var parameter in info.Value.Parameters)
@@ -463,7 +469,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
         private DSharpTypeToken ResolveType(DSharpMemberInfoBuilder member, TypeInfoNode typeInfo)
         {
-            var context = Context;
+            var context = _context;
             context.CurrentMember = member;
             return context.ResolveType(typeInfo);
         }

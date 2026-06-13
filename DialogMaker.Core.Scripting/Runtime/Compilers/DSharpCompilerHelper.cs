@@ -76,8 +76,40 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     return assembly.GetType(literalExpression.Type);
                 }
-                else if (context.TryResolveMember(expression, out var result))
+                else if (expression is CallExpressionNode callExpression)
                 {
+                    return context.FindMethod(callExpression).ReturnType;
+                }
+
+                if (expression is IdentifierExpressionNode identifierExpression &&
+                         context.CurrentMember is IDSharpMethodInfo method)
+                {
+                    var identifier = identifierExpression.GetName(false);
+                    var parameter = method.GetParameters().FirstOrDefault(p => p.Name == identifier);
+
+                    if (parameter != null)
+                    {
+                        return parameter.Type;
+                    }
+                    if (method is DSharpMethodBuilder builder)
+                    {
+                        var code = builder.GetBytecodeBuilder();
+                        var variable = code.LocalVariables.FirstOrDefault(v => v.Name == identifier);
+
+                        if (variable?.Type != null)
+                        {
+                            return builder.Assembly.GetType(variable.Type);
+                        }
+                    }
+                }
+
+                if (context.TryResolveMember(expression, out var result))
+                {
+                    if (result.TryGetReturnType(out var returnType))
+                    {
+                        return returnType;
+                    }
+
                     return result;
                 }
                 else if (expression.TrySimplifyToLiteral(out var literal))
@@ -184,7 +216,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     return leftType;
                 }
 
-                var stringType = (IDSharpType)assembly.GetType(assembly.StringType);
+                var stringType = (IDSharpType)assembly.GetType(assembly.StringToken);
 
                 if (leftType == stringType ||
                     rightType == stringType)
@@ -192,7 +224,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     return stringType;
                 }
 
-                var charType = (IDSharpType)assembly.GetType(assembly.CharType);
+                var charType = (IDSharpType)assembly.GetType(assembly.CharToken);
 
                 if (leftType == charType ||
                     rightType == charType)

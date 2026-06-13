@@ -18,7 +18,7 @@
         /// <summary>
         /// Type that declared this field. Empty field means this field is global variable in assembly
         /// </summary>
-        public override DSharpTypeBuilder? DeclaringType => declaringType;
+        public override IDSharpType? DeclaringType => declaringType;
         /// <summary>
         /// Type of value that stored by this field
         /// </summary>
@@ -44,5 +44,19 @@
                 return (IDSharpType)Assembly.GetType(FieldType);
             }
         }
+
+        #region Управление
+
+        public override string ToString()
+        {
+            if (DeclaringType == null)
+            {
+                return Name;
+            }
+
+            return $"{DeclaringType.FullName}.{Name}";
+        }
+
+        #endregion
     }
 }

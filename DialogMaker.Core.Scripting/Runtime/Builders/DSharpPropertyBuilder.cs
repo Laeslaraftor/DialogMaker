@@ -5,7 +5,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
     public class DSharpPropertyBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder declaringType, string name, DSharpTypeToken metadataToken)
         : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken), IDSharpPropertyInfo
     {
-        public override DSharpTypeBuilder DeclaringType { get; } = declaringType;
+        public override IDSharpType DeclaringType { get; } = declaringType;
         public DSharpTypeToken? PropertyType { get; set; }
         public DSharpMethodBuilder? Getter { get; private set; }
         public DSharpMethodBuilder? Setter { get; private set; }
@@ -21,7 +21,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             {
                 if (PropertyType == null)
                 {
-                    throw new InvalidOperationException("Can not get property type while it was not specified");
+                    throw new InvalidOperationException($"Can not get property type because it was not specified: {this}");
                 }
 
                 return (IDSharpType)Assembly.GetType(PropertyType);
@@ -36,8 +36,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             {
                 return Getter;
             }
+            if (DeclaringType is not DSharpTypeBuilder builder)
+            {
+                throw new InvalidOperationException($"Unable to create getter because declaring type is not a type builder");
+            }
 
-            var getter = DeclaringType.CreateMethod(t => new(this, false, GetterMethodName, t));
+            var getter = builder.CreateMethod(t => new(this, false, GetterMethodName, t));
             Getter = getter;
 
             return getter;
@@ -48,8 +52,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             {
                 return Setter;
             }
+            if (DeclaringType is not DSharpTypeBuilder builder)
+            {
+                throw new InvalidOperationException($"Unable to create setter because declaring type is not a type builder");
+            }
 
-            var setter = DeclaringType.CreateMethod(t => new(this, true, SetterMethodName, t));
+            var setter = builder.CreateMethod(t => new(this, true, SetterMethodName, t));
             setter.Parameters.Add(new(Assembly)
             {
                 Type = PropertyType,
@@ -62,7 +70,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
         public bool RemoveGetter()
         {
-            if (Getter != null && DeclaringType.RemoveMethod(Getter))
+            if (DeclaringType is not DSharpTypeBuilder builder)
+            {
+                return false;
+            }
+            if (Getter != null && builder.RemoveMethod(Getter))
             {
                 Getter = null;
                 return true;
@@ -72,13 +84,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         }
         public bool RemoveSetter()
         {
-            if (Setter != null && DeclaringType.RemoveMethod(Setter))
+            if (DeclaringType is not DSharpTypeBuilder builder)
+            {
+                return false;
+            }
+            if (Setter != null && builder.RemoveMethod(Setter))
             {
                 Setter = null;
                 return true;
             }
 
             return false;
+        }
+
+        public override string ToString()
+        {
+            return $"{DeclaringType.FullName}.{Name}";
         }
 
         #endregion

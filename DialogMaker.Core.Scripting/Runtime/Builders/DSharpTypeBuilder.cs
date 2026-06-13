@@ -1,6 +1,6 @@
 ﻿namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
-    public class DSharpTypeBuilder(DSharpAssemblyBuilder assembly, bool isGeneric, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken) 
+    public class DSharpTypeBuilder(DSharpAssemblyBuilder assembly, bool isGeneric, IDSharpType? declaringType, string name, DSharpTypeToken metadataToken) 
         : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken), IDSharpType
     {
         public DSharpTypeBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken)
@@ -16,8 +16,8 @@
         /// <summary>
         /// Type that declared this field
         /// </summary>
-        public override DSharpTypeBuilder? DeclaringType { get; } = declaringType;
-        public DSharpObjectType Type { get; set; }
+        public override IDSharpType? DeclaringType { get; } = declaringType;
+        public DSharpObjectType ObjectType { get; set; }
         public string? Namespace { get; set; }
         public string FullName
         {
@@ -36,11 +36,6 @@
                 else if (Namespace != null)
                 {
                     result = $"{Namespace}.{result}";
-                }
-
-                for (int i = 0; i < ArrayDimensions; i++)
-                {
-                    result += "[]";
                 }
 
                 return result;
@@ -95,7 +90,6 @@
                 return field;
             }
         }
-        public int ArrayDimensions { get; set; }
 
         private readonly List<DSharpMethodBuilder> _constructors = [];
         private readonly List<DSharpMethodBuilder> _methods = [];
@@ -220,6 +214,8 @@
         public IDSharpType[] GetBaseTypes() => [.. BaseTypes.Select(t => (IDSharpType)Assembly.GetType(t))];
         public IDSharpMethodInfo[] GetConstructors() => [.. _constructors];
         public IDSharpMethodInfo[] GetConstructors(Predicate<IDSharpMethodInfo> predicate) => [.. _constructors.Where(c => predicate(c))];
+        public IDSharpType[] GetGenericParameters() => [.. GenericParameters.Select(t => (IDSharpType)Assembly.GetType(t))];
+        public IDSharpType[] GetGenericTypes() => [.. GenericTypes];
 
         #endregion
 

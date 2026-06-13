@@ -10,6 +10,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         public Dictionary<string, DSharpPropertyBuilder>? IdentifiersAsProperties { get; set; }
         public Dictionary<VariableNode, DSharpMethodBuilderParameter>? LocalVariables { get; set; }
         public HashSet<CallExpressionNode>? CallingsToAwait { get; set; }
+        public bool DoNotCompileEndPointMember { get; set; }
 
         public readonly bool TryGetVariable(string name, [NotNullWhen(true)] out DSharpMethodBuilderParameter? result)
         {

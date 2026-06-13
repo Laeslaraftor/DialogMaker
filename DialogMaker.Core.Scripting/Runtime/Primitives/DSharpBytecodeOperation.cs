@@ -93,9 +93,9 @@
         /// <summary>
         /// Store last value from stack to array. 
         /// Stack:
-        /// 0: index,
-        /// 1: instance,
-        /// 2: value
+        /// 0: value
+        /// 1: index,
+        /// 2: instance,
         /// </summary>
         StoreArrayItem,
 
@@ -143,25 +143,38 @@
         Return,
 
         /// <summary>
-        /// Addition math operation (+)
+        /// Addition math operation (+).
+        /// Result will be added to stack
         /// </summary>
         Add,
         /// <summary>
-        /// Subtraction math operation (-)
+        /// Subtraction math operation (-).
+        /// Result will be added to stack
         /// </summary>
         Subtract,
         /// <summary>
-        /// Multiplication math operation (*)
+        /// Multiplication math operation (*).
+        /// Result will be added to stack
         /// </summary>
         Multiply,
         /// <summary>
-        /// Division math operation (/)
+        /// Division math operation (/).
+        /// Result will be added to stack
         /// </summary>
         Divide,
         /// <summary>
-        /// Mod math operation (%)
+        /// Mod math operation (%).
+        /// Result will be added to stack
         /// </summary>
         Mod,
+        /// <summary>
+        /// Increase last stack value by 1.
+        /// </summary>
+        Increment,
+        /// <summary>
+        /// Decrease last stack value by 1
+        /// </summary>
+        Decrement,
 
         /// <summary>
         /// Logical OR (||). 
@@ -205,7 +218,7 @@
         GreaterOrEqual,
         /// <summary>
         /// Logical NOT (!). 
-        /// Result of operation will be added to stack
+        /// This operation invert last boolean value in stack
         /// </summary>
         Not,
 
@@ -217,12 +230,18 @@
         /// </summary>
         New,
         /// <summary>
-        /// Create new instance of array and add it to stack
+        /// Create new instance of array and add it to stack.
+        /// Stack:
+        /// 0: size
         /// </summary>
         NewArray,
         /// <summary>
         /// Throw exception which must be in last stack value
         /// </summary>
         Throw,
+        /// <summary>
+        /// No operation
+        /// </summary>
+        Empty,
     }
 }

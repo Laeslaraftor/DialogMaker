@@ -177,6 +177,39 @@
 
         public IDSharpParameterInfo[] GetParameters() => [.. Parameters];
 
+        public override string ToString()
+        {
+            string name = Name + '(';
+            int parameterIndex = 0;
+
+            foreach (var parameter in Parameters)
+            {
+                if (parameterIndex > 0)
+                {
+                    name += ", ";
+                }
+
+                if (parameter.Type != null)
+                {
+                    var type = Assembly.GetType(parameter.Type);
+                    name += $"{type} ";
+                }
+
+                name += $"{parameter.Name}";
+
+                parameterIndex++;
+            }
+
+            name += ')';
+
+            if (DeclaringType == null)
+            {
+                return name;
+            }
+
+            return $"{DeclaringType.FullName}.{name}";
+        }
+
         #endregion
     }
 }

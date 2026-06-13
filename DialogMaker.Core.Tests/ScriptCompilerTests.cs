@@ -1,12 +1,10 @@
-﻿using DialogMaker.Core.Common;
-using DialogMaker.Core.Scripting.Compiler.Ast;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
 using DialogMaker.Core.Scripting.Runtime.Builders;
 using DialogMaker.Core.Scripting.Runtime.Compilers;
 using System.Diagnostics;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace DialogMaker.Core.Tests
 {
@@ -15,22 +13,13 @@ namespace DialogMaker.Core.Tests
         [Test]
         public static void TestSimpleScriptCompiling()
         {
-            var script = File.ReadAllText(ScriptLexerTests.SimpleScriptPath);
-            DSharpLexer lexer = new(script);
-            lexer.Tokenize();
-            AstParser parser = new(lexer);
-
-            var parsedScript = parser.Parse("SimpleScript");
-            DSharpAssemblyBuilder assembly = new("SimpleScript", []);
-            DSharpCompiler compiler = new(assembly);
-
-            compiler.CompileTypes(parsedScript);
+            DSharpAssemblyBuilder assembly = CompileSimpleScript();
 
             Console.WriteLine("Types:");
 
             foreach (var type in assembly.Types)
             {
-                Console.Write(type.Type.ToString().ToLower() + " ");
+                Console.Write(type.ObjectType.ToString().ToLower() + " ");
                 Console.WriteLine(type.FullName);
 
                 if (type.Properties.Count > 0)
@@ -41,7 +30,7 @@ namespace DialogMaker.Core.Tests
                     {
                         Console.Write("        ");
                         PrintType(property.PropertyType);
-                        Console.Write($" {property.Name} {{ ");
+                        Console.Write($"{property.Name} {{ ");
 
                         if (property.Getter != null)
                         {
@@ -75,6 +64,16 @@ namespace DialogMaker.Core.Tests
                     Console.WriteLine("    Methods:");
 
                     foreach (var method in type.Methods)
+                    {
+                        Console.Write("        ");
+                        PrintMethod(method);
+                    }
+                }
+                if (type.Constructors.Count > 0)
+                {
+                    Console.WriteLine("    Constructors:");
+
+                    foreach (var method in type.Constructors)
                     {
                         Console.Write("        ");
                         PrintMethod(method);
@@ -234,6 +233,22 @@ namespace DialogMaker.Core.Tests
             var type = variableWithInitializer.Initializer!.GetExpressionType(assembly);
 
             Console.WriteLine($"Result: {type}");
+        }
+
+        public static DSharpAssemblyBuilder CompileSimpleScript()
+        {
+            var script = File.ReadAllText(ScriptLexerTests.SimpleScriptPath);
+            DSharpLexer lexer = new(script);
+            lexer.Tokenize();
+            AstParser parser = new(lexer);
+
+            var parsedScript = parser.Parse("SimpleScript");
+            DSharpAssemblyBuilder assembly = new("SimpleScript", []);
+            DSharpCompiler compiler = new(assembly);
+
+            compiler.CompileTypes(parsedScript);
+
+            return assembly;
         }
 
         private static DSharpTreeRoot ParseScript(string filePath, string name)
