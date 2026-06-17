@@ -79,7 +79,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     memberAccess = new(accessOperation)
                     {
                         Target = root,
-                        Member = IdentifierExpressionNode.Parse(stream, parseGenerics)
+                        Member = ParseExpression(stream)
                     };
 
                     root = memberAccess;
@@ -208,7 +208,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Parse primary expression like literal value, array, variable/property access, 
         /// method/function invocation or new instance creation
         /// </summary>
-        /// <param name="stream"></param>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
         /// <returns></returns>
         public static ExpressionNode ParsePrimary(AstParserStream stream)
         {
@@ -216,13 +216,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 return ParenContainedExpressionNode.Parse(stream);
             }
-            //if (stream.Check(DSharpTokenType.LeftParen))
-            //{
-            //    stream.Eat(DSharpTokenType.LeftParen);
-            //    var expr = ParseExpression(stream);
-            //    stream.Eat(DSharpTokenType.RightParen);
-            //    return expr;
-            //}
+            if (stream.Check(DSharpTokenType.This))
+            {
+                return ThisExpressionNode.Parse(stream);
+            }
             if (stream.Check(DSharpTokenType.New))
             {
                 return NewExpressionNode.Parse(stream);

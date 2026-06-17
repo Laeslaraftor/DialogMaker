@@ -5,5 +5,15 @@
         public IDSharpType PropertyType => throw new NotImplementedException();
         public bool CanRead => throw new NotImplementedException();
         public bool CanWrite => throw new NotImplementedException();
+
+        public IDSharpMethodInfo? Getter => throw new NotImplementedException();
+
+        public IDSharpMethodInfo? Setter => throw new NotImplementedException();
+
+        public bool IsVirtual => throw new NotImplementedException();
+
+        public bool IsOverride => throw new NotImplementedException();
+
+        public bool IsSealed => throw new NotImplementedException();
     }
 }

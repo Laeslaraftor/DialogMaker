@@ -9,8 +9,8 @@
             LinkedProperty = property;
             MethodType = isSetter ? DSharpMethodType.Setter : DSharpMethodType.Getter;
         }
-        public DSharpMethodBuilder(DSharpTypeBuilder type, string name, DSharpTypeToken metadataToken)
-            : this(type.Assembly, type, name, metadataToken)
+        public DSharpMethodBuilder(DSharpTypeBuilder type, DSharpTypeToken metadataToken)
+            : this(type.Assembly, type, DSharpTypeBuilder.ConstructorName, metadataToken)
         {
             LinkedType = type;
             MethodType = DSharpMethodType.Constructor;
@@ -165,12 +165,22 @@
             }
         }
 
+
         private DSharpBytecodeBuilder? _bytecodeBuilder;
 
         #region Управление
 
         public DSharpBytecodeBuilder GetBytecodeBuilder()
         {
+            if (IsAbstract)
+            {
+                throw new InvalidOperationException($"Abstract method can not contains bytecode: {this}");
+            }
+            if (IsExtern)
+            {
+                throw new InvalidOperationException($"Extern method can not contains bytecode: {this}");
+            }
+
             _bytecodeBuilder ??= new(this);
             return _bytecodeBuilder;
         }

@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Builders;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
@@ -8,7 +9,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         {
             public IDSharpFieldInfo? GetFieldOrDefault(string name)
             {
-                return type.GetFields().FirstOrDefault(f => f.Name == name);
+                return type.GetMemberOrDefault(t => t.GetFields(), name);
             }
             public IDSharpFieldInfo GetField(string name)
             {
@@ -16,7 +17,7 @@ namespace DialogMaker.Core.Scripting.Runtime
             }
             public IDSharpPropertyInfo? GetPropertyOrDefault(string name)
             {
-                return type.GetProperties().FirstOrDefault(f => f.Name == name);
+                return type.GetMemberOrDefault(t => t.GetProperties(), name);
             }
             public IDSharpPropertyInfo GetProperty(string name)
             {
@@ -24,11 +25,44 @@ namespace DialogMaker.Core.Scripting.Runtime
             }
             public IDSharpMethodInfo? GetMethodOrDefault(string name)
             {
-                return type.GetMethods().FirstOrDefault(f => f.Name == name);
+                return type.GetMemberOrDefault(t => t.GetMethods(), name);
             }
             public IDSharpMethodInfo GetMethod(string name)
             {
                 return type.GetMethodOrDefault(name) ?? throw new ArgumentException($"Unable to find method {name} at {type}");
+            }
+            public T? GetMemberOrDefault<T>(Func<IDSharpType, IEnumerable<T>> selector, string name)
+                where T : IDSharpMemberInfo
+            {
+                T? Find(IDSharpType type)
+                {
+                    return selector(type).FirstOrDefault(m => m.Name == name);
+                }
+                T? FindInBaseTypes(IDSharpType type)
+                {
+                    foreach (var baseType in type.GetBaseTypes())
+                    {
+                        var member = Find(baseType);
+                        member ??= FindInBaseTypes(baseType);
+
+                        if (member != null)
+                        {
+                            return member;
+                        }
+                    }
+
+                    return default;
+                }
+
+                var result = Find(type);
+                result ??= FindInBaseTypes(type);
+
+                if (result == null && type.Assembly.ObjectType != type)
+                {
+                    result = type.Assembly.ObjectType.GetMemberOrDefault(selector, name);
+                }
+
+                return result;
             }
 
             /// <summary>
@@ -59,6 +93,96 @@ namespace DialogMaker.Core.Scripting.Runtime
                 }
 
                 return ContainsInBaseType(type);
+            }
+            public bool ContainsBaseType(IDSharpType baseType)
+            {
+                foreach (var bType in type.GetBaseTypes())
+                {
+                    if (bType == baseType || bType.ContainsBaseType(baseType))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+            public bool CanReplaceGenericType(IDSharpType normalType)
+            {
+                if (!type.IsGeneric)
+                {
+                    throw new ArgumentException($"Current type must be a generic type");
+                }
+
+                var baseTypes = type.GetBaseTypes();
+
+                if (baseTypes.Length == 0)
+                {
+                    return true;
+                }
+                foreach (var baseType in baseTypes)
+                {
+                    if (!normalType.ContainsBaseType(baseType))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        }
+        extension(IDSharpAssembly assembly)
+        {
+            /// <summary>
+            /// Try to find type that implementing provided generic type with given types
+            /// </summary>
+            /// <param name="genericType">Generic type that used by base type</param>
+            /// <param name="result">Type that implementing generic type</param>
+            /// <param name="parameters">Type parameters of generic type</param>
+            /// <returns>Is type found</returns>
+            public bool TryFindGenericImplementationType(IDSharpType genericType, [NotNullWhen(true)] out IDSharpType? result, params IEnumerable<IDSharpType> parameters)
+            {
+                result = null;
+                var name = genericType.FullName;
+                var types = assembly.GetTypes(name);
+
+                foreach (var type in types)
+                {
+                    var genericParameters = type.GetGenericParameters();
+
+                    if (type == genericType)
+                    {
+                        continue;
+                    }
+
+                    var baseTypes = type.GetBaseTypes();
+
+                    if (baseTypes.Length != 1 && baseTypes[0] != genericType)
+                    {
+                        continue;
+                    }
+
+                    if (genericParameters.SequenceEqual(parameters))
+                    {
+                        result = type;
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+            public List<IDSharpType> FindTypeBasedOn(IDSharpType baseType)
+            {
+                List<IDSharpType> result = [];
+
+                foreach (var type in assembly.Types)
+                {
+                    if (type.ContainsBaseType(baseType))
+                    {
+                        result.Add(type);
+                    }
+                }
+
+                return result;
             }
         }
     }

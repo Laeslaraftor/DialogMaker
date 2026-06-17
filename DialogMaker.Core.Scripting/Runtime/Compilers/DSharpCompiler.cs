@@ -214,6 +214,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             {
                 CreateConstructor(assemblyBuilder, type, constructor);
             }
+
+            _createdTypes.Add(type, declaration);
         }
         private void CreateFieldOrProperty(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder? declareType, FieldNode fieldNode)
         {
@@ -230,7 +232,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             var variable = assemblyBuilder.CreateGlobalVariable(variableNode.Name);
             variable.Namespace = _currentNamespaceIdentifier;
 
-            if (TryGetLiteralValue(variableNode.Initializer, out var rawValue))
+            if (variableNode.Initializer?.TrySimplifyToLiteral(out var rawValue) == true)
             {
                 variable.RawValue = rawValue;
             }
@@ -253,7 +255,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             field.IsStatic = fieldNode.IsStatic;
             field.IsReadOnly = field.IsReadOnly;
 
-            if (TryGetLiteralValue(fieldNode.Initializer, out var rawValue))
+            if (fieldNode.Initializer?.TrySimplifyToLiteral(out var rawValue) == true)
             {
                 field.RawValue = rawValue;
             }
@@ -368,19 +370,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
         #region Разрешение типов
 
-        private bool TryGetLiteralValue(ExpressionNode? expression, [NotNullWhen(true)] out DSharpLiteralValue result)
-        {
-            result = DSharpLiteralValue.Null;
-
-            if (expression is LiteralExpressionNode literalExpression)
-            {
-                result = literalExpression.Value;
-                return true;
-            }
-
-            return false;
-        }
-
         private void SetupBaseTypes(DSharpAssemblyBuilder assemblyBuilder)
         {
             foreach (var enumType in _enumTypes.Keys)
@@ -442,8 +431,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     info.Key.ReturnType = context.ResolveType(info.Value.ReturnType);
                 }
-
-                CompileMethod(info.Key, info.Value);
             }
             foreach (var info in _createdConstructors)
             {
@@ -464,6 +451,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                         Type = type
                     });
                 }
+            }
+
+            foreach (var info in _createdMethods)
+            {
+                CompileMethod(info.Key, info.Value);
+            }
+            foreach (var info in _createdConstructors)
+            {
+                CompileMethod(info.Key, info.Value);
             }
         }
 

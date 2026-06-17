@@ -46,6 +46,25 @@
 
             #endregion
         }
+        public class OffsetCountInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation, int offset, int count) 
+            : Instruction(builder, operation)
+        {
+            public int Offset { get; set; } = offset;
+            public int Count { get; set; } = count;
+
+            #region Управление
+
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <returns><inheritdoc/></returns>
+            public override string ToString()
+            {
+                return $"{Operation} {Offset} {Count}";
+            }
+
+            #endregion
+        }
         public class ParameterInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation, DSharpMethodBuilderParameter parameter) 
             : Instruction(builder, operation)
         {
@@ -67,6 +86,11 @@
         public class TypeInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation, IDSharpMemberInfo memberInfo) 
             : Instruction(builder, operation)
         {
+            public TypeInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation, DSharpTypeToken memberToken)
+                : this(builder, operation, builder.Method.Assembly.GetType(memberToken))
+            {
+            }
+
             public IDSharpMemberInfo MemberInfo { get; set; } = memberInfo;
 
             #region Управление

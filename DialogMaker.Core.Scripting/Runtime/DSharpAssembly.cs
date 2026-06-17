@@ -14,6 +14,10 @@ namespace DialogMaker.Core.Scripting.Runtime
         public ReadOnlyCollection<DSharpFieldInfo> GlobalVariables { get; }
         public ReadOnlyCollection<DSharpMethodInfo> GlobalFunctions { get; }
 
+        IReadOnlyCollection<IDSharpType> IDSharpAssembly.Types => Types;
+
+        public IDSharpType ObjectType => throw new NotImplementedException();
+
         private readonly Dictionary<string, DSharpAssembly> _references = [];
 
         #region Управление
@@ -136,6 +140,16 @@ namespace DialogMaker.Core.Scripting.Runtime
         }
 
         public IDSharpMethodInfo[] GetGlobalFunctions()
+        {
+            throw new NotImplementedException();
+        }
+
+        IDSharpType IDSharpAssembly.GetType(string fullName)
+        {
+            return GetType(fullName);
+        }
+
+        public List<IDSharpType> GetTypes(string fullName)
         {
             throw new NotImplementedException();
         }

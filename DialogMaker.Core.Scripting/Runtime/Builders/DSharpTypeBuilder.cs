@@ -1,6 +1,6 @@
 ﻿namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
-    public class DSharpTypeBuilder(DSharpAssemblyBuilder assembly, bool isGeneric, IDSharpType? declaringType, string name, DSharpTypeToken metadataToken) 
+    public class DSharpTypeBuilder(DSharpAssemblyBuilder assembly, bool isGeneric, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken) 
         : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken), IDSharpType
     {
         public DSharpTypeBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken)
@@ -16,8 +16,8 @@
         /// <summary>
         /// Type that declared this field
         /// </summary>
-        public override IDSharpType? DeclaringType { get; } = declaringType;
-        public DSharpObjectType ObjectType { get; set; }
+        public override DSharpTypeBuilder? DeclaringType { get; } = declaringType;
+        public DSharpObjectType ObjectType { get; set; } = DSharpObjectType.Class;
         public string? Namespace { get; set; }
         public string FullName
         {
@@ -43,12 +43,11 @@
         }
         public List<DSharpTypeToken> BaseTypes { get; } = [];
         /// <summary>
-        /// List of types that must fill generic types. 
-        /// Size of this list must be equals to generic types list or empty
+        /// <inheritdoc cref="IDSharpType.GetGenericParameters"/>
         /// </summary>
         public List<DSharpTypeToken> GenericParameters { get; } = [];
         /// <summary>
-        /// Generic types that created by this type
+        /// <inheritdoc cref="IDSharpType.GetGenericTypes"/>
         /// </summary>
         public ReferenceReadOnlyList<DSharpTypeBuilder> GenericTypes
         {
@@ -123,7 +122,7 @@
                 throw new InvalidOperationException("Generic types can not contains constructors");
             }
 
-            return CreateMember(DSharpMetadataTokenType.Method, _constructors, t => new(Assembly, this, ConstructorName, t));
+            return CreateMember(DSharpMetadataTokenType.Method, _constructors, t => new(this, t));
         }
         public DSharpMethodBuilder CreateMethod(string name)
         {

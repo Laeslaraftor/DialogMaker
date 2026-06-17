@@ -18,7 +18,7 @@
         /// <summary>
         /// Type that declared this field. Empty field means this field is global variable in assembly
         /// </summary>
-        public override IDSharpType? DeclaringType => declaringType;
+        public override DSharpTypeBuilder? DeclaringType => declaringType;
         /// <summary>
         /// Type of value that stored by this field
         /// </summary>

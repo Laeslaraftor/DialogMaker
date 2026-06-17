@@ -22,6 +22,12 @@ namespace DialogMaker.Core.Scripting.Runtime
 
         public DSharpObjectType ObjectType => throw new NotImplementedException();
 
+        public bool IsGeneric => throw new NotImplementedException();
+
+        public bool IsAbstract => throw new NotImplementedException();
+
+        public bool IsSealed => throw new NotImplementedException();
+
         #region Управление
 
         public IDSharpMethodInfo[] GetMethods() => [.. Methods];
@@ -38,6 +44,16 @@ namespace DialogMaker.Core.Scripting.Runtime
         }
 
         public IDSharpMethodInfo[] GetConstructors(Predicate<IDSharpMethodInfo> predicate)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IDSharpType[] GetGenericParameters()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IDSharpType[] GetGenericTypes()
         {
             throw new NotImplementedException();
         }

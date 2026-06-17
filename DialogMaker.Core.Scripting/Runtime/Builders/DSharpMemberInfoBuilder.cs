@@ -43,7 +43,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <summary>
         /// Type that declared this member
         /// </summary>
-        public abstract IDSharpType? DeclaringType { get; }
+        public abstract DSharpTypeBuilder? DeclaringType { get; }
         /// <summary>
         /// List of member attributes
         /// </summary>

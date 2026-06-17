@@ -32,6 +32,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             };
 
             CompileStatement(method, body, code, settings, context);
+
+            DSharpBytecodeOptimizer.Optimize(method);
         }
 
         #region Statements
@@ -78,6 +80,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
 
                 var variable = GetVariable(variableStatement.Variable);
+                var originalTypeResolver = context.TypeResolver;
+                context.TypeResolver = obj =>
+                {
+                    if (obj == null && variable.Type != null)
+                    {
+                        return _assemblyBuilder.GetType(variable.Type) as IDSharpType;
+                    }
+
+                    return originalTypeResolver?.Invoke(obj!);
+                };
 
                 if (variableStatement.Variable!.Initializer != null)
                 {
@@ -241,13 +253,35 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                         throw new InvalidOperationException($"Can not return value because method is not returning values: {statement}");
                     }
 
-                    var expressionType = returnStatement.Value.GetExpressionType(_assemblyBuilder, context) as IDSharpType
-                        ?? throw new ArgumentException($"Unable to get expression type: {returnStatement.Value}", nameof(statement));
+                    IDSharpType? expressionType = null;
+                    bool isNullValue = false;
 
-                    if (!expressionType.IsAssignableTo(methodReturnType))
+                    if (returnStatement.Value.IsNullExpression())
                     {
-                        throw new ArgumentException($"Returning value must be with the same type with current method or function \"{method}\". Type that returns: {expressionType}, required return type: {methodReturnType}.{Environment.NewLine}Expression: {statement}", nameof(statement));
+                        isNullValue = true;
                     }
+                    else
+                    {
+                        expressionType = returnStatement.Value.GetExpressionType(_assemblyBuilder, context) as IDSharpType
+                            ?? throw new ArgumentException($"Unable to get expression type: {returnStatement.Value}", nameof(statement));
+                    }
+
+                    if (!isNullValue && expressionType?.IsAssignableTo(methodReturnType) != true)
+                    {
+                        throw new ArgumentException($"Returning value must be with the same type with current method or function \"{method}\". Type that returns: {expressionType}, but required: {methodReturnType}.{Environment.NewLine}Expression: {statement}", nameof(statement));
+                    }
+
+                    var originalResolver = context.TypeResolver;
+
+                    context.TypeResolver = obj =>
+                    {
+                        if (obj == null && method.ReturnType != null)
+                        {
+                            return _assemblyBuilder.GetType(method.ReturnType) as IDSharpType;
+                        }
+
+                        return originalResolver?.Invoke(obj!);
+                    };
 
                     CompileValueExpression(method, returnStatement.Value, settings, null, context);
                 }
@@ -344,19 +378,63 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 settings.DoNotCompileEndPointMember = true;
 
-                var member = CompileValueExpression(method, assignExpression.Left, settings, expression, context)
-                    ?? throw new ArgumentException($"Unable to find member: {assignExpression.Left}", nameof(expression));
-
-                CompileValueExpression(method, assignExpression.Right, settings, expression, context);
-
-                if (assignExpression.Operator != DSharpAssignmentOperator.Assign)
+                if (assignExpression.Left is ArrayAccessExpressionNode arrayAccess)
                 {
-                    code.LoadPropertyOrField(member);
-                    AddExtraAssignOperation();
-                }
+                    if (arrayAccess.Array == null ||
+                        arrayAccess.Index == null)
+                    {
+                        throw new ArgumentException($"Incomplete expression: {arrayAccess}");
+                    }
 
-                code.StorePropertyOrField(member);
-                code.Pop();
+                    CompileValueExpression(method, arrayAccess.Array, settings, arrayAccess, context);
+                    CompileValueExpression(method, arrayAccess.Index, settings, arrayAccess, context);
+                    CompileValueExpression(method, assignExpression.Right, settings, expression, context);
+
+                    if (assignExpression.Operator != DSharpAssignmentOperator.Assign)
+                    {
+                        code.LoadArrayItem();
+                        AddExtraAssignOperation();
+                    }
+
+                    code.StoreArrayItem();
+                    code.Pop();
+                    code.Pop();
+                    code.Pop();
+                }
+                else
+                {
+                    var member = CompileValueExpression(method, assignExpression.Left, settings, expression, context)
+                        ?? throw new ArgumentException($"Unable to find member: {assignExpression.Left}", nameof(expression));
+
+                    CompileValueExpression(method, assignExpression.Right, settings, expression, context);
+
+                    if (assignExpression.Operator != DSharpAssignmentOperator.Assign)
+                    {
+                        code.LoadPropertyOrField(member);
+                        AddExtraAssignOperation();
+                    }
+
+                    if (method.MethodType == DSharpMethodType.Constructor &&
+                        member is IDSharpPropertyInfo property && !property.CanWrite)
+                    {
+                        if (property.DeclaringType == null)
+                        {
+                            throw new InvalidOperationException($"Property must contains declaring type {property}: {expression}");
+                        }
+
+                        var propertyField = property.DeclaringType.GetFieldOrDefault($"{property.Name}{ValueFieldNameSuffix}");
+
+                        if (propertyField == null)
+                        {
+                            throw new ArgumentException($"Unable to write value to property \"{property}\" because it have not setter: {expression}", nameof(expression));
+                        }
+
+                        member = propertyField;
+                    }
+                    
+                    code.StorePropertyOrField(member);
+                    code.Pop();
+                }
             }
             else if (expression is IncrementExpressionNode incrementExpression)
             {
@@ -425,35 +503,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     throw new InvalidOperationException($"Unable to find any available member: \"{expression}\"", error);
                 }
 
-                if (!settings.DoNotCompileEndPointMember)
+                if (!settings.DoNotCompileEndPointMember &&
+                    (member is IDSharpFieldInfo || member is IDSharpPropertyInfo))
                 {
-                    if (member is IDSharpPropertyInfo property)
-                    {
-                        if (!property.CanRead)
-                        {
-                            throw new InvalidOperationException($"Unable to read property {property.Name} because has not contains getter");
-                        }
-
-                        if (property.IsStatic)
-                        {
-                            code.LoadProperty(property);
-                        }
-                        else
-                        {
-                            code.LoadInstanceProperty(property);
-                        }
-                    }
-                    else if (member is IDSharpFieldInfo field)
-                    {
-                        if (field.IsStatic)
-                        {
-                            code.LoadField(field);
-                        }
-                        else
-                        {
-                            code.LoadInstanceField(field);
-                        }
-                    }
+                    code.LoadPropertyOrField(member);
                 }
 
                 return member;
@@ -461,6 +514,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             else if (expression is MemberAccessExpressionNode memberAccessExpression)
             {
                 MemberAccessExpressionNode rootExpression = memberAccessExpression;
+                int accessCompileCount = 0;
 
                 do
                 {
@@ -480,6 +534,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                         if (context.TryResolveType(identifier.GetName(true), out var targetTypeToken))
                         {
                             expressionMember = _assemblyBuilder.GetType(targetTypeToken);
+                            accessCompileCount++;
                         }
                         else
                         {
@@ -489,6 +544,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     else if (expressionMember.TryGetReturnType(out var returnType))
                     {
                         expressionMember = returnType;
+                        accessCompileCount++;
                     }
 
                     context.CurrentMember = expressionMember;
@@ -509,7 +565,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     throw new ArgumentException($"Member must be specified: {memberAccessExpression}", nameof(expression));
                 }
 
-                return CompileValueExpression(method, rootExpression.Member, settings, rootExpression, context);
+                var member = CompileValueExpression(method, rootExpression.Member, settings, rootExpression, context);
+
+                if (member != null && member.TryGetReturnType(out _))
+                {
+                    if (accessCompileCount == 1)
+                    {
+                        code.PopOffset(1);
+                    }
+                    else if (accessCompileCount > 1)
+                    {
+                        code.PopOffsetRepeat(1, accessCompileCount);
+                    }
+                }
+
+                return member;
             }
             else if (expression is CallExpressionNode callExpression)
             {
@@ -597,11 +667,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     throw new ArgumentException($"Array index must be specified: {arrayExpression}", nameof(expression));
                 }
 
-                CompileValueExpression(method, arrayExpression.Array, settings, arrayExpression, context);
+                var array = CompileValueExpression(method, arrayExpression.Array, settings, arrayExpression, context);
                 CompileValueExpression(method, arrayExpression.Index, settings, arrayExpression, context);
                 code.LoadArrayItem();
-                code.PopOffset(1);
-                code.PopOffset(1);
+                code.PopOffsetRepeat(1, 2);
+
+                return array;
             }
             else if (expression.TrySimplifyToLiteral(out var literal))
             {
@@ -729,8 +800,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                             throw new ArgumentException($"Unknown operator \"{(DSharpTokenType)@operator}\": {binaryExpression}", nameof(@operator));
                     }
 
-                    code.PopOffset(1);
-                    code.PopOffset(1);
+                    code.PopOffsetRepeat(1, 2);
                 }
 
                 binaryExpression.CompileExpression(Handle);
@@ -740,28 +810,43 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             else if (expression is NewInstanceExpressionNode newExpression)
             {
                 TypeInfoNode? typeInfo = newExpression.Type;
-
-                // надо сделать поиск необходимого типа при new() (typeInfo == null)
+                IDSharpType type;
 
                 if (typeInfo == null)
                 {
-                    throw new ArgumentException($"Can not create new instance when type not specified: {newExpression}", nameof(expression));
+                    type = context.TypeResolver?.Invoke(null!) ??
+                        throw new ArgumentException($"Can not create new instance when type not specified: {newExpression}", nameof(expression)); ;
                 }
-
-                var typeToken = ResolveType(method, typeInfo);
-                var type = (IDSharpType)_assemblyBuilder.GetType(typeToken);
-
-                foreach (var parameter in newExpression.Parameters)
+                else
                 {
-                    CompileValueExpression(method, parameter, settings, expression, context);
+                    var typeToken = ResolveType(method, typeInfo);
+                    type = (IDSharpType)_assemblyBuilder.GetType(typeToken);
                 }
 
-                code.Push(typeToken);
-                code.New();
+                if (newExpression.Parameters.Count == 0)
+                {
+                    code.New(type);
+                }
+                else
+                {
+                    foreach (var parameter in newExpression.Parameters)
+                    {
+                        CompileValueExpression(method, parameter, settings, expression, context);
+                    }
 
-                for (int i = 1; i < newExpression.Parameters.Count + 2; i++)
+                    DSharpCompilerContext typeContext = new(context, type);
+                    var constructor = typeContext.FindConstructor(newExpression.Parameters.Count)
+                        ?? throw new ArgumentException($"Unable to find constructor with parameters {newExpression.Parameters.Count} at {type}:{Environment.NewLine} {expression}", nameof(expression));
+                    code.New(constructor);
+                }
+
+                if (newExpression.Parameters.Count == 1)
                 {
                     code.PopOffset(1);
+                }
+                else if (newExpression.Parameters.Count > 1)
+                {
+                    code.PopOffsetRepeat(1, newExpression.Parameters.Count);
                 }
 
                 context.CurrentMember = type;
@@ -877,6 +962,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 code.Push(literalExpression.Value);
                 return null;
             }
+            else if (expression is ThisExpressionNode thisExpression)
+            {
+                if (method.IsStatic)
+                {
+                    throw new InvalidOperationException($"Unable to load current instance inside static member: {expression}");
+                }
+                if (method.DeclaringType == null)
+                {
+                    throw new InvalidOperationException($"Unable to load current instance inside global function");
+                }
+
+                code.LoadInstance();
+
+                return method.DeclaringType;
+            }
 
             throw new ArgumentException($"Unable to compile expression: {expression}", nameof(expression));
         }
@@ -965,7 +1065,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
 
             settings.LocalVariables ??= [];
-            var type = ResolveType(method, node.Type);
+            DSharpCompilerContext context = new(_context, method)
+            {
+                ParentExpression = node.Initializer
+            };
+
+            var type = context.ResolveType(node.Type);
             DSharpMethodBuilderParameter variable = new(method.Assembly)
             {
                 Name = node.Name,

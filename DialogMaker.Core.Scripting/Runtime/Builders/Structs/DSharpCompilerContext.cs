@@ -222,11 +222,38 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             result = null;
             string typeName = typeInfo.GetFullName(true, false);
+
+            if (typeName == DSharpAssemblyBuilder.VarName)
+            {
+                if (ParentExpression != null)
+                {
+                    if (Assembly == null)
+                    {
+                        throw new InvalidOperationException($"Unable to resolve type because assembly builder not specified");
+                    }
+
+                    var member = ParentExpression.GetExpressionType(Assembly, this);
+
+                    if (member != null)
+                    {
+                        result = Assembly.GetTypeToken(member);
+                    }
+                }
+
+                return result != null;
+            }
+
             string? @namespace = CurrentMember?.DeclaringType?.Namespace;
             result = InternalTryResolveType(@namespace, typeName);
 
             if (result != null)
             {
+                if (typeInfo.ArrayDimensions > 0)
+                {
+                    var arrayType = CreateArray(result, typeInfo.ArrayDimensions);
+                    result = Assembly!.GetTypeToken(arrayType);
+                }
+
                 return true;
             }
 
@@ -238,6 +265,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
                     if (result != null)
                     {
+                        if (typeInfo.ArrayDimensions > 0)
+                        {
+                            var arrayType = CreateArray(result, typeInfo.ArrayDimensions);
+                            result = Assembly!.GetTypeToken(arrayType);
+                        }
+
                         return true;
                     }
                 }
@@ -315,7 +348,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return result;
             }
 
-            throw new ArgumentException($"Unable to resolve type: {typeInfo.GetFullName(false, false)}", nameof(typeInfo));
+            throw new ArgumentException($"Unable to resolve type \"{typeInfo.GetFullName(false, false)}\": {typeInfo}", nameof(typeInfo));
         }
         public readonly IDSharpMemberInfo FindAnyAvailableMember(string name)
         {
@@ -328,7 +361,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             if (members.Count == 1)
             {
-                return members[0];
+                return members.First();
             }
             else if (members.Count > 1)
             {
@@ -337,10 +370,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             throw new ArgumentException($"Unknown member \"{name}\" at {CurrentMember}", nameof(name));
         }
-        public readonly List<T> FindAvailableMembers<T>(string name)
+        public readonly HashSet<T> FindAvailableMembers<T>(string name)
             where T : IDSharpMemberInfo
         {
-            List<T> result = [];
+            HashSet<T> result = [];
 
             bool Add(IDSharpMemberInfo member)
             {
@@ -411,6 +444,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                     count += FindBaseTypeMember(baseType, predicate);
                 }
 
+                count += FindMember(type.Assembly.ObjectType, predicate);
+
                 return count;
             }
             int FindInDeclaringType(IDSharpType type)
@@ -433,13 +468,30 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             return result;
         }
+        public readonly IDSharpMethodInfo? FindConstructor(int parametersCount)
+        {
+            DSharpMetadataToken[] tokens = new DSharpMetadataToken[parametersCount];
+            return FindConstructor(true, tokens);
+        }
         public readonly IDSharpMethodInfo? FindConstructor(bool matchByParametersCount, params IEnumerable<DSharpMetadataToken>? parameters)
         {
-            var members = FindAvailableMembers<IDSharpMethodInfo>(DSharpTypeBuilder.ConstructorName);
-
-            if (members.Count == 0)
+            if (CurrentMember == null)
             {
-                if (parameters == null)
+                throw new InvalidOperationException("Unable to find constructor with no provided current member");
+            }
+
+            var type = CurrentMember as IDSharpType ?? CurrentMember.DeclaringType;
+
+            if (type == null)
+            {
+                throw new InvalidOperationException($"Unable to find constructor using member: {CurrentMember}");
+            }
+
+            var constructors = type.GetConstructors();
+
+            if (constructors.Length == 0)
+            {
+                if (parameters != null)
                 {
                     throw new ArgumentException($"Unable to find any constructor at {CurrentMember}");
                 }
@@ -447,26 +499,125 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return null;
             }
 
-            try
+            int parametersCount = 0;
+
+            if (parameters != null)
             {
-                return FindMethod(members, matchByParametersCount, parameters);
+                parametersCount = parameters.Count();
             }
-            catch (Exception error)
+
+            static bool SequenceEqual(IDSharpParameterInfo[] parameters, IEnumerable<DSharpMetadataToken> tokens)
             {
-                throw new ArgumentException($"Unable to find constructor", error);
+                if (parameters.Length == 0)
+                {
+                    return false;
+                }
+
+                int i = 0;
+
+                foreach (var token in tokens)
+                {
+                    if (i + 1 >= parameters.Length ||
+                        parameters[i].Type.MetadataToken != token)
+                    {
+                        return false;
+                    }
+
+                    i++;
+                }
+
+                if (i + 1 != parameters.Length)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+
+            if (matchByParametersCount)
+            {
+                return constructors.FirstOrDefault(c => c.GetParameters().Length == parametersCount)
+                    ?? throw new ArgumentException($"Unable to find constructor with parameters count {parametersCount} at \"{type}\"");
+            }
+            else
+            {
+                foreach (var constructor in constructors)
+                {
+                    var constructorParameters = constructor.GetParameters();
+
+                    if (parameters == null || parametersCount == 0)
+                    {
+                        if (constructorParameters.Length == 0)
+                        {
+                            return constructor;
+                        }
+                    }
+                    else if (SequenceEqual(constructorParameters, parameters))
+                    {
+                        return constructor;
+                    }
+                }
+
+                throw new ArgumentException($"Unable to find constructor with parameters count {parametersCount} at \"{type}\"");
             }
         }
         public readonly IDSharpMethodInfo FindMethod(CallExpressionNode callExpression)
         {
-            if (callExpression.Callee is not IdentifierExpressionNode identifier)
+            if (callExpression.Callee == null)
             {
-                throw new ArgumentException($"Invalid method or function identifier: {callExpression}", nameof(callExpression));
+                throw new ArgumentException($"Incomplete expression: {callExpression}", nameof(callExpression));
             }
 
-            var name = identifier.GetName(true);
+            string name;
+            ExpressionNode callee = callExpression.Callee;
+            var context = this;
+
+            if (callExpression.Callee is MemberAccessExpressionNode memberAccess)
+            {
+                if (Assembly == null)
+                {
+                    throw new InvalidOperationException("Unable to find method with member access without specified assembly builder");
+                }
+
+                while (memberAccess.Member is MemberAccessExpressionNode accessMember)
+                {
+                    var type = memberAccess.GetExpressionType(Assembly, context);
+                    context.CurrentMember = type;
+
+                    memberAccess = accessMember;
+                }
+
+                if (memberAccess.Member == null)
+                {
+                    throw new ArgumentException($"Incomplete expression: {callExpression}", nameof(callExpression));
+                }
+
+                if (memberAccess.Member is CallExpressionNode memberAccessCallExpression)
+                {
+                    if (memberAccessCallExpression.Callee == null)
+                    {
+                        throw new ArgumentException($"Incomplete expression: {memberAccessCallExpression}", nameof(callExpression));
+                    }
+
+                    callee = memberAccessCallExpression.Callee;
+                }
+                else
+                {
+                    callee = memberAccess.Member;
+                }
+            }
+            if (callee is IdentifierExpressionNode identifier)
+            {
+                name = identifier.GetName(true);
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid method or function identifier: {callee}", nameof(callExpression));
+            }
+
             DSharpMetadataToken[] parameters = new DSharpMetadataToken[callExpression.Arguments.Count];
 
-            return FindMethod(name, true, parameters);
+            return context.FindMethod(name, true, parameters);
         }
         public readonly IDSharpMethodInfo FindMethod(string name, bool matchByParametersCount, params IEnumerable<DSharpMetadataToken>? parameters)
         {
@@ -580,6 +731,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                     {
                         return Assembly.GetTypeToken(rootType);
                     }
+                    foreach (var genericType in rootType.GetGenericTypes())
+                    {
+                        if (genericType.Name == typeName)
+                        {
+                            return Assembly.GetTypeToken(genericType);
+                        }
+                    }
 
                     rootType = rootType.DeclaringType;
                 }
@@ -595,6 +753,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
 
             return null;
+        }
+        private readonly IDSharpType CreateArray(DSharpTypeToken typeToken, int arrayDimension)
+        {
+            if (Assembly == null)
+            {
+                throw new InvalidOperationException($"Unable to create array because assembly builder not provided");
+            }
+
+            var type = (IDSharpType)Assembly.GetType(typeToken);
+
+            for (int i = 0; i < arrayDimension; i++)
+            {
+                type = Assembly.CreateArray(type);
+            }
+
+            return type;
         }
 
         #endregion

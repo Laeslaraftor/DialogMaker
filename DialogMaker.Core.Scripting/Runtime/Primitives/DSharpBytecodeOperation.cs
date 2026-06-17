@@ -18,6 +18,14 @@
         /// </summary>
         PopOffset,
         /// <summary>
+        /// Remove value from stack with offset and repeat it several times
+        /// </summary>
+        PopOffsetRepeat,
+        /// <summary>
+        /// Remove value from stack and repeat it several times
+        /// </summary>
+        PopRepeat,
+        /// <summary>
         /// Load value from argument to stack
         /// </summary>
         LoadArgument,
@@ -98,6 +106,10 @@
         /// 2: instance,
         /// </summary>
         StoreArrayItem,
+        /// <summary>
+        /// Load current object instance to stack
+        /// </summary>
+        LoadInstance,
 
         /// <summary>
         /// Call function or static method.
@@ -224,9 +236,9 @@
 
         /// <summary>
         /// Create new instance of object, call it's constructor and add it to stack.
+        /// Args: constructor or type token
         /// Stack:
-        /// 0: constructor token,
-        /// 1: args...
+        /// 0: args...
         /// </summary>
         New,
         /// <summary>

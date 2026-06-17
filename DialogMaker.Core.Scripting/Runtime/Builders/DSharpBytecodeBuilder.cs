@@ -71,13 +71,50 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             return CreateInstruction<IndexInstruction>(this, DSharpBytecodeOperation.PopOffset, index);
         }
         /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.PopRepeat"/>
+        /// </summary>
+        /// <param name="count">Repeat count</param>
+        /// <returns></returns>
+        public IndexInstruction PopRepeat(int count)
+        {
+            return CreateInstruction<IndexInstruction>(this, DSharpBytecodeOperation.PopRepeat, count);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.PopOffsetRepeat"/>
+        /// </summary>
+        /// <param name="offset">Popped item offset</param>
+        /// <param name="count">Repeat count</param>
+        /// <returns></returns>
+        public OffsetCountInstruction PopOffsetRepeat(int offset, int count)
+        {
+            return CreateInstruction<OffsetCountInstruction>(this, DSharpBytecodeOperation.PopOffsetRepeat, offset, count);
+        }
+        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.New"/>
         /// </summary>
         /// <param name="type">Type of object that needs to instantiate</param>
         /// <returns></returns>
-        public Instruction New()
+        public Instruction New(IDSharpMethodInfo constructor)
         {
-            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.New);
+            if (constructor.DeclaringType == null)
+            {
+                throw new ArgumentException($"Constructor must contains declaring type: {constructor}", nameof(constructor));
+            }
+            if (!constructor.DeclaringType.GetConstructors().Contains(constructor))
+            {
+                throw new ArgumentException($"Provided method is not constructor: {constructor}", nameof(constructor));
+            }
+
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.New, constructor);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.New"/>
+        /// </summary>
+        /// <param name="type">Type of object that needs to instantiate</param>
+        /// <returns></returns>
+        public Instruction New(IDSharpType type)
+        {
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.New, type);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.NewArray"/>
@@ -210,7 +247,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             if (propertyOrField is IDSharpPropertyInfo property)
             {
-                if (!property.CanWrite)
+                if (!property.CanRead)
                 {
                     throw new InvalidOperationException($"Unable to read value from property because it have not getter: \"{property}\"");
                 }
@@ -282,6 +319,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public Instruction StoreArrayItem()
         {
             return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.StoreArrayItem);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.LoadInstance"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction LoadInstance()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.LoadInstance);
         }
 
         #endregion

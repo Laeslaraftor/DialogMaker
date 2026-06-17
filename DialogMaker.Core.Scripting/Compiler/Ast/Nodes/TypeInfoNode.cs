@@ -127,9 +127,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                         Member = memberAccess
                     };
                 }
-                else if (accessExpression is IdentifierExpressionNode)
+                else if (accessExpression is IdentifierExpressionNode identifier)
                 {
-                    result = new(accessExpression.Token);
+                    result = new(accessExpression.Token)
+                    {
+                        GenericParameters = identifier.GenericParameters
+                    };
                 }
                 else
                 {

@@ -5,7 +5,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
     public class DSharpPropertyBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder declaringType, string name, DSharpTypeToken metadataToken)
         : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken), IDSharpPropertyInfo
     {
-        public override IDSharpType DeclaringType { get; } = declaringType;
+        public override DSharpTypeBuilder DeclaringType { get; } = declaringType;
         public DSharpTypeToken? PropertyType { get; set; }
         public DSharpMethodBuilder? Getter { get; private set; }
         public DSharpMethodBuilder? Setter { get; private set; }
@@ -27,6 +27,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return (IDSharpType)Assembly.GetType(PropertyType);
             }
         }
+        IDSharpMethodInfo? IDSharpPropertyInfo.Getter => Getter;
+        IDSharpMethodInfo? IDSharpPropertyInfo.Setter => Setter;
 
         #region Управление
 

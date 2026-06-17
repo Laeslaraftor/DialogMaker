@@ -175,6 +175,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// </summary>
         [Keyword("using")]
         Using,
+        /// <summary>
+        /// This keyword
+        /// </summary>
+        [Keyword("this")]
+        This,
 
         /// <summary>
         /// Public access modifier

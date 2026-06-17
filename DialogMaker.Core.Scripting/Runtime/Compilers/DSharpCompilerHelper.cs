@@ -64,6 +64,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         extension(ExpressionNode expression)
         {
             /// <summary>
+            /// Get is current expression null
+            /// </summary>
+            /// <returns>Is current expression null</returns>
+            public bool IsNullExpression()
+            {
+                if (expression is LiteralExpressionNode literalExpression)
+                {
+                    return literalExpression.Type == DSharpLiteralType.Null;
+                }
+
+                return false;
+            }
+            /// <summary>
             /// Get result type of expression
             /// </summary>
             /// <param name="assembly">Assembly builder for finding types</param>
@@ -80,7 +93,27 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     return context.FindMethod(callExpression).ReturnType;
                 }
+                else if (expression is ThisExpressionNode thisExpression)
+                {
+                    if (context.CurrentMember == null)
+                    {
+                        throw new ArgumentException($"Unable to get type of \"this\" because current member not provided: {expression}", nameof(context));
+                    }
+                    if (context.CurrentMember is IDSharpType type)
+                    {
+                        return type;
+                    }
+                    else if (context.CurrentMember.DeclaringType == null)
+                    {
+                        throw new InvalidOperationException($"Unable to get current instance inside global member: {expression}");
+                    }
+                    if (context.CurrentMember.IsStatic)
+                    {
+                        throw new InvalidOperationException($"Unable to get current instance inside static member: {expression}");
+                    }
 
+                    return context.CurrentMember.DeclaringType;
+                }
                 if (expression is IdentifierExpressionNode identifierExpression &&
                          context.CurrentMember is IDSharpMethodInfo method)
                 {
@@ -181,7 +214,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     }
                     if (type == null && newExpression.Type != null)
                     {
-                        type = assembly.GetType(newExpression.Type);
+                        if (context.Assembly != null && context.TryResolveType(newExpression.Type, out var resolvedTypeToken))
+                        {
+                            type = context.Assembly.GetType(resolvedTypeToken) as IDSharpType;
+                        }
+                        else
+                        {
+                            type = assembly.GetType(newExpression.Type);
+                        }
+
                     }
                     if (newExpression.Type == null)
                     {

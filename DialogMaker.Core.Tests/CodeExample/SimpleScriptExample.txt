@@ -2,11 +2,20 @@
 {
 	public struct Number 
 	{
+		public number GetSquared(number power)
+		{
+			var result = this;
+			
+			for (number i = 0; i < power; i++)
+			{
+				result *= result;
+			}
+			
+			return result;
+		}
 	}
-	public class String
+	public class String : Array<char>
 	{
-		public number Length { get; }
-		
 		public static readonly string Empty = "";
 	}
 	public class Object
@@ -24,6 +33,10 @@
 	}
 	public struct Boolean {}
 	public struct Char {}
+	public class Array<T>
+	{
+		public number Length { get; }
+	}
 	
 	public struct Color 
 	{
@@ -40,6 +53,16 @@
 		
 		public static readonly Color Black = new Color(0, 0, 0);
 	}	
+	
+	public class SomeGeneric<T>
+	{
+		public SomeGeneric(T value)
+		{
+			Value = value;
+		}
+		
+		public T Value { get; }
+	}
 }
 
 using System;
@@ -78,4 +101,14 @@ Color getTextColor(string text)
 	}
 	
 	return new Color(channels[0], channels[1], channels[2]);
+}
+number getNumberNameType() 
+{
+	number value = 10;
+	return value.GetType().Name.GetType().Name.Length;
+}
+string getGenericValue()
+{
+	SomeGeneric<string> instance = new("test value");
+	return instance.Value;
 }

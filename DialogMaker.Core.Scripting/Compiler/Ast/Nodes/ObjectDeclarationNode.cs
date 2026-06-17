@@ -321,6 +321,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 memberInfo.MemberType = DSharpTypeMember.Method;
                 return true;
             }
+            if (memberInfo.Type == null)
+            {
+                stream.Position = startPosition;
+                return false;
+            } 
 
             memberInfo.MemberType = DSharpTypeMember.Field;
             return true;
@@ -430,7 +435,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 IsAbstract = memberMode == DSharpObjectMemberMode.Abstract,
                 IsSealed = isSealed,
                 Access = access,
-                IsStatic = true
+                IsStatic = isStatic
             };
 
             if (stream.Check(DSharpTokenType.Colon))
