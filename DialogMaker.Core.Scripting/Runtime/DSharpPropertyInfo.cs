@@ -12,8 +12,10 @@
 
         public bool IsVirtual => throw new NotImplementedException();
 
-        public bool IsOverride => throw new NotImplementedException();
-
         public bool IsSealed => throw new NotImplementedException();
+
+        public IDSharpPropertyInfo? OverrideProperty => throw new NotImplementedException();
+
+        public bool IsAbstract => throw new NotImplementedException();
     }
 }

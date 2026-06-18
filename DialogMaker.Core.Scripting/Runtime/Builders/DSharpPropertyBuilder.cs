@@ -7,11 +7,63 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
     {
         public override DSharpTypeBuilder DeclaringType { get; } = declaringType;
         public DSharpTypeToken? PropertyType { get; set; }
-        public DSharpMethodBuilder? Getter { get; private set; }
-        public DSharpMethodBuilder? Setter { get; private set; }
+        public DSharpMethodBuilder? Getter
+        {
+            get
+            {
+                if (field == null && !_triedToFindGetter)
+                {
+                    _triedToFindGetter = true;
+                    field = DeclaringType.Methods.FirstOrDefault(m => m.Name == GetterMethodName);
+                }
+
+                return field;
+            }
+            private set;
+        }
+        public DSharpMethodBuilder? Setter
+        {
+            get
+            {
+                if (field == null && !_triedToFindSetter)
+                {
+                    _triedToFindSetter = true;
+                    field = DeclaringType.Methods.FirstOrDefault(m => m.Name == SetterMethodName);
+                }
+
+                return field;
+            }
+            private set;
+        }
+        public IDSharpPropertyInfo? OverrideProperty
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    if (value != null)
+                    {
+                        if (value.IsSealed)
+                        {
+                            throw new ArgumentException($"Unable to override sealed property \"{value}\" by \"{this}\"", nameof(value));
+                        }
+                        if (!value.IsVirtual && !value.IsAbstract)
+                        {
+                            throw new ArgumentException($"Unable to override property that not virtual or abstract \"{value}\" by \"{this}\"", nameof(value));
+                        }
+                        if (value.PropertyType != PropertyType)
+                        {
+                            throw new ArgumentException($"Unable to override property with different type \"{value}\" by \"{this}\"");
+                        }
+                    }
+
+                    field = value;
+                }
+            }
+        }
         public string GetterMethodName { get; private set; } = string.Empty;
         public string SetterMethodName { get; private set; } = string.Empty;
-        public bool IsVirtual { get; set; }
         public bool CanRead => Getter != null;
         public bool CanWrite => Setter != null;
 
@@ -30,6 +82,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         IDSharpMethodInfo? IDSharpPropertyInfo.Getter => Getter;
         IDSharpMethodInfo? IDSharpPropertyInfo.Setter => Setter;
 
+        private bool _triedToFindGetter;
+        private bool _triedToFindSetter;
+
         #region Управление
 
         public DSharpMethodBuilder CreateGetter()
@@ -38,12 +93,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             {
                 return Getter;
             }
-            if (DeclaringType is not DSharpTypeBuilder builder)
-            {
-                throw new InvalidOperationException($"Unable to create getter because declaring type is not a type builder");
-            }
 
-            var getter = builder.CreateMethod(t => new(this, false, GetterMethodName, t));
+            var getter = DeclaringType.CreateMethod(t => new(this, false, GetterMethodName, t));
             Getter = getter;
 
             return getter;

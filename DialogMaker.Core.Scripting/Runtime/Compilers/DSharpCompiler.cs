@@ -66,7 +66,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 ParseStatements(_assemblyBuilder, treeRoot.Statements);
             }
 
-            SetupBaseTypes(_assemblyBuilder);
+            SetupTypes(_assemblyBuilder);
 
             foreach (var enumValue in _enumValues.Keys)
             {
@@ -277,9 +277,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             property.Access = fieldNode.Access;
             property.IsStatic = fieldNode.IsStatic;
             property.IsSealed = fieldNode.IsSealed;
-            property.IsOverride = fieldNode.IsOverride;
             property.IsAbstract = fieldNode.Mode == DSharpObjectMemberMode.Abstract;
             property.IsVirtual = fieldNode.Mode == DSharpObjectMemberMode.Virtual;
+
+            if (fieldNode.CanRead)
+            {
+                property.CreateGetter();
+            }
+            if (fieldNode.CanWrite)
+            {
+                property.CreateSetter();
+            }
 
             _createdProperties.Add(property, fieldNode);
         }
@@ -370,28 +378,42 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
         #region Разрешение типов
 
-        private void SetupBaseTypes(DSharpAssemblyBuilder assemblyBuilder)
+        private void SetupTypes(DSharpAssemblyBuilder assemblyBuilder)
         {
-            foreach (var enumType in _enumTypes.Keys)
+            T? FindBaseMember<T>(Func<IDSharpType, T> selector, IDSharpType type, Predicate<T>? extraPredicate = null)
+                where T : IDSharpMemberInfo
             {
-                enumType.BaseTypes.Add(assemblyBuilder.EnumToken);
-            }
-            foreach (var info in _createdTypes)
-            {
-                foreach (var baseType in info.Value.BaseTypes)
+                var member = selector(type);
+
+                if (member == null || extraPredicate?.Invoke(member) == true)
                 {
-                    var typeToken = ResolveType(info.Key, baseType);
-                    info.Key.BaseTypes.Add(typeToken);
+                    foreach (var baseType in type.GetBaseTypes())
+                    {
+                        if (baseType.ObjectType == DSharpObjectType.Interface)
+                        {
+                            continue;
+                        }
+
+                        member = FindBaseMember(selector, baseType, extraPredicate);
+
+                        if (member != null)
+                        {
+                            return member;
+                        }
+                    }
                 }
+
+                return member;
             }
-            foreach (var info in _createdFields)
+
+            foreach (var info in _createdGlobalVariables)
             {
                 if (info.Value.Type != null)
                 {
                     info.Key.FieldType = ResolveType(info.Key, info.Value.Type);
                 }
             }
-            foreach (var info in _createdGlobalVariables)
+            foreach (var info in _createdFields)
             {
                 if (info.Value.Type != null)
                 {
@@ -404,8 +426,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     info.Key.PropertyType = ResolveType(info.Key, info.Value.Type);
                 }
-
-                CompileProperty(info.Key, info.Value);
             }
             foreach (var info in _createdMethods)
             {
@@ -432,6 +452,35 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     info.Key.ReturnType = context.ResolveType(info.Value.ReturnType);
                 }
             }
+            foreach (var enumType in _enumTypes.Keys)
+            {
+                enumType.BaseTypes.Add(assemblyBuilder.EnumToken);
+            }
+            foreach (var info in _createdTypes)
+            {
+                foreach (var baseType in info.Value.BaseTypes)
+                {
+                    var typeToken = ResolveType(info.Key, baseType);
+                    info.Key.BaseTypes.Add(typeToken);
+                }
+            }
+            
+            foreach (var info in _createdProperties)
+            {
+                if (!info.Value.IsOverride)
+                {
+                    continue;
+                }
+
+                var overrideProperty = FindBaseMember(t => t.GetProperty(info.Key.Name), info.Key.DeclaringType);
+
+                if (overrideProperty == null)
+                {
+                    throw new InvalidOperationException($"Unable to override property \"{info.Key}\" because property with same signature not found in parents: {info.Value}");
+                }
+
+                info.Key.OverrideProperty = overrideProperty;
+            }
             foreach (var info in _createdConstructors)
             {
                 var context = _context;
@@ -452,7 +501,36 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     });
                 }
             }
+            foreach (var info in _createdMethods)
+            {
+                if (!info.Value.IsOverride)
+                {
+                    continue;
+                }
 
+                if (info.Key.DeclaringType == null)
+                {
+                    throw new InvalidOperationException($"Unable to override global function \"{info.Key}\": {info.Value}");
+                }
+
+                var overrideMethod = FindBaseMember(t => t.GetMethod(info.Key.Name), info.Key.DeclaringType, m =>
+                {
+                    return m.GetParameters().Length != info.Key.Parameters.Count ||
+                           m.GetGenericParameters().Length != info.Key.GenericParameters.Count;
+                });
+
+                if (overrideMethod == null)
+                {
+                    throw new InvalidOperationException($"Unable to override property \"{info.Key}\" because property with same signature not found in parents: {info.Value}");
+                }
+
+                info.Key.OverrideMethod = overrideMethod;
+            }
+
+            foreach (var info in _createdProperties)
+            {
+                CompileProperty(info.Key, info.Value);
+            }
             foreach (var info in _createdMethods)
             {
                 CompileMethod(info.Key, info.Value);

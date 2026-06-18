@@ -8,6 +8,10 @@
         public DSharpObjectType ObjectType { get; }
         public bool IsAbstract { get; }
         public bool IsSealed { get; }
+        /// <summary>
+        /// Type that used as template to create current type
+        /// </summary>
+        public IDSharpType? GenericTemplate { get; }
 
         public IDSharpType[] GetBaseTypes();
         public IDSharpMethodInfo[] GetConstructors();

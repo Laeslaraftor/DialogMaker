@@ -246,34 +246,60 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             string? @namespace = CurrentMember?.DeclaringType?.Namespace;
             result = InternalTryResolveType(@namespace, typeName);
 
+            if (result == null)
+            {
+                if (Usings != null)
+                {
+                    foreach (var @using in Usings)
+                    {
+                        result = InternalTryResolveType(@using, typeName);
+
+                        if (result != null)
+                        {
+                            if (typeInfo.ArrayDimensions > 0)
+                            {
+                                var arrayType = CreateArray(result, typeInfo.ArrayDimensions);
+                                result = Assembly!.GetTypeToken(arrayType);
+                            }
+
+                            break;
+                        }
+                    }
+                }
+            }            
             if (result != null)
             {
+                if (Assembly == null)
+                {
+                    throw new InvalidOperationException($"Unable to resolve type because assembly builder not provided: {typeInfo}");
+                }
+
                 if (typeInfo.ArrayDimensions > 0)
                 {
                     var arrayType = CreateArray(result, typeInfo.ArrayDimensions);
-                    result = Assembly!.GetTypeToken(arrayType);
+                    result = Assembly.GetTypeToken(arrayType);
+                }
+                else if (typeInfo.GenericParameters.Count > 0)
+                {
+                    IDSharpType[] genericParameters = new IDSharpType[typeInfo.GenericParameters.Count];
+
+                    for (int i = 0; i < typeInfo.GenericParameters.Count; i++)
+                    {
+                        genericParameters[i] = (IDSharpType)Assembly.GetType(ResolveType(typeInfo.GenericParameters[i]));
+                    }
+
+                    var genericType = (IDSharpType)Assembly.GetType(result);
+
+                    if (genericType.GenericTemplate != null)
+                    {
+                        genericType = genericType.GenericTemplate;
+                    }
+
+                    genericType = Assembly.FillGeneric(genericType, genericParameters);
+                    result = Assembly.GetTypeToken(genericType);
                 }
 
                 return true;
-            }
-
-            if (Usings != null)
-            {
-                foreach (var @using in Usings)
-                {
-                    result = InternalTryResolveType(@using, typeName);
-
-                    if (result != null)
-                    {
-                        if (typeInfo.ArrayDimensions > 0)
-                        {
-                            var arrayType = CreateArray(result, typeInfo.ArrayDimensions);
-                            result = Assembly!.GetTypeToken(arrayType);
-                        }
-
-                        return true;
-                    }
-                }
             }
 
             return false;

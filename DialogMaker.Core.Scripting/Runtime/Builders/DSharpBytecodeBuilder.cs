@@ -26,9 +26,81 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <summary>
         /// Write bytecode to stream
         /// </summary>
+        /// <remarks>First 4 bytes represents total amount of instructions, 
+        /// then follows instructions one by one. Instruction size - 2 bytes, 
+        /// some instructions may contains parameters, which follows after instruction bytes.
+        /// Each instruction have static amount of parameters
+        /// <code>
+        ///  0  : 1 instruction byte
+        ///  1  : 2 instruction byte
+        /// ... : parameters
+        /// </code>
+        /// Example for <see cref="PopOffset(int)"/>:
+        /// <code>
+        ///  0  : 1 instruction byte
+        ///  1  : 2 instruction byte
+        ///  2  : 1 offset byte
+        ///  3  : 2 offset byte
+        ///  4  : 3 offset byte
+        ///  5  : 4 offset byte
+        /// </code>
+        /// </remarks>
         /// <param name="stream">Stream for writing built bytecode</param>
         public void Write(Stream stream)
         {
+            var count = BitConverter.GetBytes(Instructions.Count);
+            stream.Write(count);
+
+            foreach (var instruction in Instructions)
+            {
+                instruction.Write(stream);
+            }
+        }
+
+        /// <summary>
+        /// Copy bytecode from current builder to specified one
+        /// </summary>
+        /// <param name="builder">Builder for copying bytecode</param>
+        public void CopyTo(DSharpBytecodeBuilder builder)
+        {
+            var otherInstructions = builder.Instructions;
+            otherInstructions.Clear();
+
+            foreach (var instruction in Instructions)
+            {
+                var newInstruction = instruction.Copy(builder);
+                otherInstructions.Add(newInstruction);
+            }
+        }
+        public void ReplaceMembers(IDictionary<IDSharpMemberInfo, IDSharpMemberInfo> replacedMembers)
+        {
+            var assembly = Method.Assembly;
+
+            IDSharpMemberInfo ReplaceMember(IDSharpMemberInfo member)
+            {
+                if (replacedMembers.TryGetValue(member, out var replacedMember))
+                {
+                    return replacedMember;
+                }
+
+                return member;
+            }
+
+            foreach (var variable in LocalVariables)
+            {
+                if (variable.Type != null)
+                {
+                    var member = assembly.GetType(variable.Type);
+                    variable.Type = assembly.GetTypeToken(ReplaceMember(member));
+                }
+            }
+            foreach (var instruction in Instructions)
+            {
+                if (instruction is TypeInstruction typeInstruction)
+                {
+                    typeInstruction.MemberInfo = ReplaceMember(typeInstruction.MemberInfo);
+                }
+            }
         }
 
         #endregion

@@ -277,7 +277,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             var genericsCount = genericParameters.Count();
             var genericTypes = genericType.GetGenericTypes();
-
             if (genericTypes.Length != genericsCount)
             {
                 throw new ArgumentException($"Generic parameters count must match to amount of generic types in filling type", nameof(genericParameters));
@@ -290,13 +289,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 assemblyBuilder = genericTypeAssemblyBuilder;
             }
 
+            Dictionary<IDSharpType, IDSharpType> replacedTypes = [];
+            Dictionary<IDSharpMemberInfo, IDSharpMemberInfo> replacedMembers = [];
+            List<DSharpBytecodeBuilder> bytecodeBuilders = [];
             var newType = assemblyBuilder.CreateType(genericType.Name);
             newType.IsStatic = genericType.IsStatic;
             newType.IsAbstract = genericType.IsAbstract;
             newType.ObjectType = genericType.ObjectType;
             newType.IsSealed = genericType.IsSealed;
             newType.Namespace = genericType.Namespace;
-            newType.BaseTypes.Add(GetTypeToken(genericType));
+            newType.GenericTemplate = genericType;
 
             int i = 0;
 
@@ -310,10 +312,147 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 }
 
                 newType.GenericParameters.Add(GetTypeToken(parameter));
+                replacedTypes.Add(genericTypeParameter, parameter);
+                replacedMembers.Add(genericTypeParameter, parameter);
                 i++;
+            }
+            foreach (var genericTypeBaseType in genericType.GetBaseTypes())
+            {
+                var currentBaseType = ReplaceGenericParameters(genericTypeBaseType, replacedTypes);
+                newType.BaseTypes.Add(GetTypeToken(currentBaseType));
+            }
+            foreach (var field in genericType.GetFields())
+            {
+                var newField = newType.CreateField(field.Name);
+                newField.IsReadOnly = field.IsReadOnly;
+                newField.IsStatic = field.IsStatic;
+                newField.Access = field.Access;
+                newField.RawValue = field.RawValue;
+                newField.FieldType = GetTypeToken(ReplaceGenericParameters(field.FieldType, replacedTypes));
+
+                replacedMembers.Add(field, newField);
+            }
+            foreach (var property in genericType.GetProperties())
+            {
+                var newProperty = newType.CreateProperty(property.Name);
+                newProperty.Access = property.Access;
+                newProperty.IsStatic = property.IsStatic;
+                newProperty.IsSealed = property.IsSealed;
+                newProperty.IsAbstract = property.IsAbstract;
+                newProperty.IsVirtual = property.IsVirtual;
+                newProperty.OverrideProperty = property.OverrideProperty;
+                newProperty.PropertyType = GetTypeToken(ReplaceGenericParameters(property.PropertyType, replacedTypes));
+
+                if (property.Getter != null)
+                {
+                    var getter = newProperty.CreateGetter();
+                    ProcessMethod(getter, property.Getter);
+                }
+                if (property.Setter != null)
+                {
+                    var setter = newProperty.CreateSetter();
+                    ProcessMethod(setter, property.Setter);
+                }
+
+                replacedMembers.Add(property, newProperty);
+            }
+            foreach (var method in genericType.GetMethods())
+            {
+                if (method.MethodType != DSharpMethodType.Default)
+                {
+                    continue;
+                }
+
+                var newMethod = newType.CreateMethod(name);
+                ProcessMethod(newMethod, method);
+            }
+            foreach (var constructor in genericType.GetConstructors())
+            {
+                if (replacedMembers.ContainsKey(constructor))
+                {
+                    continue;
+                }
+
+                var newConstructor = newType.CreateConstructor();
+                ProcessMethod(newConstructor, constructor);
+            }
+
+            void ProcessMethod(DSharpMethodBuilder newMethod, IDSharpMethodInfo method)
+            {
+                newMethod.Access = method.Access;
+                newMethod.IsStatic = method.IsStatic;
+                newMethod.IsAbstract = method.IsAbstract;
+                newMethod.IsVirtual = method.IsVirtual;
+                newMethod.IsExtern = method.IsExtern;
+                newMethod.OverrideMethod = method.OverrideMethod;
+
+                if (method.MethodType == DSharpMethodType.Default &&
+                    method.ReturnType != null)
+                {
+                    newMethod.ReturnType = GetTypeToken(ReplaceGenericParameters(method.ReturnType, replacedTypes));
+                }
+                
+                foreach (var genericParameter in method.GetGenericParameters())
+                {
+                    newMethod.GenericParameters.Add(GetTypeToken(genericParameter));
+                }
+                foreach (var parameter in method.GetParameters())
+                {
+                    newMethod.Parameters.Add(new(this)
+                    {
+                        Name = parameter.Name,
+                        Type = GetTypeToken(ReplaceGenericParameters(parameter.Type, replacedTypes))
+                    });
+                }
+
+                if (!method.IsExtern && !method.IsAbstract)
+                {
+                    var code = newMethod.GetBytecodeBuilder();
+                    method.CopyBytecodeTo(code);
+                    bytecodeBuilders.Add(code);
+                }
+
+                replacedMembers.Add(method, newMethod);
+            }
+
+            foreach (var bytecodeBuilder in bytecodeBuilders)
+            {
+                bytecodeBuilder.ReplaceMembers(replacedMembers);
             }
 
             return newType;
+        }
+        public IDSharpType ReplaceGenericParameters(IDSharpType genericType, Dictionary<IDSharpType, IDSharpType> replacedTypes)
+        {
+            if (replacedTypes.Count == 0)
+            {
+                return genericType;
+            }
+            if (replacedTypes.TryGetValue(genericType, out var directReplacedType))
+            {
+                return directReplacedType;
+            }
+
+            var baseTypeGenericParameters = genericType.GetGenericParameters();
+            bool refillType = false;
+
+            for (int i = 0; i < baseTypeGenericParameters.Length; i++)
+            {
+                var parameter = baseTypeGenericParameters[i];
+
+                if (replacedTypes.TryGetValue(parameter, out var replacedType))
+                {
+                    baseTypeGenericParameters[i] = replacedType;
+                    refillType = true;
+                }
+            }
+
+            if (refillType)
+            {
+                genericType = FillGeneric(genericType, baseTypeGenericParameters);
+            }
+
+            return genericType;
         }
         public IDSharpType CreateArray(IDSharpType elementType)
         {

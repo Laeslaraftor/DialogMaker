@@ -7,8 +7,12 @@
         public IDSharpMethodInfo? Setter { get; }
         public bool CanRead { get; }
         public bool CanWrite { get; }
+        /// <summary>
+        /// Property that was overriden by current property
+        /// </summary>
+        public IDSharpPropertyInfo? OverrideProperty { get; }
         public bool IsVirtual { get; }
-        public bool IsOverride { get; }
+        public bool IsAbstract { get; }
         public bool IsSealed { get; }
     }
 }

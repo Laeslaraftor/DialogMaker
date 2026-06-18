@@ -149,18 +149,11 @@ namespace DialogMaker.Core.Scripting.Runtime
                 {
                     var genericParameters = type.GetGenericParameters();
 
-                    if (type == genericType)
+                    if (type == genericType ||
+                        type.GenericTemplate != genericType)
                     {
                         continue;
                     }
-
-                    var baseTypes = type.GetBaseTypes();
-
-                    if (baseTypes.Length != 1 && baseTypes[0] != genericType)
-                    {
-                        continue;
-                    }
-
                     if (genericParameters.SequenceEqual(parameters))
                     {
                         result = type;

@@ -16,6 +16,15 @@
             public virtual void Write(Stream stream)
             {
             }
+            /// <summary>
+            /// Create copy of current instruction for other bytecode builder
+            /// </summary>
+            /// <param name="builder">New bytecode builder</param>
+            /// <returns>Copy of current instruction</returns>
+            public virtual Instruction Copy(DSharpBytecodeBuilder builder)
+            {
+                return new(builder, Operation);
+            }
 
             /// <summary>
             /// <inheritdoc/>
@@ -34,6 +43,16 @@
             public int Index { get; set; } = index;
 
             #region Управление
+
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <param name="builder"><inheritdoc/></param>
+            /// <returns><inheritdoc/></returns>
+            public override Instruction Copy(DSharpBytecodeBuilder builder)
+            {
+                return new IndexInstruction(builder, Operation, Index);
+            }
 
             /// <summary>
             /// <inheritdoc/>
@@ -57,6 +76,16 @@
             /// <summary>
             /// <inheritdoc/>
             /// </summary>
+            /// <param name="builder"><inheritdoc/></param>
+            /// <returns><inheritdoc/></returns>
+            public override Instruction Copy(DSharpBytecodeBuilder builder)
+            {
+                return new OffsetCountInstruction(builder, Operation, Offset, Count);
+            }
+
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
             /// <returns><inheritdoc/></returns>
             public override string ToString()
             {
@@ -71,6 +100,16 @@
             public DSharpMethodBuilderParameter Parameter { get; set; } = parameter;
 
             #region Управление
+
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <param name="builder"><inheritdoc/></param>
+            /// <returns><inheritdoc/></returns>
+            public override Instruction Copy(DSharpBytecodeBuilder builder)
+            {
+                return new ParameterInstruction(builder, Operation, Parameter);
+            }
 
             /// <summary>
             /// <inheritdoc/>
@@ -98,6 +137,16 @@
             /// <summary>
             /// <inheritdoc/>
             /// </summary>
+            /// <param name="builder"><inheritdoc/></param>
+            /// <returns><inheritdoc/></returns>
+            public override Instruction Copy(DSharpBytecodeBuilder builder)
+            {
+                return new TypeInstruction(builder, Operation, MemberInfo);
+            }
+
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
             /// <returns><inheritdoc/></returns>
             public override string ToString()
             {
@@ -112,6 +161,16 @@
             public int Size { get; set; } = size;
 
             #region Управление
+
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <param name="builder"><inheritdoc/></param>
+            /// <returns><inheritdoc/></returns>
+            public override Instruction Copy(DSharpBytecodeBuilder builder)
+            {
+                return new SizedTypeInstruction(builder, Operation, MemberInfo, Size);
+            }
 
             /// <summary>
             /// <inheritdoc/>
@@ -134,9 +193,24 @@
             /// <summary>
             /// <inheritdoc/>
             /// </summary>
+            /// <param name="builder"><inheritdoc/></param>
+            /// <returns><inheritdoc/></returns>
+            public override Instruction Copy(DSharpBytecodeBuilder builder)
+            {
+                return new LiteralInstruction(builder, Operation, Value);
+            }
+
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
             /// <returns><inheritdoc/></returns>
             public override string ToString()
             {
+                if (Value.IsString)
+                {
+                    return $"{Operation} \"{Value}\"";
+                }
+
                 return $"{Operation} {Value}";
             }
 
@@ -148,6 +222,19 @@
             public Instruction? ReferencedInstruction { get; set; }
 
             #region Управление
+
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <param name="builder"><inheritdoc/></param>
+            /// <returns><inheritdoc/></returns>
+            public override Instruction Copy(DSharpBytecodeBuilder builder)
+            {
+                return new ReferenceInstruction(builder, Operation)
+                {
+                    ReferencedInstruction = ReferencedInstruction
+                };
+            }
 
             /// <summary>
             /// <inheritdoc/>

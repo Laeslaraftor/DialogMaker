@@ -77,6 +77,58 @@
         }
         public List<DSharpMethodBuilderParameter> Parameters { get; } = [];
         public List<DSharpTypeToken> GenericParameters { get; } = [];
+        public IDSharpMethodInfo? OverrideMethod
+        {
+            get
+            {
+                if (LinkedType != null)
+                {
+                    return null;
+                }
+                if (LinkedProperty != null)
+                {
+                    if (MethodType == DSharpMethodType.Getter)
+                    {
+                        return LinkedProperty.OverrideProperty?.Getter;
+                    }
+
+                    return LinkedProperty.OverrideProperty?.Setter;
+                }
+
+                return field;
+            }
+            set
+            {
+                if (field != value)
+                {
+                    if (value != null)
+                    {
+                        if (value.IsSealed)
+                        {
+                            throw new ArgumentException($"Unable to override sealed method \"{value}\" by \"{this}\"", nameof(value));
+                        }
+                        if (!value.IsVirtual && !value.IsAbstract)
+                        {
+                            throw new ArgumentException($"Unable to override method that not virtual or abstract \"{value}\" by \"{this}\"", nameof(value));
+                        }
+                        if (value.ReturnType != ReturnType)
+                        {
+                            throw new ArgumentException($"Unable to override method \"{value}\" by \"{this}\" because it's has different return types");
+                        }
+                        if (!CompareParameters(value, this))
+                        {
+                            throw new ArgumentException($"Unable to override method \"{value}\" by \"{this}\" because it's has different parameters");
+                        }
+                        if (!CompareGenericParameters(value, this))
+                        {
+                            throw new ArgumentException($"Unable to override method \"{value}\" by \"{this}\" because it's has different generic parameters");
+                        }
+                    }
+
+                    field = value;
+                }
+            }
+        }
         public override bool IsStatic
         {
             get => LinkedProperty?.IsStatic ?? base.IsStatic;
@@ -108,20 +160,7 @@
             }
             set => base.IsSealed = value;
         }
-        public override bool IsOverride
-        {
-            get
-            {
-                if (LinkedType != null)
-                {
-                    return false;
-                }
-
-                return LinkedProperty?.IsOverride ?? base.IsOverride;
-            }
-            set => base.IsOverride = value;
-        }
-        public bool IsVirtual
+        public override bool IsVirtual
         {
             get
             {
@@ -134,9 +173,9 @@
                     return LinkedProperty.IsVirtual;
                 }
 
-                return field;
+                return base.IsVirtual;
             }
-            set;
+            set => base.IsVirtual = value;
         }
         public bool IsExtern
         {
@@ -165,11 +204,16 @@
             }
         }
 
-
         private DSharpBytecodeBuilder? _bytecodeBuilder;
 
         #region Управление
 
+        /// <summary>
+        /// Get bytecode builder for this method
+        /// </summary>
+        /// <returns>Bytecode builder</returns>
+        /// <exception cref="InvalidOperationException">Abstract method can not contains bytecode</exception>
+        /// <exception cref="InvalidOperationException">Extern method can not contains bytecode</exception>
         public DSharpBytecodeBuilder GetBytecodeBuilder()
         {
             if (IsAbstract)
@@ -180,13 +224,38 @@
             {
                 throw new InvalidOperationException($"Extern method can not contains bytecode: {this}");
             }
+            if (_bytecodeBuilder == null && DeclaringType?.GenericTemplate != null)
+            {
+                // ЗДЕСЬ НАДО ПРОПИСАТЬ КОПИРОВАНИЕ КОДА С ЗАМЕНОЙ ТИПОВ!!!
+            }            
 
             _bytecodeBuilder ??= new(this);
             return _bytecodeBuilder;
         }
-
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
         public IDSharpParameterInfo[] GetParameters() => [.. Parameters];
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
+        public IDSharpType[] GetGenericParameters() => [.. GenericParameters.Select(t => (IDSharpType)Assembly.GetType(t))];
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="builder"><inheritdoc/></param>
+        public void CopyBytecodeTo(DSharpBytecodeBuilder builder)
+        {
+            var code = GetBytecodeBuilder();
+            code.CopyTo(builder);
+        }
 
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             string name = Name + '(';
@@ -218,6 +287,64 @@
             }
 
             return $"{DeclaringType.FullName}.{name}";
+        }
+
+        #endregion
+
+        #region Статика
+
+        /// <summary>
+        /// Compare parameters of two methods. 
+        /// Parameters always compares by it's type, names does not counts
+        /// </summary>
+        /// <param name="m1">First method to compare parameters</param>
+        /// <param name="m2">Second method to compare parameters</param>
+        /// <returns>Is parameters equals</returns>
+        public static bool CompareParameters(IDSharpMethodInfo m1, IDSharpMethodInfo m2)
+        {
+            var params1 = m1.GetParameters();
+            var params2 = m2.GetParameters();
+
+            if (params1.Length != params2.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < params1.Length; i++)
+            {
+                if (params1[i].Type != params2[i].Type)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        /// <summary>
+        /// Compare generic parameters of two methods
+        /// </summary>
+        /// <param name="m1">First method to compare generic parameters</param>
+        /// <param name="m2">Second method to compare generic parameters</param>
+        /// <returns>Is generic parameters equals</returns>
+        public static bool CompareGenericParameters(IDSharpMethodInfo m1, IDSharpMethodInfo m2)
+        {
+            var params1 = m1.GetGenericParameters();
+            var params2 = m2.GetGenericParameters();
+
+            if (params1.Length != params2.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < params1.Length; i++)
+            {
+                if (params1[i] != params2[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         #endregion

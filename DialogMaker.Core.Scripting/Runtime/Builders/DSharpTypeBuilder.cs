@@ -29,6 +29,10 @@
                 {
                     result += "`" + GenericTypes.Count;
                 }
+                else if (GenericParameters.Count > 0)
+                {
+                    result += "`" + GenericParameters.Count;
+                }
                 if (DeclaringType != null)
                 {
                     result = $"{DeclaringType.FullName}.{result}";
@@ -89,6 +93,7 @@
                 return field;
             }
         }
+        public IDSharpType? GenericTemplate { get; set; }
 
         private readonly List<DSharpMethodBuilder> _constructors = [];
         private readonly List<DSharpMethodBuilder> _methods = [];
@@ -220,7 +225,7 @@
 
         #region Константы
 
-        public const string ConstructorName = ".ctor";
+        public const string ConstructorName = "ctor";
 
         #endregion
     }

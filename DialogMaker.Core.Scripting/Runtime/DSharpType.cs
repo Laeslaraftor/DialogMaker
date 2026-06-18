@@ -28,6 +28,8 @@ namespace DialogMaker.Core.Scripting.Runtime
 
         public bool IsSealed => throw new NotImplementedException();
 
+        public IDSharpType? GenericTemplate => throw new NotImplementedException();
+
         #region Управление
 
         public IDSharpMethodInfo[] GetMethods() => [.. Methods];
