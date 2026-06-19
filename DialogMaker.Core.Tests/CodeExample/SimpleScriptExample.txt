@@ -33,7 +33,7 @@
 	}
 	public struct Boolean {}
 	public struct Char {}
-	public class Array<T>
+	public class Array<T> : IEnumerable<T>
 	{
 		public number Length { get; }
 		
@@ -43,6 +43,11 @@
 			{
 				destination[destinationIndex + i] = source[sourceIndex + i];
 			}
+		}
+		
+		private class Enumerator : IEnumerator<T>
+		{
+			
 		}
 	}
 	
@@ -60,7 +65,18 @@
 		public number B { get; }
 		
 		public static readonly Color Black = new Color(0, 0, 0);
-	}	
+	}
+	public interface IEnumerable<T>
+	{
+		public IEnumerator<T> GetEnumerator();
+	}
+	public interface IEnumerator<T>
+	{
+		public T Current { get; }
+		
+		public bool MoveNext();
+		public func Reset();
+	}
 	
 	public class SomeGeneric<T>
 	{
@@ -89,7 +105,7 @@
 		{
 			if (Count + 1 > Capacity)
 			{
-				Expand();
+				this.Expand();
 			}
 			
 			_items[Count] = item;

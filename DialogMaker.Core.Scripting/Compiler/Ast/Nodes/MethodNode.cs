@@ -68,11 +68,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             ParseParameters(stream, method.Parameters);
 
-            if (memberInfo.IsExtern)
-            {
-                stream.Eat(DSharpTokenType.Semicolon);
-                return method;
-            }
             if (stream.Check(DSharpTokenType.Lambda))
             {
                 method.Body = BlockStatementNode.Parse(stream, DSharpTokenType.Semicolon);
@@ -83,7 +78,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
             else
             {
-                stream.ThrowPositionException("Required method body");
+                stream.Eat(DSharpTokenType.Semicolon);
             }
 
             return method;

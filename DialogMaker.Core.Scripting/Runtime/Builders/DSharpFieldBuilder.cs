@@ -18,11 +18,23 @@
         /// <summary>
         /// Type that declared this field. Empty field means this field is global variable in assembly
         /// </summary>
-        public override DSharpTypeBuilder? DeclaringType => declaringType;
+        public override DSharpTypeBuilder? DeclaringType { get; } = declaringType;
         /// <summary>
         /// Type of value that stored by this field
         /// </summary>
-        public DSharpTypeToken? FieldType { get; set; }
+        public DSharpTypeToken? FieldType
+        {
+            get
+            {
+                if (field == null && DeclaringType != null && OriginalField != null)
+                {
+                    field = GetReplacedType(OriginalField.FieldType);
+                }
+
+                return field;
+            }
+            set;
+        }
         /// <summary>
         /// Is read only flag. This flag means that this field can not be changed at runtime outside of constructor 
         /// </summary>
@@ -31,6 +43,7 @@
         /// Default values that sets at compile time. Other values must be setted in constructor
         /// </summary>
         public DSharpLiteralValue? RawValue { get; set; }
+        internal IDSharpFieldInfo? OriginalField { get; set; }
 
         IDSharpType IDSharpFieldInfo.FieldType
         {
@@ -47,6 +60,16 @@
 
         #region Управление
 
+        internal override void Update()
+        {
+            base.Update();
+            _ = FieldType;
+        }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             if (DeclaringType == null)

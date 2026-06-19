@@ -31,5 +31,10 @@
         /// Generic types that created by this type
         /// </summary>
         public IDSharpType[] GetGenericTypes();
+        /// <summary>
+        /// Get all types that contains in current type
+        /// </summary>
+        /// <returns>Array of types that contain in current type</returns>
+        public IDSharpType[] GetChildrenTypes();
     }
 }

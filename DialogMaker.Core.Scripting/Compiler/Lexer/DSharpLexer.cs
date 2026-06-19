@@ -112,6 +112,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         {
             while (!IsEndOfFile() && char.IsWhiteSpace(Peek()))
             {
+                _column++;
                 GetNext();
             }
         }

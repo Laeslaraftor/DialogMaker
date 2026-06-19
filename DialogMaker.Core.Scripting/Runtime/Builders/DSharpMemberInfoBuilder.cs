@@ -61,6 +61,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         IDSharpType? IDSharpMemberInfo.DeclaringType => DeclaringType;
         IDSharpAssembly IDSharpMemberInfo.Assembly => Assembly;
 
+        #region Управление
+
+        internal virtual void Update()
+        {
+        }
+
+        #endregion
+
         #region Дополнительно
 
         protected T CreateMember<T>(DSharpMetadataTokenType tokenType, Func<DSharpTypeToken, T> fabric)
@@ -90,6 +98,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
 
             return false;
+        }
+
+        protected DSharpTypeToken GetReplacedType(IDSharpType originalType)
+        {
+            if (DeclaringType == null)
+            {
+                throw new InvalidOperationException($"Unable to get replaced type for member without declaring type: \"{this}\"");
+            }
+
+            var replacedTypes = DeclaringType.GetReplacedTypes();
+            return Assembly.GetTypeToken(Assembly.ReplaceGenericParameters(originalType, replacedTypes));
         }
 
         #endregion

@@ -19,6 +19,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             Assembly = context.Assembly;
             Usings = context.Usings;
             TypeResolver = context.TypeResolver;
+            MemberResolver = context.MemberResolver;
             CurrentMember = currentMember;
             ResolvedTypes = context.ResolvedTypes;
             ParentExpression = context.ParentExpression;
@@ -27,6 +28,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public DSharpAssemblyBuilder? Assembly { get; set; }
         public IEnumerable<string>? Usings { get; set; }
         public Func<object, IDSharpType?>? TypeResolver { get; set; }
+        public Func<object, IDSharpMemberInfo?>? MemberResolver { get; set; }
         public IDSharpMemberInfo? CurrentMember { get; set; }
         public Dictionary<string, DSharpTypeToken>? ResolvedTypes { get; set; }
         public ExpressionNode? ParentExpression { get; set; }
@@ -102,9 +104,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
             if (TypeResolver != null)
             {
-                result = TypeResolver(expression);
+                var member = TypeResolver(expression);
 
-                if (result != null)
+                if (member == null)
+                {
+                    return false;
+                }
+                if (member is IDSharpType typeMember)
+                {
+                    result = typeMember;
+                    return true;
+                }
+                if (member.TryGetReturnType(out result))
                 {
                     return true;
                 }
@@ -218,6 +229,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             return result != null;
         }
+        public readonly bool TryResolveMember(string name, [NotNullWhen(true)] out IDSharpMemberInfo? result)
+        {
+            return TryResolveMember(name, false, out result);
+        }
         public readonly bool TryResolveType(TypeInfoNode typeInfo, [NotNullWhen(true)] out DSharpTypeToken? result)
         {
             result = null;
@@ -242,31 +257,60 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
                 return result != null;
             }
+            if (CurrentMember != null && Assembly != null)
+            {
+                IDSharpType? member;
 
-            string? @namespace = CurrentMember?.DeclaringType?.Namespace;
-            result = InternalTryResolveType(@namespace, typeName);
+                if (CurrentMember is IDSharpType type)
+                {
+                    member = type;
+                }
+                else
+                {
+                    member = CurrentMember.DeclaringType;
+                }
+
+                while (member != null)
+                {
+                    var genericType = member.GetGenericTypes().FirstOrDefault(t => t.Name == typeName);
+
+                    if (genericType != null)
+                    {
+                        result = Assembly.GetTypeToken(genericType);
+                        break;
+                    }
+
+                    member = member.DeclaringType;
+                }
+            }
 
             if (result == null)
             {
-                if (Usings != null)
+                string? @namespace = CurrentMember?.DeclaringType?.Namespace;
+                result = InternalTryResolveType(@namespace, typeName);
+
+                if (result == null)
                 {
-                    foreach (var @using in Usings)
+                    if (Usings != null)
                     {
-                        result = InternalTryResolveType(@using, typeName);
-
-                        if (result != null)
+                        foreach (var @using in Usings)
                         {
-                            if (typeInfo.ArrayDimensions > 0)
-                            {
-                                var arrayType = CreateArray(result, typeInfo.ArrayDimensions);
-                                result = Assembly!.GetTypeToken(arrayType);
-                            }
+                            result = InternalTryResolveType(@using, typeName);
 
-                            break;
+                            if (result != null)
+                            {
+                                if (typeInfo.ArrayDimensions > 0)
+                                {
+                                    var arrayType = CreateArray(result, typeInfo.ArrayDimensions);
+                                    result = Assembly!.GetTypeToken(arrayType);
+                                }
+
+                                break;
+                            }
                         }
                     }
                 }
-            }            
+            }           
             if (result != null)
             {
                 if (Assembly == null)
@@ -295,7 +339,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                         genericType = genericType.GenericTemplate;
                     }
 
-                    genericType = Assembly.FillGeneric(genericType, genericParameters);
+                    DSharpTypeBuilder? parent = null;
+
+                    if (genericType.DeclaringType is DSharpTypeBuilder declaringTypeBuilder)
+                    {
+                        parent = declaringTypeBuilder;
+                    }
+
+                    genericType = Assembly.FillGeneric(genericType, parent, genericParameters);
                     result = Assembly.GetTypeToken(genericType);
                 }
 
@@ -428,9 +479,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             if (Assembly != null)
             {
-                if (Assembly.TryGetStandardType(name, out var typeToken))
+                if (TryResolveMember(name, true, out var typeToken))
                 {
-                    Add(Assembly.GetType(typeToken));
+                    Add(typeToken);
                     return result;
                 }
                 var variable = Assembly.GetGlobalVariables().FirstOrDefault(f => f.Name == name);
@@ -730,6 +781,52 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         }
 
 
+        private readonly bool TryResolveMember(string name, bool recursive, [NotNullWhen(true)] out IDSharpMemberInfo? result)
+        {
+            result = null;
+
+            if (Assembly == null)
+            {
+                return false;
+            }
+
+            if (CurrentMember != null && !recursive)
+            {
+                try
+                {
+                    result = FindAnyAvailableMember(name);
+                    return true;
+                }
+                catch
+                {
+                }
+            }
+            if (MemberResolver != null)
+            {
+                result = MemberResolver(name);
+
+                if (result != null)
+                {
+                    return true;
+                }
+            }
+            if (TypeResolver != null)
+            {
+                result = TypeResolver(name);
+
+                if (result != null)
+                {
+                    return true;
+                }
+            }
+
+            if (TryResolveType(name, out var resolvedType))
+            {
+                result = Assembly.GetType(resolvedType);
+            }
+
+            return result != null;
+        }
         private readonly DSharpTypeToken? InternalTryResolveType(string? @namespace, string typeName)
         {
             var fullName = $"{@namespace}.{typeName}";

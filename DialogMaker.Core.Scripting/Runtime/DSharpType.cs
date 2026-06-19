@@ -60,6 +60,11 @@ namespace DialogMaker.Core.Scripting.Runtime
             throw new NotImplementedException();
         }
 
+        public IDSharpType[] GetChildrenTypes()
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
     }
 }

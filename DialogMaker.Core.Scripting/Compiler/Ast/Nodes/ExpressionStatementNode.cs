@@ -21,7 +21,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
-            return Expression?.ToString() ?? base.ToString();
+            if (Expression == null)
+            {
+                return base.ToString();
+            }
+
+            return $"Expression statement: {Expression}";
         }
 
         #endregion

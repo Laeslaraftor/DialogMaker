@@ -95,6 +95,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
+        public ReferenceReadOnlyList<DSharpTypeBuilder> ChildrenTypes
+        {
+            get
+            {
+                field ??= new(_childrenTypes);
+                return field;
+            }
+        }
         public IDSharpType? GenericTemplate
         {
             get;
@@ -104,6 +112,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 {
                     field = value;
                     _templatedMembers = null;
+                    _replacedTypes = null;
                 }
             }
         }
@@ -113,7 +122,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         private readonly List<DSharpPropertyBuilder> _properties = [];
         private readonly List<DSharpFieldBuilder> _fields = [];
         private readonly List<DSharpTypeBuilder> _genericTypes = [];
-        private ReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo>? _templatedMembers;
+        private readonly List<DSharpTypeBuilder> _childrenTypes = [];
+        internal IReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo>? _templatedMembers;
+        internal IReadOnlyDictionary<IDSharpType, IDSharpType>? _replacedTypes;
 
         #region Управление
 
@@ -125,6 +136,23 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
 
             return CreateMember(DSharpMetadataTokenType.Method, _methods, fabric);
+        }
+        internal override void Update()
+        {
+            base.Update();
+
+            void UpdateAll(IEnumerable<DSharpMemberInfoBuilder> builders)
+            {
+                foreach (var builder in builders)
+                {
+                    builder.Update();
+                }
+            }
+
+            UpdateAll(Constructors);
+            UpdateAll(Methods);
+            UpdateAll(Fields);
+            UpdateAll(Properties);
         }
 
         public DSharpTypeBuilder CreateGenericType(string name)
@@ -170,6 +198,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             return CreateMember(DSharpMetadataTokenType.Field, _fields, t => new(Assembly, this, name, t));
         }
+        public DSharpTypeBuilder CreateChildType(string name)
+        {
+            var type = Assembly.CreateType(name, false, this);
+            _childrenTypes.Add(type);
+
+            return type;
+        }
 
         public bool RemoveGenericType(DSharpTypeBuilder type)
         {
@@ -197,12 +232,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             return RemoveMember(_fields, field);
         }
+        public bool RemoveChildType(DSharpTypeBuilder type)
+        {
+            Assembly.RemoveType(type);
+            return _childrenTypes.Remove(type);
+        }
 
         /// <summary>
         /// Get dictionary of members that created based on <see cref="GenericTemplate"/>
         /// </summary>
         /// <returns>Dictionary of members that created based template</returns>
-        public ReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo> GetTemplatedMembers()
+        public IReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo> GetTemplatedMembers()
         {
             if (_templatedMembers != null)
             {
@@ -262,11 +302,38 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             Copy(methods, Methods);
             Copy(constructors, Constructors);
 
-            _templatedMembers = new(members);
+            _templatedMembers = new ReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo>(members);
 
             return _templatedMembers;
         }
+        public IReadOnlyDictionary<IDSharpType, IDSharpType> GetReplacedTypes()
+        {
+            if (_replacedTypes != null)
+            {
+                return _replacedTypes;
+            }
+            if (GenericTemplate == null)
+            {
+                throw new InvalidOperationException($"Unable to get dictionary of types that replaced by type parameters because current type does not have template \"{this}\"");
+            }
 
+            Dictionary<IDSharpType, IDSharpType> replacedTypes = [];
+            var genericTypes = GenericTemplate.GetGenericTypes();
+
+            for (int i = 0; i < GenericParameters.Count; i++)
+            {
+                replacedTypes.Add(genericTypes[i], (IDSharpType)Assembly.GetType(GenericParameters[i]));
+            }
+
+            _replacedTypes = new ReadOnlyDictionary<IDSharpType, IDSharpType>(replacedTypes);
+
+            return _replacedTypes;
+        }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             return FullName;
@@ -303,6 +370,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public IDSharpMethodInfo[] GetConstructors(Predicate<IDSharpMethodInfo> predicate) => [.. _constructors.Where(c => predicate(c))];
         public IDSharpType[] GetGenericParameters() => [.. GenericParameters.Select(t => (IDSharpType)Assembly.GetType(t))];
         public IDSharpType[] GetGenericTypes() => [.. GenericTypes];
+        public IDSharpType[] GetChildrenTypes() => [.. ChildrenTypes];
 
         #endregion
 

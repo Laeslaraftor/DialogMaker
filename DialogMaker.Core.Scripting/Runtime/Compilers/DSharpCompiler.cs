@@ -307,7 +307,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     throw new ArgumentException($"Static method can not be virtual, abstract, sealed and overriden: {methodNode}", nameof(methodNode));
                 }
             }
-            if (!methodNode.IsExtern && methodNode.Body == null)
+            if ((!methodNode.IsExtern && declareType?.ObjectType != DSharpObjectType.Interface) && methodNode.Body == null)
             {
                 throw new ArgumentException($"Method must have a body: {methodNode}", nameof(methodNode));
             }
@@ -451,6 +451,26 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     info.Key.ReturnType = context.ResolveType(info.Value.ReturnType);
                 }
             }
+            foreach (var info in _createdConstructors)
+            {
+                var context = _context;
+                context.CurrentMember = info.Key;
+
+                foreach (var parameter in info.Value.Parameters)
+                {
+                    if (parameter.Type == null)
+                    {
+                        throw new InvalidOperationException($"Parameter must have a type: {parameter}");
+                    }
+
+                    var type = context.ResolveType(parameter.Type);
+                    info.Key.Parameters.Add(new(assemblyBuilder)
+                    {
+                        Name = parameter.Name,
+                        Type = type
+                    });
+                }
+            }
             foreach (var enumType in _enumTypes.Keys)
             {
                 enumType.BaseTypes.Add(assemblyBuilder.EnumToken);
@@ -479,26 +499,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
 
                 info.Key.OverrideProperty = overrideProperty;
-            }
-            foreach (var info in _createdConstructors)
-            {
-                var context = _context;
-                context.CurrentMember = info.Key;
-
-                foreach (var parameter in info.Value.Parameters)
-                {
-                    if (parameter.Type == null)
-                    {
-                        throw new InvalidOperationException($"Parameter must have a type: {parameter}");
-                    }
-
-                    var type = context.ResolveType(parameter.Type);
-                    info.Key.Parameters.Add(new(assemblyBuilder)
-                    {
-                        Name = parameter.Name,
-                        Type = type
-                    });
-                }
             }
             foreach (var info in _createdMethods)
             {
@@ -537,6 +537,20 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             foreach (var info in _createdConstructors)
             {
                 CompileMethod(info.Key, info.Value);
+            }
+
+            int i = 0;
+
+            while (i < _assemblyBuilder.Types.Count)
+            {
+                var type = _assemblyBuilder.Types[i];
+
+                if (type.GenericTemplate != null)
+                {
+                    type.Update();
+                }
+
+                i++;
             }
         }
 

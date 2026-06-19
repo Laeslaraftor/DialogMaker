@@ -2,7 +2,6 @@
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime.Builders;
-using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Runtime.Compilers
 {
@@ -12,7 +11,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         {
             if (invokableNode.Body == null)
             {
-                if (method.IsExtern)
+                if (method.IsExtern || method.DeclaringType?.ObjectType == DSharpObjectType.Interface)
                 {
                     return;
                 }
@@ -29,6 +28,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             DSharpCompilerContext context = new(_context, method)
             {
                 TypeResolver = code.ExpressionTypeResolver,
+                MemberResolver = code.ExpressionMemberResolver,
             };
 
             CompileStatement(method, body, code, settings, context);
@@ -114,11 +114,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 CompileValueExpression(method, ifStatement.Condition, settings, null, context);
                 var jumpOperation = code.JumpIfFalse();
+                code.Pop();
 
                 if (ifStatement.ThenBranch == null)
                 {
                     throw new ArgumentException($"If statement should contains then branch: {statement}", nameof(statement));
                 }
+
+                CompileStatement(method, ifStatement.ThenBranch, code, settings, context);
 
                 DSharpBytecodeBuilder.ReferenceInstruction? skipOtherOperation = null;
 
@@ -453,6 +456,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 CompileValueExpressionOperation(method, code, decrementExpression.Expression, () => code.Decrement(), settings, context);
             }
+            else if (expression is CallExpressionNode ||
+                     expression is MemberAccessExpressionNode)
+            {
+                CompileValueExpression(method, expression, settings, parentExpression, context);
+            }
         }
 
         /// <summary>
@@ -495,7 +503,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 try
                 {
-                    member = context.FindAnyAvailableMember(identifierExpression.Name);
+                    member = context.FindAnyAvailableMember(identifierExpression.GetName(true));
                 }
                 catch (Exception error)
                 {
@@ -513,6 +521,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             else if (expression is MemberAccessExpressionNode memberAccessExpression)
             {
                 MemberAccessExpressionNode rootExpression = memberAccessExpression;
+                var startContextMember = context.CurrentMember;
+                var startContextResolver = context.TypeResolver;
                 int accessCompileCount = 0;
 
                 do
@@ -564,6 +574,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     throw new ArgumentException($"Member must be specified: {memberAccessExpression}", nameof(expression));
                 }
 
+                DSharpCompilerContext parentContext = new(context, startContextMember);
+                context.TypeResolver = obj =>
+                {
+                    try
+                    {
+                        if (parentContext.TryResolveType(obj.ToString(), out var typeToken))
+                        {
+                            return _assemblyBuilder.GetType(typeToken) as IDSharpType;
+                        }
+                    }
+                    catch
+                    {
+                    }
+
+                    return startContextResolver?.Invoke(obj);
+                };
                 var member = CompileValueExpression(method, rootExpression.Member, settings, rootExpression, context);
 
                 if (member != null && member.TryGetReturnType(out _))
@@ -595,6 +621,32 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 int popOffset = 0;
                 IDSharpMethodInfo calledMethod;
 
+                void CallAuto(IDSharpMethodInfo method)
+                {
+                    if (settings.Await(callExpression))
+                    {
+                        if (method.IsStatic)
+                        {
+                            code.AwaitCall(method);
+                        }
+                        else
+                        {
+                            code.AwaitCallInstance(method);
+                        }
+                    }
+                    else
+                    {
+                        if (method.IsStatic)
+                        {
+                            code.Call(method);
+                        }
+                        else
+                        {
+                            code.CallInstance(method);
+                        }
+                    }
+                }
+
                 if (callExpression.Callee is IdentifierExpressionNode identifier)
                 {
                     calledMethod = context.FindAnyAvailableMember<IDSharpMethodInfo>(identifier.Name);
@@ -603,14 +655,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     {
                         popOffset = 1;
                     }
-                    if (settings.Await(callExpression))
-                    {
-                        code.AwaitCall(calledMethod);
-                    }
-                    else
-                    {
-                        code.Call(calledMethod);
-                    }
+
+                    CallAuto(calledMethod);
                 }
                 else if (callExpression.Callee is MemberAccessExpressionNode memberMethod)
                 {
@@ -631,16 +677,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     }
 
                     CompileValueExpression(method, memberMethod.Target, settings, memberMethod, context);
-
-                    if (settings.Await(callExpression))
-                    {
-                        code.AwaitCallInstance(calledMethod);
-                    }
-                    else
-                    {
-                        code.CallInstance(calledMethod);
-                    }
-
+                    CallAuto(calledMethod);
                     code.PopOffset(popOffset);
                 }
                 else
@@ -971,8 +1008,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     throw new InvalidOperationException($"Unable to load current instance inside global function");
                 }
-
-                code.LoadInstance();
+                if (parentExpression is not MemberAccessExpressionNode)
+                {
+                    code.LoadInstance();
+                }
 
                 return method.DeclaringType;
             }

@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+using DialogMaker.Core.Scripting.Runtime;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
@@ -15,7 +16,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <summary>
         /// Object type
         /// </summary>
-        public DSharpDeclaredObjectType Type { get; set; }
+        public DSharpObjectType Type { get; set; }
         /// <summary>
         /// Access modifier of this object
         /// </summary>
@@ -361,6 +362,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 return stream.Check(DSharpTokenType.Struct, offset) ||
                        stream.Check(DSharpTokenType.Class, offset) ||
+                       stream.Check(DSharpTokenType.Enum, offset) ||
                        stream.Check(DSharpTokenType.Interface, offset);
             }
             bool IsStatic(int offset)
@@ -410,17 +412,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 isStatic = true;
             }
 
-            DSharpDeclaredObjectType objectType = DSharpDeclaredObjectType.Class;
+            DSharpObjectType objectType = DSharpObjectType.Class;
 
             if (stream.Check(DSharpTokenType.Struct))
             {
                 stream.Eat(DSharpTokenType.Struct);
-                objectType = DSharpDeclaredObjectType.Struct;
+                objectType = DSharpObjectType.Struct;
             }
             else if (stream.Check(DSharpTokenType.Interface))
             {
                 stream.Eat(DSharpTokenType.Interface);
-                objectType = DSharpDeclaredObjectType.Struct;
+                objectType = DSharpObjectType.Interface;
+            }
+            else if (stream.Check(DSharpTokenType.Enum))
+            {
+                stream.Eat(DSharpTokenType.Enum);
+                objectType = DSharpObjectType.Enum;
             }
             else
             {
@@ -458,19 +465,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             while (!stream.Check(DSharpTokenType.RightBrace))
             {
-                if (stream.Check(DSharpTokenType.Enum))
-                {
-                    var enumNode = EnumNode.Parse(stream);
-                    node.ChildrenEnums.Add(enumNode);
-                }
                 if (IsObjectDeclaration(stream))
                 {
                     var child = Parse(stream);
                     node.Children.Add(child);
+                    continue;
                 }
                 if (!TryStartParseMember(stream, out var memberInfo))
                 {
-                    stream.ThrowPositionException("Invalid object member");
+                    stream.ThrowPositionException($"Invalid object member: {stream.Peek()}");
                 }
 
                 var member = ParseMember(stream, memberInfo);

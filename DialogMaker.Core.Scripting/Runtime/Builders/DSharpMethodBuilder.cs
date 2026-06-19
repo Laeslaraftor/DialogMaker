@@ -57,6 +57,10 @@
         {
             get
             {
+                if (field == null && OriginalMethod?.ReturnType != null)
+                {
+                    field = GetReplacedType(OriginalMethod.ReturnType);
+                }
                 if (LinkedType != null)
                 {
                     return null;
@@ -190,6 +194,7 @@
             }
             set;
         }
+        internal IDSharpMethodInfo? OriginalMethod { get; set; }
 
         IDSharpType? IDSharpMethodInfo.ReturnType
         {
@@ -207,6 +212,12 @@
         private DSharpBytecodeBuilder? _bytecodeBuilder;
 
         #region Управление
+
+        internal override void Update()
+        {
+            base.Update();
+            _ = ReturnType;
+        }
 
         /// <summary>
         /// Get bytecode builder for this method

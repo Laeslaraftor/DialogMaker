@@ -6,7 +6,15 @@ namespace DialogMaker.Core.Tests
 {
     internal class ScriptBytecodeTests
     {
-        [Test, TestCase("repeat"), TestCase("sum"), TestCase("getTextColor"), TestCase("getNumberNameType"), TestCase("getGenericValue"), TestCase("System.Number.GetSquared")]
+        [Test]
+        [TestCase("repeat")]
+        [TestCase("sum")]
+        [TestCase("getTextColor")]
+        [TestCase("getNumberNameType")]
+        [TestCase("getGenericValue")]
+        [TestCase("System.Number.GetSquared")]
+        [TestCase("System.List`1.Add")]
+        [TestCase("System.List`1.Expand")]
         public static void PrintSimpleFunctionBytecode(string functionName)
         {
             var assembly = ScriptCompilerTests.CompileSimpleScript();

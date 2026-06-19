@@ -153,6 +153,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 field.Initializer = ExpressionNode.ParseExpression(stream);
                 stream.Eat(DSharpTokenType.Semicolon);
             }
+            else if (stream.Check(DSharpTokenType.Semicolon))
+            {
+                stream.Eat(DSharpTokenType.Semicolon);
+            }
 
             return field;
         }

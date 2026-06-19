@@ -749,12 +749,66 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             {
                 var variable = LocalVariables.FirstOrDefault(v => v.Name == variableName);
                 
+                if (variable == null)
+                {
+                    return null;
+                }
                 if (variable.Type == null)
                 {
                     throw new InvalidOperationException($"Type of local variable ({variableName}) not specified in {Method}");
                 }
 
                 return Method.Assembly.GetType(variable.Type) as IDSharpType;
+            }
+
+            return null;
+        }
+        /// <summary>
+        /// Resolve expression member
+        /// </summary>
+        /// <param name="value">Value that contains type info or name</param>
+        /// <returns>Resolved member</returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public IDSharpMemberInfo? ExpressionMemberResolver(object value)
+        {
+            if (Method.DeclaringType == null)
+            {
+                return null;
+            }
+
+            string? name = null;
+
+            if (value is string str)
+            {
+                name = str;
+            }
+            else if (value is IdentifierExpressionNode identifier)
+            {
+                name = identifier.GetName(false);
+            }
+            if (name != null)
+            {
+                var declaringType = Method.DeclaringType;
+                var field = declaringType.Fields.FirstOrDefault(m => m.Name == name);
+
+                if (field != null)
+                {
+                    return field;
+                }
+
+                var property = declaringType.Properties.FirstOrDefault(m => m.Name == name);
+
+                if (property != null)
+                {
+                    return property;
+                }
+
+                var method = declaringType.Methods.FirstOrDefault(m => m.Name == name);
+
+                if (method != null)
+                {
+                    return method;
+                }
             }
 
             return null;

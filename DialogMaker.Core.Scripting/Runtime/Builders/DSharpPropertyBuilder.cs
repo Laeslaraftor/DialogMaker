@@ -6,7 +6,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken), IDSharpPropertyInfo
     {
         public override DSharpTypeBuilder DeclaringType { get; } = declaringType;
-        public DSharpTypeToken? PropertyType { get; set; }
+        public DSharpTypeToken? PropertyType
+        {
+            get
+            {
+                if (field == null && OriginalProperty != null)
+                {
+                    field = GetReplacedType(OriginalProperty.PropertyType);
+                }
+
+                return field;
+            }
+            set;
+        }
         public DSharpMethodBuilder? Getter
         {
             get
@@ -66,6 +78,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public string SetterMethodName { get; private set; } = string.Empty;
         public bool CanRead => Getter != null;
         public bool CanWrite => Setter != null;
+        internal IDSharpPropertyInfo? OriginalProperty { get; set; }
 
         IDSharpType IDSharpPropertyInfo.PropertyType
         {
@@ -86,6 +99,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         private bool _triedToFindSetter;
 
         #region Управление
+
+        internal override void Update()
+        {
+            base.Update();
+            _ = PropertyType;
+        }
 
         public DSharpMethodBuilder CreateGetter()
         {
