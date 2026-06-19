@@ -207,7 +207,7 @@ namespace DialogMaker.Core.Tests
             DSharpAssemblyBuilder assembly = new("SimpleScript", []);
             DSharpCompiler compiler = new(assembly);
 
-            compiler.CompileTypes(parsedScript);
+            compiler.CompileTrees(parsedScript);
 
             VariableNode? variableWithInitializer = null;
 
@@ -246,7 +246,7 @@ namespace DialogMaker.Core.Tests
             DSharpAssemblyBuilder assembly = new("SimpleScript", []);
             DSharpCompiler compiler = new(assembly);
 
-            compiler.CompileTypes(parsedScript);
+            compiler.CompileTrees(parsedScript);
 
             return assembly;
         }

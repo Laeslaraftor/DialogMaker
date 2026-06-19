@@ -49,7 +49,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
         #region Управление
 
-        public void CompileTypes(params IEnumerable<DSharpTreeRoot> treeRoots)
+        public void CompileTrees(params IEnumerable<DSharpTreeRoot> treeRoots)
         {
             _resolvedTypes.Clear();
             _createdTypes.Clear();
@@ -67,11 +67,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
 
             SetupTypes(_assemblyBuilder);
-
-            foreach (var enumValue in _enumValues.Keys)
-            {
-                enumValue.FieldType = _assemblyBuilder.NumberToken;
-            }
         }
 
         #endregion
@@ -380,7 +375,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
         private void SetupTypes(DSharpAssemblyBuilder assemblyBuilder)
         {
-            T? FindBaseMember<T>(Func<IDSharpType, T> selector, IDSharpType type, Predicate<T>? extraPredicate = null)
+            static T? FindBaseMember<T>(Func<IDSharpType, T> selector, IDSharpType type, Predicate<T>? extraPredicate = null)
                 where T : IDSharpMemberInfo
             {
                 var member = selector(type);
@@ -406,6 +401,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 return member;
             }
 
+            foreach (var enumValue in _enumValues.Keys)
+            {
+                enumValue.FieldType = _assemblyBuilder.NumberToken;
+            }
             foreach (var info in _createdGlobalVariables)
             {
                 if (info.Value.Type != null)

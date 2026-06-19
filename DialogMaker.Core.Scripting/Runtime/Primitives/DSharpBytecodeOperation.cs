@@ -26,6 +26,10 @@
         /// </summary>
         PopRepeat,
         /// <summary>
+        /// Remove previous 2 values from stack. This is analog of <c>PopOffsetRepeat 1 2</c>
+        /// </summary>
+        PopPreviousTwo,
+        /// <summary>
         /// Load value from argument to stack
         /// </summary>
         LoadArgument,

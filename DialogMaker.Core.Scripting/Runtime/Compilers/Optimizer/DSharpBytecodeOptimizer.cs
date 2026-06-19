@@ -3,8 +3,44 @@ using static DialogMaker.Core.Scripting.Runtime.Builders.DSharpBytecodeBuilder;
 
 namespace DialogMaker.Core.Scripting.Runtime.Compilers
 {
-    public static class DSharpBytecodeOptimizer
+    public static partial class DSharpBytecodeOptimizer
     {
+        public static void Optimize(DSharpAssemblyBuilder assembly)
+        {
+            HashSet<DSharpTypeBuilder> optimizedTypes = [];
+
+            void OptimizeType(DSharpTypeBuilder type)
+            {
+                if (type.ObjectType == DSharpObjectType.Enum ||
+                    !optimizedTypes.Add(type))
+                {
+                    return;
+                }
+                if (type.GenericTemplate != null)
+                {
+                    if (type.GenericTemplate is DSharpTypeBuilder genericTemplateBuilder)
+                    {
+                        OptimizeType(genericTemplateBuilder);
+                    }
+
+                    return;
+                }
+
+                foreach (var method in GetAllMethods(type))
+                {
+                    Optimize(method);
+                }
+            }
+
+            foreach (var type in assembly.Types)
+            {
+                OptimizeType(type);
+            }
+            foreach (var globalFunction in assembly.GlobalFunctions)
+            {
+                Optimize(globalFunction);
+            }
+        }
         public static void Optimize(DSharpMethodBuilder method)
         {
             if (method.IsAbstract || method.IsExtern)
@@ -13,55 +49,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
 
             var code = method.GetBytecodeBuilder();
-            Optimize(code);
+            OptimizePops(code);
+            OptimizeUselessCombinations(code);
         }
-        public static void Optimize(DSharpBytecodeBuilder builder)
-        {
-            var popRepeats = FindRepeatInstructions(builder, DSharpBytecodeOperation.Pop).ToList();
-            popRepeats.Reverse();
 
-            foreach (var popRange in popRepeats)
-            {
-                for (int i = 0; i < popRange.Length; i++)
-                {
-                    builder.Instructions.RemoveAt(popRange.StartIndex);
-                }
-
-                IndexInstruction newInstruction = new(builder, DSharpBytecodeOperation.PopRepeat, popRange.Length);
-                builder.Instructions.Insert(popRange.StartIndex, newInstruction);
-            }
-            
-            static bool PredicateIndexInstruction(IndexInstruction current, IndexInstruction? previous)
-            {
-                if (previous == null)
-                {
-                    return true;
-                }
-
-                return current.Index == previous.Index;
-            }
-
-            var popOffsetRepeats = FindRepeatInstructions<IndexInstruction>(builder, DSharpBytecodeOperation.PopOffset, PredicateIndexInstruction).ToList();
-            popOffsetRepeats.Reverse();
-
-            foreach (var popRange in popOffsetRepeats)
-            {
-                if (builder.Instructions[popRange.StartIndex] is not IndexInstruction indexInstruction)
-                {
-                    continue;
-                }
-
-                int index = indexInstruction.Index;
-
-                for (int i = 0; i < popRange.Length; i++)
-                {
-                    builder.Instructions.RemoveAt(popRange.StartIndex);
-                }
-
-                OffsetCountInstruction newInstruction = new(builder, DSharpBytecodeOperation.PopOffsetRepeat, index, popRange.Length);
-                builder.Instructions.Insert(popRange.StartIndex, newInstruction);
-            }
-        }
+        #region Дополнительно
 
         private static IEnumerable<InstructionRange> FindRepeatInstructions(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation)
         {
@@ -117,11 +109,29 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
         }
 
-        private struct InstructionRange(int startIndex, int length)
+        private static IEnumerable<DSharpMethodBuilder> GetAllMethods(DSharpTypeBuilder type)
+        {
+            foreach (var method in type.Methods)
+            {
+                yield return method;
+            }
+            foreach (var constructor in type.Constructors)
+            {
+                yield return constructor;
+            }
+        }
+
+        #endregion
+
+        #region Структуры
+
+        private readonly struct InstructionRange(int startIndex, int length)
         {
             public int StartIndex { get; } = startIndex;
             public int EndIndex { get; } = startIndex + length;
             public int Length { get; } = length;
         }
+
+        #endregion
     }
 }

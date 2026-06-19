@@ -36,6 +36,14 @@
 	public class Array<T>
 	{
 		public number Length { get; }
+		
+		public static func Copy(Array<T> source, number sourceIndex, Array<T> destination, number destinationIndex, number count)
+		{
+			for (number i = 0; i < count; i++)
+			{
+				destination[destinationIndex + i] = source[sourceIndex + i];
+			}
+		}
 	}
 	
 	public struct Color 
@@ -62,6 +70,39 @@
 		}
 		
 		public T Value { get; }
+	}
+	
+	public class List<T>
+	{
+		public List()
+		{
+			_items = new T[4];
+			Capacity = 4;
+		}
+		
+		public number Count { get; private set; }
+		public number Capacity { get; private set; }
+		
+		private T[] _items;
+		
+		public func Add(T item)
+		{
+			if (Count + 1 > Capacity)
+			{
+				Expand();
+			}
+			
+			_items[Count] = item;
+			Count++;
+		}
+		
+		private func Expand()
+		{
+			Capacity *= 2;
+			T[] newItems = new T[Capacity];
+			Array<T>.Copy(_items, 0, newItems, 0, _items.Length);			
+			_items = newItems;
+		}
 	}
 }
 
@@ -111,4 +152,16 @@ string getGenericValue()
 {
 	SomeGeneric<string> instance = new("test value");
 	return instance.Value;
+}
+number sum(number count)
+{
+	number result = 0;
+	number i = 0;
+	
+	while (i < count)
+	{
+		result += i++;
+	}
+	
+	return result;
 }

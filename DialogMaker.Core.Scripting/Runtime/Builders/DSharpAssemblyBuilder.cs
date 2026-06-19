@@ -405,20 +405,20 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                     });
                 }
 
-                if (!method.IsExtern && !method.IsAbstract)
-                {
-                    var code = newMethod.GetBytecodeBuilder();
-                    method.CopyBytecodeTo(code);
-                    bytecodeBuilders.Add(code);
-                }
+                //if (!method.IsExtern && !method.IsAbstract)
+                //{
+                //    var code = newMethod.GetBytecodeBuilder();
+                //    method.CopyBytecodeTo(code);
+                //    bytecodeBuilders.Add(code);
+                //}
 
                 replacedMembers.Add(method, newMethod);
             }
 
-            foreach (var bytecodeBuilder in bytecodeBuilders)
-            {
-                bytecodeBuilder.ReplaceMembers(replacedMembers);
-            }
+            //foreach (var bytecodeBuilder in bytecodeBuilders)
+            //{
+            //    bytecodeBuilder.ReplaceMembers(replacedMembers);
+            //}
 
             return newType;
         }

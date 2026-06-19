@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+using System.Text;
 
 namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
@@ -72,7 +73,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 otherInstructions.Add(newInstruction);
             }
         }
-        public void ReplaceMembers(IDictionary<IDSharpMemberInfo, IDSharpMemberInfo> replacedMembers)
+        /// <summary>
+        /// Replace members in instructions arguments
+        /// </summary>
+        /// <param name="replacedMembers">Dictionary of replaced members</param>
+        public void ReplaceMembers(IReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo> replacedMembers)
         {
             var assembly = Method.Assembly;
 
@@ -102,6 +107,66 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 }
             }
         }
+        /// <summary>
+        /// Find all instructions that references to specified instruction
+        /// </summary>
+        /// <param name="instruction">Instruction that referenced by other</param>
+        /// <returns>List of instructions that references to specified instruction</returns>
+        public List<ReferenceInstruction>? FindReferences(Instruction instruction)
+        {
+            List<ReferenceInstruction>? result = null;
+
+            foreach (var i in Instructions)
+            {
+                if (i is ReferenceInstruction referenceInstruction &&
+                    referenceInstruction.ReferencedInstruction == instruction)
+                {
+                    result ??= [];
+                    result.Add(referenceInstruction);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
+        public override string ToString()
+        {
+            if (Instructions.Count == 0)
+            {
+                return "[No code]";
+            }
+
+            StringBuilder builder = new();
+            var lineNumberLength = Instructions.Count.ToString().Length;
+            int line = 0;
+
+            string GetLine()
+            {
+                string result = line.ToString();
+
+                if (lineNumberLength > result.Length)
+                {
+                    for (int i = 0; i < lineNumberLength - result.Length; i++)
+                    {
+                        result = ' ' + result;
+                    }
+                }
+
+                return result;
+            }
+
+            foreach (var instruction in Instructions)
+            {
+                builder.AppendLine($"{GetLine()}: {instruction}");
+                line++;
+            }
+
+            return builder.ToString().TrimEnd();
+        }
 
         #endregion
 
@@ -112,18 +177,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
-        public Instruction Push(DSharpLiteralValue value)
+        public LiteralInstruction Push(DSharpLiteralValue value)
         {
             return CreateInstruction<LiteralInstruction>(this, DSharpBytecodeOperation.Push, value);
-        }
-        /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.Push"/>
-        /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public TypeInstruction Push(DSharpTypeToken type)
-        {
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.Push, type);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.Pop"/>
@@ -150,6 +206,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public IndexInstruction PopRepeat(int count)
         {
             return CreateInstruction<IndexInstruction>(this, DSharpBytecodeOperation.PopRepeat, count);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.PopPreviousTwo"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction PopPreviousTwo()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.PopPreviousTwo);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.PopOffsetRepeat"/>

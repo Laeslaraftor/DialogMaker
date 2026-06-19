@@ -7,6 +7,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
     {
         public DSharpToken? Current => Position < _lexer.Tokens.Count ? _lexer.Tokens[Position] : null;
         public int Position { get; set; }
+        public int Line => Current != null ? Current.Line : 0;
+        public int Column => Current != null ? Current.Column : 0;
 
         private readonly DSharpLexer _lexer = lexer;
 

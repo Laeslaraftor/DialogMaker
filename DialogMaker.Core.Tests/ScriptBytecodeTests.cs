@@ -1,11 +1,12 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Builders;
+using DialogMaker.Core.Scripting.Runtime.Compilers;
 using System.Diagnostics;
 
 namespace DialogMaker.Core.Tests
 {
     internal class ScriptBytecodeTests
     {
-        [Test, TestCase("repeat"), TestCase("getTextColor"), TestCase("getNumberNameType"), TestCase("getGenericValue"), TestCase("System.Number.GetSquared")]
+        [Test, TestCase("repeat"), TestCase("sum"), TestCase("getTextColor"), TestCase("getNumberNameType"), TestCase("getGenericValue"), TestCase("System.Number.GetSquared")]
         public static void PrintSimpleFunctionBytecode(string functionName)
         {
             var assembly = ScriptCompilerTests.CompileSimpleScript();
@@ -67,11 +68,14 @@ namespace DialogMaker.Core.Tests
         private static void ReadCode(DSharpMethodBuilder method)
         {
             var code = method.GetBytecodeBuilder();
+            Console.WriteLine("Raw bytecode:");
+            Console.WriteLine(code.ToString());
 
-            foreach (var instruction in code.Instructions)
-            {
-                Console.WriteLine(instruction.ToString());
-            }
+            DSharpBytecodeOptimizer.Optimize(method.Assembly);
+
+            Console.WriteLine();
+            Console.WriteLine("Optimized:");
+            Console.WriteLine(code.ToString());
         }
     }
 }

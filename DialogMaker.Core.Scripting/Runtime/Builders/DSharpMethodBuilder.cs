@@ -224,12 +224,29 @@
             {
                 throw new InvalidOperationException($"Extern method can not contains bytecode: {this}");
             }
-            if (_bytecodeBuilder == null && DeclaringType?.GenericTemplate != null)
+            if (_bytecodeBuilder == null)
             {
+                _bytecodeBuilder = new(this);
+
                 // ЗДЕСЬ НАДО ПРОПИСАТЬ КОПИРОВАНИЕ КОДА С ЗАМЕНОЙ ТИПОВ!!!
+                if (DeclaringType?.GenericTemplate != null)
+                {
+                    var templatedMembers = DeclaringType.GetTemplatedMembers();
+
+                    if (!templatedMembers.TryGetKey(this, out var methodTemplateMember))
+                    {
+                        throw new InvalidOperationException($"Unable to get bytecode builder for templated method \"{this}\" because it's template not found");
+                    }
+                    if (methodTemplateMember is not IDSharpMethodInfo methodTemplate)
+                    {
+                        throw new InvalidOperationException($"Template for method \"{this}\" must be a method, got \"{methodTemplateMember}\"");
+                    }
+
+                    methodTemplate.CopyBytecodeTo(_bytecodeBuilder);
+                    _bytecodeBuilder.ReplaceMembers(templatedMembers);
+                }
             }            
 
-            _bytecodeBuilder ??= new(this);
             return _bytecodeBuilder;
         }
         /// <summary>

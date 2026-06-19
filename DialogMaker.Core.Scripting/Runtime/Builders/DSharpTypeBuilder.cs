@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core.Scripting.Runtime.Builders
+﻿using System.Collections.ObjectModel;
+
+namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
     public class DSharpTypeBuilder(DSharpAssemblyBuilder assembly, bool isGeneric, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken) 
         : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken), IDSharpType
@@ -93,13 +95,25 @@
                 return field;
             }
         }
-        public IDSharpType? GenericTemplate { get; set; }
+        public IDSharpType? GenericTemplate
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    _templatedMembers = null;
+                }
+            }
+        }
 
         private readonly List<DSharpMethodBuilder> _constructors = [];
         private readonly List<DSharpMethodBuilder> _methods = [];
         private readonly List<DSharpPropertyBuilder> _properties = [];
         private readonly List<DSharpFieldBuilder> _fields = [];
         private readonly List<DSharpTypeBuilder> _genericTypes = [];
+        private ReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo>? _templatedMembers;
 
         #region Управление
 
@@ -182,6 +196,75 @@
         public bool RemoveField(DSharpFieldBuilder field)
         {
             return RemoveMember(_fields, field);
+        }
+
+        /// <summary>
+        /// Get dictionary of members that created based on <see cref="GenericTemplate"/>
+        /// </summary>
+        /// <returns>Dictionary of members that created based template</returns>
+        public ReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo> GetTemplatedMembers()
+        {
+            if (_templatedMembers != null)
+            {
+                return _templatedMembers;
+            }
+            if (GenericTemplate == null)
+            {
+                throw new InvalidOperationException($"Unable to get dictionary of members that created based on template because current type does not have template \"{this}\"");
+            }
+
+            Dictionary<IDSharpMemberInfo, IDSharpMemberInfo> members = [];
+
+            var properties = GenericTemplate.GetProperties();
+            var fields = GenericTemplate.GetFields();
+            var methods = GenericTemplate.GetMethods();
+            var constructors = GenericTemplate.GetConstructors();
+            var genericTypes = GenericTemplate.GetGenericTypes();
+
+            if (genericTypes.Length != GenericParameters.Count)
+            {
+                throw new InvalidOperationException($"Type must contains same amount of generic parameters that it's template");
+            }
+            if (properties.Length != Properties.Count)
+            {
+                throw new InvalidOperationException($"Type must contains same properties that it's template");
+            }
+            if (fields.Length != Fields.Count)
+            {
+                throw new InvalidOperationException($"Type must contains same fields that it's template");
+            }
+            if (methods.Length != Methods.Count)
+            {
+                throw new InvalidOperationException($"Type must contains same methods that it's template");
+            }
+            if (constructors.Length != Constructors.Count)
+            {
+                throw new InvalidOperationException($"Type must contains same constructors that it's template");
+            }
+
+            void Copy<T>(T[] templateMembers, IReadOnlyList<T> newMembers)
+                where T : IDSharpMemberInfo
+            {
+                for (int i = 0; i < templateMembers.Length; i++)
+                {
+                    members.Add(templateMembers[i], newMembers[i]);
+                }
+            }
+
+            for (int i = 0; i < genericTypes.Length; i++)
+            {
+                var newType = (IDSharpType)Assembly.GetType(GenericParameters[i]);
+                members.Add(genericTypes[i], newType);
+            }
+
+            Copy(properties, Properties);
+            Copy(fields, Fields);
+            Copy(methods, Methods);
+            Copy(constructors, Constructors);
+
+            _templatedMembers = new(members);
+
+            return _templatedMembers;
         }
 
         public override string ToString()

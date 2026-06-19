@@ -32,8 +32,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             };
 
             CompileStatement(method, body, code, settings, context);
-
-            DSharpBytecodeOptimizer.Optimize(method);
         }
 
         #region Statements
@@ -218,6 +216,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 CompileStatement(method, forStatement.Body, code, settings, context);
                 CompileExpression(method, forStatement.Increment, settings, null, context);
+                code.Jump(startExpressionOperation);
                 code.Instructions.Add(context.CurrentLoopEndInstruction);
             }
             else if (statement is ContinueStatementNode continueStatement)
@@ -431,7 +430,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                         member = propertyField;
                     }
-                    
+
                     code.StorePropertyOrField(member);
                     code.Pop();
                 }
@@ -977,32 +976,63 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 return method.DeclaringType;
             }
+            else if (expression is IncrementExpressionNode incrementExpression)
+            {
+                if (incrementExpression.Expression == null)
+                {
+                    throw new ArgumentException($"Invalid expression: {expression}", nameof(expression));
+                }
+
+                bool popLast = parentExpression == null;
+
+                return CompileValueExpressionOperation(method, code, incrementExpression.Expression, () => code.Increment(), settings, context, popLast);
+            }
+            else if (expression is DecrementExpressionNode decrementExpression)
+            {
+                if (decrementExpression.Expression == null)
+                {
+                    throw new ArgumentException($"Invalid expression: {expression}", nameof(expression));
+                }
+
+                bool popLast = parentExpression == null;
+
+                return CompileValueExpressionOperation(method, code, decrementExpression.Expression, () => code.Decrement(), settings, context, popLast);
+            }
 
             throw new ArgumentException($"Unable to compile expression: {expression}", nameof(expression));
         }
 
-        private void CompileValueExpressionOperation(DSharpMethodBuilder method, DSharpBytecodeBuilder code, ExpressionNode expression, Action operation, DSharpMethodCompileSettings settings = default, DSharpCompilerContext context = default)
+        private IDSharpMemberInfo? CompileValueExpressionOperation(DSharpMethodBuilder method, DSharpBytecodeBuilder code, ExpressionNode expression, Action operation, DSharpMethodCompileSettings settings = default, DSharpCompilerContext context = default, bool popLast = true)
         {
             if (expression is IdentifierExpressionNode identifier)
             {
                 var localName = identifier.GetName(false);
                 var parameter = method.Parameters.FirstOrDefault(p => p.Name == localName);
+                bool success = false;
 
                 if (parameter != null)
                 {
+                    success = true;
                     code.LoadArgument(parameter);
                     operation();
                     code.StoreArgument(parameter);
-                    code.Pop();
-                    return;
                 }
-                if (settings.TryGetVariable(localName, out var variable))
+                else if (settings.TryGetVariable(localName, out var variable))
                 {
+                    success = true;
                     code.LoadLocal(variable);
                     operation();
                     code.StoreLocal(variable);
-                    code.Pop();
-                    return;
+                }
+
+                if (success)
+                {
+                    if (popLast)
+                    {
+                        code.Pop();
+                    }
+
+                    return null;
                 }
             }
 
@@ -1014,7 +1044,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             code.LoadPropertyOrField(member);
             operation();
             code.StorePropertyOrField(member);
-            code.Pop();
+
+            if (popLast)
+            {
+                code.Pop();
+            }
+
+            return member;
         }
 
         #endregion

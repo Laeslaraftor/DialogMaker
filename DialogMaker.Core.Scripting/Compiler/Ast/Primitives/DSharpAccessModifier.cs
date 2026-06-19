@@ -22,6 +22,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
         /// <summary>
         /// Internal access modifier. Object type or member can be accessed only in assembly that contains it
         /// </summary>
-        Internal = DSharpTokenType.Interface
+        Internal = DSharpTokenType.Internal
     }
 }

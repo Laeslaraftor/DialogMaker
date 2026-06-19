@@ -25,6 +25,14 @@
             {
                 return new(builder, Operation);
             }
+            /// <summary>
+            /// Get array of arguments of this instruction
+            /// </summary>
+            /// <returns>Array of arguments</returns>
+            public virtual object[] GetArguments()
+            {
+                return [];
+            }
 
             /// <summary>
             /// <inheritdoc/>
@@ -52,6 +60,14 @@
             public override Instruction Copy(DSharpBytecodeBuilder builder)
             {
                 return new IndexInstruction(builder, Operation, Index);
+            }
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <returns><inheritdoc/></returns>
+            public override object[] GetArguments()
+            {
+                return [Index];
             }
 
             /// <summary>
@@ -82,6 +98,14 @@
             {
                 return new OffsetCountInstruction(builder, Operation, Offset, Count);
             }
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <returns><inheritdoc/></returns>
+            public override object[] GetArguments()
+            {
+                return [Offset, Count];
+            }
 
             /// <summary>
             /// <inheritdoc/>
@@ -109,6 +133,14 @@
             public override Instruction Copy(DSharpBytecodeBuilder builder)
             {
                 return new ParameterInstruction(builder, Operation, Parameter);
+            }
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <returns><inheritdoc/></returns>
+            public override object[] GetArguments()
+            {
+                return [Parameter];
             }
 
             /// <summary>
@@ -143,6 +175,14 @@
             {
                 return new TypeInstruction(builder, Operation, MemberInfo);
             }
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <returns><inheritdoc/></returns>
+            public override object[] GetArguments()
+            {
+                return [MemberInfo];
+            }
 
             /// <summary>
             /// <inheritdoc/>
@@ -171,6 +211,14 @@
             {
                 return new SizedTypeInstruction(builder, Operation, MemberInfo, Size);
             }
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <returns><inheritdoc/></returns>
+            public override object[] GetArguments()
+            {
+                return [Size];
+            }
 
             /// <summary>
             /// <inheritdoc/>
@@ -198,6 +246,14 @@
             public override Instruction Copy(DSharpBytecodeBuilder builder)
             {
                 return new LiteralInstruction(builder, Operation, Value);
+            }
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <returns><inheritdoc/></returns>
+            public override object[] GetArguments()
+            {
+                return [Value];
             }
 
             /// <summary>
@@ -235,6 +291,19 @@
                     ReferencedInstruction = ReferencedInstruction
                 };
             }
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <returns><inheritdoc/></returns>
+            public override object[] GetArguments()
+            {
+                if (ReferencedInstruction == null)
+                {
+                    return [];
+                }
+
+                return [ReferencedInstruction];
+            }
 
             /// <summary>
             /// <inheritdoc/>
@@ -242,7 +311,14 @@
             /// <returns><inheritdoc/></returns>
             public override string ToString()
             {
-                return $"{Operation} [{ReferencedInstruction}]";
+                if (ReferencedInstruction == null)
+                {
+                    return base.ToString();
+                }
+
+                int index = BytecodeBuilder.Instructions.IndexOf(ReferencedInstruction);
+
+                return $"{Operation} [{index}: {ReferencedInstruction}]";
             }
 
             #endregion
