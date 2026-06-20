@@ -9,6 +9,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         public Dictionary<string, DSharpFieldBuilder>? IdentifiersAsField { get; set; }
         public Dictionary<string, DSharpPropertyBuilder>? IdentifiersAsProperties { get; set; }
         public Dictionary<VariableNode, DSharpMethodBuilderParameter>? LocalVariables { get; set; }
+        public HashSet<DSharpMethodBuilder>? AlwaysReturnMethods { get; set; }
         public HashSet<CallExpressionNode>? CallingsToAwait { get; set; }
         public bool DoNotCompileEndPointMember { get; set; }
 
@@ -39,6 +40,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             throw new ArgumentException($"Unknown variable: {name}", nameof(name));
         }
-        public bool Await(CallExpressionNode callExpression) => CallingsToAwait?.Contains(callExpression) == true;
+        public readonly bool Await(CallExpressionNode callExpression) => CallingsToAwait?.Contains(callExpression) == true;
+        public readonly bool AddReturnMethod(DSharpMethodBuilder method) => AlwaysReturnMethods?.Add(method) == true;
+        public readonly bool AlwaysReturn(DSharpMethodBuilder method) => AlwaysReturnMethods?.Contains(method) == true;
     }
 }

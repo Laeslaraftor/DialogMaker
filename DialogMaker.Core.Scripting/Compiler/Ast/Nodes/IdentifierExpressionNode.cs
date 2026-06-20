@@ -39,7 +39,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
             else
             {
-                stream.ThrowPositionException("Required identifier or standard type");
+                stream.ThrowPositionException($"Required identifier or standard type, got: {currentType}");
                 return null;
             }
 

@@ -12,6 +12,8 @@ namespace DialogMaker.Core.Scripting.Runtime
         public DSharpAccessModifier Access { get; }
         public bool IsStatic { get; }
 
+        public bool IsDeclaration => throw new NotImplementedException();
+
         IDSharpType? IDSharpMemberInfo.DeclaringType => DeclaringType;
         IDSharpAssembly IDSharpMemberInfo.Assembly => Assembly;
     }

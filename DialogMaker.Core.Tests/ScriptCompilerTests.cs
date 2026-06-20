@@ -32,13 +32,13 @@ namespace DialogMaker.Core.Tests
                         PrintType(property.PropertyType);
                         Console.Write($"{property.Name} {{ ");
 
-                        if (property.Getter != null)
+                        if (property.CanRead)
                         {
                             Console.Write("get;");
                         }
-                        if (property.Setter != null)
+                        if (property.CanWrite)
                         {
-                            if (property.Getter != null)
+                            if (property.CanRead)
                             {
                                 Console.Write(" ");
                             }

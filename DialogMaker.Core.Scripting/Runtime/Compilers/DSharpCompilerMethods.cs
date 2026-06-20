@@ -25,25 +25,32 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         {
             var code = method.GetBytecodeBuilder();
             settings.LocalVariables ??= [];
+            settings.AlwaysReturnMethods ??= [];
             DSharpCompilerContext context = new(_context, method)
             {
                 TypeResolver = code.ExpressionTypeResolver,
                 MemberResolver = code.ExpressionMemberResolver,
             };
 
-            CompileStatement(method, body, code, settings, context);
+            CompileStatement(method, body, 0, code, settings, context);
+
+            if (method.ReturnType != null &&
+                !settings.AlwaysReturn(method))
+            {
+                throw new ArgumentException($"Not all path returns value in \"{method}\": {body}");
+            }
         }
 
         #region Statements
 
-        private void CompileStatement(DSharpMethodBuilder method, BlockStatementNode blockStatement, DSharpBytecodeBuilder code, DSharpMethodCompileSettings settings = default, DSharpCompilerContext context = default)
+        private void CompileStatement(DSharpMethodBuilder method, BlockStatementNode blockStatement, int depth, DSharpBytecodeBuilder code, DSharpMethodCompileSettings settings = default, DSharpCompilerContext context = default)
         {
             foreach (var statement in blockStatement.Statements)
             {
-                CompileStatement(method, statement, code, settings, context);
+                CompileStatement(method, statement, depth, code, settings, context);
             }
         }
-        private void CompileStatement(DSharpMethodBuilder method, StatementNode statement, DSharpBytecodeBuilder code, DSharpMethodCompileSettings settings = default, DSharpCompilerContext context = default)
+        private void CompileStatement(DSharpMethodBuilder method, StatementNode statement, int depth, DSharpBytecodeBuilder code, DSharpMethodCompileSettings settings = default, DSharpCompilerContext context = default)
         {
             DSharpMethodBuilderParameter GetVariable(VariableNode? node)
             {
@@ -57,7 +64,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             if (statement is BlockStatementNode blockStatement)
             {
-                CompileStatement(method, blockStatement, code, settings, context);
+                CompileStatement(method, blockStatement, depth + 1, code, settings, context);
             }
             else if (statement is VariableStatementNode variableStatement)
             {
@@ -104,6 +111,29 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
 
                 CompileExpression(method, expressionStatement.Expression, settings, null, context);
+
+                if (depth == 0)
+                {
+                    if (expressionStatement.Expression.IsNullExpression())
+                    {
+                        settings.AddReturnMethod(method);
+                        return;
+                    }
+
+                    try
+                    {
+                        var expressionType = expressionStatement.Expression.GetExpressionType(_assemblyBuilder, context);
+
+                        if (expressionType != null && 
+                            (expressionType is IDSharpType || expressionType.TryGetReturnType(out _)))
+                        {
+                            settings.AddReturnMethod(method);
+                        }
+                    }
+                    catch
+                    {
+                    }
+                }
             }
             else if (statement is IfStatementNode ifStatement)
             {
@@ -121,7 +151,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     throw new ArgumentException($"If statement should contains then branch: {statement}", nameof(statement));
                 }
 
-                CompileStatement(method, ifStatement.ThenBranch, code, settings, context);
+                CompileStatement(method, ifStatement.ThenBranch, depth + 1, code, settings, context);
 
                 DSharpBytecodeBuilder.ReferenceInstruction? skipOtherOperation = null;
 
@@ -139,8 +169,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     {
                         throw new ArgumentException($"Invalid else branch: {ifStatement.ElseBranch}", nameof(statement));
                     }
+                    if (depth == 0 && ifStatement.ElseBranch is BlockStatementNode elseBlock)
+                    {
+                        var containsReturn = elseBlock.Statements.Any(s => s is ReturnStatementNode);
 
-                    CompileStatement(method, ifStatement.ElseBranch, code, settings, context);
+                        if (containsReturn)
+                        {
+                            settings.AddReturnMethod(method);
+                        }
+                    }
+
+                    CompileStatement(method, ifStatement.ElseBranch, depth + 1, code, settings, context);
                 }
 
                 skipOtherOperation?.ReferencedInstruction = code.Empty();
@@ -169,7 +208,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 if (whileStatement.Body != null)
                 {
-                    CompileStatement(method, whileStatement.Body, code, settings, context);
+                    CompileStatement(method, whileStatement.Body, depth + 1, code, settings, context);
                 }
 
                 code.Jump(expressionStartOperation);
@@ -202,7 +241,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     throw new ArgumentException($"Condition should return boolean value: {statement}", nameof(statement));
                 }
 
-                CompileStatement(method, forStatement.Initializer, code, settings, context);
+                CompileStatement(method, forStatement.Initializer, depth + 1, code, settings, context);
                 var startExpressionOperation = code.Empty(true);
                 CompileValueExpression(method, forStatement.Condition, settings, null, context);
                 var skipOperation = code.JumpIfFalse();
@@ -217,7 +256,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 skipOperation.ReferencedInstruction = context.CurrentLoopEndInstruction;
                 code.Instructions.Remove(context.CurrentLoopEndInstruction);
 
-                CompileStatement(method, forStatement.Body, code, settings, context);
+                CompileStatement(method, forStatement.Body, depth + 1, code, settings, context);
                 CompileExpression(method, forStatement.Increment, settings, null, context);
                 code.Jump(startExpressionOperation);
                 code.Instructions.Add(context.CurrentLoopEndInstruction);
@@ -291,6 +330,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     throw new InvalidOperationException($"Return statement should returns some value in method that returning value: {statement}");
                 }
+                if (depth == 0)
+                {
+                    settings.AddReturnMethod(method);
+                }
 
                 code.Return();
             }
@@ -298,6 +341,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             {
                 throw new ArgumentException($"Invalid statement in current context: {statement}", nameof(statement));
             }
+
+
         }
 
         #endregion
@@ -457,9 +502,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 CompileValueExpressionOperation(method, code, decrementExpression.Expression, () => code.Decrement(), settings, context);
             }
             else if (expression is CallExpressionNode ||
-                     expression is MemberAccessExpressionNode)
+                     expression is MemberAccessExpressionNode ||
+                     expression is BinaryExpressionNode ||
+                     expression is UnaryExpressionNode ||
+                     expression is LiteralExpressionNode)
             {
                 CompileValueExpression(method, expression, settings, parentExpression, context);
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid expression for current context: {expression}", nameof(context));
             }
         }
 
@@ -858,9 +910,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     var typeToken = ResolveType(method, typeInfo);
                     type = (IDSharpType)_assemblyBuilder.GetType(typeToken);
                 }
+                if (type.ObjectType == DSharpObjectType.Interface)
+                {
+                    throw new ArgumentException($"Can not create new instance of interface \"{type}\": {expression}", nameof(expression));
+                }
+                if (type.IsAbstract)
+                {
+                    throw new ArgumentException($"Can not create new instance of abstract object \"{type}\": {expression}", nameof(expression));
+                }
 
                 if (newExpression.Parameters.Count == 0)
                 {
+                    var constructors = type.GetConstructors();
+
+                    if (constructors.Length > 0)
+                    {
+                        var noParametersConstructor = constructors.FirstOrDefault(c => c.GetParameters().Length == 0) 
+                            ?? throw new InvalidOperationException($"Can not create new instance of object \"{type}\" because it not contains constructor with no parameters");
+                    }
+
                     code.New(type);
                 }
                 else

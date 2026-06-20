@@ -11,6 +11,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         /// Fields creating only when property have not custom getter and setter
         /// </summary>
         private readonly Dictionary<DSharpPropertyBuilder, DSharpFieldBuilder> _propertyFields = [];
+        private readonly HashSet<DSharpPropertyBuilder> _propertiesWithCustomAccessors = [];
 
         private void CompileProperty(DSharpPropertyBuilder property, FieldNode node)
         {
@@ -31,35 +32,49 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 return valueField;
             }
-             
-            if (node.CanRead)
+            void CreateAccessor(Func<DSharpMethodBuilder> fabric, BlockStatementNode? customAccessor, DSharpAccessModifier access)
             {
-                var getterMethod = property.CreateGetter();
-                getterMethod.Access = node.GetterAccess;
+                DSharpMethodBuilder? accessorMethod = fabric();
 
-                if (node.Getter != null)
+                if (node.GetterAccess == DSharpAccessModifier.Protected)
                 {
-                    CompileMethod(getterMethod, node.Getter, settings);
+                    accessorMethod.Access = DSharpAccessModifier.Protected;
+                }
+                else
+                {
+                    accessorMethod.Access = DSharpAccessModifier.Private;
+                }
+
+                if (customAccessor != null)
+                {
+                    _propertiesWithCustomAccessors.Add(property);
+                    CompileMethod(accessorMethod, customAccessor, settings);
                 }
                 else
                 {
                     GetValueField();
-                    CompileGetterMethod(getterMethod, settings);
+                    CompileGetterMethod(accessorMethod, settings);
+                }
+            }
+
+            if (node.CanRead)
+            {
+                property.CanRead = true;
+
+                if (property.DeclaringType.ObjectType != DSharpObjectType.Interface ||
+                    (property.DeclaringType.ObjectType == DSharpObjectType.Interface && node.Getter != null))
+                {
+                    CreateAccessor(property.CreateGetter, node.Getter, node.GetterAccess);
                 }
             }
             if (node.CanWrite)
             {
-                var setterMethod = property.CreateSetter();
-                setterMethod.Access = node.SetterAccess;
+                property.CanWrite = true;
 
-                if (node.Setter != null)
+                if (property.DeclaringType.ObjectType != DSharpObjectType.Interface ||
+                    (property.DeclaringType.ObjectType == DSharpObjectType.Interface && node.Setter != null))
                 {
-                    CompileMethod(setterMethod, node.Setter, settings);
-                }
-                else
-                {
-                    GetValueField();
-                    CompileSetterMethod(setterMethod, settings);
+                    CreateAccessor(property.CreateSetter, node.Setter, node.SetterAccess);
                 }
             }
         }

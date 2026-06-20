@@ -27,8 +27,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             DSharpBytecodeOperation.LoadInstanceProperty
         ]);
         private static readonly Range _uselessPopCombinationsRange = new(0, 5);
-        private static readonly UselessCombination[] _uselessCombinations =
-        [
+        private static readonly ReadOnlyCollection<UselessCombination> _uselessCombinations =
+        new([
             new(
                 [
                     new(_storeParameterOperations, typeof(ParameterInstruction), 2),
@@ -106,19 +106,27 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 ],
                 UselessCombinationRemovePopOffset12
             ),
-        ];
+        ]);
+        private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _finalUselessOperations =
+        new([
+            DSharpBytecodeOperation.Pop,
+            DSharpBytecodeOperation.PopOffset,
+            DSharpBytecodeOperation.PopOffsetRepeat,
+            DSharpBytecodeOperation.PopPreviousTwo,
+            DSharpBytecodeOperation.PopRepeat
+        ]);
         private static bool _uselessCombinationOptimizationCheckReferences = true;
 
         private static int OptimizeUselessCombinations(DSharpBytecodeBuilder builder)
         {
-            return OptimizeUselessCombinations(builder, new(0, _uselessCombinations.Length - 1), 0, int.MaxValue);
+            return OptimizeUselessCombinations(builder, new(0, _uselessCombinations.Count - 1), 0, int.MaxValue);
         }
         private static int OptimizeUselessCombinations(DSharpBytecodeBuilder builder, Range uselessCombinationsRange, int startInstruction, int maxCombinationsCount)
         {
             var instructions = builder.Instructions;
             Dictionary<int, UselessCombination> startIndexOfUselessCombination = [];
             int offset = 0;
-            int maxLength = Math.Min(_uselessCombinations.Length, uselessCombinationsRange.Start.Value + uselessCombinationsRange.End.Value + 1);
+            int maxLength = Math.Min(_uselessCombinations.Count, uselessCombinationsRange.Start.Value + uselessCombinationsRange.End.Value + 1);
 
             for (int i = startInstruction; i < builder.Instructions.Count; i++)
             {
@@ -144,6 +152,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 offset += info.Value.Remove(builder, startIndex);
             }
 
+            if (maxCombinationsCount == int.MaxValue)
+            {
+                while (instructions.Count > 0 &&
+                       _finalUselessOperations.Contains(instructions[^1].Operation))
+                {
+                    ReplaceInstructionReferences(builder, instructions.Count - 1);
+                    offset++;
+                }
+            }
+
             return offset;
         }
 
@@ -164,7 +182,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             var instructions = builder.Instructions;
             int lastPushIndex = startIndex + uselessCombination.Definitions.Count - 1;
             var lastPush = instructions[lastPushIndex];
-            
+
             if (_uselessCombinationOptimizationCheckReferences)
             {
                 var references = builder.FindReferences(lastPush);
@@ -284,7 +302,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         {
             var oldInstruction = builder.Instructions[instructionIndex];
             builder.Instructions.RemoveAt(instructionIndex);
-            var newInstruction = builder.Instructions[instructionIndex];
+
+            Instruction newInstruction;
+
+            if (instructionIndex >= builder.Instructions.Count)
+            {
+                newInstruction = builder.Instructions[^1];
+            }
+            else
+            {
+                newInstruction = builder.Instructions[instructionIndex];
+            }
 
             ReplaceInstructionReferences(builder, oldInstruction, newInstruction);
         }

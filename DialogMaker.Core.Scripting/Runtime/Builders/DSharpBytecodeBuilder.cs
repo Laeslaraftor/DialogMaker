@@ -22,6 +22,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// </summary>
         public List<Instruction> Instructions { get; } = [];
 
+        private readonly DSharpCompilerContext _context = new()
+        {
+            Assembly = method.Assembly,
+            CurrentMember = method
+        };
+
         #region Управление
 
         /// <summary>
@@ -241,6 +247,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 throw new ArgumentException($"Provided method is not constructor: {constructor}", nameof(constructor));
             }
 
+            CheckAccess(constructor);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.New, constructor);
         }
         /// <summary>
@@ -250,6 +257,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns></returns>
         public Instruction New(IDSharpType type)
         {
+            CheckAccess(type);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.New, type);
         }
         /// <summary>
@@ -259,6 +267,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns></returns>
         public TypeInstruction NewArray(IDSharpType type)
         {
+            CheckAccess(type);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.NewArray, type);
         }
 
@@ -307,6 +316,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns></returns>
         public TypeInstruction LoadField(IDSharpFieldInfo member)
         {
+            CheckAccess(member);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadField, member);
         }
         /// <summary>
@@ -316,6 +326,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns></returns>
         public TypeInstruction LoadInstanceField(IDSharpFieldInfo member)
         {
+            CheckAccess(member);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadInstanceField, member);
         }
         /// <summary>
@@ -325,6 +336,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns></returns>
         public TypeInstruction StoreField(IDSharpFieldInfo member)
         {
+            CheckAccess(member);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreField, member);
         }
         /// <summary>
@@ -334,6 +346,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns></returns>
         public TypeInstruction StoreInstanceField(IDSharpFieldInfo member)
         {
+            CheckAccess(member);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreInstanceField, member);
         }
 
@@ -344,6 +357,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns></returns>
         public TypeInstruction LoadProperty(IDSharpPropertyInfo member)
         {
+            CheckAccess(member);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadProperty, member);
         }
         /// <summary>
@@ -353,6 +367,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns></returns>
         public TypeInstruction LoadInstanceProperty(IDSharpPropertyInfo member)
         {
+            CheckAccess(member);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadInstanceProperty, member);
         }
         /// <summary>
@@ -362,6 +377,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns></returns>
         public TypeInstruction StoreProperty(IDSharpPropertyInfo member)
         {
+            CheckAccess(member);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreProperty, member);
         }
         /// <summary>
@@ -371,6 +387,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns></returns>
         public TypeInstruction StoreInstanceProperty(IDSharpPropertyInfo member)
         {
+            CheckAccess(member);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreInstanceProperty, member);
         }
         /// <summary>
@@ -476,6 +493,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns></returns>
         public TypeInstruction Call(IDSharpMethodInfo method)
         {
+            CheckAccess(method);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.Call, method);
         }
         /// <summary>
@@ -485,6 +503,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns></returns>
         public TypeInstruction AwaitCall(IDSharpMethodInfo method)
         {
+            CheckAccess(method);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.AwaitCall, method);
         }
         /// <summary>
@@ -494,6 +513,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns></returns>
         public TypeInstruction CallInstance(IDSharpMethodInfo method)
         {
+            CheckAccess(method);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.CallInstance, method);
         }
         /// <summary>
@@ -503,6 +523,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns></returns>
         public TypeInstruction AwaitCallInstance(IDSharpMethodInfo method)
         {
+            CheckAccess(method);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.AwaitCallInstance, method);
         }
         /// <summary>
@@ -821,6 +842,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             Instructions.Add(result);
 
             return result;
+        }
+        private void CheckAccess(IDSharpMemberInfo member)
+        {
+            if (!_context.CanAccessTo(member))
+            {
+                _context.ThrowCanNotAccessException(member);
+            }
         }
 
         #endregion

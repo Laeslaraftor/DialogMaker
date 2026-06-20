@@ -35,7 +35,91 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public DSharpBytecodeBuilder.Instruction? CurrentLoopStartInstruction { get; set; }
         public DSharpBytecodeBuilder.Instruction? CurrentLoopEndInstruction { get; set; }
 
-        #region Управление
+        #region Доступ
+
+        public readonly bool CanAccessTo(IDSharpMemberInfo member)
+        {
+            if (member.DeclaringType == null &&
+                member.Access == DSharpAccessModifier.Public)
+            {
+                return true;
+            }
+            if (CurrentMember != null)
+            {
+                IDSharpType? memberType = CurrentMember as IDSharpType ?? CurrentMember.DeclaringType;
+                IDSharpType? rootType = memberType;
+
+                while (rootType != null)
+                {
+                    if (member.DeclaringType == rootType)
+                    {
+                        return true;
+                    }
+
+                    rootType = rootType.DeclaringType;
+                }
+
+                bool CheckInBaseTypes(DSharpAssemblyBuilder assembly, IDSharpType type)
+                {
+                    foreach (var baseMember in type.GetAllMembers(m => m.Access == DSharpAccessModifier.Public ||
+                                                                       m.Access == DSharpAccessModifier.Protected ||
+                                                                       m.Access == DSharpAccessModifier.Internal && m.Assembly == assembly))
+                    {
+                        if (baseMember == member)
+                        {
+                            return true;
+                        }
+                    }
+
+                    foreach (var baseType in type.GetBaseTypes())
+                    {
+                        if (CheckInBaseTypes(assembly, baseType))
+                        {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }
+
+                if (Assembly != null &&
+                    memberType != null &&
+                    CheckInBaseTypes(Assembly, memberType))
+                {
+                    return true;
+                }
+            }
+
+            var currentType = CurrentMember as IDSharpType ?? CurrentMember?.DeclaringType;
+
+            while (currentType != null)
+            {
+                if (currentType.Access != DSharpAccessModifier.Public)
+                {
+                    return false;
+                }
+
+                currentType = currentType.DeclaringType;
+            }
+
+            return member.Access == DSharpAccessModifier.Public;
+        }
+        [DoesNotReturn]
+        public readonly void ThrowCanNotAccessException(IDSharpMemberInfo member)
+        {
+            string message = $"Can not access to \"{member}\"";
+
+            if (CurrentMember != null)
+            {
+                message += $" from \"{CurrentMember}\"";
+            }
+
+            throw new InvalidOperationException(message);
+        }
+
+        #endregion
+
+        #region Поиск типов
 
         /// <summary>
         /// Try to resolve type that referenced by identifier. 
@@ -286,7 +370,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             if (result == null)
             {
-                string? @namespace = CurrentMember?.DeclaringType?.Namespace;
+                string? @namespace = CurrentMember?.DeclaringType?.FullName;
                 result = InternalTryResolveType(@namespace, typeName);
 
                 if (result == null)
@@ -310,7 +394,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                         }
                     }
                 }
-            }           
+            }
             if (result != null)
             {
                 if (Assembly == null)
@@ -780,7 +864,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             throw new ArgumentException($"Unable to find overload for method at {CurrentMember}", nameof(members));
         }
 
-
         private readonly bool TryResolveMember(string name, bool recursive, [NotNullWhen(true)] out IDSharpMemberInfo? result)
         {
             result = null;
@@ -844,9 +927,24 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 ResolvedTypes?.Add(typeName, token);
                 return token;
             }
-            if (Assembly != null && CurrentMember?.DeclaringType != null)
+            if (Assembly != null && CurrentMember != null)
             {
-                var rootType = CurrentMember.DeclaringType;
+                if (CurrentMember is IDSharpType typeCurrentMember &&
+                    typeCurrentMember.Name == typeName)
+                {
+                    return Assembly.GetTypeToken(typeCurrentMember);
+                }
+
+                IDSharpType? rootType;
+
+                if (CurrentMember is IDSharpType memberAsType)
+                {
+                    rootType = memberAsType;
+                }
+                else
+                {
+                    rootType = CurrentMember.DeclaringType;
+                }
 
                 while (rootType != null)
                 {

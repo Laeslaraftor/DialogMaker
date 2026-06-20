@@ -229,7 +229,17 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                         stream.ThrowPositionException("Multiple override modifiers");
                     }
 
-                    memberInfo.IsSealed = true;
+                    memberInfo.IsOverride = true;
+                    eatToken = true;
+                }
+                else if (currentToken.Type == DSharpTokenType.ReadOnly)
+                {
+                    if (memberInfo.IsReadOnly)
+                    {
+                        stream.ThrowPositionException("Multiple readonly modifiers");
+                    }
+
+                    memberInfo.IsReadOnly = true;
                     eatToken = true;
                 }
                 else if (currentToken.Type == DSharpTokenType.Sealed)
@@ -465,6 +475,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             while (!stream.Check(DSharpTokenType.RightBrace))
             {
+                if (stream.Check(DSharpTokenType.Comment) ||
+                    stream.Check(DSharpTokenType.MultilineComment))
+                {
+                    stream.Eat(stream.Current!.Type);
+                    continue;
+                }
                 if (IsObjectDeclaration(stream))
                 {
                     var child = Parse(stream);
@@ -582,6 +598,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             /// Static flag of member
             /// </summary>
             public bool IsStatic { get; set; }
+            public bool IsReadOnly { get; set; }
             /// <summary>
             /// Member's return type
             /// </summary>

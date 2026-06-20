@@ -3,6 +3,7 @@ using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Runtime.Builders;
 using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
+using System.Net.WebSockets;
 
 namespace DialogMaker.Core.Scripting.Runtime.Compilers
 {
@@ -59,6 +60,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             _enumTypes.Clear();
             _enumValues.Clear();
             _usings.Clear();
+            _propertiesWithCustomAccessors.Clear();
+            _propertyFields.Clear();
             CurrentNamespace = null;
 
             foreach (var treeRoot in treeRoots)
@@ -170,11 +173,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             {
                 throw new ArgumentException($"Object can not be abstract and static: {declaration}", nameof(declaration));
             }
+            if (parent == null && declaration.Access != DSharpAccessModifier.Public)
+            {
+                throw new ArgumentException($"Objects in namespace only can be public: {declaration}", nameof(declaration));
+            }
 
             var type = assemblyBuilder.CreateType(declaration.Identifier.Name, parent);
             type.IsStatic = declaration.IsStatic;
             type.IsAbstract = declaration.IsAbstract;
-            type.ObjectType = (DSharpObjectType)declaration.Type;
+            type.ObjectType = declaration.Type;
             type.Access = declaration.Access;
             type.Namespace = CurrentNamespace?.Identifier?.Name;
 
@@ -248,7 +255,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             DSharpFieldBuilder field = declareType.CreateField(fieldNode.Identifier.GetName(false));
             field.Access = fieldNode.Access;
             field.IsStatic = fieldNode.IsStatic;
-            field.IsReadOnly = field.IsReadOnly;
+            field.IsReadOnly = fieldNode.IsReadOnly;
 
             if (fieldNode.Initializer?.TrySimplifyToLiteral(out var rawValue) == true)
             {
@@ -275,11 +282,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             property.IsAbstract = fieldNode.Mode == DSharpObjectMemberMode.Abstract;
             property.IsVirtual = fieldNode.Mode == DSharpObjectMemberMode.Virtual;
 
-            if (fieldNode.CanRead)
+            if (fieldNode.CanRead && 
+                ((declareType?.ObjectType == DSharpObjectType.Interface && fieldNode.Getter != null) ||
+                 declareType?.ObjectType != DSharpObjectType.Interface))
             {
                 property.CreateGetter();
             }
-            if (fieldNode.CanWrite)
+            if (fieldNode.CanWrite &&
+                ((declareType?.ObjectType == DSharpObjectType.Interface && fieldNode.Setter != null) ||
+                 declareType?.ObjectType != DSharpObjectType.Interface))
             {
                 property.CreateSetter();
             }
@@ -539,6 +550,26 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 CompileMethod(info.Key, info.Value);
             }
 
+            foreach (var info in _createdTypes)
+            {
+                if (info.Key.ObjectType == DSharpObjectType.Interface)
+                {
+                    ValidateInterface(info.Key);
+                }
+                else if (info.Key.BaseTypes.Count > 0)
+                {
+                    foreach (var baseTypeToken in info.Key.BaseTypes)
+                    {
+                        var baseType = (IDSharpType)_assemblyBuilder.GetType(baseTypeToken);
+
+                        if (baseType.ObjectType == DSharpObjectType.Interface)
+                        {
+                            CheckInterfaceImplementation(info.Key, baseType);
+                        }
+                    }
+                }
+            }
+
             int i = 0;
 
             while (i < _assemblyBuilder.Types.Count)
@@ -558,7 +589,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         {
             var context = _context;
             context.CurrentMember = member;
-            return context.ResolveType(typeInfo);
+            var typeToken = context.ResolveType(typeInfo);
+            var type = _assemblyBuilder.GetType(typeToken);
+
+            if (!context.CanAccessTo(type))
+            {
+                context.ThrowCanNotAccessException(type);
+            }
+
+            return typeToken;
         }
 
         #endregion

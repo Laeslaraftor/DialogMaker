@@ -70,7 +70,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             if (stream.Check(DSharpTokenType.Lambda))
             {
-                method.Body = BlockStatementNode.Parse(stream, DSharpTokenType.Semicolon);
+                method.Body = BlockStatementNode.Parse(stream, DSharpTokenType.Semicolon, DSharpTokenType.Lambda);
             }
             else if (stream.Check(DSharpTokenType.LeftBrace))
             {

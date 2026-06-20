@@ -141,6 +141,12 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// <returns>Is type found</returns>
             public bool TryFindGenericImplementationType(IDSharpType genericType, [NotNullWhen(true)] out IDSharpType? result, params IEnumerable<IDSharpType> parameters)
             {
+                if (genericType.GetGenericTypes().SequenceEqual(parameters))
+                {
+                    result = genericType;
+                    return true;
+                }
+
                 result = null;
                 var name = genericType.FullName;
                 var types = assembly.GetTypes(name);

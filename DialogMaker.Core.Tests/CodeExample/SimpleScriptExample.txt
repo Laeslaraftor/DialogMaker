@@ -37,6 +37,11 @@
 	{
 		public number Length { get; }
 		
+		public IEnumerator<T> GetEnumerator()
+		{
+			return new Enumerator(this);
+		}
+		
 		public static func Copy(Array<T> source, number sourceIndex, Array<T> destination, number destinationIndex, number count)
 		{
 			for (number i = 0; i < count; i++)
@@ -47,7 +52,34 @@
 		
 		private class Enumerator : IEnumerator<T>
 		{
+			public Enumerator(T[] items)
+			{
+				_items = items;
+			}
 			
+			public T Current { get; private set; }
+		
+			private readonly T[] _items;
+			private number _currentIndex;
+		
+			public bool MoveNext()
+			{
+				if (_items.Length == 0 ||
+					_currentIndex + 1 >= _items.Length)
+				{
+					return false;
+				}
+				
+				_currentIndex++;
+				Current = _items[_currentIndex];
+				
+				return true;
+			}
+			public func Reset()
+			{
+				_currentIndex = -1;
+				Current = null;
+			}
 		}
 	}
 	
@@ -101,6 +133,19 @@
 		
 		private T[] _items;
 		
+		public number IndexOf(T item)
+		{
+			for (number i = 0; i < Count; i++)
+			{
+				if (_items[i] == item)
+				{
+					return i;
+				}
+			}
+			
+			return -1;
+		}
+		public bool Contains(T item) => IndexOf(item) != -1;
 		public func Add(T item)
 		{
 			if (Count + 1 > Capacity)
@@ -119,6 +164,36 @@
 			Array<T>.Copy(_items, 0, newItems, 0, _items.Length);			
 			_items = newItems;
 		}
+	}
+	public struct KeyValuePair<TKey, TValue>
+	{
+		public KeyValuePair(TKey key, TValue value)
+		{
+			Key = key;
+			Value = value;
+		}
+		
+		public TKey Key { get; }
+		public TValue Value { get; }
+	}
+	public class Dictionary<TKey, TValue>
+	{
+		private readonly List<KeyValuePair<TKey, TValue>> _values = new();
+		
+		/*
+		public bool ContainsKey(TKey key)
+		{
+			for (number i = 0; i < _values.Count; i++)
+			{
+				if (_values[i].Key == key)
+				{
+					return true;
+				}
+			}
+			
+			return false;
+		}
+		*/
 	}
 }
 

@@ -71,6 +71,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         [Keyword(ObjectDeclarationNode.StaticModifier)]
         Static,
         /// <summary>
+        /// Readonly keyword
+        /// </summary>
+        [Keyword("readonly")]
+        ReadOnly,
+        /// <summary>
         /// Struct keyword
         /// </summary>
         [Keyword("struct")]

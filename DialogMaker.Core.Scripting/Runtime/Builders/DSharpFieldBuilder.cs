@@ -43,6 +43,10 @@
         /// Default values that sets at compile time. Other values must be setted in constructor
         /// </summary>
         public DSharpLiteralValue? RawValue { get; set; }
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        public override bool IsDeclaration => false;
         internal IDSharpFieldInfo? OriginalField { get; set; }
 
         IDSharpType IDSharpFieldInfo.FieldType

@@ -10,5 +10,9 @@ namespace DialogMaker.Core.Scripting.Runtime
         public IDSharpType? DeclaringType { get; }
         public DSharpAccessModifier Access { get; }
         public bool IsStatic { get; }
+        /// <summary>
+        /// This flag indicates that current member requiers implementation
+        /// </summary>
+        public bool IsDeclaration { get; }
     }
 }

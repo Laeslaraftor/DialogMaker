@@ -76,8 +76,48 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         }
         public string GetterMethodName { get; private set; } = string.Empty;
         public string SetterMethodName { get; private set; } = string.Empty;
-        public bool CanRead => Getter != null;
-        public bool CanWrite => Setter != null;
+        public bool CanRead
+        {
+            get
+            {
+                if (DeclaringType.ObjectType != DSharpObjectType.Interface)
+                {
+                    return Getter != null;
+                }
+
+                return field;
+            }
+            set;
+        }
+        public bool CanWrite
+        {
+            get
+            {
+                if (DeclaringType.ObjectType != DSharpObjectType.Interface)
+                {
+                    return Setter != null;
+                }
+
+                return field;
+            }
+            set;
+        }
+        public override bool IsDeclaration
+        {
+            get
+            {
+                var getter = Getter;
+                var setter = Setter;
+
+                if (getter == null && setter == null)
+                {
+                    return true;
+                }
+
+                return getter?.IsDeclaration == true ||
+                       setter?.IsDeclaration == true;
+            }
+        }
         internal IDSharpPropertyInfo? OriginalProperty { get; set; }
 
         IDSharpType IDSharpPropertyInfo.PropertyType
@@ -124,15 +164,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             {
                 return Setter;
             }
-            if (DeclaringType is not DSharpTypeBuilder builder)
-            {
-                throw new InvalidOperationException($"Unable to create setter because declaring type is not a type builder");
-            }
 
-            var setter = builder.CreateMethod(t => new(this, true, SetterMethodName, t));
+            var setter = DeclaringType.CreateMethod(t => new(this, true, SetterMethodName, t));
             setter.Parameters.Add(new(Assembly)
             {
-                Type = PropertyType,
+                TypeGetter = () => PropertyType,
                 Name = "value"
             });
             Setter = setter;

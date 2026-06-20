@@ -194,6 +194,19 @@
             }
             set;
         }
+        public override bool IsDeclaration => IsAbstract || IsExtern || !HasBody;
+        public bool HasBody
+        {
+            get
+            {
+                if (IsExtern || IsAbstract)
+                {
+                    return false;
+                }
+
+                return GetBytecodeBuilder().Instructions.Count > 0;
+            }
+        }
         internal IDSharpMethodInfo? OriginalMethod { get; set; }
 
         IDSharpType? IDSharpMethodInfo.ReturnType

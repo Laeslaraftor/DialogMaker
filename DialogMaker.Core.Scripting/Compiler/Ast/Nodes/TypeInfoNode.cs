@@ -166,6 +166,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
 
             result.IsNullable = CheckNullable();
+            ParseGenericParameters(stream, result.GenericParameters, true);
 
             if (skipArrayCheck)
             {
@@ -197,12 +198,34 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
 
                 int offset = 1;
+                int inner = 1;
 
-                while (!stream.Check(DSharpTokenType.Greater, offset))
+                bool IsEnd(int offset)
                 {
-                    if (stream.Check(DSharpTokenType.Semicolon, offset) ||
-                        stream.Check(DSharpTokenType.Less, offset) ||
-                        stream.Check(DSharpTokenType.And, offset))
+                    return stream.Check(DSharpTokenType.Semicolon, offset) ||
+                           stream.Check(DSharpTokenType.Assign, offset) ||
+                           stream.Check(DSharpTokenType.LeftParen, offset) ||
+                           stream.Check(DSharpTokenType.LeftBrace, offset) ||
+                           stream.Check(DSharpTokenType.LeftBracket, offset);
+                }
+
+                while (!IsEnd(offset))
+                {
+                    if (stream.Check(DSharpTokenType.Less, offset))
+                    {
+                        inner++;
+                    }
+                    else if (stream.Check(DSharpTokenType.Greater, offset))
+                    {
+                        inner--;
+
+                        if (0 >= inner)
+                        {
+                            break;
+                        }
+                    }
+                    else if (stream.Check(DSharpTokenType.Semicolon, offset) ||
+                             stream.Check(DSharpTokenType.And, offset))
                     {
                         return;
                     }
@@ -212,6 +235,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     }
 
                     offset++;
+                }
+
+                if (inner != 0)
+                {
+                    return;
                 }
             }
 

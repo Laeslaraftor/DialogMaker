@@ -42,6 +42,121 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 return result != null;
             }
+            public bool SameSignatureTo(IDSharpMemberInfo otherMember)
+            {
+                if (member.Name != otherMember.Name ||
+                    member.Access != otherMember.Access)
+                {
+                    return false;
+                }
+
+                if (member is IDSharpType currentType && otherMember is IDSharpType otherType)
+                {
+                    return currentType.ObjectType == otherType.ObjectType;
+                }
+                else if (member is IDSharpFieldInfo currentField && otherMember is IDSharpFieldInfo otherField)
+                {
+                    return currentField.FieldType == otherField.FieldType;
+                }
+                else if (member is IDSharpPropertyInfo currentProperty && otherMember is IDSharpPropertyInfo otherProperty)
+                {
+                    return currentProperty.PropertyType == otherProperty.PropertyType;
+                }
+                else if (member is IDSharpMethodInfo currentMethod && otherMember is IDSharpMethodInfo otherMethod)
+                {
+                    return currentMethod.ReturnType == otherMethod.ReturnType &&
+                           currentMethod.GetParameters().SequenceEqual(otherMethod.GetParameters(), IDSharpParameterInfo.Comparer.Instance) &&
+                           currentMethod.GetGenericParameters().SequenceEqual(otherMethod.GetGenericParameters());
+                }
+
+                return false;
+            }
+        }
+        extension(IDSharpType type)
+        {
+            /// <summary>
+            /// Get all members of interfaces that must be implemented
+            /// </summary>
+            /// <returns>Members to implement</returns>
+            public IEnumerable<IDSharpMemberInfo> GetInterfaceMembersToImplement()
+            {
+                if (type.ObjectType != DSharpObjectType.Interface)
+                {
+                    yield break;
+                }
+
+                foreach (var property in type.GetProperties())
+                {
+                    if (property.IsDeclaration)
+                    {
+                        yield return property;
+                    }
+                }
+                foreach (var method in type.GetMethods())
+                {
+                    if (method.IsDeclaration)
+                    {
+                        yield return method;
+                    }
+                }
+
+                foreach (var baseType in type.GetBaseTypes())
+                {
+                    foreach (var baseMember in baseType.GetInterfaceMembersToImplement())
+                    {
+                        yield return baseMember;
+                    }
+                }
+            }
+            /// <summary>
+            /// Get all members of type include inherited members
+            /// </summary>
+            /// <param name="predicate">Predicate for members</param>
+            /// <returns>All members of specified type</returns>
+            public IEnumerable<IDSharpMemberInfo> GetAllMembers(Predicate<IDSharpMemberInfo>? predicate = null)
+            {
+                bool IsValid(IDSharpMemberInfo member)
+                {
+                    return predicate == null || predicate(member);
+                }
+
+                foreach (var member in type.GetConstructors())
+                {
+                    if (IsValid(member))
+                    {
+                        yield return member;
+                    }
+                }
+                foreach (var member in type.GetFields())
+                {
+                    if (IsValid(member))
+                    {
+                        yield return member;
+                    }
+                }
+                foreach (var member in type.GetProperties())
+                {
+                    if (IsValid(member))
+                    {
+                        yield return member;
+                    }
+                }
+                foreach (var member in type.GetMethods())
+                {
+                    if (IsValid(member))
+                    {
+                        yield return member;
+                    }
+                }
+
+                foreach (var baseType in type.GetBaseTypes())
+                {
+                    foreach (var member in baseType.GetAllMembers(predicate))
+                    {
+                        yield return member;
+                    }
+                }
+            }
         }
         extension(DSharpBinaryOperator @operator)
         {
@@ -220,7 +335,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                         }
                         else
                         {
-                            type = assembly.GetType(newExpression.Type);
+                            if (context.Assembly != null)
+                            {
+                                type = context.Assembly.GetType(context.ResolveType(newExpression.Type)) as IDSharpType;
+                            }
+                            else
+                            {
+                                type = assembly.GetType(newExpression.Type);
+                            }
                         }
 
                     }

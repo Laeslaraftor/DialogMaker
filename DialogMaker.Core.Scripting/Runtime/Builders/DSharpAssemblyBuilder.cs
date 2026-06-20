@@ -327,6 +327,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
 
             var newType = assemblyBuilder.CreateType(genericType.Name, parent);
+            newType.Access = genericType.Access;
             newType.IsStatic = genericType.IsStatic;
             newType.IsAbstract = genericType.IsAbstract;
             newType.ObjectType = genericType.ObjectType;
@@ -339,15 +340,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             foreach (var parameter in genericTypes)
             {
-                var genericTypeParameter = genericTypes[i];
-
-                if (!genericTypeParameter.CanReplaceGenericType(parameter))
+                if (!replacedTypes.TryGetValue(parameter, out var replacedGenericType))
                 {
-                    throw new ArgumentException($"Generic type {genericTypeParameter} can not be replaced by {parameter}");
+                    throw new InvalidOperationException($"Type for replacing generic type \"{parameter}\" in \"{genericType}\" not provided");
+                }
+                if (!parameter.CanReplaceGenericType(replacedGenericType))
+                {
+                    throw new ArgumentException($"Generic type {parameter} can not be replaced by {replacedGenericType}");
                 }
 
-                newType.GenericParameters.Add(GetTypeToken(parameter));
-                replacedMembers.Add(genericTypeParameter, parameter);
+                newType.GenericParameters.Add(GetTypeToken(replacedGenericType));
+                replacedMembers.Add(parameter, replacedGenericType);
                 i++;
             }
             foreach (var genericTypeBaseType in genericType.GetBaseTypes())
@@ -425,17 +428,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 newMethod.OverrideMethod = method.OverrideMethod;
                 newMethod.OriginalMethod = method;
 
-                foreach (var genericParameter in method.GetGenericParameters())
+                if (newMethod.MethodType != DSharpMethodType.Getter &&
+                    newMethod.MethodType != DSharpMethodType.Setter)
                 {
-                    newMethod.GenericParameters.Add(GetTypeToken(genericParameter));
-                }
-                foreach (var parameter in method.GetParameters())
-                {
-                    newMethod.Parameters.Add(new(this)
+                    foreach (var genericParameter in method.GetGenericParameters())
                     {
-                        Name = parameter.Name,
-                        Type = GetTypeToken(ReplaceGenericParameters(parameter.Type, replacedTypes))
-                    });
+                        newMethod.GenericParameters.Add(GetTypeToken(genericParameter));
+                    }
+                    foreach (var parameter in method.GetParameters())
+                    {
+                        newMethod.Parameters.Add(new(this)
+                        {
+                            Name = parameter.Name,
+                            Type = GetTypeToken(ReplaceGenericParameters(parameter.Type, replacedTypes))
+                        });
+                    }
                 }
 
                 replacedMembers.Add(method, newMethod);

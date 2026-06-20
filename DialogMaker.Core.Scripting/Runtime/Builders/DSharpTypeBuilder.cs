@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+using System.Collections.ObjectModel;
 
 namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
@@ -19,6 +20,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// Type that declared this field
         /// </summary>
         public override DSharpTypeBuilder? DeclaringType { get; } = declaringType;
+        public override DSharpAccessModifier Access { get; set; } = DSharpAccessModifier.Public;
         public DSharpObjectType ObjectType { get; set; } = DSharpObjectType.Class;
         public string? Namespace { get; set; }
         public string FullName
@@ -116,6 +118,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 }
             }
         }
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        public override bool IsDeclaration => false;
 
         private readonly List<DSharpMethodBuilder> _constructors = [];
         private readonly List<DSharpMethodBuilder> _methods = [];
@@ -141,7 +147,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             base.Update();
 
-            void UpdateAll(IEnumerable<DSharpMemberInfoBuilder> builders)
+            static void UpdateAll(IEnumerable<DSharpMemberInfoBuilder> builders)
             {
                 foreach (var builder in builders)
                 {

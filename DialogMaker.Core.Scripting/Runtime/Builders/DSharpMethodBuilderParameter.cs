@@ -4,8 +4,21 @@
     {
         public DSharpAssemblyBuilder Assembly { get; } = assembly;
         public string? Name { get; set; }
-        public DSharpTypeToken? Type { get; set; }
+        public DSharpTypeToken? Type
+        {
+            get
+            {
+                if (field != null)
+                {
+                    return field;
+                }
 
+                return TypeGetter?.Invoke();
+            }
+            set;
+        }
+        public Func<DSharpTypeToken?>? TypeGetter { get; set; }
+        
         string IDSharpParameterInfo.Name => Name ?? string.Empty;
         IDSharpType IDSharpParameterInfo.Type
         {

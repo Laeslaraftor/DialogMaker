@@ -49,6 +49,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public bool IsSealed { get; set; }
         /// <summary>
+        /// Readonly flag
+        /// </summary>
+        public bool IsReadOnly { get; set; }
+        /// <summary>
         /// Member mode
         /// </summary>
         public DSharpObjectMemberMode Mode { get; set; }
@@ -83,6 +87,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 Attributes = memberInfo.Attributes,
                 CanRead = true,
                 CanWrite = true,
+                IsReadOnly = memberInfo.IsReadOnly,
                 IsStatic = memberInfo.IsStatic,
                 Access = memberInfo.AccessModifier,
                 Mode = memberInfo.Mode,
