@@ -43,6 +43,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         [Keyword("for")]
         For,
         /// <summary>
+        /// Foreach keyword
+        /// </summary>
+        [Keyword("foreach")]
+        Foreach,
+        /// <summary>
         /// Break keyword for stopping loop
         /// </summary>
         [Keyword("break")]
@@ -125,6 +130,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// </summary>
         [Keyword("is")]
         Is,
+        /// <summary>
+        /// In keyword
+        /// </summary>
+        [Keyword("in")]
+        In,
         /// <summary>
         /// Object keyword for variable or property with unknown type. This is root of all type system
         /// </summary>

@@ -27,8 +27,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             DSharpBytecodeOperation.LoadInstanceProperty
         ]);
         private static readonly Range _uselessPopCombinationsRange = new(0, 5);
-        private static readonly ReadOnlyCollection<UselessCombination> _uselessCombinations =
-        new([
+        private static readonly ReadOnlyCollection<UselessCombination> _uselessCombinations = new([
             new(
                 [
                     new(_storeParameterOperations, typeof(ParameterInstruction), 2),
@@ -107,8 +106,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 UselessCombinationRemovePopOffset12
             ),
         ]);
-        private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _finalUselessOperations =
-        new([
+        private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _finalUselessOperations = new([
             DSharpBytecodeOperation.Pop,
             DSharpBytecodeOperation.PopOffset,
             DSharpBytecodeOperation.PopOffsetRepeat,
@@ -152,13 +150,37 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 offset += info.Value.Remove(builder, startIndex);
             }
 
-            if (maxCombinationsCount == int.MaxValue)
+            if (maxCombinationsCount == int.MaxValue && instructions.Count > 0)
             {
-                while (instructions.Count > 0 &&
-                       _finalUselessOperations.Contains(instructions[^1].Operation))
+                Dictionary<Instruction, List<ReferenceInstruction>> referencesToUselessOperations = [];
+                int currentIndex = instructions.Count - 1;
+
+                while (currentIndex > 0 &&
+                       _finalUselessOperations.Contains(instructions[currentIndex].Operation))
                 {
-                    ReplaceInstructionReferences(builder, instructions.Count - 1);
-                    offset++;
+                    var currentInstruction = instructions[currentIndex];
+                    var references = builder.FindReferences(currentInstruction);
+
+                    if (references != null)
+                    {
+                        referencesToUselessOperations.Add(currentInstruction, references);
+                    }
+
+                    instructions.RemoveAt(currentIndex);
+                    currentIndex--;
+                }
+
+                if (referencesToUselessOperations.Count > 0)
+                {
+                    var empty = builder.Empty();
+
+                    foreach (var references in referencesToUselessOperations.Values)
+                    {
+                        foreach (var reference in references)
+                        {
+                            reference.ReferencedInstruction = empty;
+                        }
+                    }
                 }
             }
 

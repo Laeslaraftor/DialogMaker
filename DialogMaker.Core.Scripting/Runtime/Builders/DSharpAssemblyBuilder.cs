@@ -91,6 +91,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
+        public DSharpTypeToken IEnumeratorToken
+        {
+            get
+            {
+                field ??= GetTypeToken(IEnumeratorType.Type);
+                return field;
+            }
+        }
         public IDSharpType StringType
         {
             get
@@ -144,6 +152,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             get
             {
                 field ??= (IDSharpType)GetType(ArrayBaseToken);
+                return field;
+            }
+        }
+        public DSharpIEnumeratorType IEnumeratorType
+        {
+            get
+            {
+                field ??= DSharpIEnumeratorType.Create(this);
                 return field;
             }
         }
@@ -379,6 +395,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 newProperty.IsVirtual = property.IsVirtual;
                 newProperty.OverrideProperty = property.OverrideProperty;
                 newProperty.OriginalProperty = property;
+                newProperty.CanRead = property.CanRead;
+                newProperty.CanWrite = property.CanWrite;
 
                 if (property.Getter != null)
                 {

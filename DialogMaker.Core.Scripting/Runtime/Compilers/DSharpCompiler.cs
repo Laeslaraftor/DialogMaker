@@ -233,6 +233,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         {
             var variable = assemblyBuilder.CreateGlobalVariable(variableNode.Name);
             variable.Namespace = _currentNamespaceIdentifier;
+            variable.Access = DSharpAccessModifier.Public;
 
             if (variableNode.Initializer?.TrySimplifyToLiteral(out var rawValue) == true)
             {
@@ -345,7 +346,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             method.IsSealed = methodNode.IsSealed;
             method.IsAbstract = methodNode.Mode == DSharpObjectMemberMode.Abstract;
             method.IsVirtual = methodNode.Mode == DSharpObjectMemberMode.Virtual;
-            method.Access = methodNode.Access;
+            
+            if (declareType == null)
+            {
+                method.Access = DSharpAccessModifier.Public;
+            }
+            else
+            {
+                method.Access = methodNode.Access;
+            }
 
             _createdMethods.Add(method, methodNode);
         }
@@ -491,6 +500,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 foreach (var baseType in info.Value.BaseTypes)
                 {
                     var typeToken = ResolveType(info.Key, baseType);
+
+                    if (typeToken == info.Key.MetadataToken)
+                    {
+                        throw new InvalidOperationException($"Type can not inherit itself: {info.Key}");
+                    }
+
                     info.Key.BaseTypes.Add(typeToken);
                 }
             }

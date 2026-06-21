@@ -127,6 +127,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 return ForStatementNode.Parse(stream);
             }
+            if (stream.Check(DSharpTokenType.Foreach))
+            {
+                return ForeachStatementNode.Parse(stream);
+            }
             if (stream.Check(DSharpTokenType.Return))
             {
                 return ReturnStatementNode.Parse(stream);

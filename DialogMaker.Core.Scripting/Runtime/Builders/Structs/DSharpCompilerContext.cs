@@ -511,6 +511,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             throw new ArgumentException($"Unable to resolve type \"{typeInfo.GetFullName(false, false)}\": {typeInfo}", nameof(typeInfo));
         }
+        public readonly DSharpTypeToken ResolveType(string typeName)
+        {
+            if (TryResolveType(typeName, out var result))
+            {
+                return result;
+            }
+
+            throw new ArgumentException($"Unable to resolve type \"{typeName}\"", nameof(typeName));
+        }
         public readonly IDSharpMemberInfo FindAnyAvailableMember(string name)
         {
             return FindAnyAvailableMember<IDSharpMemberInfo>(name);
@@ -912,7 +921,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         }
         private readonly DSharpTypeToken? InternalTryResolveType(string? @namespace, string typeName)
         {
-            var fullName = $"{@namespace}.{typeName}";
+            var fullName = typeName;
+
+            if (@namespace != null)
+            {
+                fullName = $"{@namespace}.{fullName}";
+            }
 
             if (ResolvedTypes != null &&
                 (ResolvedTypes.TryGetValue(typeName, out var token) ||
@@ -930,7 +944,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             if (Assembly != null && CurrentMember != null)
             {
                 if (CurrentMember is IDSharpType typeCurrentMember &&
-                    typeCurrentMember.Name == typeName)
+                    typeCurrentMember.FullName == fullName)
                 {
                     return Assembly.GetTypeToken(typeCurrentMember);
                 }
@@ -948,7 +962,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
                 while (rootType != null)
                 {
-                    if (rootType.Name == typeName)
+                    if (rootType.FullName == fullName)
                     {
                         return Assembly.GetTypeToken(rootType);
                     }

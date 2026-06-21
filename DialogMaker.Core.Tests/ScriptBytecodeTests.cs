@@ -12,6 +12,8 @@ namespace DialogMaker.Core.Tests
         [TestCase("getTextColor")]
         [TestCase("getNumberNameType")]
         [TestCase("getGenericValue")]
+        [TestCase("getLines")]
+        [TestCase("foreachTest")]
         [TestCase("System.Number.GetSquared")]
         [TestCase("System.List`1.Add")]
         [TestCase("System.List`1.Expand")]

@@ -98,13 +98,21 @@
 		
 		public static readonly Color Black = new Color(0, 0, 0);
 	}
-	public interface IEnumerable<T>
+	public interface IEnumerable<T> : IEnumerable
 	{
 		public IEnumerator<T> GetEnumerator();
 	}
-	public interface IEnumerator<T>
+	public interface IEnumerable
+	{
+		public IEnumerator GetEnumerator();
+	}
+	public interface IEnumerator<T> : IEnumerator
 	{
 		public T Current { get; }
+	}
+	public interface IEnumerator
+	{
+		public object Current { get; }
 		
 		public bool MoveNext();
 		public func Reset();
@@ -130,6 +138,13 @@
 		
 		public number Count { get; private set; }
 		public number Capacity { get; private set; }
+		/*
+		public T this[number index]
+		{
+			get => _items[index];
+			set => _items[index] = value;
+		}
+		*/
 		
 		private T[] _items;
 		
@@ -195,6 +210,11 @@
 		}
 		*/
 	}
+	public class Console
+	{
+		public static extern func WriteLine(string text);
+		public static extern string ReadLine();
+	}
 }
 
 using System;
@@ -256,3 +276,27 @@ number sum(number count)
 	
 	return result;
 }
+string[] getLines()
+{
+	return new string[] { "Text 1", "Text 2" };
+}
+func foreachTest()
+{
+	foreach (var line in guideText)
+	{
+		Console.WriteLine(line);
+		Console.ReadLine();
+	}
+}
+
+/*
+Надо сделать:
+1. using для IDisposable
+2. Делегаты, анонимные делегаты, события и лямбда-выражения
+3. try, catch, finally
+4. Базовый конструктор
+5. Деструктор
+6. Вызов полей и методов из базового класса (base.Property, base.Method())
+7. Индексаторы (this[])
+8. Методы расширения
+*/

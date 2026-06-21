@@ -230,7 +230,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     return context.CurrentMember.DeclaringType;
                 }
                 if (expression is IdentifierExpressionNode identifierExpression &&
-                         context.CurrentMember is IDSharpMethodInfo method)
+                    context.CurrentMember is IDSharpMethodInfo method)
                 {
                     var identifier = identifierExpression.GetName(false);
                     var parameter = method.GetParameters().FirstOrDefault(p => p.Name == identifier);
@@ -350,12 +350,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     {
                         throw new ArgumentException($"Unknown type: {newExpression.Type}", nameof(expression));
                     }
+                    if (type == null)
+                    {
+                        return null;
+                    }
+
+                    if (expression is NewArrayExpressionNode)
+                    {
+                        return assembly.CreateArray(type);
+                    }
 
                     return type;
-                }
-                else if (expression is NewArrayExpressionNode newArrayExpression)
-                {
-                    throw new NotImplementedException("Array types not implemented");
                 }
 
                 throw new ArgumentException($"Unable to get type of expression: {expression}", nameof(expression));

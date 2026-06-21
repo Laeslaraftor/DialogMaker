@@ -34,10 +34,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             CompileStatement(method, body, 0, code, settings, context);
 
+            bool alwaysReturns = settings.AlwaysReturn(method);
+
             if (method.ReturnType != null &&
-                !settings.AlwaysReturn(method))
+                !alwaysReturns)
             {
                 throw new ArgumentException($"Not all path returns value in \"{method}\": {body}");
+            }
+            if (alwaysReturns &&
+                body.Token.Type == DSharpTokenType.Lambda &&
+                code.Instructions.Count > 0 &&
+                code.Instructions[^1].Operation != DSharpBytecodeOperation.Return)
+            {
+                code.Return();
             }
         }
 
@@ -52,14 +61,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         }
         private void CompileStatement(DSharpMethodBuilder method, StatementNode statement, int depth, DSharpBytecodeBuilder code, DSharpMethodCompileSettings settings = default, DSharpCompilerContext context = default)
         {
+            DSharpMethodBuilderParameter GetCustomVariable(string name, object type, ExpressionNode? initializer = null)
+            {
+                return this.GetVariable(method, name, type, initializer, settings, context);
+            }
             DSharpMethodBuilderParameter GetVariable(VariableNode? node)
             {
                 if (node == null)
                 {
                     throw new ArgumentNullException("Variable node must be provided", nameof(node));
                 }
+                if (node.Type == null)
+                {
+                    throw new ArgumentException($"Unknown variable type: {node}", nameof(node));
+                }
 
-                return this.GetVariable(method, node, settings);
+                return this.GetVariable(method, node.Name, node.Type, node.Initializer, settings, context);
             }
 
             if (statement is BlockStatementNode blockStatement)
@@ -124,7 +141,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     {
                         var expressionType = expressionStatement.Expression.GetExpressionType(_assemblyBuilder, context);
 
-                        if (expressionType != null && 
+                        if (expressionType != null &&
                             (expressionType is IDSharpType || expressionType.TryGetReturnType(out _)))
                         {
                             settings.AddReturnMethod(method);
@@ -261,6 +278,90 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 code.Jump(startExpressionOperation);
                 code.Instructions.Add(context.CurrentLoopEndInstruction);
             }
+            else if (statement is ForeachStatementNode foreachStatement)
+            {
+                if (foreachStatement.Variable == null ||
+                    foreachStatement.EnumeratorExpression == null ||
+                    foreachStatement.Body == null)
+                {
+                    throw new ArgumentException($"Incomplete foreach statement: {statement}", nameof(statement));
+                }
+                
+                var expressionResult = CompileValueExpression(method, foreachStatement.EnumeratorExpression, settings, null, context)
+                    ?? throw new ArgumentException($"Invalid expression in foreach statement: {statement}", nameof(statement));
+
+                if (!expressionResult.TryGetReturnType(out var expressionReturnType))
+                {
+                    throw new ArgumentException($"Unable to get return type of expression in foreach statement: {statement}", nameof(statement));
+                }
+
+                var returnTypeMethods = expressionReturnType.GetAllMembers(m => m is IDSharpMethodInfo &&
+                                                                                m.DeclaringType?.ObjectType != DSharpObjectType.Interface &&
+                                                                                m.Access == DSharpAccessModifier.Public)
+                                                            .Cast<IDSharpMethodInfo>();
+                var getEnumeratorMethod = returnTypeMethods.FirstOrDefault(m => m.Name == "GetEnumerator" &&
+                                                                                m.ReturnType != null &&
+                                                                                m.ReturnType.IsAssignableTo(_assemblyBuilder.IEnumeratorType.Type));
+
+                if (getEnumeratorMethod == null)
+                {
+                    throw new ArgumentException($"Unable to find public GetEnumerator method with \"{_assemblyBuilder.IEnumeratorType}\" as return value in expression of foreach statement", nameof(statement));
+                }
+
+                var enumerator = DSharpIEnumeratorType.Create(getEnumeratorMethod.ReturnType!);
+                DSharpMethodBuilderParameter variable;
+
+                if (foreachStatement.Variable.Type?.Token.Type == DSharpTokenType.Var)
+                {
+                    variable = GetCustomVariable(foreachStatement.Variable.Name, enumerator.CurrentProperty.PropertyType);
+                }
+                else
+                {
+                    variable = GetVariable(foreachStatement.Variable);
+
+                    if (variable.Type == null)
+                    {
+                        variable.Type = _assemblyBuilder.ObjectToken;
+                    }
+                    else
+                    {
+                        var variableType = (IDSharpType)_assemblyBuilder.GetType(variable.Type);
+
+                        if (!enumerator.CurrentProperty.PropertyType.IsAssignableTo(variableType))
+                        {
+                            throw new ArgumentException($"Can not assign enumeration value to variable in foreach statement: {statement}", nameof(statement));
+                        }
+                    }
+                }
+
+                var enumeratorVariable = GetCustomVariable($"foreachEnumerator_{statement.Line}_{statement.Column}", getEnumeratorMethod.ReturnType!);
+
+                code.CallInstance(getEnumeratorMethod);
+                code.PopOffset(1);
+                code.StoreLocal(enumeratorVariable);
+                code.CallInstance(enumerator.ResetMethod);
+                var moveNextOperation = code.CallInstance(enumerator.MoveNextMethod);
+                var skipIteration = code.JumpIfFalse();
+                code.Pop();
+                code.StartStackBlock();
+                code.LoadInstanceProperty(enumerator.CurrentProperty);
+                code.StoreLocal(variable);
+                code.Pop();
+
+                context.CurrentLoopStartInstruction = code.EndStackBlock();
+                context.CurrentLoopEndInstruction = code.Pop();
+
+                code.Instructions.Remove(context.CurrentLoopStartInstruction);
+                code.Instructions.Remove(context.CurrentLoopEndInstruction);
+                CompileStatement(method, foreachStatement.Body, depth + 1, code, settings, context);
+
+                code.Instructions.Add(context.CurrentLoopStartInstruction);
+
+                code.Jump(moveNextOperation);
+
+                skipIteration.ReferencedInstruction = context.CurrentLoopEndInstruction;
+                code.Instructions.Add(context.CurrentLoopEndInstruction);
+            }
             else if (statement is ContinueStatementNode continueStatement)
             {
                 if (context.CurrentLoopStartInstruction == null)
@@ -341,8 +442,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             {
                 throw new ArgumentException($"Invalid statement in current context: {statement}", nameof(statement));
             }
-
-
         }
 
         #endregion
@@ -673,11 +772,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 int popOffset = 0;
                 IDSharpMethodInfo calledMethod;
 
+                bool IsStatic(IDSharpMethodInfo method) => method.IsStatic || method.DeclaringType == null;
                 void CallAuto(IDSharpMethodInfo method)
                 {
                     if (settings.Await(callExpression))
                     {
-                        if (method.IsStatic)
+                        if (IsStatic(method))
                         {
                             code.AwaitCall(method);
                         }
@@ -688,7 +788,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     }
                     else
                     {
-                        if (method.IsStatic)
+                        if (IsStatic(method))
                         {
                             code.Call(method);
                         }
@@ -739,6 +839,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 for (int i = 0; i < callExpression.Arguments.Count; i++)
                 {
+                    if (popOffset == 0)
+                    {
+                        code.Pop();
+                        continue;
+                    }
+
                     code.PopOffset(popOffset);
                 }
 
@@ -925,7 +1031,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                     if (constructors.Length > 0)
                     {
-                        var noParametersConstructor = constructors.FirstOrDefault(c => c.GetParameters().Length == 0) 
+                        var noParametersConstructor = constructors.FirstOrDefault(c => c.GetParameters().Length == 0)
                             ?? throw new InvalidOperationException($"Can not create new instance of object \"{type}\" because it not contains constructor with no parameters");
                     }
 
@@ -1047,7 +1153,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     code.Pop();
                 }
 
-                return type;
+                return _assemblyBuilder.CreateArray(type);
             }
             else if (expression is AwaitExpressionNode awaitExpression)
             {
@@ -1196,30 +1302,45 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
         #region Дополнительно
 
-        private DSharpMethodBuilderParameter GetVariable(DSharpMethodBuilder method, VariableNode node, DSharpMethodCompileSettings settings)
+        private DSharpMethodBuilderParameter GetVariable(DSharpMethodBuilder method, string name, object type, ExpressionNode? initializerExpression, DSharpMethodCompileSettings settings, DSharpCompilerContext context)
         {
-            if (settings.LocalVariables?.TryGetValue(node, out var result) == true)
+            if (settings.TryGetVariable(name, out var result))
             {
                 return result;
             }
-            if (node.Type == null)
-            {
-                throw new ArgumentException($"Unknown variable type: {node}", nameof(node));
-            }
 
             settings.LocalVariables ??= [];
-            DSharpCompilerContext context = new(_context, method)
-            {
-                ParentExpression = node.Initializer
-            };
+            context.ParentExpression = initializerExpression;
 
-            var type = context.ResolveType(node.Type);
+            DSharpTypeToken typeToken;
+
+            if (type is TypeInfoNode typeInfoNode)
+            {
+                typeToken = context.ResolveType(typeInfoNode);
+            }
+            else if (type is DSharpTypeToken providedTypeToken)
+            {
+                typeToken = providedTypeToken;
+            }
+            else if (type is IDSharpType providedType)
+            {
+                typeToken = _assemblyBuilder.GetTypeToken(providedType);
+            }
+            else if (type is string typeName)
+            {
+                typeToken = context.ResolveType(typeName);
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid object as type: {type}", nameof(type));
+            }
+
             DSharpMethodBuilderParameter variable = new(method.Assembly)
             {
-                Name = node.Name,
-                Type = type
+                Name = name,
+                Type = typeToken
             };
-            settings.LocalVariables.Add(node, variable);
+            settings.LocalVariables.Add(name, variable);
 
             var code = method.GetBytecodeBuilder();
             code.LocalVariables.Add(variable);

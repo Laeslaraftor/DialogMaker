@@ -80,7 +80,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <param name="attributes">List of attributes</param>
         /// <param name="eatEnding">A flag that indicates that the final token must be eaten.</param>
         /// <returns>Parsed variable</returns>
-        public static VariableNode ParseVariable(AstParserStream stream, List<AttributeNode>? attributes, bool eatEnding = true)
+        public static VariableNode ParseVariable(AstParserStream stream, List<AttributeNode>? attributes, bool eatEnding = true, bool canContainsAssignment = true)
         {
             TypeInfoNode variableType;
 
@@ -102,6 +102,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             if (stream.Check(DSharpTokenType.Assign))
             {
+                if (!canContainsAssignment)
+                {
+                    stream.ThrowPositionException($"Assignment not supported in current context");
+                }
+
                 stream.Eat(DSharpTokenType.Assign);
                 variable.Initializer = ExpressionNode.ParseExpression(stream);
             }

@@ -482,6 +482,23 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.LoadInstance);
         }
 
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.StartStackBlock"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction StartStackBlock()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.StartStackBlock);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.EndStackBlock"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction EndStackBlock()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.EndStackBlock);
+        }
+
         #endregion
 
         #region Вызовы и переходы
