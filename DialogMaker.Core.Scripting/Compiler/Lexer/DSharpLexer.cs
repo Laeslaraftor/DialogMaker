@@ -21,6 +21,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                 return field;
             }
         }
+        /// <summary>
+        /// Tab size in symbols
+        /// </summary>
+        public int TabSize { get; set; } = 4;
 
         private readonly string _source = source;
         private int _position = 0;
@@ -100,6 +104,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                 _line++;
                 _column = 1;
             }
+            else if (value == '\t')
+            {
+                _column += TabSize;
+            }
             else if (value != '\r')
             {
                 _column++;
@@ -112,7 +120,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         {
             while (!IsEndOfFile() && char.IsWhiteSpace(Peek()))
             {
-                _column++;
                 GetNext();
             }
         }
@@ -436,6 +443,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                     break;
                 case '?':
                     AddToken(DSharpTokenType.Question, "?", startLine, startColumn);
+                    break;
+                case '~':
+                    AddToken(DSharpTokenType.Tilde, "~", startLine, startColumn);
                     break;
                 default:
                     throw new Exception($"Unknown character '{current}' at {_line}:{_column}");

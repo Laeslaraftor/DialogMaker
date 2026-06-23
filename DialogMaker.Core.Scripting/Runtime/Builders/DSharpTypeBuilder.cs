@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
@@ -105,6 +106,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
+        /// <summary>
+        /// <inheritdoc cref="IDSharpType.Finalizer"/>
+        /// </summary>
+        public DSharpMethodBuilder? Finalizer { get; private set; }
         public IDSharpType? GenericTemplate
         {
             get;
@@ -122,6 +127,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <inheritdoc/>
         /// </summary>
         public override bool IsDeclaration => false;
+
+        IDSharpMethodInfo? IDSharpType.Finalizer => Finalizer;
 
         private readonly List<DSharpMethodBuilder> _constructors = [];
         private readonly List<DSharpMethodBuilder> _methods = [];
@@ -170,12 +177,36 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         }
         public DSharpMethodBuilder CreateConstructor()
         {
+            if (ObjectType == DSharpObjectType.Interface)
+            {
+                throw new InvalidOperationException($"Can not create constructor for interface \"{this}\"");
+            }
             if (IsGeneric)
             {
                 throw new InvalidOperationException("Generic types can not contains constructors");
             }
 
-            return CreateMember(DSharpMetadataTokenType.Method, _constructors, t => new(this, t));
+            return CreateMember(DSharpMetadataTokenType.Method, _constructors, t => DSharpMethodBuilder.CreateConstructor(this, t));
+        }
+        public DSharpMethodBuilder CreateFinalizer()
+        {
+            if (ObjectType == DSharpObjectType.Interface)
+            {
+                throw new InvalidOperationException($"Can not create finalizer for interface \"{this}\"");
+            }
+            if (IsGeneric)
+            {
+                throw new InvalidOperationException("Generic types can not contains finalizers");
+            }
+            if (Finalizer != null)
+            {
+                throw new InvalidOperationException($"Can not create multiple finalizers for \"{this}\"");
+            }
+
+            var finalizer = CreateMember(DSharpMetadataTokenType.Method, _methods, t => DSharpMethodBuilder.CreateFinalizer(this, t));
+            Finalizer = finalizer;
+
+            return finalizer;
         }
         public DSharpMethodBuilder CreateMethod(string name)
         {
@@ -336,6 +367,48 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             return _replacedTypes;
         }
 
+        public bool TryGetInheritedFinalizer([NotNullWhen(true)] out IDSharpMethodInfo? result)
+        {
+            static IDSharpMethodInfo? FindInBaseType(IDSharpType type, bool skipFirstCheck)
+            {
+                if (!skipFirstCheck)
+                {
+                    if (type is DSharpTypeBuilder builder)
+                    {
+                        if (builder.Finalizer != null)
+                        {
+                            return builder.Finalizer;
+                        }
+                    }
+                    else
+                    {
+                        var finalizer = type.GetMethodOrDefault(FinalizerName);
+
+                        if (finalizer != null)
+                        {
+                            return finalizer;
+                        }
+                    }
+                }
+
+                foreach (var baseType in type.GetBaseTypes())
+                {
+                    if (baseType.ObjectType == DSharpObjectType.Interface)
+                    {
+                        continue;
+                    }
+
+                    var finalizer = FindInBaseType(baseType, false);
+                    return finalizer;
+                }
+
+                return null;
+            }
+
+            result = FindInBaseType(this, true);
+            return result != null;
+        }
+
         /// <summary>
         /// <inheritdoc/>
         /// </summary>
@@ -383,6 +456,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         #region Константы
 
         public const string ConstructorName = "ctor";
+        public const string FinalizerName = "Finalize";
 
         #endregion
     }

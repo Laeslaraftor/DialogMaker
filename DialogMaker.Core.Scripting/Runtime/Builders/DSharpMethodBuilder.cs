@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core.Scripting.Runtime.Builders
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+
+namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
     public class DSharpMethodBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken)
         : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken), IDSharpMethodInfo
@@ -9,11 +11,11 @@
             LinkedProperty = property;
             MethodType = isSetter ? DSharpMethodType.Setter : DSharpMethodType.Getter;
         }
-        public DSharpMethodBuilder(DSharpTypeBuilder type, DSharpTypeToken metadataToken)
-            : this(type.Assembly, type, DSharpTypeBuilder.ConstructorName, metadataToken)
+        private DSharpMethodBuilder(DSharpMethodType methodType, string name, DSharpTypeBuilder type, DSharpTypeToken metadataToken)
+            : this(type.Assembly, type, name, metadataToken)
         {
             LinkedType = type;
-            MethodType = DSharpMethodType.Constructor;
+            MethodType = methodType;
         }
 
         public DSharpMethodType MethodType { get; } = DSharpMethodType.Default;
@@ -29,6 +31,10 @@
         {
             get
             {
+                if (MethodType == DSharpMethodType.Finalizer)
+                {
+                    return DSharpTypeBuilder.FinalizerName;
+                }
                 if (LinkedType != null)
                 {
                     return DSharpTypeBuilder.ConstructorName;
@@ -61,7 +67,7 @@
                 {
                     field = GetReplacedType(OriginalMethod.ReturnType);
                 }
-                if (LinkedType != null)
+                if (LinkedType != null || MethodType == DSharpMethodType.Finalizer)
                 {
                     return null;
                 }
@@ -85,6 +91,15 @@
         {
             get
             {
+                if (MethodType == DSharpMethodType.Finalizer)
+                {
+                    if (DeclaringType?.TryGetInheritedFinalizer(out var inheritedFinalizer) == true)
+                    {
+                        return inheritedFinalizer;
+                    }
+
+                    return null;
+                }
                 if (LinkedType != null)
                 {
                     return null;
@@ -135,14 +150,22 @@
         }
         public override bool IsStatic
         {
-            get => LinkedProperty?.IsStatic ?? base.IsStatic;
+            get
+            {
+                if (MethodType == DSharpMethodType.Finalizer)
+                {
+                    return false;
+                }
+
+                return LinkedProperty?.IsStatic ?? base.IsStatic;
+            }
             set => base.IsStatic = value;
         }
         public override bool IsAbstract
         {
             get
             {
-                if (LinkedType != null)
+                if (LinkedType != null || MethodType == DSharpMethodType.Finalizer)
                 {
                     return false;
                 }
@@ -155,7 +178,7 @@
         {
             get
             {
-                if (LinkedType != null)
+                if (LinkedType != null || MethodType == DSharpMethodType.Finalizer)
                 {
                     return false;
                 }
@@ -168,6 +191,10 @@
         {
             get
             {
+                if (MethodType == DSharpMethodType.Finalizer)
+                {
+                    return true;
+                }
                 if (LinkedType != null)
                 {
                     return false;
@@ -181,11 +208,25 @@
             }
             set => base.IsVirtual = value;
         }
+        public override DSharpAccessModifier Access 
+        {
+            get
+            {
+                if (MethodType == DSharpMethodType.Finalizer)
+                {
+                    return DSharpAccessModifier.Protected;
+                }
+
+                return base.Access;
+            }
+            set => base.Access = value; 
+        }
         public bool IsExtern
         {
             get
             {
-                if (LinkedProperty != null && LinkedType != null)
+                if (LinkedProperty != null || LinkedType != null ||
+                    MethodType == DSharpMethodType.Finalizer)
                 {
                     return false;
                 }
@@ -333,6 +374,27 @@
         #endregion
 
         #region Статика
+
+        /// <summary>
+        /// Create constructor method
+        /// </summary>
+        /// <param name="type">Type for constructing</param>
+        /// <param name="metadataToken">Token for new method</param>
+        /// <returns>Constructor method</returns>
+        public static DSharpMethodBuilder CreateConstructor(DSharpTypeBuilder type, DSharpTypeToken metadataToken)
+        {
+            return new(DSharpMethodType.Constructor, DSharpTypeBuilder.ConstructorName, type, metadataToken);
+        }
+        /// <summary>
+        /// Create finalize method
+        /// </summary>
+        /// <param name="type">Type for finalizing</param>
+        /// <param name="metadataToken">Token for new method</param>
+        /// <returns>Finalize method</returns>
+        public static DSharpMethodBuilder CreateFinalizer(DSharpTypeBuilder type, DSharpTypeToken metadataToken)
+        {
+            return new(DSharpMethodType.Finalizer, DSharpTypeBuilder.FinalizerName, type, metadataToken);
+        }
 
         /// <summary>
         /// Compare parameters of two methods. 

@@ -11,7 +11,35 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <summary>
         /// Identifier of this namespace
         /// </summary>
-        public IdentifierExpressionNode? Identifier { get; set; }
+        public ExpressionNode? Identifier { get; set; }
+
+        #region Управление
+
+        /// <summary>
+        /// Get full name of current namespace
+        /// </summary>
+        /// <returns>Full name of current namespace</returns>
+        /// <exception cref="InvalidOperationException">Namespace identifier not specified</exception>
+        /// <exception cref="InvalidOperationException">Invalid namespace identifier</exception>
+        public string GetName()
+        {
+            if (Identifier == null)
+            {
+                throw new InvalidOperationException($"Namespace identifier not specified: {this}");
+            }
+            if (Identifier is IdentifierExpressionNode identifierExpression)
+            {
+                return identifierExpression.GetName(false);
+            }
+            else if (Identifier is MemberAccessExpressionNode memberAccess)
+            {
+                return memberAccess.GetName(false);
+            }
+
+            throw new InvalidOperationException($"Invalid namespace identifier: {Identifier}");
+        }
+
+        #endregion
 
         #region Статика
 
@@ -23,7 +51,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         public static NamespaceStatementNode Parse(AstParserStream stream)
         {
             var namespaceKeyword = stream.Eat(DSharpTokenType.Namespace);
-            var identifier = IdentifierExpressionNode.Parse(stream, false);
+            var identifier = ExpressionNode.ParseIdentifier(stream, false);
 
             if (stream.Check(DSharpTokenType.Semicolon))
             {

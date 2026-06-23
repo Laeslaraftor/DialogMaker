@@ -30,6 +30,8 @@ namespace DialogMaker.Core.Scripting.Runtime
 
         public IDSharpType? GenericTemplate => throw new NotImplementedException();
 
+        public IDSharpMethodInfo? Finalizer => throw new NotImplementedException();
+
         #region Управление
 
         public IDSharpMethodInfo[] GetMethods() => [.. Methods];

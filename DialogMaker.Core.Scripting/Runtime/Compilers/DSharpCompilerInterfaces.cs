@@ -17,11 +17,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 throw new ArgumentException($"Interfaces can not contains fields: {type}");
             }
 
-            void Validate(DSharpMemberInfoBuilder member)
+            void Validate(DSharpVirtualizedMemberInfoBuilder member)
             {
                 if (!member.IsStatic && member.Access != DSharpAccessModifier.Public)
                 {
                     throw new ArgumentException($"Interfaces should contains only public member definitions. Invalid member \"{member}\" at \"{type}\"");
+                }
+                if (member.IsVirtual)
+                {
+                    throw new ArgumentException($"Interfaces can not contains virtual members. Invalid member \"{member}\" at \"{type}\"");
+                }
+                if (member.IsAbstract)
+                {
+                    throw new ArgumentException($"Interfaces can not contains abstract members. Invalid member \"{member}\" at \"{type}\"");
                 }
             }
             void CheckBaseTypes(IDSharpType type)

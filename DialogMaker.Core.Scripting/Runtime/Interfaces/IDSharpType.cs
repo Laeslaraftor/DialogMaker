@@ -9,6 +9,15 @@
         public bool IsAbstract { get; }
         public bool IsSealed { get; }
         /// <summary>
+        /// Finalizer/destructor of this object.
+        /// This property provides finalizer only for current type,
+        /// if is this property empty it's not indicates that finalizer 
+        /// will not called at all. 
+        /// Finalizer always virtual and it may be contained by base type.
+        /// Anyway this method always have same signature: <c>protected virtual void Finalize()</c>
+        /// </summary>
+        public IDSharpMethodInfo? Finalizer { get; }
+        /// <summary>
         /// Type that used as template to create current type
         /// </summary>
         public IDSharpType? GenericTemplate { get; }

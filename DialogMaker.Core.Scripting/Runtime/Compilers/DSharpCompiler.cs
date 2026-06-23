@@ -27,6 +27,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         private readonly Dictionary<DSharpFieldBuilder, VariableNode> _createdGlobalVariables = [];
         private readonly Dictionary<DSharpPropertyBuilder, FieldNode> _createdProperties = [];
         private readonly Dictionary<DSharpMethodBuilder, MethodNode> _createdMethods = [];
+        private readonly Dictionary<DSharpMethodBuilder, FinalizerNode> _createdFinalizers = [];
         private readonly Dictionary<DSharpMethodBuilder, ConstructorNode> _createdConstructors = [];
         private readonly Dictionary<DSharpTypeBuilder, ObjectDeclarationNode> _enumTypes = [];
         private readonly Dictionary<DSharpFieldBuilder, LiteralExpressionNode> _enumValues = [];
@@ -40,7 +41,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 if (field != value)
                 {
                     field = value;
-                    _currentNamespaceIdentifier = value?.Identifier?.GetName(false);
+                    _currentNamespaceIdentifier = value?.GetName();
                 }
             }
         }
@@ -183,7 +184,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             type.IsAbstract = declaration.IsAbstract;
             type.ObjectType = declaration.Type;
             type.Access = declaration.Access;
-            type.Namespace = CurrentNamespace?.Identifier?.Name;
+            type.Namespace = CurrentNamespace?.GetName();
 
             void CreateGenerics(DSharpTypeBuilder builder, IEnumerable<TypeInfoNode> types)
             {
@@ -211,6 +212,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             foreach (var method in declaration.Methods)
             {
                 CreateMethod(assemblyBuilder, type, method);
+            }
+            foreach (var finalizer in declaration.Finalizers)
+            {
+                CreateFinalizer(assemblyBuilder, type, finalizer);
             }
             foreach (var constructor in declaration.Constructors)
             {
@@ -283,7 +288,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             property.IsAbstract = fieldNode.Mode == DSharpObjectMemberMode.Abstract;
             property.IsVirtual = fieldNode.Mode == DSharpObjectMemberMode.Virtual;
 
-            if (fieldNode.CanRead && 
+            if (fieldNode.CanRead &&
                 ((declareType?.ObjectType == DSharpObjectType.Interface && fieldNode.Getter != null) ||
                  declareType?.ObjectType != DSharpObjectType.Interface))
             {
@@ -323,6 +328,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             {
                 throw new ArgumentException($"Method must have a body: {methodNode}", nameof(methodNode));
             }
+            if (methodNode.Identifier.Name == DSharpTypeBuilder.FinalizerName)
+            {
+                throw new ArgumentException($"Invalid identifier of method, name \"{methodNode.Identifier.Name}\" was reserved for finalizer/destructor: {methodNode}", nameof(methodNode));
+            }
 
             DSharpMethodBuilder method;
 
@@ -346,7 +355,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             method.IsSealed = methodNode.IsSealed;
             method.IsAbstract = methodNode.Mode == DSharpObjectMemberMode.Abstract;
             method.IsVirtual = methodNode.Mode == DSharpObjectMemberMode.Virtual;
-            
+
             if (declareType == null)
             {
                 method.Access = DSharpAccessModifier.Public;
@@ -357,6 +366,34 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
 
             _createdMethods.Add(method, methodNode);
+        }
+        private void CreateFinalizer(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder declareType, FinalizerNode finalizerNode)
+        {
+            if (finalizerNode.Parameters.Count > 0)
+            {
+                throw new ArgumentException($"Finalizers not supports parameters: {finalizerNode}", nameof(finalizerNode));
+            }
+            if (finalizerNode.Identifier == null)
+            {
+                throw new ArgumentException($"Finalizer should have identifier: {finalizerNode}", nameof(finalizerNode));
+            }
+            if (finalizerNode.Identifier.Name != declareType.Name)
+            {
+                throw new ArgumentException($"Finalizer identifier should be same to type that it contains ({declareType}): {finalizerNode}", nameof(finalizerNode));
+            }
+
+            DSharpMethodBuilder finalizer;
+
+            try
+            {
+                finalizer = declareType.CreateFinalizer();
+            }
+            catch (Exception error)
+            {
+                throw new InvalidOperationException($"Unable to create finalizer: {finalizerNode}", error);
+            }
+
+            _createdFinalizers.Add(finalizer, finalizerNode);
         }
         private void CreateConstructor(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder? declareType, ConstructorNode constructorNode)
         {
@@ -509,7 +546,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     info.Key.BaseTypes.Add(typeToken);
                 }
             }
-            
+
             foreach (var info in _createdProperties)
             {
                 if (!info.Value.IsOverride)
@@ -561,6 +598,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 CompileMethod(info.Key, info.Value);
             }
             foreach (var info in _createdConstructors)
+            {
+                CompileMethod(info.Key, info.Value);
+            }
+            foreach (var info in _createdFinalizers)
             {
                 CompileMethod(info.Key, info.Value);
             }

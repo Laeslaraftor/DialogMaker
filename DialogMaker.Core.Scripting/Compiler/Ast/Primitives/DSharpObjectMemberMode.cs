@@ -1,6 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
-
-namespace DialogMaker.Core.Scripting.Compiler.Ast
+﻿namespace DialogMaker.Core.Scripting.Compiler.Ast
 {
     /// <summary>
     /// Member mode

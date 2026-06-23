@@ -370,8 +370,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// Question mark means type which can be null
         /// </summary>
         Question,
+        /// <summary>
+        /// Finalizer/destructor indicator (~)
+        /// </summary>
+        Tilde,
 
-        // Значения
         /// <summary>
         /// Name of variable, function, method, etc.
         /// </summary>

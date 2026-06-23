@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
+using System.Diagnostics.SymbolStore;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
@@ -61,6 +62,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Children of object
         /// </summary>
         public List<AttributeNode>? Attributes { get; set; }
+        /// <summary>
+        /// List of finalizer methods
+        /// </summary>
+        public List<FinalizerNode> Finalizers { get; set; } = [];
 
         #region Константы
 
@@ -182,6 +187,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             var startPosition = stream.Position;
             DSharpAccessModifier? accessModifier = null;
             DSharpObjectMemberMode? mode = null;
+            bool tilde = false;
             var currentToken = stream.Current ?? throw new Exception("Unable to read member");
 
             if (AttributeNode.TryParse(stream, out var attributeNodes))
@@ -220,6 +226,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     }
 
                     mode = memberMode;
+                    eatToken = true;
+                }
+                else if (currentToken.Type == DSharpTokenType.Tilde)
+                {
+                    if (tilde)
+                    {
+                        stream.ThrowPositionException("Multiple destructor modifier");
+                    }
+
+                    tilde = true;
                     eatToken = true;
                 }
                 else if (currentToken.Type == DSharpTokenType.Override)
@@ -323,6 +339,24 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             if (stream.Check(DSharpTokenType.LeftParen))
             {
+                if (tilde)
+                {
+                    if (memberInfo.Type == null &&
+                        mode == null &&
+                        accessModifier == null &&
+                        !memberInfo.IsExtern &&
+                        !memberInfo.IsStatic &&
+                        !memberInfo.IsOverride &&
+                        !memberInfo.IsOverride &&
+                        !memberInfo.IsSealed)
+                    {
+                        memberInfo.MemberType = DSharpTypeMember.Finalizer;
+                        return true;
+                    }
+
+                    stream.Position = startPosition;
+                    return false;
+                }
                 if (memberInfo.Type == null)
                 {
                     memberInfo.MemberType = DSharpTypeMember.Constructor;
@@ -336,7 +370,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 stream.Position = startPosition;
                 return false;
-            } 
+            }
 
             memberInfo.MemberType = DSharpTypeMember.Field;
             return true;
@@ -506,6 +540,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 {
                     node.Fields.Add(field);
                 }
+                else if (member is FinalizerNode finalizer)
+                {
+                    node.Finalizers.Add(finalizer);
+                }
                 else
                 {
                     throw new Exception($"Invalid member type: {memberInfo.MemberType}");
@@ -558,6 +596,17 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
 
                 return method;
+            }
+            else if (memberInfo.MemberType == DSharpTypeMember.Finalizer)
+            {
+                var finalizer = FinalizerNode.Parse(stream, memberInfo);
+
+                if (attributes != null)
+                {
+                    finalizer.Attributes = attributes;
+                }
+
+                return finalizer;
             }
             else
             {
