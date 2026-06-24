@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Tests
 {
     internal class ScriptLexerTests
     {
-        public const string ScriptPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\DialogScriptExample.txt";
+        public const string ScriptPathTemplate = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\{0}.txt";
         public const string SimpleScriptPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\SimpleScriptExample.txt";
         public const string ExpressionsScriptPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\ExpressionsScript.txt";
         public const string MathScriptPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\MathScript.txt";

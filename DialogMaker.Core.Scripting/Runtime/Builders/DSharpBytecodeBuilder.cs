@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+using DialogMaker.Core.Scripting.Runtime.Compilers;
 using System.Text;
 
 namespace DialogMaker.Core.Scripting.Runtime.Builders
@@ -20,13 +21,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <summary>
         /// List of all instructions
         /// </summary>
-        public List<Instruction> Instructions { get; } = [];
+        public List<Instruction> Instructions => _instructions;
 
         private readonly DSharpCompilerContext _context = new()
         {
             Assembly = method.Assembly,
             CurrentMember = method
         };
+        private List<Instruction> _instructions = [];
+        private bool _isWriting;
 
         #region Управление
 
@@ -55,12 +58,52 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <param name="stream">Stream for writing built bytecode</param>
         public void Write(Stream stream)
         {
-            var count = BitConverter.GetBytes(Instructions.Count);
-            stream.Write(count);
-
-            foreach (var instruction in Instructions)
+            if (_isWriting)
             {
-                instruction.Write(stream);
+                throw new InvalidOperationException("Bytecode builder already writing code to stream");
+            }
+
+            _isWriting = true;
+            var overrideMethod = Method.OverrideMethod;
+            List<Instruction>? extraInstructions = null;
+
+            if (Method.MethodType == DSharpMethodType.Finalizer && overrideMethod != null)
+            {
+                var defaultInstructions = _instructions;
+                extraInstructions = [];
+                _instructions = extraInstructions;
+
+                LoadInstance();
+                CallBaseInstance(overrideMethod);
+
+                _instructions = defaultInstructions;
+            }
+
+            try
+            {
+                int instructionsCount = Instructions.Count + extraInstructions?.Count ?? 0;
+                var count = BitConverter.GetBytes(instructionsCount);
+                stream.Write(count);
+
+                if (extraInstructions != null)
+                {
+                    foreach (var extraInstruction in extraInstructions)
+                    {
+                        extraInstruction.Write(stream);
+                    }
+                }
+                foreach (var instruction in Instructions)
+                {
+                    instruction.Write(stream);
+                }
+            }
+            catch
+            {
+                throw;
+            }
+            finally
+            {
+                _isWriting = false;
             }
         }
 
@@ -147,7 +190,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
 
             StringBuilder builder = new();
-            var lineNumberLength = Instructions.Count.ToString().Length;
+            var lineNumberLength = Instructions.Count.ToString().Length - 1;
             int line = 0;
 
             string GetLine()
@@ -371,6 +414,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadInstanceProperty, member);
         }
         /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.LoadBaseInstanceProperty"/>
+        /// </summary>
+        /// <param name="member">Property to load to stack</param>
+        /// <returns></returns>
+        public TypeInstruction LoadBaseInstanceProperty(IDSharpPropertyInfo member)
+        {
+            CheckAccess(member);
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadBaseInstanceProperty, member);
+        }
+        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.StoreProperty"/>
         /// </summary>
         /// <param name="member">Property for writing value from stack</param>
@@ -391,12 +444,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreInstanceProperty, member);
         }
         /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.StoreBaseInstanceProperty"/>
+        /// </summary>
+        /// <param name="member">Property for writing value from stack</param>
+        /// <returns></returns>
+        public TypeInstruction StoreBaseInstanceProperty(IDSharpPropertyInfo member)
+        {
+            CheckAccess(member);
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreBaseInstanceProperty, member);
+        }
+        /// <summary>
         /// Auto load for specified member.
         /// </summary>
         /// <param name="propertyOrField">Property or field</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public TypeInstruction LoadPropertyOrField(IDSharpMemberInfo propertyOrField)
+        public TypeInstruction LoadPropertyOrField(IDSharpMemberInfo propertyOrField, bool isBase = false)
         {
             if (propertyOrField is IDSharpPropertyInfo property)
             {
@@ -407,6 +470,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 if (propertyOrField.IsStatic)
                 {
                     return LoadProperty(property);
+                }
+                if (isBase)
+                {
+                    return LoadBaseInstanceProperty(property);
                 }
 
                 return LoadInstanceProperty(property);
@@ -429,7 +496,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <param name="propertyOrField">Property or field</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public TypeInstruction StorePropertyOrField(IDSharpMemberInfo propertyOrField)
+        public TypeInstruction StorePropertyOrField(IDSharpMemberInfo propertyOrField, bool isBase = false)
         {
             if (propertyOrField is IDSharpPropertyInfo property)
             {
@@ -440,6 +507,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 if (propertyOrField.IsStatic)
                 {
                     return StoreProperty(property);
+                }
+                if (isBase)
+                {
+                    return StoreBaseInstanceProperty(property);
                 }
 
                 return StoreInstanceProperty(property);
@@ -534,6 +605,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.CallInstance, method);
         }
         /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.CallBaseInstance"/>
+        /// </summary>
+        /// <param name="method">Method that needs to call</param>
+        /// <returns></returns>
+        public TypeInstruction CallBaseInstance(IDSharpMethodInfo method)
+        {
+            CheckAccess(method);
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.CallBaseInstance, method);
+        }
+        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.AwaitCallInstance"/>
         /// </summary>
         /// <param name="method">Method that needs to call</param>
@@ -542,6 +623,95 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             CheckAccess(method);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.AwaitCallInstance, method);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.AwaitCallBaseInstance"/>
+        /// </summary>
+        /// <param name="method">Method that needs to call</param>
+        /// <returns></returns>
+        public TypeInstruction AwaitCallBaseInstance(IDSharpMethodInfo method)
+        {
+            CheckAccess(method);
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.AwaitCallBaseInstance, method);
+        }
+        public TypeInstruction CallAuto(IDSharpMethodInfo method, bool isAwait, ref DSharpMethodCompileSettings settings)
+        {
+            return CallAuto(method, isAwait, settings.NextNonVirtualizedAccess);
+        }
+        public TypeInstruction CallAuto(IDSharpMethodInfo method, bool isAwait = false, bool nextNonVirtualizedAccess = false)
+        {
+            bool isStatic = method.IsStatic || 
+                            method.DeclaringType == null;
+            bool NeedToLoadInstance()
+            {
+                return method == Method ||
+                       method.DeclaringType == Method.DeclaringType &&
+                       method.DeclaringType != null;
+            }
+            void PopInstance()
+            {
+                if (method.ReturnType == null)
+                {
+                    Pop();
+                }
+                else
+                {
+                    PopOffset(1);
+                }
+            }
+            TypeInstruction CallInstanceAndPop(Func<IDSharpMethodInfo, TypeInstruction> call, bool loadInstance)
+            {
+                if (loadInstance)
+                {
+                    LoadInstance();
+                }
+
+                var result = call(method);
+
+                if (loadInstance)
+                {
+                    PopInstance();
+                }
+
+                return result;
+            }
+
+            if (isAwait)
+            {
+                if (isStatic)
+                {
+                    return AwaitCall(method);
+                }
+                else
+                {
+                    if (nextNonVirtualizedAccess)
+                    {
+                        return CallInstanceAndPop(AwaitCallBaseInstance, true);
+                    }
+                    else
+                    {
+                        return CallInstanceAndPop(AwaitCallInstance, NeedToLoadInstance());
+                    }
+                }
+            }
+            else
+            {
+                if (isStatic)
+                {
+                    return Call(method);
+                }
+                else
+                {
+                    if (nextNonVirtualizedAccess)
+                    {
+                        return CallInstanceAndPop(CallBaseInstance, true);
+                    }
+                    else
+                    {
+                        return CallInstanceAndPop(CallInstance, NeedToLoadInstance());
+                    }
+                }
+            }
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.Jump"/>
@@ -807,49 +977,31 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <param name="value">Value that contains type info or name</param>
         /// <returns>Resolved member</returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public IDSharpMemberInfo? ExpressionMemberResolver(object value)
+        public IDSharpMemberInfo? ExpressionMemberResolver(DSharpCompilerContext context, object value)
         {
-            if (Method.DeclaringType == null)
+            if ((context.CurrentMember == null || context.CurrentMember == Method) &&
+                Method.DeclaringType != null)
             {
-                return null;
+                return ExpressionMemberResolver(Method.DeclaringType, value);
             }
 
-            string? name = null;
+            IDSharpMemberInfo? result = null;
 
-            if (value is string str)
+            if (context.CurrentMember is IDSharpType currentType)
             {
-                name = str;
+                result = ExpressionMemberResolver(currentType, value);
             }
-            else if (value is IdentifierExpressionNode identifier)
+            else if (context.CurrentMember?.DeclaringType != null)
             {
-                name = identifier.GetName(false);
-            }
-            if (name != null)
-            {
-                var declaringType = Method.DeclaringType;
-                var field = declaringType.Fields.FirstOrDefault(m => m.Name == name);
-
-                if (field != null)
-                {
-                    return field;
-                }
-
-                var property = declaringType.Properties.FirstOrDefault(m => m.Name == name);
-
-                if (property != null)
-                {
-                    return property;
-                }
-
-                var method = declaringType.Methods.FirstOrDefault(m => m.Name == name);
-
-                if (method != null)
-                {
-                    return method;
-                }
+                result = ExpressionMemberResolver(context.CurrentMember.DeclaringType, value);
             }
 
-            return null;
+            if (Method.DeclaringType != null && result == null)
+            {
+                result = ExpressionMemberResolver(Method.DeclaringType, value);
+            }
+
+            return result;
         }
 
         private T CreateInstruction<T>(params object[] parameters)
@@ -866,6 +1018,44 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             {
                 _context.ThrowCanNotAccessException(member);
             }
+        }
+        private IDSharpMemberInfo? ExpressionMemberResolver(IDSharpType type, object value)
+        {
+            string? name = null;
+
+            if (value is string str)
+            {
+                name = str;
+            }
+            else if (value is IdentifierExpressionNode identifier)
+            {
+                name = identifier.GetName(false);
+            }
+            if (name != null)
+            {
+                var field = type.GetFieldOrDefault(name);
+
+                if (field != null)
+                {
+                    return field;
+                }
+
+                var property = type.GetPropertyOrDefault(name);
+
+                if (property != null)
+                {
+                    return property;
+                }
+
+                var method = type.GetMethodOrDefault(name);
+
+                if (method != null)
+                {
+                    return method;
+                }
+            }
+
+            return null;
         }
 
         #endregion

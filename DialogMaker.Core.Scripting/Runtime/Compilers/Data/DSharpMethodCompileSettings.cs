@@ -11,8 +11,20 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         public Dictionary<string, DSharpMethodBuilderParameter>? LocalVariables { get; set; }
         public HashSet<DSharpMethodBuilder>? AlwaysReturnMethods { get; set; }
         public HashSet<CallExpressionNode>? CallingsToAwait { get; set; }
+        public HashSet<ExpressionNode>? BannedExpressions { get; set; }
         public bool DoNotCompileEndPointMember { get; set; }
+        public bool NextNonVirtualizedAccess { get; set; }
 
+        public readonly bool BanExpression(ExpressionNode expression) => BannedExpressions?.Add(expression) == true;
+        public readonly bool IsExpressionBanned(ExpressionNode? expression)
+        {
+            if (expression == null || BannedExpressions == null)
+            {
+                return false;
+            }
+
+            return BannedExpressions.Contains(expression);
+        }
         public readonly bool TryGetVariable(string name, [NotNullWhen(true)] out DSharpMethodBuilderParameter? result)
         {
             result = null;

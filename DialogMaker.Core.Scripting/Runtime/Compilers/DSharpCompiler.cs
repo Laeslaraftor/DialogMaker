@@ -1,9 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Runtime.Builders;
-using System.Data.Common;
-using System.Diagnostics.CodeAnalysis;
-using System.Net.WebSockets;
 
 namespace DialogMaker.Core.Scripting.Runtime.Compilers
 {
@@ -33,21 +30,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         private readonly Dictionary<DSharpFieldBuilder, LiteralExpressionNode> _enumValues = [];
         private readonly Dictionary<string, DSharpTypeToken> _resolvedTypes = [];
 
-        private NamespaceStatementNode? CurrentNamespace
-        {
-            get;
-            set
-            {
-                if (field != value)
-                {
-                    field = value;
-                    _currentNamespaceIdentifier = value?.GetName();
-                }
-            }
-        }
+        private string? _currentNamespace;
         private DSharpCompilerContext _context;
-
-        private string? _currentNamespaceIdentifier;
 
         #region Управление
 
@@ -63,7 +47,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             _usings.Clear();
             _propertiesWithCustomAccessors.Clear();
             _propertyFields.Clear();
-            CurrentNamespace = null;
+            _currentNamespace = null;
 
             foreach (var treeRoot in treeRoots)
             {
@@ -117,19 +101,28 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
             else if (statement is NamespaceBlockStatementBlock namespaceBlockStatement)
             {
-                var previousNamespace = CurrentNamespace;
-                CurrentNamespace = namespaceBlockStatement;
+                var previousNamespace = _currentNamespace;
+                var currentNamespace = namespaceBlockStatement.GetName();
+
+                if (previousNamespace != null)
+                {
+                    _currentNamespace += "." + currentNamespace;
+                }
+                else
+                {
+                    _currentNamespace = currentNamespace;
+                }
 
                 if (namespaceBlockStatement.Block?.Statements != null)
                 {
                     ParseStatements(assemblyBuilder, namespaceBlockStatement.Block.Statements);
                 }
 
-                CurrentNamespace = previousNamespace;
+                _currentNamespace = previousNamespace;
             }
             else if (statement is NamespaceStatementNode namespaceStatement)
             {
-                CurrentNamespace = namespaceStatement;
+                _currentNamespace = namespaceStatement.GetName();
             }
             else if (statement is InvokableStatementNode invokableStatement)
             {
@@ -184,7 +177,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             type.IsAbstract = declaration.IsAbstract;
             type.ObjectType = declaration.Type;
             type.Access = declaration.Access;
-            type.Namespace = CurrentNamespace?.GetName();
+            type.Namespace = _currentNamespace;
 
             void CreateGenerics(DSharpTypeBuilder builder, IEnumerable<TypeInfoNode> types)
             {
@@ -237,7 +230,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         private void CreateGlobalVariable(DSharpAssemblyBuilder assemblyBuilder, VariableNode variableNode)
         {
             var variable = assemblyBuilder.CreateGlobalVariable(variableNode.Name);
-            variable.Namespace = _currentNamespaceIdentifier;
+            variable.Namespace = _currentNamespace;
             variable.Access = DSharpAccessModifier.Public;
 
             if (variableNode.Initializer?.TrySimplifyToLiteral(out var rawValue) == true)
@@ -343,7 +336,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
 
                 method = assemblyBuilder.CreateGlobalFunction(methodNode.Identifier.Name);
-                method.Namespace = _currentNamespaceIdentifier;
+                method.Namespace = _currentNamespace;
             }
             else
             {
@@ -410,7 +403,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         {
             var type = assemblyBuilder.CreateType(enumNode.Name, parent);
             type.Name = enumNode.Name;
-            type.Namespace = CurrentNamespace?.Name;
+            type.Namespace = _currentNamespace;
 
             foreach (var enumValue in enumNode.Members)
             {
@@ -432,27 +425,40 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
         private void SetupTypes(DSharpAssemblyBuilder assemblyBuilder)
         {
-            static T? FindBaseMember<T>(Func<IDSharpType, T> selector, IDSharpType type, Predicate<T>? extraPredicate = null)
+            T? FindBaseMember<T>(Func<IDSharpType, T> selector, IDSharpType type, Predicate<T>? extraPredicate = null)
                 where T : IDSharpMemberInfo
             {
                 var member = selector(type);
 
-                if (member == null || extraPredicate?.Invoke(member) == true)
+                if (member != null && extraPredicate?.Invoke(member) == true)
                 {
-                    foreach (var baseType in type.GetBaseTypes())
+                    member = default;
+                }
+                if (member == null && type != _assemblyBuilder.ObjectType)
+                {
+                    var baseTypes = type.GetBaseTypes();
+
+                    if (baseTypes.Length != 0)
                     {
-                        if (baseType.ObjectType == DSharpObjectType.Interface)
+                        foreach (var baseType in type.GetBaseTypes())
                         {
-                            continue;
-                        }
+                            if (baseType.ObjectType == DSharpObjectType.Interface)
+                            {
+                                continue;
+                            }
 
-                        member = FindBaseMember(selector, baseType, extraPredicate);
+                            member = FindBaseMember(selector, baseType, extraPredicate);
 
-                        if (member != null)
-                        {
-                            return member;
+                            if (member != null)
+                            {
+                                break;
+                            }
                         }
                     }
+                    else 
+                    {
+                        member = FindBaseMember(selector, _assemblyBuilder.ObjectType, extraPredicate);
+                    }                    
                 }
 
                 return member;
@@ -560,6 +566,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     throw new InvalidOperationException($"Unable to override property \"{info.Key}\" because property with same signature not found in parents: {info.Value}");
                 }
+                if (overrideProperty.IsSealed)
+                {
+                    throw new InvalidOperationException($"Unable to override sealed property \"{overrideProperty}\" by \"{info.Key}\"");
+                }
 
                 info.Key.OverrideProperty = overrideProperty;
             }
@@ -575,15 +585,23 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     throw new InvalidOperationException($"Unable to override global function \"{info.Key}\": {info.Value}");
                 }
 
+                var parameters = info.Key.GetParameters();
+                var genericParameters = info.Key.GetGenericParameters();
+
                 var overrideMethod = FindBaseMember(t => t.GetMethod(info.Key.Name), info.Key.DeclaringType, m =>
                 {
-                    return m.GetParameters().Length != info.Key.Parameters.Count ||
-                           m.GetGenericParameters().Length != info.Key.GenericParameters.Count;
+                    return m.DeclaringType == info.Key.DeclaringType ||
+                           !m.GetParameters().SequenceEqual(parameters) ||
+                           !m.GetGenericParameters().SequenceEqual(genericParameters);
                 });
 
                 if (overrideMethod == null)
                 {
-                    throw new InvalidOperationException($"Unable to override property \"{info.Key}\" because property with same signature not found in parents: {info.Value}");
+                    throw new InvalidOperationException($"Unable to override method \"{info.Key}\" because method with same signature not found in parents: {info.Value}");
+                }
+                if (overrideMethod.IsSealed)
+                {
+                    throw new InvalidOperationException($"Unable to override sealed method \"{overrideMethod}\" by \"{info.Key}\"");
                 }
 
                 info.Key.OverrideMethod = overrideMethod;

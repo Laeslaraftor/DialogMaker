@@ -3,6 +3,7 @@ using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime.Builders;
 using System.Diagnostics.CodeAnalysis;
+using System.Net.WebSockets;
 using System.Reflection.Emit;
 
 namespace DialogMaker.Core.Scripting.Runtime.Compilers
@@ -229,6 +230,47 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                     return context.CurrentMember.DeclaringType;
                 }
+                else if (expression is BaseExpressionNode baseExpression)
+                {
+                    if (context.CurrentMember == null)
+                    {
+                        throw new ArgumentException($"Unable to get type of \"base\" because current member not provided: {expression}", nameof(context));
+                    }
+                    if (context.CurrentMember.IsStatic)
+                    {
+                        throw new InvalidOperationException($"Unable to access to base inside static member: {expression}");
+                    }
+
+                    IDSharpType currentType;
+
+                    if (context.CurrentMember is IDSharpType typeMember)
+                    {
+                        currentType = typeMember;
+                    }
+                    else
+                    {
+                        if (context.CurrentMember.DeclaringType == null)
+                        {
+                            throw new ArgumentException($"Unable to get type of \"base\" from member without declaring type: {expression}", nameof(context));
+                        }
+
+                        currentType = context.CurrentMember.DeclaringType;
+                    }
+
+                    var baseTypes = currentType.GetBaseTypes().Where(t => t.ObjectType != DSharpObjectType.Interface);
+
+                    foreach (var baseType in baseTypes)
+                    {
+                        return baseType;
+                    }
+
+                    if (context.Assembly != null && currentType != context.Assembly.ObjectType)
+                    {
+                        return context.Assembly.ObjectType;
+                    }
+
+                    throw new ArgumentException($"Unable to get type of \"base\" from type that do not have base types \"{currentType}\"", nameof(context));
+                }
                 if (expression is IdentifierExpressionNode identifierExpression &&
                     context.CurrentMember is IDSharpMethodInfo method)
                 {
@@ -374,8 +416,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     throw new InvalidOperationException($"Unable to find one of expressions type. Left: {leftTypeMember}, right: {rightTypeMember}");
                 }
-                if (!leftTypeMember.TryGetReturnType(out var leftType) ||
-                    !rightTypeMember.TryGetReturnType(out var rightType))
+
+                IDSharpType? leftType = leftTypeMember as IDSharpType;
+                IDSharpType? rightType = rightTypeMember as IDSharpType;
+
+                if ((leftType == null || rightType == null) &&
+                    (!leftTypeMember.TryGetReturnType(out leftType) ||
+                    !rightTypeMember.TryGetReturnType(out rightType)))
                 {
                     throw new InvalidOperationException($"Expression must return value. Left: {leftTypeMember}, right: {rightTypeMember}");
                 }

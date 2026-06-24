@@ -55,35 +55,38 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 ParseExpressions(stream, expression.Parameters, DSharpTokenType.RightParen, "Required parameter");
                 stream.Eat(DSharpTokenType.RightParen);
             }
-            if (!leftParenExists && !stream.Check(DSharpTokenType.LeftBrace))
+            if (!stream.Check(DSharpTokenType.Semicolon))
             {
-                stream.ThrowPositionException("Required calling or properties initializers");
-            }
-
-            if (stream.Check(DSharpTokenType.LeftBrace))
-            {
-                stream.Eat(DSharpTokenType.LeftBrace);
-
-                while (!stream.Check(DSharpTokenType.RightBrace))
+                if (!leftParenExists && !stream.Check(DSharpTokenType.LeftBrace))
                 {
-                    var property = IdentifierExpressionNode.Parse(stream);
-                    var assignmentOperator = stream.Eat(DSharpTokenType.Assign);
-                    var value = ParseExpression(stream);
-
-                    expression.PropertiesInitializer.Add(new(assignmentOperator) 
-                    {
-                        Left = property,
-                        Operator = DSharpAssignmentOperator.Assign,
-                        Right = value
-                    });
-
-                    if (!ArrayExpressionNode.CheckTokenAfterComma(stream, DSharpTokenType.RightBrace))
-                    {
-                        stream.ThrowPositionException("Required property initializer");
-                    }
+                    stream.ThrowPositionException("Required calling or properties initializers");
                 }
 
-                stream.Eat(DSharpTokenType.RightBrace);
+                if (stream.Check(DSharpTokenType.LeftBrace))
+                {
+                    stream.Eat(DSharpTokenType.LeftBrace);
+
+                    while (!stream.Check(DSharpTokenType.RightBrace))
+                    {
+                        var property = IdentifierExpressionNode.Parse(stream);
+                        var assignmentOperator = stream.Eat(DSharpTokenType.Assign);
+                        var value = ParseExpression(stream);
+
+                        expression.PropertiesInitializer.Add(new(assignmentOperator)
+                        {
+                            Left = property,
+                            Operator = DSharpAssignmentOperator.Assign,
+                            Right = value
+                        });
+
+                        if (!ArrayExpressionNode.CheckTokenAfterComma(stream, DSharpTokenType.RightBrace))
+                        {
+                            stream.ThrowPositionException("Required property initializer");
+                        }
+                    }
+
+                    stream.Eat(DSharpTokenType.RightBrace);
+                }
             }
 
             return expression;

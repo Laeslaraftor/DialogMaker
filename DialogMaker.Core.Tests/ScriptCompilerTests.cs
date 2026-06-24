@@ -10,11 +10,113 @@ namespace DialogMaker.Core.Tests
 {
     internal class ScriptCompilerTests
     {
-        [Test]
-        public static void TestSimpleScriptCompiling()
-        {
-            DSharpAssemblyBuilder assembly = CompileSimpleScript();
+        public const string SimpleScript = "SimpleScriptExample";
+        public const string TypeScript = "TypeDetectionScript";
 
+        [Test]
+        [TestCase(SimpleScript)]
+        [TestCase(TypeScript)]
+        public static void TestSimpleScriptCompiling(string fileName)
+        {
+            var assembly = CompileScript(fileName);
+            PrintAssembly(assembly);
+        }
+        [Test]
+        public static void TestMathSimplifying()
+        {
+            var parsedScript = ParseScript(ScriptLexerTests.MathScriptPath, "SimpleScript");
+            VariableNode? variableWithInitializer = null;
+
+            foreach (var statement in parsedScript.Statements)
+            {
+                if (statement is VariableStatementNode variableStatement &&
+                    variableStatement.Variable?.Initializer != null)
+                {
+                    variableWithInitializer = variableStatement.Variable;
+                    break;
+                }
+            }
+
+            if (variableWithInitializer == null)
+            {
+                Debug.Fail("Variable with initializer not found");
+                return;
+            }
+
+            Console.WriteLine("Variable:");
+            Console.WriteLine(variableWithInitializer.ToString());
+
+            if (variableWithInitializer.Initializer!.TrySimplifyToLiteral(out var result))
+            {
+                Console.WriteLine($"Result: {result}");
+            }
+            else
+            {
+                Debug.Fail($"Failed to simplify expression: {variableWithInitializer.Initializer}");
+            }
+        }
+        [Test]
+        public static void TestExpressionTypeDetection()
+        {
+            var parsedScript = ParseScript(ScriptLexerTests.TypeDetectionScriptPath, "SimpleScript");
+            DSharpAssemblyBuilder assembly = new("SimpleScript", []);
+            DSharpCompiler compiler = new(assembly);
+
+            compiler.CompileTrees(parsedScript);
+
+            VariableNode? variableWithInitializer = null;
+
+            foreach (var statement in parsedScript.Statements)
+            {
+                if (statement is VariableStatementNode variableStatement &&
+                    variableStatement.Variable?.Initializer != null)
+                {
+                    variableWithInitializer = variableStatement.Variable;
+                    break;
+                }
+            }
+
+            if (variableWithInitializer == null)
+            {
+                Debug.Fail("Variable with initializer not found");
+                return;
+            }
+
+            Console.WriteLine("Variable:");
+            Console.WriteLine(variableWithInitializer.ToString());
+
+            var type = variableWithInitializer.Initializer!.GetExpressionType(assembly);
+
+            Console.WriteLine($"Result: {type}");
+        }
+
+        public static DSharpAssemblyBuilder CompileScript(string scriptName)
+        {
+            var scriptPath = string.Format(ScriptLexerTests.ScriptPathTemplate, scriptName);
+            var script = File.ReadAllText(scriptPath);
+            DSharpLexer lexer = new(script);
+            lexer.Tokenize();
+            AstParser parser = new(lexer);
+
+            var parsedScript = parser.Parse("SimpleScript");
+            DSharpAssemblyBuilder assembly = new("SimpleScript", []);
+            DSharpCompiler compiler = new(assembly);
+
+            compiler.CompileTrees(parsedScript);
+
+            return assembly;
+        }
+
+        private static DSharpTreeRoot ParseScript(string filePath, string name)
+        {
+            var script = File.ReadAllText(filePath);
+            DSharpLexer lexer = new(script);
+            lexer.Tokenize();
+            AstParser parser = new(lexer);
+            return parser.Parse(name);
+        }
+        private static void PrintAssembly(DSharpAssemblyBuilder assembly)
+        {
             Console.WriteLine("Types:");
 
             foreach (var type in assembly.Types)
@@ -165,99 +267,6 @@ namespace DialogMaker.Core.Tests
             {
                 PrintField(variable);
             }
-        }
-        [Test]
-        public static void TestMathSimplifying()
-        {
-            var parsedScript = ParseScript(ScriptLexerTests.MathScriptPath, "SimpleScript");
-            VariableNode? variableWithInitializer = null;
-
-            foreach (var statement in parsedScript.Statements)
-            {
-                if (statement is VariableStatementNode variableStatement &&
-                    variableStatement.Variable?.Initializer != null)
-                {
-                    variableWithInitializer = variableStatement.Variable;
-                    break;
-                }
-            }
-
-            if (variableWithInitializer == null)
-            {
-                Debug.Fail("Variable with initializer not found");
-                return;
-            }
-
-            Console.WriteLine("Variable:");
-            Console.WriteLine(variableWithInitializer.ToString());
-
-            if (variableWithInitializer.Initializer!.TrySimplifyToLiteral(out var result))
-            {
-                Console.WriteLine($"Result: {result}");
-            }
-            else
-            {
-                Debug.Fail($"Failed to simplify expression: {variableWithInitializer.Initializer}");
-            }
-        }
-        [Test]
-        public static void TestExpressionTypeDetection()
-        {
-            var parsedScript = ParseScript(ScriptLexerTests.TypeDetectionScriptPath, "SimpleScript");
-            DSharpAssemblyBuilder assembly = new("SimpleScript", []);
-            DSharpCompiler compiler = new(assembly);
-
-            compiler.CompileTrees(parsedScript);
-
-            VariableNode? variableWithInitializer = null;
-
-            foreach (var statement in parsedScript.Statements)
-            {
-                if (statement is VariableStatementNode variableStatement &&
-                    variableStatement.Variable?.Initializer != null)
-                {
-                    variableWithInitializer = variableStatement.Variable;
-                    break;
-                }
-            }
-
-            if (variableWithInitializer == null)
-            {
-                Debug.Fail("Variable with initializer not found");
-                return;
-            }
-
-            Console.WriteLine("Variable:");
-            Console.WriteLine(variableWithInitializer.ToString());
-
-            var type = variableWithInitializer.Initializer!.GetExpressionType(assembly);
-
-            Console.WriteLine($"Result: {type}");
-        }
-
-        public static DSharpAssemblyBuilder CompileSimpleScript()
-        {
-            var script = File.ReadAllText(ScriptLexerTests.SimpleScriptPath);
-            DSharpLexer lexer = new(script);
-            lexer.Tokenize();
-            AstParser parser = new(lexer);
-
-            var parsedScript = parser.Parse("SimpleScript");
-            DSharpAssemblyBuilder assembly = new("SimpleScript", []);
-            DSharpCompiler compiler = new(assembly);
-
-            compiler.CompileTrees(parsedScript);
-
-            return assembly;
-        }
-
-        private static DSharpTreeRoot ParseScript(string filePath, string name)
-        {
-            var script = File.ReadAllText(filePath);
-            DSharpLexer lexer = new(script);
-            lexer.Tokenize();
-            AstParser parser = new(lexer);
-            return parser.Parse(name);
         }
     }
 }

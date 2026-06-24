@@ -115,6 +115,14 @@
         [RequestsStackValues(1)]
         LoadInstanceProperty,
         /// <summary>
+        /// Load object instance property value to stack without searching overriding member.
+        /// Stack:
+        /// 0: instance
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(1)]
+        LoadBaseInstanceProperty,
+        /// <summary>
         /// Store last value from stack to property.
         /// Stack:
         /// 0: value
@@ -131,6 +139,15 @@
         [ArgsCount(1)]
         [RequestsStackValues(2)]
         StoreInstanceProperty,
+        /// <summary>
+        /// Store last value from stack to object instance property without searching overriding member.
+        /// Stack:
+        /// 0: value,
+        /// 1: instance
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(2)]
+        StoreBaseInstanceProperty,
         /// <summary>
         /// Load item value from array to stack.
         /// Stack:
@@ -183,6 +200,15 @@
         [RequestsStackValues(-2)]
         CallInstance,
         /// <summary>
+        /// Call method from instance of object that must be placed in bottom of stack without searching overriding member. 
+        /// Stack:
+        /// 0: instance,
+        /// 1: args...
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(-2)]
+        CallBaseInstance,
+        /// <summary>
         /// Call and await method from instance of object that must be placed in bottom of stack. 
         /// Stack:
         /// 0: instance,
@@ -191,6 +217,15 @@
         [ArgsCount(1)]
         [RequestsStackValues(-2)]
         AwaitCallInstance,
+        /// <summary>
+        /// Call and await method from instance of object that must be placed in bottom of stack without searching overriding member. 
+        /// Stack:
+        /// 0: instance,
+        /// 1: args...
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(-2)]
+        AwaitCallBaseInstance,
         /// <summary>
         /// Jump to instruction
         /// </summary>

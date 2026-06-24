@@ -102,6 +102,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
             set;
         }
+        public override bool IsVirtual 
+        { 
+            get => base.IsVirtual || OriginalProperty != null; 
+            set => base.IsVirtual = value; 
+        }
         public override bool IsDeclaration
         {
             get

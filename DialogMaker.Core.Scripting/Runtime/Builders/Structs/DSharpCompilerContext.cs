@@ -28,7 +28,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public DSharpAssemblyBuilder? Assembly { get; set; }
         public IEnumerable<string>? Usings { get; set; }
         public Func<object, IDSharpType?>? TypeResolver { get; set; }
-        public Func<object, IDSharpMemberInfo?>? MemberResolver { get; set; }
+        public Func<DSharpCompilerContext, object, IDSharpMemberInfo?>? MemberResolver { get; set; }
         public IDSharpMemberInfo? CurrentMember { get; set; }
         public Dictionary<string, DSharpTypeToken>? ResolvedTypes { get; set; }
         public ExpressionNode? ParentExpression { get; set; }
@@ -115,6 +115,30 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
 
             throw new InvalidOperationException(message);
+        }
+        [DoesNotReturn]
+        public readonly void ThrowThisOrBaseIsUnavailable(ExpressionNode expression)
+        {
+            if (expression is ThisExpressionNode)
+            {
+                ThrowThisIsUnavailable(expression);
+            }
+            else if (expression is BaseExpressionNode)
+            {
+                ThrowBaseIsUnavailable(expression);
+            }
+
+            throw new InvalidOperationException($"Expression is unavailable in current context: {expression}");
+        }
+        [DoesNotReturn]
+        public readonly void ThrowThisIsUnavailable(ExpressionNode expression)
+        {
+            throw new InvalidOperationException($"\"this\" is unavailable in current context: {expression}");
+        }
+        [DoesNotReturn]
+        public readonly void ThrowBaseIsUnavailable(ExpressionNode expression)
+        {
+            throw new InvalidOperationException($"\"base\" is unavailable in current context: {expression}");
         }
 
         #endregion
@@ -370,8 +394,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             if (result == null)
             {
-                string? @namespace = CurrentMember?.DeclaringType?.FullName;
-                result = InternalTryResolveType(@namespace, typeName);
+                var declaringType = CurrentMember?.DeclaringType;
+
+                result = InternalTryResolveType(declaringType?.FullName, typeName);
+                result ??= InternalTryResolveType(declaringType?.Namespace, typeName);
 
                 if (result == null)
                 {
@@ -895,7 +921,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
             if (MemberResolver != null)
             {
-                result = MemberResolver(name);
+                result = MemberResolver(this, name);
 
                 if (result != null)
                 {

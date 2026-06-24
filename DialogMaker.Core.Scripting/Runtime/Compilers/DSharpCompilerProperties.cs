@@ -32,7 +32,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 return valueField;
             }
-            void CreateAccessor(Func<DSharpMethodBuilder> fabric, BlockStatementNode? customAccessor, DSharpAccessModifier access)
+
+            void CreateAccessor(Func<DSharpMethodBuilder> fabric, BlockStatementNode? customAccessor, DSharpAccessModifier access, Action<DSharpMethodBuilder, DSharpMethodCompileSettings> compiler)
             {
                 DSharpMethodBuilder? accessorMethod = fabric();
 
@@ -53,7 +54,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 else
                 {
                     GetValueField();
-                    CompileGetterMethod(accessorMethod, settings);
+                    compiler(accessorMethod, settings);
                 }
             }
 
@@ -64,7 +65,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 if (property.DeclaringType.ObjectType != DSharpObjectType.Interface ||
                     (property.DeclaringType.ObjectType == DSharpObjectType.Interface && node.Getter != null))
                 {
-                    CreateAccessor(property.CreateGetter, node.Getter, node.GetterAccess);
+                    CreateAccessor(property.CreateGetter, node.Getter, node.GetterAccess, CompileGetterMethod);
                 }
             }
             if (node.CanWrite)
@@ -74,7 +75,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 if (property.DeclaringType.ObjectType != DSharpObjectType.Interface ||
                     (property.DeclaringType.ObjectType == DSharpObjectType.Interface && node.Setter != null))
                 {
-                    CreateAccessor(property.CreateSetter, node.Setter, node.SetterAccess);
+                    CreateAccessor(property.CreateSetter, node.Setter, node.SetterAccess, CompileSetterMethod);
                 }
             }
         }

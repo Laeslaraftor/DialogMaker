@@ -1,13 +1,50 @@
 ﻿namespace System
 {
 	public class String {}
-	public class Object {}
+	public class Object
+	{
+		public extern Type GetType();
+		public virtual string ToString() => GetType().Name;
+	}
 	public struct Char {}
 	public struct Boolean {}
 	public struct Number {}
 	
-	public class Type {}
+	public class Type
+	{
+		public string Name { get; }
+	}
 }
+
+public class Character
+{
+	public string Name { get; set; }
 	
+	public override string ToString()
+	{
+		if (Name != null)
+		{
+			return Name;
+		}
+		
+		return base.ToString();
+	}
+}
+public class Player : Character
+{
+	public number Hp { get; set; }
+	public Player OtherPlayer { get; set; }
+	
+
+	public func SetValues() 
+	{
+		OtherPlayer.OtherPlayer.Hp = 100;
+	}
+	public override string ToString()
+	{
+		return base.ToString() + "; Hp: " + Hp;
+	}
+	private Player GetPlayer() => OtherPlayer;
+}
 
 number value = new System.Type();

@@ -655,6 +655,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 _ => throw new ArgumentException($"Invalid literal type: {literalType}", nameof(literalType))
             };
         }
+        public IDSharpMemberInfo? GetTypeOrDefault(DSharpTypeToken? token)
+        {
+            if (token == null)
+            {
+                return null;
+            }
+
+            return GetType(token);
+        }
         public IDSharpMemberInfo GetType(DSharpTypeToken token)
         {
             return GetType((DSharpMetadataToken)token);

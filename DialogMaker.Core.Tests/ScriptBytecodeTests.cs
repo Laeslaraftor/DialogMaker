@@ -7,19 +7,21 @@ namespace DialogMaker.Core.Tests
     internal class ScriptBytecodeTests
     {
         [Test]
-        [TestCase("repeat")]
-        [TestCase("sum")]
-        [TestCase("getTextColor")]
-        [TestCase("getNumberNameType")]
-        [TestCase("getGenericValue")]
-        [TestCase("getLines")]
-        [TestCase("foreachTest")]
-        [TestCase("System.Number.GetSquared")]
-        [TestCase("System.List`1.Add")]
-        [TestCase("System.List`1.Expand")]
-        public static void PrintSimpleFunctionBytecode(string functionName)
+        [TestCase(ScriptCompilerTests.SimpleScript, "repeat")]
+        [TestCase(ScriptCompilerTests.SimpleScript, "sum")]
+        [TestCase(ScriptCompilerTests.SimpleScript, "getTextColor")]
+        [TestCase(ScriptCompilerTests.SimpleScript, "getNumberNameType")]
+        [TestCase(ScriptCompilerTests.SimpleScript, "getGenericValue")]
+        [TestCase(ScriptCompilerTests.SimpleScript, "getLines")]
+        [TestCase(ScriptCompilerTests.SimpleScript, "foreachTest")]
+        [TestCase(ScriptCompilerTests.SimpleScript, "System.Number.GetSquared")]
+        [TestCase(ScriptCompilerTests.SimpleScript, "System.List`1.Add")]
+        [TestCase(ScriptCompilerTests.SimpleScript, "System.List`1.Expand")]
+        [TestCase(ScriptCompilerTests.TypeScript, "Player.ToString")]
+        [TestCase(ScriptCompilerTests.TypeScript, "Player.SetValues")]
+        public static void PrintSimpleFunctionBytecode(string scriptName, string functionName)
         {
-            var assembly = ScriptCompilerTests.CompileSimpleScript();
+            var assembly = ScriptCompilerTests.CompileScript(scriptName);
             ReadFunctionOrMethod(assembly, functionName);
         }
 

@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
@@ -53,7 +54,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Parsed member access node (<see cref="MemberAccessExpressionNode"/>) or identifier node (<see cref="IdentifierExpressionNode"/>)</returns>
         public static ExpressionNode ParseIdentifier(AstParserStream stream, bool parseGenerics = true)
         {
-            ExpressionNode root = IdentifierExpressionNode.Parse(stream, parseGenerics);
+            ExpressionNode root;
+
+            if (stream.Check(DSharpTokenType.This))
+            {
+                root = ThisExpressionNode.Parse(stream);
+            }
+            else if (stream.Check(DSharpTokenType.Base))
+            {
+                root = BaseExpressionNode.Parse(stream);
+            }
+            else
+            {
+                root = IdentifierExpressionNode.Parse(stream, parseGenerics);
+            }
 
             /*
             MemberAccess 
@@ -85,6 +99,24 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     root = memberAccess;
                 }
                 while (stream.Check(DSharpTokenType.Dot));
+
+                var rootBinary = memberAccess.Member as BinaryExpressionNode;
+                var currentBinary = rootBinary;
+
+                while (currentBinary != null)
+                {
+                    if (currentBinary.Left is BinaryExpressionNode nextBinary)
+                    {
+                        currentBinary = nextBinary;
+                    }
+                    else
+                    {
+                        memberAccess.Member = currentBinary.Left;
+                        currentBinary.Left = memberAccess;
+
+                        return rootBinary!;
+                    }
+                }
 
                 return memberAccess;
             }
@@ -168,6 +200,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Parsed expression</returns>
         public static ExpressionNode ParseExpression(AstParserStream stream)
         {
+            bool previousIsMemberAccess = stream.Check(DSharpTokenType.Dot, -1);
             var left = BinaryExpressionNode.ParseLogicalOr(stream);
 
             if (AssignmentExpressionNode.TryParse(stream, out var assignment))
@@ -191,14 +224,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     Expression = left
                 };
             }
-            while (stream.Check(DSharpTokenType.Dot))
+
+            if (!previousIsMemberAccess)
             {
-                var accessOperation = stream.Eat(DSharpTokenType.Dot);
-                left = new MemberAccessExpressionNode(accessOperation)
+                while (stream.Check(DSharpTokenType.Dot))
                 {
-                    Target = left,
-                    Member = ParseExpression(stream)
-                };
+                    var accessOperation = stream.Eat(DSharpTokenType.Dot);
+                    left = new MemberAccessExpressionNode(accessOperation)
+                    {
+                        Target = left,
+                        Member = ParseExpression(stream)
+                    };
+                }
             }
 
             return left;
@@ -216,9 +253,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 return ParenContainedExpressionNode.Parse(stream);
             }
-            if (stream.Check(DSharpTokenType.This))
+            if (stream.Check(DSharpTokenType.This) ||
+                stream.Check(DSharpTokenType.Base) ||
+                stream.Check(DSharpTokenType.Identifier))
             {
-                return ThisExpressionNode.Parse(stream);
+                return ParseIdentifierAccess(stream);
             }
             if (stream.Check(DSharpTokenType.New))
             {
@@ -231,10 +270,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             if (stream.Check(DSharpTokenType.LeftBracket))
             {
                 return ArrayExpressionNode.Parse(stream);
-            }
-            if (stream.Check(DSharpTokenType.Identifier))
-            {
-                return ParseIdentifierAccess(stream);
             }
             if (TypeInfoNode.CanParseIdentifier(stream) && stream.Check(DSharpTokenType.Dot, 1))
             {
