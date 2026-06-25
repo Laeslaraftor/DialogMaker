@@ -550,20 +550,37 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
                 else
                 {
-                    DSharpBytecodeBuilder.Instruction? startLastInstruction = null;
+                    IDSharpMemberInfo? member;
 
-                    if (code.Instructions.Count > 0)
+                    if (assignExpression.Left is MemberAccessExpressionNode leftMemberAccess)
                     {
-                        startLastInstruction = code.Instructions[^1];
+                        member = CompileMemberAccessExpression(method, leftMemberAccess, (p, e, ref s, c) =>
+                        {
+                            c.ParentExpression = p;
+
+                            if (p is ThisExpressionNode ||
+                                p is BaseExpressionNode)
+                            {
+                                code.LoadInstance();
+                            }
+                            if (c.TryResolveMember(e, out var resolvedMember))
+                            {
+                                return resolvedMember;
+                            }
+
+                            throw new InvalidOperationException($"Unable to resolve member: {e}");
+                        }, ref settings, context);
+                    }
+                    else
+                    {
+                        member = CompileValueExpression(method, assignExpression.Left, ref settings, expression, context);
                     }
 
-                    var member = CompileValueExpression(method, assignExpression.Left, ref settings, expression, context)
-                        ?? throw new ArgumentException($"Unable to find member: {assignExpression.Left}", nameof(expression));
-                    bool lastIsLoadInstance = false;
+                    settings.DoNotCompileEndPointMember = false;
 
-                    if (code.Instructions.Count > 0)
+                    if (member == null)
                     {
-                        lastIsLoadInstance = code.Instructions[^1] != startLastInstruction;
+                        throw new ArgumentException($"Unable to find member: {assignExpression.Left}", nameof(expression));
                     }
 
                     CompileValueExpression(method, assignExpression.Right, ref settings, expression, context);
@@ -571,7 +588,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     if (assignExpression.Operator != DSharpAssignmentOperator.Assign)
                     {
                         code.LoadPropertyOrField(member, settings.NextNonVirtualizedAccess);
-                        settings.NextNonVirtualizedAccess = false;
                         AddExtraAssignOperation();
                     }
 
@@ -594,14 +610,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     }
 
                     code.StorePropertyOrField(member, settings.NextNonVirtualizedAccess);
-                    code.Pop();
+                    settings.NextNonVirtualizedAccess = false;
 
-                    if (lastIsLoadInstance)
+                    if (!member.IsStatic)
+                    {
+                        code.PopRepeat(2);
+                    }
+                    else
                     {
                         code.Pop();
                     }
-
-                    settings.NextNonVirtualizedAccess = false;
                 }
             }
             else if (expression is IncrementExpressionNode incrementExpression)
@@ -688,21 +706,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     bool instanceLoaded = false;
 
-                    if (parentExpression is IdentifierExpressionNode ||
-                        (expression is IdentifierExpressionNode && parentExpression is not MemberAccessExpressionNode) ||
-                        (parentExpression is MemberAccessExpressionNode parentAccess && parentAccess.Target == expression))
+                    if (!member.IsStatic &&
+                        parentExpression is not MemberAccessExpressionNode &&
+                        parentExpression is not IdentifierExpressionNode &&
+                        ((code.Instructions.Count > 0 &&
+                        code.Instructions[^1].Operation != DSharpBytecodeOperation.LoadInstance) ||
+                        code.Instructions.Count == 0))
                     {
-                        if (!settings.IsExpressionBanned(parentExpression))
-                        {
-                            if (parentExpression is MemberAccessExpressionNode parentToBan &&
-                                parentToBan.Member != null)
-                            {
-                                settings.BanExpression(parentToBan.Member);
-                            }
+                        code.LoadInstance();
 
-                            code.LoadInstance();
-                        }
-                        
                         instanceLoaded = true;
                     }
 
@@ -722,163 +734,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
             else if (expression is MemberAccessExpressionNode memberAccessExpression)
             {
-                MemberAccessExpressionNode rootExpression = memberAccessExpression;
-                var startContextMember = context.CurrentMember;
-                var startContextResolver = context.TypeResolver;
-                int accessCompileCount = 0;
-                bool isAccessedToSomething = false;
-                bool isParentBanned = parentExpression != null && settings.IsExpressionBanned(parentExpression);
-                bool isThisBanned = false;
-
-                bool IsBaseOrThis(ExpressionNode expression) => expression is ThisExpressionNode ||
-                                                                expression is BaseExpressionNode;
-                void Ban(ExpressionNode? expression, ExpressionNode? parent, ref DSharpMethodCompileSettings settings)
+                return CompileMemberAccessExpression(method, memberAccessExpression, (p, e, ref s, c) =>
                 {
-                    if (expression != null)
-                    {
-                        settings.BanExpression(expression);
-                    }
-                    if (parent is MemberAccessExpressionNode parentAccess)
-                    {
-                        if (parentAccess.Target != null)
-                        {
-                            settings.BanExpression(parentAccess.Target);
-                        }
-                        if (parentAccess.Member != null)
-                        {
-                            settings.BanExpression(parentAccess.Member);
-                        }
+                    c.ParentExpression = p;
 
-                        settings.BanExpression(parentAccess);
-                    }
-                }
-
-                do
-                {
-                    if (rootExpression.Target == null)
+                    if (c.CurrentMember != null &&
+                        c.CurrentMember is not IDSharpType &&
+                        c.CurrentMember.TryGetReturnType(out var memberType))
                     {
-                        throw new ArgumentException($"Target identifier can not be empty when trying to accessing member: {memberAccessExpression}", nameof(expression));
+                        c.CurrentMember = memberType;
                     }
 
-                    var targetIsBaseOrThis = IsBaseOrThis(rootExpression.Target);
-                    bool targetIsThis = rootExpression.Target is ThisExpressionNode;
+                    var result = CompileValueExpression(method, e, ref s, p, c);
 
-                    if (isThisBanned && targetIsThis)
-                    {
-                        context.ThrowThisIsUnavailable(rootExpression.Target);
-                    }
-                    if (targetIsBaseOrThis &&
-                        (settings.IsExpressionBanned(rootExpression) || isParentBanned))
-                    {
-                        context.ThrowThisOrBaseIsUnavailable(rootExpression.Target);
-                    }
-                    if (rootExpression.Target is not MemberAccessExpressionNode && !targetIsBaseOrThis)
-                    {
-                        Ban(rootExpression.Member, parentExpression, ref settings);
-                        isAccessedToSomething = true;
-                    }
-                    if (targetIsBaseOrThis)
-                    {
-                        if (targetIsThis)
-                        {
-                            Ban(rootExpression.Member, parentExpression, ref settings);
-                        }
-
-                        isThisBanned = true;
-                    }
-
-                    var expressionMember = CompileValueExpression(method, rootExpression.Target, ref settings, rootExpression, context);
-
-                    if (expressionMember == null)
-                    {
-                        if (rootExpression.Target is not IdentifierExpressionNode identifier)
-                        {
-                            throw new InvalidOperationException($"Invalid identifier: {rootExpression.Target}");
-                        }
-                        if (context.TryResolveType(identifier.GetName(true), out var targetTypeToken))
-                        {
-                            expressionMember = _assemblyBuilder.GetType(targetTypeToken);
-                            accessCompileCount++;
-                        }
-                        else
-                        {
-                            throw new InvalidOperationException($"Unable to get type for: {rootExpression.Target}");
-                        }
-                    }
-                    else if (expressionMember.TryGetReturnType(out var returnType))
-                    {
-                        expressionMember = returnType;
-                        accessCompileCount++;
-                    }
-
-                    context.CurrentMember = expressionMember;
-
-                    if (rootExpression.Member is MemberAccessExpressionNode accessMember)
-                    {
-                        rootExpression = accessMember;
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                while (true);
-
-                if (rootExpression.Member == null)
-                {
-                    throw new ArgumentException($"Member must be specified: {memberAccessExpression}", nameof(expression));
-                }
-                if (rootExpression.Member is ThisExpressionNode ||
-                    parentExpression is MemberAccessExpressionNode nextMemberAccess &&
-                    nextMemberAccess.Target is ThisExpressionNode)
-                {
-                    context.ThrowThisIsUnavailable(rootExpression.Member);
-                }
-
-                bool memberIsBaseOrRoot = IsBaseOrThis(rootExpression.Member);
-
-                if (isAccessedToSomething || !memberIsBaseOrRoot || isParentBanned)
-                {
-                    Ban(rootExpression.Member, parentExpression, ref settings);
-                }
-                if ((isAccessedToSomething && memberIsBaseOrRoot) ||
-                    settings.IsExpressionBanned(rootExpression) && memberIsBaseOrRoot ||
-                    (parentExpression != null && settings.IsExpressionBanned(parentExpression) && memberIsBaseOrRoot))
-                {
-                    context.ThrowThisOrBaseIsUnavailable(rootExpression.Member);
-                }
-
-                DSharpCompilerContext parentContext = new(context, startContextMember);
-                context.TypeResolver = obj =>
-                {
-                    try
-                    {
-                        if (parentContext.TryResolveType(obj.ToString(), out var typeToken))
-                        {
-                            return _assemblyBuilder.GetType(typeToken) as IDSharpType;
-                        }
-                    }
-                    catch
-                    {
-                    }
-
-                    return startContextResolver?.Invoke(obj);
-                };
-                var member = CompileValueExpression(method, rootExpression.Member, ref settings, rootExpression, context);
-
-                if (member != null && member.TryGetReturnType(out _))
-                {
-                    if (accessCompileCount == 1)
-                    {
-                        code.PopOffset(1);
-                    }
-                    else if (accessCompileCount > 1)
-                    {
-                        code.PopOffsetRepeat(1, accessCompileCount);
-                    }
-                }
-
-                return member;
+                    return result;
+                }, ref settings, context);
             }
             else if (expression is CallExpressionNode callExpression)
             {
@@ -887,12 +757,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     throw new ArgumentException($"Unable to call method without identifier: {callExpression}", nameof(expression));
                 }
 
+                var startCurrentMember = context.CurrentMember;
+                context.CurrentMember = method;
+
                 foreach (var arg in callExpression.Arguments)
                 {
                     CompileValueExpression(method, arg, ref settings, callExpression, context);
                 }
 
+                context.CurrentMember = startCurrentMember;
+
                 int popOffset = 0;
+                bool removeInstance = false;
                 IDSharpMethodInfo calledMethod;
 
                 void CallAuto(IDSharpMethodInfo method, ref DSharpMethodCompileSettings settings)
@@ -908,6 +784,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     if (calledMethod.ReturnType != null)
                     {
                         popOffset = 1;
+                    }
+                    if (!calledMethod.IsStatic &&
+                        (parentExpression == null ||
+                        parentExpression is ThisExpressionNode ||
+                        parentExpression is BaseExpressionNode))
+                    {
+                        code.LoadInstance();
+                        removeInstance = true;
                     }
 
                     CallAuto(calledMethod, ref settings);
@@ -939,7 +823,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     throw new ArgumentException($"Invalid method identifier: {callExpression.Callee}", nameof(expression));
                 }
 
-                for (int i = 0; i < callExpression.Arguments.Count; i++)
+                int argsCount = callExpression.Arguments.Count;
+
+                if (removeInstance)
+                {
+                    argsCount++;
+                }
+
+                for (int i = 0; i < argsCount; i++)
                 {
                     if (popOffset == 0)
                     {
@@ -1353,7 +1244,179 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             throw new ArgumentException($"Unable to compile expression: {expression}", nameof(expression));
         }
+        public IDSharpMemberInfo? CompileMemberAccessExpression(DSharpMethodBuilder method, MemberAccessExpressionNode memberAccessExpression, MemberAccessExpressionEndPointHandler endPointHandler, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context = default)
+        {
+            var startDoNotCompileEndPointMemberValue = settings.DoNotCompileEndPointMember;
 
+            if (context.CurrentMember == null)
+            {
+                context.CurrentMember = method.DeclaringType;
+            }
+            else if (context.CurrentMember != null &&
+                     context.CurrentMember is not IDSharpType &&
+                     context.CurrentMember.TryGetReturnType(out var contextMemberType))
+            {
+                context.CurrentMember = contextMemberType;
+            }
+
+            settings.DoNotCompileEndPointMember = false;
+
+            var currentMemberAccess = memberAccessExpression;
+            var code = method.GetBytecodeBuilder();
+            ExpressionNode? previousTarget = null;
+            IDSharpMemberInfo? currentMember = context.CurrentMember;
+            bool previousIsThis = false;
+            bool canUseThis = true;
+            bool canUseBase = true;
+            bool lastAccessedAsLocalMember = false;
+
+            while (true)
+            {
+                IDSharpMemberInfo currentType;
+                bool currentIsBase = false;
+                bool currentIsThis = false;
+                bool accessedAsLocalMember = false;
+
+                if (currentMemberAccess.Target is ThisExpressionNode thisExpression)
+                {
+                    if (method.DeclaringType == null)
+                    {
+                        throw new InvalidOperationException($"Unable to use \"this\" in method that do not have declaring type: {thisExpression}");
+                    }
+                    if (!canUseThis)
+                    {
+                        context.ThrowThisIsUnavailable(thisExpression);
+                    }
+
+                    currentType = method.DeclaringType;
+                    currentMember = method.DeclaringType;
+                    previousIsThis = true;
+                    currentIsThis = true;
+                }
+                else if (currentMemberAccess.Target is BaseExpressionNode baseExpression)
+                {
+                    if (context.CurrentMember == null || !canUseBase)
+                    {
+                        context.ThrowBaseIsUnavailable(baseExpression);
+                    }
+
+                    IDSharpType currentMemberType;
+
+                    if (context.CurrentMember is IDSharpType type)
+                    {
+                        currentMemberType = type;
+                    }
+                    else
+                    {
+                        if (context.CurrentMember.DeclaringType == null)
+                        {
+                            context.ThrowBaseIsUnavailable(baseExpression);
+                        }
+
+                        currentMemberType = context.CurrentMember.DeclaringType;
+                    }
+                    if (currentMemberType == method.Assembly.ObjectType)
+                    {
+                        context.ThrowBaseIsUnavailable(baseExpression);
+                    }
+
+                    var baseType = currentMemberType.GetBaseTypes().FirstOrDefault(t => t.ObjectType != DSharpObjectType.Interface);
+                    currentIsBase = true;
+                    currentType = baseType ?? method.Assembly.ObjectType;
+                    currentMember = currentType;
+                    settings.NextNonVirtualizedAccess = true;
+                }
+                else if (!previousIsThis && !settings.NextNonVirtualizedAccess &&
+                         currentMemberAccess.Target is IdentifierExpressionNode identifier &&
+                         identifier.TryGetLocalMember(method, out var localMemberInfo))
+                {
+                    currentType = localMemberInfo.Value.Type;
+                    lastAccessedAsLocalMember = true;
+                    accessedAsLocalMember = true;
+
+                    if (localMemberInfo.Type == LocalMemberType.Parameter)
+                    {
+                        code.LoadArgument(localMemberInfo.Value);
+                    }
+                    else
+                    {
+                        code.LoadLocal(localMemberInfo.Value);
+                    }
+                }
+                else
+                {
+                    var expressionMember = CompileValueExpression(method, currentMemberAccess.Target!, ref settings, previousTarget, context)
+                        ?? throw new InvalidOperationException($"Unable to get type of expression: {currentMemberAccess.Target}");
+
+                    if (settings.NextNonVirtualizedAccess &&
+                        expressionMember.DeclaringType != context.CurrentMember)
+                    {
+                        throw new InvalidOperationException($"Unable to find \"{currentMemberAccess.Target}\" at \"{context.CurrentMember}\"");
+                    }
+
+                    currentMember = expressionMember;
+
+                    if (expressionMember is not IDSharpType && expressionMember.TryGetReturnType(out var expressionMemberType))
+                    {
+                        expressionMember = expressionMemberType;
+                    }
+
+                    settings.NextNonVirtualizedAccess = false;
+                    currentType = expressionMember;
+                }
+
+                canUseThis = false;
+
+                if (!currentIsThis)
+                {
+                    previousIsThis = false;
+                }
+                if (!currentIsBase)
+                {
+                    canUseBase = false;
+                }
+                if (!accessedAsLocalMember)
+                {
+                    lastAccessedAsLocalMember = false;
+                }
+
+                context.CurrentMember = currentType;
+                previousTarget = currentMemberAccess.Target;
+
+                if (currentMemberAccess.Member is not MemberAccessExpressionNode nextMemberAccess)
+                {
+                    break;
+                }
+
+                currentMemberAccess = nextMemberAccess;
+            }
+
+            if (currentMemberAccess.Member == null)
+            {
+                throw new InvalidOperationException($"Incomplete expression: {currentMemberAccess}");
+            }
+
+            var result = endPointHandler(previousTarget, currentMemberAccess.Member, ref settings, context);
+            settings.DoNotCompileEndPointMember = startDoNotCompileEndPointMemberValue;
+
+            if (result != null && result.IsStatic &&
+                (currentMember is not IDSharpType ||
+                previousTarget is ThisExpressionNode ||
+                previousTarget is BaseExpressionNode))
+            {
+                throw new InvalidOperationException($"Unable to access to static member \"{result}\" throw instance, use full path to access it: {currentMemberAccess.Member}");
+            }
+            if (result != null && !result.IsStatic &&
+                !lastAccessedAsLocalMember &&
+                currentMember is IDSharpType &&
+                previousTarget is not ThisExpressionNode &&
+                previousTarget is not BaseExpressionNode)
+            {
+                throw new InvalidOperationException($"Unable to access to non static member \"{result}\" without object instance: {currentMemberAccess.Member}");
+            }
+
+            return result;
+        }
         private IDSharpMemberInfo? CompileValueExpressionOperation(DSharpMethodBuilder method, DSharpBytecodeBuilder code, ExpressionNode expression, Action operation, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context = default, bool popLast = true)
         {
             if (expression is IdentifierExpressionNode identifier)

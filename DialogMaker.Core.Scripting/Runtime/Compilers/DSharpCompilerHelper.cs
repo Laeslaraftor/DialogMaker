@@ -3,8 +3,6 @@ using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime.Builders;
 using System.Diagnostics.CodeAnalysis;
-using System.Net.WebSockets;
-using System.Reflection.Emit;
 
 namespace DialogMaker.Core.Scripting.Runtime.Compilers
 {
@@ -272,25 +270,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     throw new ArgumentException($"Unable to get type of \"base\" from type that do not have base types \"{currentType}\"", nameof(context));
                 }
                 if (expression is IdentifierExpressionNode identifierExpression &&
-                    context.CurrentMember is IDSharpMethodInfo method)
+                    context.CurrentMember is IDSharpMethodInfo method &&
+                    identifierExpression.TryGetLocalMember(method, out var localMemberInfo))
                 {
-                    var identifier = identifierExpression.GetName(false);
-                    var parameter = method.GetParameters().FirstOrDefault(p => p.Name == identifier);
-
-                    if (parameter != null)
-                    {
-                        return parameter.Type;
-                    }
-                    if (method is DSharpMethodBuilder builder)
-                    {
-                        var code = builder.GetBytecodeBuilder();
-                        var variable = code.LocalVariables.FirstOrDefault(v => v.Name == identifier);
-
-                        if (variable?.Type != null)
-                        {
-                            return builder.Assembly.GetType(variable.Type);
-                        }
-                    }
+                    return localMemberInfo.Value.Type;
                 }
 
                 if (context.TryResolveMember(expression, out var result))
@@ -822,6 +805,40 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
 
                 handler(leftExpression, rightExpression, expression.Operator);
+            }
+        }
+        extension(IdentifierExpressionNode identifierExpression)
+        {
+            /// <summary>
+            /// Try to get local member of method or function (parameter, local variable)
+            /// </summary>
+            /// <param name="method">Method that must contains local member</param>
+            /// <param name="result">Result of searching</param>
+            /// <returns>Is local member found</returns>
+            public bool TryGetLocalMember(IDSharpMethodInfo method, [NotNullWhen(true)] out LocalMemberInfo result)
+            {
+                result = default;
+                var identifier = identifierExpression.GetName(false);
+                var parameter = method.GetParameters().FirstOrDefault(p => p.Name == identifier);
+
+                if (parameter != null)
+                {
+                    result = new(LocalMemberType.Parameter, parameter);
+                    return true;
+                }
+                if (method is DSharpMethodBuilder builder)
+                {
+                    var code = builder.GetBytecodeBuilder();
+                    var variable = code.LocalVariables.FirstOrDefault(v => v.Name == identifier);
+
+                    if (variable != null)
+                    {
+                        result = new(LocalMemberType.Variable, variable);
+                        return true;
+                    }
+                }
+
+                return false;
             }
         }
     }

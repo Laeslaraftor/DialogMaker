@@ -232,6 +232,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             var variable = assemblyBuilder.CreateGlobalVariable(variableNode.Name);
             variable.Namespace = _currentNamespace;
             variable.Access = DSharpAccessModifier.Public;
+            variable.IsStatic = true;
 
             if (variableNode.Initializer?.TrySimplifyToLiteral(out var rawValue) == true)
             {
@@ -344,7 +345,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
 
             method.IsExtern = methodNode.IsExtern;
-            method.IsStatic = methodNode.IsStatic;
+            method.IsStatic = methodNode.IsStatic || declareType == null;
             method.IsSealed = methodNode.IsSealed;
             method.IsAbstract = methodNode.Mode == DSharpObjectMemberMode.Abstract;
             method.IsVirtual = methodNode.Mode == DSharpObjectMemberMode.Virtual;

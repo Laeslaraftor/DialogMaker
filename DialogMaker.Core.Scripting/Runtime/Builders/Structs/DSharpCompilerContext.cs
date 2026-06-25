@@ -2,6 +2,7 @@
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Runtime.Compilers;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 
 namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
@@ -280,54 +281,77 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
             else if (expression is MemberAccessExpressionNode memberAccess)
             {
-                while (memberAccess.Target is MemberAccessExpressionNode targetMemberAccess)
+                if (memberAccess.Target == null || memberAccess.Member == null)
                 {
-                    memberAccess = targetMemberAccess;
+                    throw new ArgumentException($"Incomplete expression: {expression}", nameof(expression));
                 }
-
-                if (Assembly == null)
+                if (!TryResolveMember(memberAccess.Target, out var member))
                 {
-                    throw new InvalidOperationException($"Unable to get expression type because compiler context does not contains assembly builder: {memberAccess}");
+                    throw new InvalidOperationException($"Unable to resolve member for expression: {memberAccess.Target}");
                 }
-
-                IDSharpMemberInfo? targetType = null;
-
-                ExpressionNode ParseMemberAccess(MemberAccessExpressionNode memberAccess, DSharpCompilerContext context)
+                if (member is not IDSharpType)
                 {
-                    if (memberAccess.Target == null ||
-                        memberAccess.Member == null)
+                    if (member.TryGetReturnType(out var memberType))
                     {
-                        throw new ArgumentException($"Incomplete expression: {memberAccess}");
+                        member = memberType;
                     }
-
-                    targetType = memberAccess.Target.GetExpressionType(context.Assembly!, context)
-                        ?? throw new ArgumentException($"Expression should return some value: {memberAccess.Target}");
-
-                    if (memberAccess.Member is MemberAccessExpressionNode nextMemberAccess)
+                    else
                     {
-                        context = new(context, targetType)
-                        {
-                            ParentExpression = memberAccess
-                        };
-                        return ParseMemberAccess(nextMemberAccess, context);
+                        throw new InvalidOperationException($"Unable to get returning type of \"{member}\"");
                     }
-
-                    return memberAccess.Member;
                 }
 
-                var memberExpression = ParseMemberAccess(memberAccess, this);
+                DSharpCompilerContext context = new(this, member);
+                return context.TryResolveMember(memberAccess.Member, out result);
 
-                if (targetType == null)
-                {
-                    throw new InvalidOperationException($"Unable to find type of expression: {expression}");
-                }
+                //while (memberAccess.Target is MemberAccessExpressionNode targetMemberAccess)
+                //{
+                //    memberAccess = targetMemberAccess;
+                //}
 
-                DSharpCompilerContext context = new(this, targetType)
-                {
-                    ParentExpression = memberAccess
-                };
+                //if (Assembly == null)
+                //{
+                //    throw new InvalidOperationException($"Unable to get expression type because compiler context does not contains assembly builder: {memberAccess}");
+                //}
 
-                context.TryResolveMember(memberExpression, out result);
+                //IDSharpMemberInfo? targetType = null;
+
+                //ExpressionNode ParseMemberAccess(MemberAccessExpressionNode memberAccess, DSharpCompilerContext context)
+                //{
+                //    if (memberAccess.Target == null ||
+                //        memberAccess.Member == null)
+                //    {
+                //        throw new ArgumentException($"Incomplete expression: {memberAccess}");
+                //    }
+
+                //    targetType = memberAccess.Target.GetExpressionType(context.Assembly!, context)
+                //        ?? throw new ArgumentException($"Expression should return some value: {memberAccess.Target}");
+
+                //    if (memberAccess.Member is MemberAccessExpressionNode nextMemberAccess)
+                //    {
+                //        context = new(context, targetType)
+                //        {
+                //            ParentExpression = memberAccess
+                //        };
+                //        return ParseMemberAccess(nextMemberAccess, context);
+                //    }
+
+                //    return memberAccess.Member;
+                //}
+
+                //var memberExpression = ParseMemberAccess(memberAccess, this);
+
+                //if (targetType == null)
+                //{
+                //    throw new InvalidOperationException($"Unable to find type of expression: {expression}");
+                //}
+
+                //DSharpCompilerContext context = new(this, targetType)
+                //{
+                //    ParentExpression = memberAccess
+                //};
+
+                //context.TryResolveMember(memberExpression, out result);
             }
 
             if (result == null && TypeResolver != null)
@@ -561,10 +585,20 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
             else if (members.Count > 1)
             {
-                throw new ArgumentException($"Found multiple members with the same name \"{name}\" in {CurrentMember}", nameof(name));
+                StringBuilder builder = new();
+                builder.AppendLine($"Found multiple members with the same name \"{name}\" in {CurrentMember}");
+                int i = 1;
+
+                foreach (var member in members)
+                {
+                    builder.AppendLine($"{i}: {member}");
+                    i++;
+                }
+
+                throw new ArgumentException(builder.ToString().TrimEnd(), nameof(name));
             }
 
-            throw new ArgumentException($"Unknown member \"{name}\" at {CurrentMember}", nameof(name));
+            throw new ArgumentException($"Unknown member \"{name}\" at \"{CurrentMember}\"", nameof(name));
         }
         public readonly HashSet<T> FindAvailableMembers<T>(string name)
             where T : IDSharpMemberInfo
@@ -626,7 +660,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 var properties = type.GetProperties(predicate);
                 var fields = type.GetFields(predicate);
                 var methods = type.GetMethods(predicate);
-                var constructors = type.GetConstructors(predicate);
+                //var constructors = type.GetConstructors(predicate);
 
                 return AddRange(properties) + AddRange(fields) + AddRange(methods);
             }
@@ -657,10 +691,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return count + FindInDeclaringType(type);
             }
 
+            AddRange(type.GetChildrenTypes().Where(t => t.Name == name));
             FindMember(type, m => m.Name == name);
-            FindBaseTypeMember(type, m => m.Name == name && m.Access == DSharpAccessModifier.Public ||
-                                                            m.Access == DSharpAccessModifier.Protected);
-            FindInDeclaringType(type);
+            FindBaseTypeMember(type, m => m.Name == name && (m.Access == DSharpAccessModifier.Public ||
+                                                            m.Access == DSharpAccessModifier.Protected));
+
+            if (ParentExpression == null)
+            {
+                FindInDeclaringType(type);
+            }
 
             return result;
         }

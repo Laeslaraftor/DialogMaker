@@ -100,6 +100,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
                 while (stream.Check(DSharpTokenType.Dot));
 
+                if (memberAccess.Member is AssignmentExpressionNode assignment)
+                {
+                    memberAccess.Member = assignment.Left;
+                    assignment.Left = memberAccess;
+
+                    return assignment;
+                }
+
                 var rootBinary = memberAccess.Member as BinaryExpressionNode;
                 var currentBinary = rootBinary;
 
@@ -202,6 +210,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         {
             bool previousIsMemberAccess = stream.Check(DSharpTokenType.Dot, -1);
             var left = BinaryExpressionNode.ParseLogicalOr(stream);
+
+            if (previousIsMemberAccess)
+            {
+                return left;
+            }
 
             if (AssignmentExpressionNode.TryParse(stream, out var assignment))
             {

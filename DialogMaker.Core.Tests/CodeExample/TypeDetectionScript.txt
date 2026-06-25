@@ -29,16 +29,28 @@ public class Character
 		
 		return base.ToString();
 	}
+	protected Character GetPath(number depth)
+	{
+		return this;
+	}
 }
 public class Player : Character
 {
+	public class Data
+	{
+		public static number Id { get; set; }
+	}
+	
 	public number Hp { get; set; }
 	public Player OtherPlayer { get; set; }
-	
 
 	public func SetValues() 
 	{
-		OtherPlayer.OtherPlayer.Hp = 100;
+		OtherPlayer.Name += "awdawda";
+	}
+	public object GetValues()
+	{
+		return value;
 	}
 	public override string ToString()
 	{

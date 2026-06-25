@@ -319,7 +319,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// </summary>
         /// <param name="parameter">Argument of method or function to load to stack</param>
         /// <returns></returns>
-        public ParameterInstruction LoadArgument(DSharpMethodBuilderParameter parameter)
+        public ParameterInstruction LoadArgument(IDSharpParameterInfo parameter)
         {
             return CreateInstruction<ParameterInstruction>(this, DSharpBytecodeOperation.LoadArgument, parameter);
         }
@@ -328,7 +328,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// </summary>
         /// <param name="parameter">Argument of method or function for writing value from stack</param>
         /// <returns></returns>
-        public ParameterInstruction StoreArgument(DSharpMethodBuilderParameter parameter)
+        public ParameterInstruction StoreArgument(IDSharpParameterInfo parameter)
         {
             return CreateInstruction<ParameterInstruction>(this, DSharpBytecodeOperation.StoreArgument, parameter);
         }
@@ -338,7 +338,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// </summary>
         /// <param name="parameter">Local variable to load to stack</param>
         /// <returns></returns>
-        public ParameterInstruction LoadLocal(DSharpMethodBuilderParameter parameter)
+        public ParameterInstruction LoadLocal(IDSharpParameterInfo parameter)
         {
             return CreateInstruction<ParameterInstruction>(this, DSharpBytecodeOperation.LoadLocal, parameter);
         }
@@ -347,7 +347,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// </summary>
         /// <param name="parameter">Local variable for writing value from stack</param>
         /// <returns></returns>
-        public ParameterInstruction StoreLocal(DSharpMethodBuilderParameter parameter)
+        public ParameterInstruction StoreLocal(IDSharpParameterInfo parameter)
         {
             return CreateInstruction<ParameterInstruction>(this, DSharpBytecodeOperation.StoreLocal, parameter);
         }
@@ -642,39 +642,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             bool isStatic = method.IsStatic || 
                             method.DeclaringType == null;
-            bool NeedToLoadInstance()
-            {
-                return method == Method ||
-                       method.DeclaringType == Method.DeclaringType &&
-                       method.DeclaringType != null;
-            }
-            void PopInstance()
-            {
-                if (method.ReturnType == null)
-                {
-                    Pop();
-                }
-                else
-                {
-                    PopOffset(1);
-                }
-            }
-            TypeInstruction CallInstanceAndPop(Func<IDSharpMethodInfo, TypeInstruction> call, bool loadInstance)
-            {
-                if (loadInstance)
-                {
-                    LoadInstance();
-                }
-
-                var result = call(method);
-
-                if (loadInstance)
-                {
-                    PopInstance();
-                }
-
-                return result;
-            }
 
             if (isAwait)
             {
@@ -686,11 +653,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 {
                     if (nextNonVirtualizedAccess)
                     {
-                        return CallInstanceAndPop(AwaitCallBaseInstance, true);
+                        return AwaitCallBaseInstance(method);
                     }
                     else
                     {
-                        return CallInstanceAndPop(AwaitCallInstance, NeedToLoadInstance());
+                        return AwaitCallInstance(method);
                     }
                 }
             }
@@ -704,11 +671,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 {
                     if (nextNonVirtualizedAccess)
                     {
-                        return CallInstanceAndPop(CallBaseInstance, true);
+                        return CallBaseInstance(method);
                     }
                     else
                     {
-                        return CallInstanceAndPop(CallInstance, NeedToLoadInstance());
+                        return CallInstance(method);
                     }
                 }
             }
@@ -996,7 +963,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 result = ExpressionMemberResolver(context.CurrentMember.DeclaringType, value);
             }
 
-            if (Method.DeclaringType != null && result == null)
+            if (context.ParentExpression == null && Method.DeclaringType != null && result == null)
             {
                 result = ExpressionMemberResolver(Method.DeclaringType, value);
             }

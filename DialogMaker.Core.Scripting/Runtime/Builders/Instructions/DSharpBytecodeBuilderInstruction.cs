@@ -118,10 +118,10 @@
 
             #endregion
         }
-        public class ParameterInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation, DSharpMethodBuilderParameter parameter) 
+        public class ParameterInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation, IDSharpParameterInfo parameter) 
             : Instruction(builder, operation)
         {
-            public DSharpMethodBuilderParameter Parameter { get; set; } = parameter;
+            public IDSharpParameterInfo Parameter { get; set; } = parameter;
 
             #region Управление
 
