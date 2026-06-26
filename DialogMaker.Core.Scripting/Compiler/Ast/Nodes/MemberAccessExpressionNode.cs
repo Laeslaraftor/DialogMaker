@@ -28,7 +28,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <exception cref="InvalidOperationException">Member and target can not be null</exception>
         /// <exception cref="InvalidOperationException">Member must contains identifier</exception>
         /// <exception cref="InvalidOperationException">Target must contains identifier</exception>
-        public string GetName(bool simplifyGenerics = false)
+        public string GetName(bool simplifyGenerics = false, bool withoutGenerics = false)
         {
             if (Member == null || Target == null)
             {
@@ -40,7 +40,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             if (Member is IdentifierExpressionNode memberIdentifier)
             {
-                memberName = memberIdentifier.GetName(simplifyGenerics);
+                if (withoutGenerics)
+                {
+                    memberName = memberIdentifier.Name;
+                }
+                else
+                {
+                    memberName = memberIdentifier.GetName(simplifyGenerics);
+                }
             }
             else
             {
@@ -48,11 +55,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
             if (Target is MemberAccessExpressionNode targetAccess)
             {
-                targetName = GetName(simplifyGenerics);
+                targetName = targetAccess.GetName(simplifyGenerics, withoutGenerics);
             }
             else if (Target is IdentifierExpressionNode targetIdentifier)
             {
-                targetName = targetIdentifier.GetName(simplifyGenerics);
+                if (withoutGenerics)
+                {
+                    targetName = targetIdentifier.Name;
+                }
+                else
+                {
+                    targetName = targetIdentifier.GetName(simplifyGenerics);
+                }
             }
             else
             {

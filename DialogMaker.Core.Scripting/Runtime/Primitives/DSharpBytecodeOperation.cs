@@ -251,18 +251,18 @@
         [RequestsStackValues(0)]
         Return,
         /// <summary>
-        /// Begins stack block. 
-        /// All values that added after this operation will be removed after <see cref="EndStackBlock"/>
+        /// Begins scope. 
+        /// All values that added after this operation will be removed after <see cref="EndScope"/>
         /// </summary>
         [ArgsCount(0)]
         [RequestsStackValues(0)]
-        StartStackBlock,
+        StartScope,
         /// <summary>
-        /// Close current stack block and remove all its values.
+        /// Close current scope and remove all its values from stack.
         /// </summary>
         [ArgsCount(0)]
         [RequestsStackValues(0)]
-        EndStackBlock,
+        EndScope,
 
         /// <summary>
         /// Addition math operation (+).

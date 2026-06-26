@@ -93,7 +93,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 list.Add(member);
             }
-            foreach (var member in type.GetAllMembers(m => m.DeclaringType?.ObjectType != DSharpObjectType.Interface))
+            foreach (var member in type.GetAllMembers(false, m => m.DeclaringType?.ObjectType != DSharpObjectType.Interface))
             {
                 if (!membersToImplement.TryGetValue(member.Name, out var declarationMembers))
                 {

@@ -154,6 +154,11 @@ namespace DialogMaker.Core.Scripting.Runtime
             throw new NotImplementedException();
         }
 
+        public List<IDSharpType> GetTypes(string? @namespace, string name)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
     }
 }

@@ -385,7 +385,7 @@ func foreachTest()
 {
 	foreach (var line in guideText)
 	{
-		Console.WriteLine(line);
+		Console.WriteLine(line.ToString());
 		Console.ReadLine();
 	}
 }

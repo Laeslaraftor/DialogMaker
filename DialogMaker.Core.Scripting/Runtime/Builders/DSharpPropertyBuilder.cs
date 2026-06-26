@@ -67,7 +67,11 @@
                         {
                             throw new ArgumentException($"Unable to override property that not virtual or abstract \"{value}\" by \"{this}\"", nameof(value));
                         }
-                        if (value.PropertyType != PropertyType)
+
+                        var valuePropertyType = value.PropertyType;
+
+                        if (valuePropertyType != PropertyType &&
+                            valuePropertyType != Assembly.GetTypeOrDefault(PropertyType))
                         {
                             throw new ArgumentException($"Unable to override property with different type \"{value}\" by \"{this}\"");
                         }

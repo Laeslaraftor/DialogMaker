@@ -36,15 +36,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             void CreateAccessor(Func<DSharpMethodBuilder> fabric, BlockStatementNode? customAccessor, DSharpAccessModifier access, Action<DSharpMethodBuilder, DSharpMethodCompileSettings> compiler)
             {
                 DSharpMethodBuilder? accessorMethod = fabric();
-
-                if (node.GetterAccess == DSharpAccessModifier.Protected)
-                {
-                    accessorMethod.Access = DSharpAccessModifier.Protected;
-                }
-                else
-                {
-                    accessorMethod.Access = DSharpAccessModifier.Private;
-                }
+                accessorMethod.Access = access;
 
                 if (customAccessor != null)
                 {

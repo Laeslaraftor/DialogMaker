@@ -1,9 +1,7 @@
-﻿using Acly.Tokens;
-using DialogMaker.Core.Scripting.Compiler.Ast;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection.Emit;
 
 namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
@@ -645,6 +643,162 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             return false;
         }
+        public bool TryGetTypeToken(string? @namespace, string name, List<DSharpTypeToken>? genericTypeTokens, [NotNullWhen(true)] out DSharpTypeToken? result)
+        {
+            result = null;
+            List<IDSharpType>? genericTypes = null;
+            int genericTypesCount = 0;
+            var currentFullName = name;
+            IDSharpType? foundAssignableTemplate = null;
+
+            if (@namespace != null)
+            {
+                currentFullName = $"{@namespace}.{name}";
+            }
+
+            if (genericTypeTokens != null && genericTypeTokens.Count > 0)
+            {
+                genericTypes = [];
+
+                foreach (var token in genericTypeTokens)
+                {
+                    genericTypes.Add((IDSharpType)GetType(token));
+                }
+
+                genericTypesCount = genericTypes.Count;
+            }
+
+            bool? IsValid(IDSharpType type)
+            {
+                var fullName = GetFullName(type);
+
+                if (fullName != currentFullName)
+                {
+                    return false;
+                }
+
+                if (type.GenericTemplate != null)
+                {
+                    var genericParameters = type.GetGenericParameters();
+
+                    if (genericParameters.Length == 0 && genericTypesCount == 0)
+                    {
+                        return true;
+                    }
+                    if (genericParameters.Length != genericTypesCount)
+                    {
+                        return false;
+                    }
+
+                    return genericParameters.SequenceEqual(genericTypes);
+                }
+
+                var typeGenerics = type.GetGenericTypes();
+
+                if (typeGenerics.Length == 0 && genericTypesCount == 0)
+                {
+                    return true;
+                }
+                if (typeGenerics.Length != genericTypesCount)
+                {
+                    return false;
+                }
+                if (typeGenerics.SequenceEqual(genericTypes))
+                {
+                    return true;
+                }
+
+                for (int i = 0; i < typeGenerics.Length; i++)
+                {
+                    if (!typeGenerics[i].CanReplaceGenericType(genericTypes![i]))
+                    {
+                        return false;
+                    }
+                }
+
+                return null;
+            }
+            string GetFullName(IDSharpType type)
+            {
+                string name = string.Empty;
+                var declaringType = type;
+
+                while (declaringType != null)
+                {
+                    if (string.IsNullOrEmpty(name))
+                    {
+                        name = declaringType.Name;
+                    }
+                    else
+                    {
+                        name = $"{declaringType.Name}.{name}";
+                    }
+
+                    if (declaringType.DeclaringType == null)
+                    {
+                        break;
+                    }
+
+                    declaringType = declaringType.DeclaringType;
+                }
+
+                if (declaringType?.Namespace != null)
+                {
+                    name = $"{declaringType.Namespace}.{name}";
+                }
+
+                return name;
+            }
+            DSharpTypeToken? Check(IEnumerable<IDSharpType> types)
+            {
+                foreach (var type in types)
+                {
+                    var validateResult = IsValid(type);
+
+                    if (validateResult == false)
+                    {
+                        continue;
+                    }
+                    if (validateResult == null)
+                    {
+                        foundAssignableTemplate = type;
+                        continue;
+                    }
+
+                    return GetTypeToken(type);
+                }
+
+                return null;
+            }
+
+            result = Check(_types);
+
+            if (result == null)
+            {
+                foreach (var reference in References)
+                {
+                    result = Check(reference.Types);
+
+                    if (result != null)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (result != null)
+            {
+                return true;
+            }
+            else if (foundAssignableTemplate != null)
+            {
+                var newType = FillGeneric(foundAssignableTemplate, genericTypes!);
+                result = GetTypeToken(newType);
+                return true;
+            }
+
+            return false;
+        }
         public IDSharpType GetType(string fullName)
         {
             IDSharpType type = _types.FirstOrDefault(t => t.FullName == fullName);
@@ -776,6 +930,20 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             foreach (var reference in References)
             {
                 var types = reference.Types.Where(t => t.FullName == fullName);
+                result.AddRange(types);
+            }
+
+            return result;
+        }
+        public List<IDSharpType> GetTypes(string? @namespace, string name)
+        {
+            List<IDSharpType> result = [.. Types.Where(t => t.Namespace == @namespace &&
+                                                            t.Name == name)];
+
+            foreach (var reference in References)
+            {
+                var types = reference.Types.Where(t => t.Namespace == @namespace &&
+                                                       t.Name == name);
                 result.AddRange(types);
             }
 

@@ -30,13 +30,29 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             {
                 string result = Name;
 
-                if (GenericTypes.Count > 0)
+                if (GenericParameters.Count > 0)
+                {
+                    result += '<';
+                    bool isFirst = true;
+
+                    foreach (var typeToken in GenericParameters)
+                    {
+                        var type = Assembly.GetType(typeToken);
+
+                        if (!isFirst)
+                        {
+                            result += ", ";
+                        }
+
+                        result += type;
+                        isFirst = false;
+                    }
+
+                    result += '>';
+                }
+                else if (GenericTypes.Count > 0)
                 {
                     result += "`" + GenericTypes.Count;
-                }
-                else if (GenericParameters.Count > 0)
-                {
-                    result += "`" + GenericParameters.Count;
                 }
                 if (DeclaringType != null)
                 {

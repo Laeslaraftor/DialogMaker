@@ -1,6 +1,29 @@
 ﻿namespace System
 {
-	public class String {}
+	public class Array<T>
+	{
+		public T this[number index]
+		{
+			get => GetValue(index);
+			set => SetValue(index, value);
+		}
+		
+		private extern T GetValue(number index);
+		private extern func SetValue(number index, T value);
+	}
+	public class String
+	{
+		public char this[number index]
+		{
+			get => GetValue(index);
+			set => SetValue(index, value);
+		}
+		
+		public char GetFirstSymbol() => this[0];
+		
+		private extern char GetValue(number index);
+		private extern func SetValue(number index, char value);
+	}
 	public class Object
 	{
 		public extern Type GetType();
@@ -16,6 +39,24 @@
 	}
 }
 
+public class Group
+{
+	public virtual Character this[number index]
+	{
+		get => _characters[index];
+		set => _characters[index] = value;
+	}
+	
+	private readonly Character[] _characters;
+}
+public class PlayerGroup : Group
+{
+	public override Character this[number index]
+	{
+		get => base.this[index];
+		set => base.this[index] = value;
+	}
+}
 public class Character
 {
 	public string Name { get; set; }
@@ -28,6 +69,10 @@ public class Character
 		}
 		
 		return base.ToString();
+	}
+	public func PrintName()
+	{
+		Name[10] = 'c';
 	}
 	protected Character GetPath(number depth)
 	{

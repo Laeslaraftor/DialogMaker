@@ -28,6 +28,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #region Управление
 
+        public virtual string GetSimpleFullName() => Name;
         public string GetFullName(bool simplifyGenerics, bool nullable)
         {
             string result = GetTypeName(simplifyGenerics);

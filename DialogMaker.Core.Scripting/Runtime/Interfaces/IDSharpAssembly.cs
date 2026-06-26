@@ -11,5 +11,6 @@
         public IDSharpMemberInfo GetType(DSharpMetadataToken metadataToken);
         public IDSharpType GetType(string fullName);
         public List<IDSharpType> GetTypes(string fullName);
+        public List<IDSharpType> GetTypes(string? @namespace, string name);
     }
 }

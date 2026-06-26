@@ -205,6 +205,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
             int startCol = _column;
             char value = '\0';
 
+            GetNext();
+
             while (!IsEndOfFile() && Peek() != '\'')
             {
                 if (Peek() == '\\')

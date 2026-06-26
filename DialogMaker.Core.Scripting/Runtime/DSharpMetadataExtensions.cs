@@ -23,6 +23,15 @@ namespace DialogMaker.Core.Scripting.Runtime
             {
                 return type.GetPropertyOrDefault(name) ?? throw new ArgumentException($"Unable to find property {name} at {type}");
             }
+            public IDSharpPropertyInfo? GetIndexerOrDefault(IEnumerable<IDSharpParameterInfo> parameters)
+            {
+                return type.GetMemberOrDefault(t => t.GetIndexers(), i => i.GetParameters().SequenceEqual(parameters, IDSharpParameterInfo.Comparer.Instance));
+            }
+            public IDSharpPropertyInfo GetIndexer(IEnumerable<IDSharpParameterInfo> parameters)
+            {
+                return type.GetIndexerOrDefault(parameters) 
+                    ?? throw new ArgumentException($"Unable to find indexer with {parameters.Count()} parameters at {type}");
+            }
             public IDSharpMethodInfo? GetMethodOrDefault(string name)
             {
                 return type.GetMemberOrDefault(t => t.GetMethods(), name);
@@ -34,9 +43,14 @@ namespace DialogMaker.Core.Scripting.Runtime
             public T? GetMemberOrDefault<T>(Func<IDSharpType, IEnumerable<T>> selector, string name)
                 where T : IDSharpMemberInfo
             {
+                return type.GetMemberOrDefault<T>(selector, m => m.Name == name);
+            }
+            public T? GetMemberOrDefault<T>(Func<IDSharpType, IEnumerable<T>> selector, Predicate<T> predicate)
+                where T : IDSharpMemberInfo
+            {
                 T? Find(IDSharpType type)
                 {
-                    return selector(type).FirstOrDefault(m => m.Name == name);
+                    return selector(type).FirstOrDefault(m => predicate(m));
                 }
                 T? FindInBaseTypes(IDSharpType type)
                 {
@@ -59,7 +73,7 @@ namespace DialogMaker.Core.Scripting.Runtime
 
                 if (result == null && type.Assembly.ObjectType != type)
                 {
-                    result = type.Assembly.ObjectType.GetMemberOrDefault(selector, name);
+                    result = type.Assembly.ObjectType.GetMemberOrDefault(selector, predicate);
                 }
 
                 return result;
@@ -83,6 +97,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                     return true;
                 }
                 if (type == destination ||
+                    (type.GenericTemplate != null && type.GenericTemplate == destination) ||
                     destination.FullName == DSharpAssemblyBuilder.ObjectTypeFullName)
                 {
                     return true;
@@ -93,6 +108,9 @@ namespace DialogMaker.Core.Scripting.Runtime
                     foreach (var baseType in currentType.GetBaseTypes())
                     {
                         if (baseType == destination ||
+                            baseType.GenericTemplate == destination ||
+                            baseType == destination.GenericTemplate ||
+                            baseType.GenericTemplate == destination.GenericTemplate ||
                             ContainsInBaseType(baseType))
                         {
                             return true;
@@ -102,7 +120,16 @@ namespace DialogMaker.Core.Scripting.Runtime
                     return false;
                 }
 
-                return ContainsInBaseType(type);
+                if (ContainsInBaseType(type))
+                {
+                    return true;
+                }
+                if (type.GenericTemplate != null)
+                {
+                    return ContainsInBaseType(type.GenericTemplate);
+                }
+
+                return false;
             }
             public bool ContainsBaseType(IDSharpType baseType)
             {
@@ -158,8 +185,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                 }
 
                 result = null;
-                var name = genericType.FullName;
-                var types = assembly.GetTypes(name);
+                var types = assembly.GetTypes(genericType.Namespace, genericType.Name);
 
                 foreach (var type in types)
                 {

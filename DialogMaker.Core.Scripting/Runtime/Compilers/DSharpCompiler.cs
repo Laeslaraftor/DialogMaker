@@ -372,6 +372,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             {
                 throw new ArgumentException($"Indexers must contains at least one parameters: {indexerNode}", nameof(indexerNode));
             }
+            if (indexerNode.IsStatic)
+            {
+                throw new ArgumentException($"Indexers can not be static: {indexerNode}", nameof(indexerNode));
+            }
 
             var indexer = CreateProperty(assemblyBuilder, declareType, indexerNode, (t, n) => t.CreateIndexer());
             _createdIndexers.Add(indexer, indexerNode);
@@ -431,13 +435,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 ((declareType?.ObjectType == DSharpObjectType.Interface && fieldNode.Getter != null) ||
                  declareType?.ObjectType != DSharpObjectType.Interface))
             {
-                property.CreateGetter();
+                var getter = property.CreateGetter();
+                getter.Access = fieldNode.GetterAccess;
             }
             if (fieldNode.CanWrite &&
                 ((declareType?.ObjectType == DSharpObjectType.Interface && fieldNode.Setter != null) ||
                  declareType?.ObjectType != DSharpObjectType.Interface))
             {
-                property.CreateSetter();
+                var setter = property.CreateSetter();
+                setter.Access = fieldNode.SetterAccess;
             }
 
             return property;
@@ -503,14 +509,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     });
                 }
             }
-            void OverrideProperty(DSharpPropertyBuilder property, FieldNode node, string memberName)
+            void OverrideProperty(DSharpPropertyBuilder property, FieldNode node, string memberName, Func<IDSharpType, IDSharpPropertyInfo> selector)
             {
                 if (!node.IsOverride)
                 {
                     return;
                 }
-
-                var overrideProperty = FindBaseMember(t => t.GetProperty(property.Name), property.DeclaringType);
+                
+                var overrideProperty = FindBaseMember(selector, property.DeclaringType, m => m == property);
 
                 if (overrideProperty == null)
                 {
@@ -592,7 +598,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                     if (typeToken == info.Key.MetadataToken)
                     {
-                        throw new InvalidOperationException($"Type can not inherit itself: {info.Key}");
+                        throw new InvalidOperationException($"Type can not inherit itself \"{info.Key}\": {baseType}");
                     }
 
                     info.Key.BaseTypes.Add(typeToken);
@@ -601,11 +607,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             foreach (var info in _createdProperties)
             {
-                OverrideProperty(info.Key, info.Value, "property");
+                OverrideProperty(info.Key, info.Value, "property", t => t.GetProperty(info.Key.Name));
             }
             foreach (var info in _createdIndexers)
             {
-                OverrideProperty(info.Key, info.Value, "indexer");
+                OverrideProperty(info.Key, info.Value, "indexer", t => t.GetIndexer(info.Key.Parameters));
             }
             foreach (var info in _createdMethods)
             {

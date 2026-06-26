@@ -18,6 +18,8 @@ namespace DialogMaker.Core.Tests
         [TestCase(ScriptCompilerTests.SimpleScript, "System.List`1.Add")]
         [TestCase(ScriptCompilerTests.SimpleScript, "System.List`1.Remove")]
         [TestCase(ScriptCompilerTests.SimpleScript, "System.List`1.Expand")]
+        [TestCase(ScriptCompilerTests.TypeScript, "System.String.GetFirstSymbol")]
+        [TestCase(ScriptCompilerTests.TypeScript, "Character.PrintName")]
         [TestCase(ScriptCompilerTests.TypeScript, "Player.ToString")]
         [TestCase(ScriptCompilerTests.TypeScript, "Player.SetValues")]
         [TestCase(ScriptCompilerTests.TypeScript, "Player.GetValues")]

@@ -567,20 +567,20 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         }
 
         /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.StartStackBlock"/>
+        /// <inheritdoc cref="DSharpBytecodeOperation.StartScope"/>
         /// </summary>
         /// <returns></returns>
         public Instruction StartStackBlock()
         {
-            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.StartStackBlock);
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.StartScope);
         }
         /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.EndStackBlock"/>
+        /// <inheritdoc cref="DSharpBytecodeOperation.EndScope"/>
         /// </summary>
         /// <returns></returns>
         public Instruction EndStackBlock()
         {
-            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.EndStackBlock);
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.EndScope);
         }
 
         #endregion

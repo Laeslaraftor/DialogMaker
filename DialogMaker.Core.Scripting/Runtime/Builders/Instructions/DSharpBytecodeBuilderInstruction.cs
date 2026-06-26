@@ -266,6 +266,10 @@
                 {
                     return $"{Operation} \"{Value}\"";
                 }
+                if (Value.IsChar)
+                {
+                    return $"{Operation} '{Value}'";
+                }
 
                 return $"{Operation} {Value}";
             }

@@ -126,18 +126,71 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             /// <returns>All members of specified type</returns>
             public IEnumerable<IDSharpMemberInfo> GetAllMembers(Predicate<IDSharpMemberInfo>? predicate = null)
             {
+                return type.GetAllMembers(true, predicate);
+            }
+            /// <summary>
+            /// Get all members of type include inherited members
+            /// </summary>
+            /// <param name="includeDeclaringType">Include all members in all declaring types</param>
+            /// <param name="predicate">Predicate for members</param>
+            /// <returns>All members of specified type</returns>
+            public IEnumerable<IDSharpMemberInfo> GetAllMembers(bool includeDeclaringType, Predicate<IDSharpMemberInfo>? predicate = null)
+            {
+                foreach (var member in type.GetAllLocalMembers(predicate))
+                {
+                    yield return member;
+                }
+
+                foreach (var baseType in type.GetBaseTypes())
+                {
+                    foreach (var member in baseType.GetAllLocalMembers(predicate))
+                    {
+                        yield return member;
+                    }
+                }
+
+                if (type != type.Assembly.ObjectType)
+                {
+                    foreach (var member in type.Assembly.ObjectType.GetAllLocalMembers(predicate, false, true))
+                    {
+                        yield return member;
+                    }
+                }
+
+                if (includeDeclaringType)
+                {
+                    var declaringType = type.DeclaringType;
+
+                    while (declaringType != null)
+                    {
+                        foreach (var declaringTypeMember in declaringType.GetAllLocalMembers(predicate, false, false))
+                        {
+                            yield return declaringTypeMember;
+                        }
+
+                        declaringType = type.DeclaringType;
+                    }
+                }
+            }
+
+            private IEnumerable<IDSharpMemberInfo> GetAllLocalMembers(Predicate<IDSharpMemberInfo>? predicate = null, bool constructors = true, bool indexers = true)
+            {
                 bool IsValid(IDSharpMemberInfo member)
                 {
                     return predicate == null || predicate(member);
                 }
 
-                foreach (var member in type.GetConstructors())
+                if (constructors)
                 {
-                    if (IsValid(member))
+                    foreach (var member in type.GetConstructors())
                     {
-                        yield return member;
+                        if (IsValid(member))
+                        {
+                            yield return member;
+                        }
                     }
                 }
+
                 foreach (var member in type.GetFields())
                 {
                     if (IsValid(member))
@@ -159,19 +212,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                         yield return member;
                     }
                 }
-                foreach (var member in type.GetIndexers())
+                
+                if (indexers)
                 {
-                    if (IsValid(member))
+                    foreach (var member in type.GetIndexers())
                     {
-                        yield return member;
-                    }
-                }
-
-                foreach (var baseType in type.GetBaseTypes())
-                {
-                    foreach (var member in baseType.GetAllMembers(predicate))
-                    {
-                        yield return member;
+                        if (IsValid(member))
+                        {
+                            yield return member;
+                        }
                     }
                 }
             }
