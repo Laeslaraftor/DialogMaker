@@ -32,5 +32,23 @@
                 return (IDSharpType)Assembly.GetType(Type);
             }
         }
+
+        #region Управление
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
+        public override string ToString()
+        {
+            if (Type == null)
+            {
+                return Name ?? string.Empty;
+            }
+
+            return $"{Assembly.GetType(Type)} {Name}";
+        }
+
+        #endregion
     }
 }

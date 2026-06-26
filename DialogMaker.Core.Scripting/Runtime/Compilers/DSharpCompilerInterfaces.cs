@@ -1,6 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Runtime.Builders;
-using System.Security.Cryptography;
 
 namespace DialogMaker.Core.Scripting.Runtime.Compilers
 {
@@ -44,13 +43,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     CheckBaseTypes(baseType);
                 }
             }
-
-            foreach (var property in type.Properties)
+            void CheckProperty(DSharpPropertyBuilder property)
             {
                 if (!_propertiesWithCustomAccessors.Contains(property))
                 {
                     Validate(property);
                 }
+            }
+
+            foreach (var property in type.Properties)
+            {
+                CheckProperty(property);
+            }
+            foreach (var indexer in type.Indexers)
+            {
+                CheckProperty(indexer);
             }
             foreach (var method in type.Methods)
             {

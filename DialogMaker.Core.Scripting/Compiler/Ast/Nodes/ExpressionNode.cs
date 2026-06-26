@@ -132,10 +132,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             return root;
         }
         /// <summary>
-        /// parse member access or raw type name with possibility of method calling, array access, type checking
+        /// Parse member access or raw type name with possibility of method calling, array access, type checking
         /// </summary>
-        /// <param name="stream"></param>
-        /// <returns></returns>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <returns>Parsed member access</returns>
         public static ExpressionNode ParseIdentifierAccess(AstParserStream stream)
         {
             ExpressionNode expression = ParseIdentifier(stream);
@@ -144,20 +144,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 if (stream.Check(DSharpTokenType.LeftParen))
                 {
-                    var callToken = stream.Eat(DSharpTokenType.LeftParen);
                     List<ExpressionNode> args = [];
+                    var callToken = CallExpressionNode.ParseArguments(stream, args);
 
-                    while (!stream.Check(DSharpTokenType.RightParen))
-                    {
-                        args.Add(ParseExpression(stream));
-
-                        if (!ArrayExpressionNode.CheckTokenAfterComma(stream, DSharpTokenType.RightParen))
-                        {
-                            stream.ThrowPositionException("Required argument expression");
-                        }
-                    }
-
-                    stream.Eat(DSharpTokenType.RightParen);
                     expression = new CallExpressionNode(callToken)
                     {
                         Callee = expression,
@@ -166,14 +155,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
                 else if (stream.Check(DSharpTokenType.LeftBracket))
                 {
-                    var arrayAccessToken = stream.Eat(DSharpTokenType.LeftBracket);
-                    var index = ParseExpression(stream);
+                    List<ExpressionNode> args = [];
+                    var arrayAccessToken = CallExpressionNode.ParseArguments(stream, args, DSharpTokenType.LeftBracket, DSharpTokenType.RightBracket);
 
-                    stream.Eat(DSharpTokenType.RightBracket);
                     expression = new ArrayAccessExpressionNode(arrayAccessToken)
                     {
                         Array = expression,
-                        Index = index
+                        Arguments = args
                     };
                 }
                 //else if (stream.Check(DSharpTokenType.As, DSharpTokenType.Is))

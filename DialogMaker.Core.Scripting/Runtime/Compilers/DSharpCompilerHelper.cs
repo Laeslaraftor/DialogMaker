@@ -61,6 +61,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     return currentProperty.PropertyType == otherProperty.PropertyType;
                 }
+                else if (member is IDSharpIndexerInfo currentIndexer && otherMember is IDSharpIndexerInfo otherIndexer)
+                {
+                    return currentIndexer.PropertyType == otherIndexer.PropertyType &&
+                           currentIndexer.GetParameters().SequenceEqual(otherIndexer.GetParameters(), IDSharpParameterInfo.Comparer.Instance);
+                }
                 else if (member is IDSharpMethodInfo currentMethod && otherMember is IDSharpMethodInfo otherMethod)
                 {
                     return currentMethod.ReturnType == otherMethod.ReturnType &&
@@ -84,6 +89,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     yield break;
                 }
 
+                foreach (var indexer in type.GetIndexers())
+                {
+                    if (indexer.IsDeclaration)
+                    {
+                        yield return indexer;
+                    }
+                }
                 foreach (var property in type.GetProperties())
                 {
                     if (property.IsDeclaration)
@@ -141,6 +153,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     }
                 }
                 foreach (var member in type.GetMethods())
+                {
+                    if (IsValid(member))
+                    {
+                        yield return member;
+                    }
+                }
+                foreach (var member in type.GetIndexers())
                 {
                     if (IsValid(member))
                     {
@@ -386,6 +405,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     }
 
                     return type;
+                }
+                else if (expression is ArrayAccessExpressionNode arrayExpression)
+                {
+                    var indexer = context.FindIndexer(arrayExpression);
+                    return indexer.PropertyType;
                 }
 
                 throw new ArgumentException($"Unable to get type of expression: {expression}", nameof(expression));

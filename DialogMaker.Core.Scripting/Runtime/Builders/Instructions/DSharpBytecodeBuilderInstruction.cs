@@ -323,5 +323,45 @@
 
             #endregion
         }
+        public class CommentInstruction(DSharpBytecodeBuilder builder, string? text = null) : Instruction(builder, DSharpBytecodeOperation.Empty)
+        {
+            public string? Text { get; set; } = text;
+
+            #region Управление
+
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <param name="builder"><inheritdoc/></param>
+            /// <returns><inheritdoc/></returns>
+            public override Instruction Copy(DSharpBytecodeBuilder builder)
+            {
+                return new CommentInstruction(builder, Text);
+            }
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <returns><inheritdoc/></returns>
+            public override object[] GetArguments()
+            {
+                return [];
+            }
+
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <returns><inheritdoc/></returns>
+            public override string ToString()
+            {
+                if (string.IsNullOrEmpty(Text))
+                {
+                    return string.Empty;
+                }
+
+                return $"; {Text}";
+            }
+
+            #endregion
+        }
     }
 }

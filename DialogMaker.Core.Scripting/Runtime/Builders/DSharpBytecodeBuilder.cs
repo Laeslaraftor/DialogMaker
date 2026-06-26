@@ -81,7 +81,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             try
             {
-                int instructionsCount = Instructions.Count + extraInstructions?.Count ?? 0;
+                int instructionsCount = Instructions.Count(i => i is not CommentInstruction) + extraInstructions?.Count ?? 0;
                 var count = BitConverter.GetBytes(instructionsCount);
                 stream.Write(count);
 
@@ -94,7 +94,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 }
                 foreach (var instruction in Instructions)
                 {
-                    instruction.Write(stream);
+                    if (instruction is not CommentInstruction)
+                    {
+                        instruction.Write(stream);
+                    }
                 }
             }
             catch
@@ -190,7 +193,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
 
             StringBuilder builder = new();
-            var lineNumberLength = Instructions.Count.ToString().Length - 1;
+            var lineNumberLength = (Instructions.Count - 1).ToString().Length;
             int line = 0;
 
             string GetLine()
@@ -220,6 +223,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         #endregion
 
         #region Загрузка и выгрузка значений
+
+        /// <summary>
+        /// Add comment to bytecode. Comments will not writes to result bytecode
+        /// </summary>
+        /// <param name="text">Text of comment</param>
+        /// <returns>Comment instruction</returns>
+        public CommentInstruction Comment(string? text)
+        {
+            return CreateInstruction<CommentInstruction>(this, text);
+        }
 
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.Push"/>
@@ -971,7 +984,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             return result;
         }
 
-        private T CreateInstruction<T>(params object[] parameters)
+        private T CreateInstruction<T>(params object?[] parameters)
             where T : Instruction
         {
             var result = (T)Activator.CreateInstance(typeof(T), parameters);

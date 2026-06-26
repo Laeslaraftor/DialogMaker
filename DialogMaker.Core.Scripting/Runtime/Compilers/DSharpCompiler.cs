@@ -25,6 +25,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         private readonly Dictionary<DSharpPropertyBuilder, FieldNode> _createdProperties = [];
         private readonly Dictionary<DSharpMethodBuilder, MethodNode> _createdMethods = [];
         private readonly Dictionary<DSharpMethodBuilder, FinalizerNode> _createdFinalizers = [];
+        private readonly Dictionary<DSharpIndexerBuilder, IndexerNode> _createdIndexers = [];
         private readonly Dictionary<DSharpMethodBuilder, ConstructorNode> _createdConstructors = [];
         private readonly Dictionary<DSharpTypeBuilder, ObjectDeclarationNode> _enumTypes = [];
         private readonly Dictionary<DSharpFieldBuilder, LiteralExpressionNode> _enumValues = [];
@@ -202,6 +203,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             {
                 CreateFieldOrProperty(assemblyBuilder, type, field);
             }
+            foreach (var indexer in declaration.Indexers)
+            {
+                CreateIndexer(assemblyBuilder, type, indexer);
+            }
             foreach (var method in declaration.Methods)
             {
                 CreateMethod(assemblyBuilder, type, method);
@@ -266,35 +271,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         }
         private void CreateProperty(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder? declareType, FieldNode fieldNode)
         {
-            if (fieldNode.Identifier == null)
-            {
-                throw new ArgumentException($"Empty identifier of property: {fieldNode}", nameof(fieldNode));
-            }
-            if (declareType == null)
-            {
-                throw new ArgumentException($"Property must have a type that declares it", nameof(declareType));
-            }
-
-            var property = declareType.CreateProperty(fieldNode.Identifier.GetName(false));
-            property.Access = fieldNode.Access;
-            property.IsStatic = fieldNode.IsStatic;
-            property.IsSealed = fieldNode.IsSealed;
-            property.IsAbstract = fieldNode.Mode == DSharpObjectMemberMode.Abstract;
-            property.IsVirtual = fieldNode.Mode == DSharpObjectMemberMode.Virtual;
-
-            if (fieldNode.CanRead &&
-                ((declareType?.ObjectType == DSharpObjectType.Interface && fieldNode.Getter != null) ||
-                 declareType?.ObjectType != DSharpObjectType.Interface))
-            {
-                property.CreateGetter();
-            }
-            if (fieldNode.CanWrite &&
-                ((declareType?.ObjectType == DSharpObjectType.Interface && fieldNode.Setter != null) ||
-                 declareType?.ObjectType != DSharpObjectType.Interface))
-            {
-                property.CreateSetter();
-            }
-
+            var property = CreateProperty(assemblyBuilder, declareType, fieldNode, (t, n) => t.CreateProperty(n));
             _createdProperties.Add(property, fieldNode);
         }
         private void CreateMethod(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder? declareType, MethodNode methodNode)
@@ -389,6 +366,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             _createdFinalizers.Add(finalizer, finalizerNode);
         }
+        private void CreateIndexer(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder? declareType, IndexerNode indexerNode)
+        {
+            if (indexerNode.Parameters.Count == 0)
+            {
+                throw new ArgumentException($"Indexers must contains at least one parameters: {indexerNode}", nameof(indexerNode));
+            }
+
+            var indexer = CreateProperty(assemblyBuilder, declareType, indexerNode, (t, n) => t.CreateIndexer());
+            _createdIndexers.Add(indexer, indexerNode);
+        }
         private void CreateConstructor(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder? declareType, ConstructorNode constructorNode)
         {
             if (declareType == null)
@@ -403,6 +390,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         private void CreateEnum(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder? parent, EnumNode enumNode)
         {
             var type = assemblyBuilder.CreateType(enumNode.Name, parent);
+            type.ObjectType = DSharpObjectType.Struct;
             type.Name = enumNode.Name;
             type.Namespace = _currentNamespace;
 
@@ -418,6 +406,41 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 field.IsReadOnly = true;
                 field.RawValue = enumValue.Value;
             }
+        }
+
+        private T CreateProperty<T>(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder? declareType, FieldNode fieldNode, Func<DSharpTypeBuilder, string, T> fabric)
+            where T : DSharpPropertyBuilder
+        {
+            if (fieldNode.Identifier == null)
+            {
+                throw new ArgumentException($"Empty identifier of property: {fieldNode}", nameof(fieldNode));
+            }
+            if (declareType == null)
+            {
+                throw new ArgumentException($"Property must have a type that declares it", nameof(declareType));
+            }
+
+            var property = fabric(declareType, fieldNode.Identifier.GetName(false));
+            property.Access = fieldNode.Access;
+            property.IsStatic = fieldNode.IsStatic;
+            property.IsSealed = fieldNode.IsSealed;
+            property.IsAbstract = fieldNode.Mode == DSharpObjectMemberMode.Abstract;
+            property.IsVirtual = fieldNode.Mode == DSharpObjectMemberMode.Virtual;
+
+            if (fieldNode.CanRead &&
+                ((declareType?.ObjectType == DSharpObjectType.Interface && fieldNode.Getter != null) ||
+                 declareType?.ObjectType != DSharpObjectType.Interface))
+            {
+                property.CreateGetter();
+            }
+            if (fieldNode.CanWrite &&
+                ((declareType?.ObjectType == DSharpObjectType.Interface && fieldNode.Setter != null) ||
+                 declareType?.ObjectType != DSharpObjectType.Interface))
+            {
+                property.CreateSetter();
+            }
+
+            return property;
         }
 
         #endregion
@@ -456,13 +479,49 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                             }
                         }
                     }
-                    else 
+                    else
                     {
                         member = FindBaseMember(selector, _assemblyBuilder.ObjectType, extraPredicate);
-                    }                    
+                    }
                 }
 
                 return member;
+            }
+            void ResolveParameters(List<VariableNode> variables, IList<DSharpMethodBuilderParameter> parameters, DSharpCompilerContext context)
+            {
+                foreach (var parameter in variables)
+                {
+                    if (parameter.Type == null)
+                    {
+                        throw new InvalidOperationException($"Parameter must have a type: {parameter}");
+                    }
+
+                    parameters.Add(new(assemblyBuilder)
+                    {
+                        Name = parameter.Name,
+                        TypeGetter = () => context.ResolveType(parameter.Type)
+                    });
+                }
+            }
+            void OverrideProperty(DSharpPropertyBuilder property, FieldNode node, string memberName)
+            {
+                if (!node.IsOverride)
+                {
+                    return;
+                }
+
+                var overrideProperty = FindBaseMember(t => t.GetProperty(property.Name), property.DeclaringType);
+
+                if (overrideProperty == null)
+                {
+                    throw new InvalidOperationException($"Unable to override {memberName} \"{property}\" because property with same signature not found in parents: {node}");
+                }
+                if (overrideProperty.IsSealed)
+                {
+                    throw new InvalidOperationException($"Unable to override sealed {memberName} \"{overrideProperty}\" by \"{property}\"");
+                }
+
+                property.OverrideProperty = overrideProperty;
             }
 
             foreach (var enumValue in _enumValues.Keys)
@@ -473,46 +532,45 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             {
                 if (info.Value.Type != null)
                 {
-                    info.Key.FieldType = ResolveType(info.Key, info.Value.Type);
+                    info.Key.FieldTypeResolver = () => ResolveType(info.Key, info.Value.Type);
                 }
             }
             foreach (var info in _createdFields)
             {
                 if (info.Value.Type != null)
                 {
-                    info.Key.FieldType = ResolveType(info.Key, info.Value.Type);
+                    info.Key.FieldTypeResolver = () => ResolveType(info.Key, info.Value.Type);
                 }
             }
             foreach (var info in _createdProperties)
             {
                 if (info.Value.Type != null)
                 {
-                    info.Key.PropertyType = ResolveType(info.Key, info.Value.Type);
+                    info.Key.PropertyTypeResolver = () => ResolveType(info.Key, info.Value.Type);
                 }
+            }
+            foreach (var info in _createdIndexers)
+            {
+                var context = _context;
+                context.CurrentMember = info.Key;
+
+                if (info.Value.Type != null)
+                {
+                    info.Key.PropertyTypeResolver = () => ResolveType(info.Key, info.Value.Type);
+                }
+
+                ResolveParameters(info.Value.Parameters, info.Key.Parameters, context);
             }
             foreach (var info in _createdMethods)
             {
                 var context = _context;
                 context.CurrentMember = info.Key;
 
-                foreach (var parameter in info.Value.Parameters)
-                {
-                    if (parameter.Type == null)
-                    {
-                        throw new InvalidOperationException($"Parameter must have a type: {parameter}");
-                    }
-
-                    var type = context.ResolveType(parameter.Type);
-                    info.Key.Parameters.Add(new(assemblyBuilder)
-                    {
-                        Name = parameter.Name,
-                        Type = type
-                    });
-                }
+                ResolveParameters(info.Value.Parameters, info.Key.Parameters, context);
 
                 if (info.Value.ReturnType != null && info.Value.ReturnType.Name != "func")
                 {
-                    info.Key.ReturnType = context.ResolveType(info.Value.ReturnType);
+                    info.Key.ReturnTypeResolver = () => context.ResolveType(info.Value.ReturnType);
                 }
             }
             foreach (var info in _createdConstructors)
@@ -520,20 +578,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 var context = _context;
                 context.CurrentMember = info.Key;
 
-                foreach (var parameter in info.Value.Parameters)
-                {
-                    if (parameter.Type == null)
-                    {
-                        throw new InvalidOperationException($"Parameter must have a type: {parameter}");
-                    }
-
-                    var type = context.ResolveType(parameter.Type);
-                    info.Key.Parameters.Add(new(assemblyBuilder)
-                    {
-                        Name = parameter.Name,
-                        Type = type
-                    });
-                }
+                ResolveParameters(info.Value.Parameters, info.Key.Parameters, context);
             }
             foreach (var enumType in _enumTypes.Keys)
             {
@@ -556,23 +601,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             foreach (var info in _createdProperties)
             {
-                if (!info.Value.IsOverride)
-                {
-                    continue;
-                }
-
-                var overrideProperty = FindBaseMember(t => t.GetProperty(info.Key.Name), info.Key.DeclaringType);
-
-                if (overrideProperty == null)
-                {
-                    throw new InvalidOperationException($"Unable to override property \"{info.Key}\" because property with same signature not found in parents: {info.Value}");
-                }
-                if (overrideProperty.IsSealed)
-                {
-                    throw new InvalidOperationException($"Unable to override sealed property \"{overrideProperty}\" by \"{info.Key}\"");
-                }
-
-                info.Key.OverrideProperty = overrideProperty;
+                OverrideProperty(info.Key, info.Value, "property");
+            }
+            foreach (var info in _createdIndexers)
+            {
+                OverrideProperty(info.Key, info.Value, "indexer");
             }
             foreach (var info in _createdMethods)
             {
@@ -609,6 +642,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
 
             foreach (var info in _createdProperties)
+            {
+                CompileProperty(info.Key, info.Value);
+            }
+            foreach (var info in _createdIndexers)
             {
                 CompileProperty(info.Key, info.Value);
             }
@@ -650,12 +687,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             while (i < _assemblyBuilder.Types.Count)
             {
                 var type = _assemblyBuilder.Types[i];
-
-                if (type.GenericTemplate != null)
-                {
-                    type.Update();
-                }
-
+                type.Update();
                 i++;
             }
         }

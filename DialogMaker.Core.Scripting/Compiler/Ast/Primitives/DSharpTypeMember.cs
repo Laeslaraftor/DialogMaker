@@ -10,7 +10,7 @@
         /// </summary>
         Constructor,
         /// <summary>
-        /// Field
+        /// Field/property
         /// </summary>
         Field,
         /// <summary>
@@ -20,6 +20,10 @@
         /// <summary>
         /// Finalizer/destructor
         /// </summary>
-        Finalizer
+        Finalizer,
+        /// <summary>
+        /// Indexer (this[int] { get; set; })
+        /// </summary>
+        Indexer,
     }
 }

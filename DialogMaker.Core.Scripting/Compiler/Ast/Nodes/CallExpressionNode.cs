@@ -49,5 +49,50 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         }
 
         #endregion
+
+        #region Статика
+
+        /// <summary>
+        /// Parse argument expression starts with current token
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="buffer">Buffer for writing arguments</param>
+        /// <param name="openToken">Token that indicate start or arguments</param>
+        /// <param name="closeToken">Token that indicate start or arguments</param>
+        /// <returns>Arguments open token</returns>
+        public static DSharpToken ParseArguments(AstParserStream stream, List<ExpressionNode> buffer, DSharpTokenType openToken = DSharpTokenType.LeftParen, DSharpTokenType closeToken = DSharpTokenType.RightParen)
+        {
+            var callToken = stream.Eat(openToken);
+
+            while (!stream.Check(closeToken))
+            {
+                buffer.Add(ParseExpression(stream));
+
+                if (!ArrayExpressionNode.CheckTokenAfterComma(stream, closeToken))
+                {
+                    stream.ThrowPositionException("Required argument expression");
+                }
+            }
+
+            stream.Eat(closeToken);
+
+            return callToken;
+        }
+        /// <summary>
+        /// Parse argument expression starts with current token
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="openToken">Token that indicate start or arguments</param>
+        /// <param name="closeToken">Token that indicate start or arguments</param>
+        /// <returns>Parsed arguments</returns>
+        public static List<ExpressionNode> ParseArguments(AstParserStream stream, DSharpTokenType openToken = DSharpTokenType.LeftParen, DSharpTokenType closeToken = DSharpTokenType.RightParen)
+        {
+            List<ExpressionNode> buffer = [];
+            ParseArguments(stream, buffer, openToken, closeToken);
+
+            return buffer;
+        }
+
+        #endregion
     }
 }

@@ -66,6 +66,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// List of finalizer methods
         /// </summary>
         public List<FinalizerNode> Finalizers { get; set; } = [];
+        /// <summary>
+        /// List of indexers
+        /// </summary>
+        public List<IndexerNode> Indexers { get; set; } = [];
 
         #region Константы
 
@@ -197,11 +201,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             bool IsDefinitionEnded(int offset)
             {
-                return stream.Check(DSharpTokenType.LeftBrace, offset) || // { - property getter and setter block
-                       stream.Check(DSharpTokenType.LeftParen, offset) || // ( - method or constructor
-                       stream.Check(DSharpTokenType.Lambda, offset) ||    // => - property lambda
-                       stream.Check(DSharpTokenType.Semicolon, offset) || // ; - property without getter and setter
-                       stream.Check(DSharpTokenType.Assign, offset);      // = - assign value to property
+                return stream.Check(DSharpTokenType.LeftBrace, offset) ||   // {  - property getter and setter block
+                       stream.Check(DSharpTokenType.LeftParen, offset) ||   // (  - method or constructor parameters
+                       stream.Check(DSharpTokenType.Lambda, offset) ||      // => - property lambda
+                       stream.Check(DSharpTokenType.Semicolon, offset) ||   // ;  - property without getter and setter
+                       stream.Check(DSharpTokenType.Assign, offset);        // =  - assign value to property
             }
 
             do
@@ -298,6 +302,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     memberInfo.Type = new(currentToken);
                     eatToken = true;
                 }
+                else if (currentToken.Type == DSharpTokenType.This)
+                {
+                    memberInfo.Identifier = new(currentToken);
+                    stream.Eat(currentToken.Type);
+                    break;
+                }
                 else
                 {
                     if (stream.Check(DSharpTokenType.Identifier) && IsDefinitionEnded(1))
@@ -309,6 +319,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     try
                     {
                         memberInfo.Type = TypeInfoNode.Parse(stream, true, true);
+                        currentToken = stream.Current;
                         continue;
                     }
                     catch
@@ -372,7 +383,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 return false;
             }
 
-            memberInfo.MemberType = DSharpTypeMember.Field;
+            if (memberInfo.Identifier.Token.Type == DSharpTokenType.This)
+            {
+                memberInfo.MemberType = DSharpTypeMember.Indexer;
+            }
+            else
+            {
+                memberInfo.MemberType = DSharpTypeMember.Field;
+            }
+
             return true;
         }
         /// <summary>
@@ -536,6 +555,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 {
                     node.Methods.Add(method);
                 }
+                else if (member is IndexerNode indexer)
+                {
+                    node.Indexers.Add(indexer);
+                }
                 else if (member is FieldNode field)
                 {
                     node.Fields.Add(field);
@@ -600,6 +623,17 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             else if (memberInfo.MemberType == DSharpTypeMember.Finalizer)
             {
                 var finalizer = FinalizerNode.Parse(stream, memberInfo);
+
+                if (attributes != null)
+                {
+                    finalizer.Attributes = attributes;
+                }
+
+                return finalizer;
+            }
+            else if (memberInfo.MemberType == DSharpTypeMember.Indexer)
+            {
+                var finalizer = IndexerNode.ParseIndexer(stream, memberInfo);
 
                 if (attributes != null)
                 {

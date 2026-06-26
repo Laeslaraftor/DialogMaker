@@ -130,25 +130,16 @@ namespace DialogMaker.Core.Tests
 
                     foreach (var property in type.Properties)
                     {
-                        Console.Write("        ");
-                        PrintType(property.PropertyType);
-                        Console.Write($"{property.Name} {{ ");
+                        PrintProperty(property);
+                    }
+                }
+                if (type.Indexers.Count > 0)
+                {
+                    Console.WriteLine("    Indexers:");
 
-                        if (property.CanRead)
-                        {
-                            Console.Write("get;");
-                        }
-                        if (property.CanWrite)
-                        {
-                            if (property.CanRead)
-                            {
-                                Console.Write(" ");
-                            }
-
-                            Console.Write("set;");
-                        }
-
-                        Console.WriteLine(" }");
+                    foreach (var indexer in type.Indexers)
+                    {
+                        PrintProperty(indexer, indexer.Parameters);
                     }
                 }
                 if (type.Fields.Count > 0)
@@ -187,16 +178,8 @@ namespace DialogMaker.Core.Tests
             {
                 if (token != null)
                 {
-                    var type = assembly.GetType(token);
-
-                    if (type is DSharpTypeBuilder builder)
-                    {
-                        Console.Write($"{builder.FullName} ");
-                    }
-                    else if (type is DSharpType typeInfo)
-                    {
-                        Console.Write($"{typeInfo.FullName} ");
-                    }
+                    var type = (IDSharpType)assembly.GetType(token);
+                    Console.Write($"{type} ");
                 }
             }
             void PrintRawValue(DSharpFieldBuilder field)
@@ -229,27 +212,59 @@ namespace DialogMaker.Core.Tests
                 PrintRawValue(field);
                 Console.WriteLine();
             }
+            void PrintProperty(DSharpPropertyBuilder property, IEnumerable<DSharpMethodBuilderParameter>? parameters = null)
+            {
+                Console.Write("        ");
+                PrintType(property.PropertyType);
+                Console.Write($"{property.Name}");
+
+                if (parameters != null)
+                {
+                    Console.Write('[');
+                    PrintParameters(parameters);
+                    Console.Write("]");
+                }
+
+                Console.Write(" { ");
+
+                if (property.CanRead)
+                {
+                    Console.Write("get;");
+                }
+                if (property.CanWrite)
+                {
+                    if (property.CanRead)
+                    {
+                        Console.Write(" ");
+                    }
+
+                    Console.Write("set;");
+                }
+
+                Console.WriteLine(" }");
+            }
             void PrintMethod(DSharpMethodBuilder method)
             {
                 PrintType(method.ReturnType);
                 Console.Write(method.Name);
                 Console.Write('(');
-
+                PrintParameters(method.Parameters);
+                Console.WriteLine(')');
+            }
+            void PrintParameters(IEnumerable<DSharpMethodBuilderParameter> parameters)
+            {
                 int parameterIndex = 0;
 
-                foreach (var parameter in method.Parameters)
+                foreach (var parameter in parameters)
                 {
                     if (parameterIndex > 0)
                     {
                         Console.Write(", ");
                     }
 
-                    PrintType(parameter.Type);
-                    Console.Write(parameter.Name);
+                    Console.Write(parameter);
                     parameterIndex++;
                 }
-
-                Console.WriteLine(')');
             }
 
             Console.WriteLine();

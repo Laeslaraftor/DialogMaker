@@ -72,6 +72,16 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// <returns>Is type assignable to destination type</returns>
             public bool IsAssignableTo(IDSharpType destination)
             {
+                if (type == null)
+                {
+                    if (destination.ObjectType == DSharpObjectType.Struct ||
+                        destination.ObjectType == DSharpObjectType.Enum)
+                    {
+                        return false;
+                    }
+
+                    return true;
+                }
                 if (type == destination ||
                     destination.FullName == DSharpAssemblyBuilder.ObjectTypeFullName)
                 {

@@ -67,6 +67,16 @@ namespace DialogMaker.Core.Scripting.Runtime
             throw new NotImplementedException();
         }
 
+        public IDSharpIndexerInfo[] GetIndexers()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IDSharpIndexerInfo[] GetIndexers(Predicate<IDSharpIndexerInfo> predicate)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
     }
 }

@@ -5,7 +5,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
     public class DSharpMethodBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken)
         : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken), IDSharpMethodInfo
     {
-        public DSharpMethodBuilder(DSharpPropertyBuilder property, bool isSetter, string name, DSharpTypeToken metadataToken)
+        private DSharpMethodBuilder(DSharpPropertyBuilder property, bool isSetter, string name, DSharpTypeToken metadataToken)
             : this(property.Assembly, property.DeclaringType, name, metadataToken)
         {
             LinkedProperty = property;
@@ -63,6 +63,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             get
             {
+                if (field == null && ReturnTypeResolver != null)
+                {
+                    field = ReturnTypeResolver();
+                    ReturnTypeResolver = null;
+                }
                 if (field == null && OriginalMethod?.ReturnType != null)
                 {
                     field = GetReplacedType(OriginalMethod.ReturnType);
@@ -249,6 +254,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
         }
         internal IDSharpMethodInfo? OriginalMethod { get; set; }
+        internal Func<DSharpTypeToken>? ReturnTypeResolver { get; set; }
 
         IDSharpType? IDSharpMethodInfo.ReturnType
         {
@@ -395,6 +401,27 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             return new(DSharpMethodType.Finalizer, DSharpTypeBuilder.FinalizerName, type, metadataToken);
         }
+        /// <summary>
+        /// Create getter method
+        /// </summary>
+        /// <param name="property">Property that must contains getter</param>
+        /// <param name="metadataToken">Token for new method</param>
+        /// <returns>Getter method</returns>
+        public static DSharpMethodBuilder CreateGetter(DSharpPropertyBuilder property, string name, DSharpTypeToken metadataToken)
+        {
+            return new(property, false, name, metadataToken);
+        }
+        /// <summary>
+        /// Create setter method
+        /// </summary>
+        /// <param name="property">Property that must contains setter</param>
+        /// <param name="metadataToken">Token for new method</param>
+        /// <returns>Setter method</returns>
+        public static DSharpMethodBuilder CreateSetter(DSharpPropertyBuilder property, string name, DSharpTypeToken metadataToken)
+        {
+            return new(property, true, name, metadataToken);
+        }
+
 
         /// <summary>
         /// Compare parameters of two methods. 

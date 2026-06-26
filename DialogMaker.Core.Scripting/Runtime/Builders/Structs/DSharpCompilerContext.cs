@@ -3,6 +3,7 @@ using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Runtime.Compilers;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using System.Transactions;
 
 namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
@@ -263,6 +264,34 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                         result ??= Assembly.GlobalFunctions.FirstOrDefault(f => f.Name == name);
                     }
                 }
+            }
+            else if (expression is ThisExpressionNode thisExpression)
+            {
+                result = CurrentMember;
+                return result != null;
+            }
+            else if (expression is BaseExpressionNode baseExpression)
+            {
+                if (CurrentMember == null || Assembly == null)
+                {
+                    return false;
+                }
+
+                IDSharpType? type = CurrentMember as IDSharpType ?? CurrentMember.DeclaringType;
+
+                if (type == null)
+                {
+                    return false;
+                }
+
+                if (type == Assembly.ObjectType)
+                {
+                    ThrowBaseIsUnavailable(expression);
+                }
+
+                result = type.GetBaseTypes().FirstOrDefault(t => t.ObjectType != DSharpObjectType.Interface) ?? Assembly.ObjectType;
+
+                return true;
             }
             else if (expression is CallExpressionNode callExpression)
             {
@@ -936,6 +965,86 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
 
             throw new ArgumentException($"Unable to find overload for method at {CurrentMember}", nameof(members));
+        }
+        public readonly IDSharpIndexerInfo FindIndexer(ArrayAccessExpressionNode arrayAccessExpression)
+        {
+            if (arrayAccessExpression.Array == null)
+            {
+                throw new ArgumentException($"Invalid expression: {arrayAccessExpression}", nameof(arrayAccessExpression));
+            }
+            if (Assembly == null)
+            {
+                throw new InvalidOperationException($"Unable to find indexer when assembly not provided: {arrayAccessExpression}");
+            }
+            if (arrayAccessExpression.Array.GetExpressionType(Assembly, this) is not IDSharpType arrayType)
+            {
+                throw new InvalidOperationException($"Unable to get array type: {arrayAccessExpression.Array}");
+            }
+
+            IDSharpType?[] parameters = new IDSharpType[arrayAccessExpression.Arguments.Count];
+            int i = 0;
+
+            foreach (var arg in arrayAccessExpression.Arguments)
+            {
+                if (arg.IsNullExpression())
+                {
+                    parameters[i] = null;
+                    i++;
+                    continue;
+                }
+                if (arg.GetExpressionType(Assembly, this) is not IDSharpType argumentType)
+                {
+                    throw new InvalidOperationException($"Unable to get argument type: {arg}");
+                }
+
+                parameters[i] = argumentType;
+                i++;
+            }
+
+            DSharpCompilerContext context = new(this, arrayType);
+
+            try
+            {
+                return context.FindIndexer(parameters);
+            }
+            catch (Exception error)
+            {
+                throw new InvalidOperationException($"Unable to find indexer for expression: {arrayAccessExpression}", error);
+            }
+        }
+        public readonly IDSharpIndexerInfo FindIndexer(params IDSharpType?[] parameters)
+        {
+            IDSharpType? currentType = (CurrentMember as IDSharpType ?? CurrentMember?.DeclaringType) 
+                ?? throw new InvalidOperationException($"Unable to find indexer when current member not provided");
+
+            bool IsValid(IDSharpParameterInfo[] indexerParameters)
+            {
+                for (int i = 0; i < indexerParameters.Length; i++)
+                {
+                    if (!parameters[i]!.IsAssignableTo(indexerParameters[i].Type))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            foreach (var indexer in currentType.GetIndexers())
+            {
+                var indexerParameters = indexer.GetParameters();
+
+                if (indexerParameters.Length != parameters.Length)
+                {
+                    continue;
+                }
+                if (IsValid(indexerParameters))
+                {
+                    return indexer;
+                }
+            }
+
+            throw new InvalidOperationException($"Can not find indexer in \"{currentType}\" with {parameters.Length} parameters");
         }
 
         private readonly bool TryResolveMember(string name, bool recursive, [NotNullWhen(true)] out IDSharpMemberInfo? result)

@@ -90,6 +90,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
+        public ReferenceReadOnlyList<DSharpIndexerBuilder> Indexers
+        {
+            get
+            {
+                field ??= new(_indexers);
+                return field;
+            }
+        }
         public ReferenceReadOnlyList<DSharpFieldBuilder> Fields
         {
             get
@@ -133,6 +141,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         private readonly List<DSharpMethodBuilder> _constructors = [];
         private readonly List<DSharpMethodBuilder> _methods = [];
         private readonly List<DSharpPropertyBuilder> _properties = [];
+        private readonly List<DSharpIndexerBuilder> _indexers = [];
         private readonly List<DSharpFieldBuilder> _fields = [];
         private readonly List<DSharpTypeBuilder> _genericTypes = [];
         private readonly List<DSharpTypeBuilder> _childrenTypes = [];
@@ -166,6 +175,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             UpdateAll(Methods);
             UpdateAll(Fields);
             UpdateAll(Properties);
+            UpdateAll(Indexers);
         }
 
         public DSharpTypeBuilder CreateGenericType(string name)
@@ -235,6 +245,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             return CreateMember(DSharpMetadataTokenType.Field, _fields, t => new(Assembly, this, name, t));
         }
+        public DSharpIndexerBuilder CreateIndexer()
+        {
+            if (IsGeneric)
+            {
+                throw new InvalidOperationException("Generic types can not contains indexers");
+            }
+
+            var indexer = CreateMember(DSharpMetadataTokenType.Property, _indexers, t => new(Assembly, this, IndexerName, t));
+
+            return indexer;
+        }
         public DSharpTypeBuilder CreateChildType(string name)
         {
             var type = Assembly.CreateType(name, false, this);
@@ -253,22 +274,23 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             return false;
         }
-        public bool RemoveConstructor(DSharpMethodBuilder constructor)
+        public bool RemoveConstructor(DSharpMethodBuilder constructor) => RemoveMember(_constructors, constructor);
+        public bool RemoveMethod(DSharpMethodBuilder method) => RemoveMember(_methods, method);
+        public bool RemoveFinalizer()
         {
-            return RemoveMember(_constructors, constructor);
+            if (Finalizer == null)
+            {
+                return false;
+            }
+
+            var finalizer = Finalizer;
+            Finalizer = null;
+
+            return _methods.Remove(finalizer);
         }
-        public bool RemoveMethod(DSharpMethodBuilder method)
-        {
-            return RemoveMember(_methods, method);
-        }
-        public bool RemoveProperty(DSharpPropertyBuilder property)
-        {
-            return RemoveMember(_properties, property);
-        }
-        public bool RemoveField(DSharpFieldBuilder field)
-        {
-            return RemoveMember(_fields, field);
-        }
+        public bool RemoveProperty(DSharpPropertyBuilder property) => RemoveMember(_properties, property);
+        public bool RemoveIndexer(DSharpIndexerBuilder indexer) => RemoveMember(_indexers, indexer);
+        public bool RemoveField(DSharpFieldBuilder field) => RemoveMember(_fields, field);
         public bool RemoveChildType(DSharpTypeBuilder type)
         {
             Assembly.RemoveType(type);
@@ -442,6 +464,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public IDSharpMethodInfo[] GetMethods(Predicate<IDSharpMethodInfo> predicate) => [.. _methods.Where(m => predicate(m))];
         public IDSharpPropertyInfo[] GetProperties() => [.. _properties];
         public IDSharpPropertyInfo[] GetProperties(Predicate<IDSharpPropertyInfo> predicate) => [.. _properties.Where(p => predicate(p))];
+        public IDSharpIndexerInfo[] GetIndexers() => [.. _indexers];
+        public IDSharpIndexerInfo[] GetIndexers(Predicate<IDSharpIndexerInfo> predicate) => [.. _indexers.Where(i => predicate(i))];
         public IDSharpFieldInfo[] GetFields() => [.._fields];
         public IDSharpFieldInfo[] GetFields(Predicate<IDSharpFieldInfo> predicate) => [.. _fields.Where(f => predicate(f))];
         public IDSharpType[] GetBaseTypes() => [.. BaseTypes.Select(t => (IDSharpType)Assembly.GetType(t))];
@@ -457,6 +481,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
         public const string ConstructorName = "ctor";
         public const string FinalizerName = "Finalize";
+        public const string IndexerName = "Item";
 
         #endregion
     }

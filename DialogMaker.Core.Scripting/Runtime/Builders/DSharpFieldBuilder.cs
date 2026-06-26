@@ -26,6 +26,11 @@
         {
             get
             {
+                if (field == null && FieldTypeResolver != null)
+                {
+                    field = FieldTypeResolver();
+                    FieldTypeResolver = null;
+                }
                 if (field == null && DeclaringType != null && OriginalField != null)
                 {
                     field = GetReplacedType(OriginalField.FieldType);
@@ -48,6 +53,7 @@
         /// </summary>
         public override bool IsDeclaration => false;
         internal IDSharpFieldInfo? OriginalField { get; set; }
+        internal Func<DSharpTypeToken>? FieldTypeResolver { get; set; }
 
         IDSharpType IDSharpFieldInfo.FieldType
         {

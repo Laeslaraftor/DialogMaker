@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-
-namespace DialogMaker.Core.Scripting.Runtime.Builders
+﻿namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
     public class DSharpPropertyBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder declaringType, string name, DSharpTypeToken metadataToken)
         : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken), IDSharpPropertyInfo
@@ -10,6 +8,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             get
             {
+                if (field == null && PropertyTypeResolver != null)
+                {
+                    field = PropertyTypeResolver();
+                    PropertyTypeResolver = null;
+                }
                 if (field == null && OriginalProperty != null)
                 {
                     field = GetReplacedType(OriginalProperty.PropertyType);
@@ -124,6 +127,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
         }
         internal IDSharpPropertyInfo? OriginalProperty { get; set; }
+        internal Func<DSharpTypeToken>? PropertyTypeResolver { get; set; }
 
         IDSharpType IDSharpPropertyInfo.PropertyType
         {
@@ -158,8 +162,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return Getter;
             }
 
-            var getter = DeclaringType.CreateMethod(t => new(this, false, GetterMethodName, t));
-            Getter = getter;
+            var getter = DeclaringType.CreateMethod(t => DSharpMethodBuilder.CreateGetter(this, GetterMethodName, t));
+            OnGetterCreated(getter);
 
             return getter;
         }
@@ -170,13 +174,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return Setter;
             }
 
-            var setter = DeclaringType.CreateMethod(t => new(this, true, SetterMethodName, t));
-            setter.Parameters.Add(new(Assembly)
-            {
-                TypeGetter = () => PropertyType,
-                Name = "value"
-            });
-            Setter = setter;
+            var setter = DeclaringType.CreateMethod(t => DSharpMethodBuilder.CreateSetter(this, SetterMethodName, t));
+            OnSetterCreated(setter);
 
             return setter;
         }
@@ -224,6 +223,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             base.OnNameChanged(name);
             GetterMethodName = $"get_{name}";
             SetterMethodName = $"set_{name}";
+        }
+
+        protected virtual void OnGetterCreated(DSharpMethodBuilder method)
+        {
+            Getter = method;
+        }
+        protected virtual void OnSetterCreated(DSharpMethodBuilder method)
+        {
+            method.Parameters.Add(new(Assembly)
+            {
+                TypeGetter = () => PropertyType,
+                Name = "value"
+            });
+
+            Setter = method;
         }
 
         #endregion

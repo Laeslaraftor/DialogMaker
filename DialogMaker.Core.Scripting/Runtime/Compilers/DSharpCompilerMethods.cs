@@ -528,13 +528,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 if (assignExpression.Left is ArrayAccessExpressionNode arrayAccess)
                 {
                     if (arrayAccess.Array == null ||
-                        arrayAccess.Index == null)
+                        arrayAccess.Arguments == null)
                     {
                         throw new ArgumentException($"Incomplete expression: {arrayAccess}");
                     }
 
                     CompileValueExpression(method, arrayAccess.Array, ref settings, arrayAccess, context);
-                    CompileValueExpression(method, arrayAccess.Index, ref settings, arrayAccess, context);
+
+                    foreach (var arg in arrayAccess.Arguments)
+                    {
+                        CompileValueExpression(method, arg, ref settings, arrayAccess, context);
+                    }
+
                     CompileValueExpression(method, assignExpression.Right, ref settings, expression, context);
 
                     if (assignExpression.Operator != DSharpAssignmentOperator.Assign)
@@ -577,17 +582,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     }
 
                     settings.DoNotCompileEndPointMember = false;
+                    bool isComplexAssignment = assignExpression.Operator != DSharpAssignmentOperator.Assign;
 
                     if (member == null)
                     {
                         throw new ArgumentException($"Unable to find member: {assignExpression.Left}", nameof(expression));
                     }
+                    if (isComplexAssignment)
+                    {
+                        code.LoadPropertyOrField(member, settings.NextNonVirtualizedAccess);
+                    }
 
                     CompileValueExpression(method, assignExpression.Right, ref settings, expression, context);
 
-                    if (assignExpression.Operator != DSharpAssignmentOperator.Assign)
+                    if (isComplexAssignment)
                     {
-                        code.LoadPropertyOrField(member, settings.NextNonVirtualizedAccess);
                         AddExtraAssignOperation();
                     }
 
@@ -645,7 +654,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                      expression is BinaryExpressionNode ||
                      expression is UnaryExpressionNode ||
                      expression is LiteralExpressionNode ||
-                     expression is IdentifierExpressionNode)
+                     expression is IdentifierExpressionNode ||
+                     expression is ArrayAccessExpressionNode)
             {
                 CompileValueExpression(method, expression, ref settings, parentExpression, context);
             }
@@ -849,13 +859,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     throw new ArgumentException($"Array identifier can not be empty: {arrayExpression}", nameof(expression));
                 }
-                if (arrayExpression.Index == null)
+                if (arrayExpression.Arguments == null)
                 {
                     throw new ArgumentException($"Array index must be specified: {arrayExpression}", nameof(expression));
                 }
 
                 var array = CompileValueExpression(method, arrayExpression.Array, ref settings, arrayExpression, context);
-                CompileValueExpression(method, arrayExpression.Index, ref settings, arrayExpression, context);
+
+                foreach (var arg in arrayExpression.Arguments)
+                {
+                    CompileValueExpression(method, arg, ref settings, arrayExpression, context);
+                }
+
                 code.LoadArrayItem();
                 code.PopOffsetRepeat(1, 2);
 

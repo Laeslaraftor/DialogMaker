@@ -36,6 +36,14 @@
 	public class Array<T> : IEnumerable<T>
 	{
 		public number Length { get; }
+		public T this[number index]
+		{
+			get => GetValue(index);
+			set => SetValue(index, value);
+		}
+		
+		private extern func SetValue(number index, T value);
+		private extern T GetValue(number index);
 		
 		public IEnumerator<T> GetEnumerator()
 		{
@@ -128,7 +136,7 @@
 		public T Value { get; }
 	}
 	
-	public class List<T>
+	public class List<T> : IList<T>
 	{
 		public List()
 		{
@@ -138,13 +146,11 @@
 		
 		public number Count { get; private set; }
 		public number Capacity { get; private set; }
-		/*
 		public T this[number index]
 		{
 			get => _items[index];
 			set => _items[index] = value;
-		}
-		*/
+		}		
 		
 		private T[] _items;
 		
@@ -161,17 +167,90 @@
 			return -1;
 		}
 		public bool Contains(T item) => IndexOf(item) != -1;
+		public func Insert(number index, T item)
+		{
+			if (index >= Count)
+			{
+				Add(item);
+				return;
+			}
+			
+			ExpandIfNeed();
+			bool isAdded = false;
+			
+			for (number i = Count - 1; i >= 0; i--)
+			{
+				_items[i + 1] = _items[i];
+				
+				if (i == index)
+				{
+					_items[i] = item;
+					break;
+				}
+			}
+			
+			Count++;
+		}
 		public func Add(T item)
 		{
-			if (Count + 1 > Capacity)
-			{
-				this.Expand();
-			}
+			ExpandIfNeed();
 			
 			_items[Count] = item;
 			Count++;
 		}
+		public bool Remove(T item)
+		{
+			if (Count == 0)
+			{
+				return false;
+			}
+			
+			bool isRemoved = false;
+			
+			for (number i = 0; i < Count; i++)
+			{
+				T currentItem = _items[i];
+				
+				if (isRemoved)
+				{
+					_items[i - 1] = currentItem;
+					continue;
+				}
+				if (currentItem == item)
+				{
+					isRemoved = true;
+				}
+			}
+			
+			if (isRemoved)
+			{
+				Count--;
+			}
+			
+			return isRemoved;
+		}
+		public func Clear()
+		{
+			if (Count == 0)
+			{
+				return;
+			}
+			
+			for (number i = 0; i < Count; i++)
+			{
+				_items[i] = null;
+			}
+			
+			Count = 0;
+		}
 		
+		private func ExpandIfNeed()
+		{
+			if (Count + 1 > Capacity)
+			{
+				Expand();
+			}
+		}
 		private func Expand()
 		{
 			Capacity *= 2;
@@ -179,6 +258,19 @@
 			Array<T>.Copy(_items, 0, newItems, 0, _items.Length);			
 			_items = newItems;
 		}
+	}
+	public interface IList<T> : IEnumerable<T>
+	{
+		public number Count { get; }
+		public number Capacity { get; }
+		public T this[number index] { get; set; }
+		
+		public number IndexOf(T item);
+		public bool Contains(T item);
+		public func Add(T item);
+		public func Insert(number index, T item);
+		public bool Remove(T item);
+		public func Clear();
 	}
 	public struct KeyValuePair<TKey, TValue>
 	{
@@ -300,17 +392,19 @@ func foreachTest()
 
 /*
 Надо сделать:
-1. Деструктор (частично готово, надо сделать вызов наследованых деструкторов)
-2. Исправить вложенные namespace
-3. using для IDisposable
-4. try, catch, finally
-5. Проработка реализации абстрактных классов
-6. Проверка на правильные наследования: классы от классов, структуры от структур
-7. Вызов полей и методов из базового класса (base.Property, base.Method())
-8. Индексаторы (this[])
-9. Делегаты, анонимные делегаты и лямбда-выражения
-10. Базовый конструктор
-11. Методы расширения
-12. Пользовательские операторы: implicit, explicit, +, -, *, /, ==, !=, >, >=, <, <=, ++, --
-13. События
+1. Деструктор (готово)
+2. Исправить вложенные namespace (готово)
+3. Вызов полей и методов из базового класса (base.Property, base.Method()) (готово)
+4. Индексаторы (this[]) (частично готово, надо сделать вызов геттеров и сеттеров)
+5. Заменить опкоды свойств на вызовы геттеров и сеттеров
+6. using для IDisposable
+7. try, catch, finally
+8. Проработка реализации абстрактных классов
+9. Проверка на правильные наследования: классы от классов, структуры от структур
+10. Делегаты, анонимные делегаты и лямбда-выражения
+11. Базовый конструктор
+12. Явные преобразования, as, is
+13. Пользовательские операторы: implicit, explicit, +, -, *, /, ==, !=, >, >=, <, <=, ++, --
+14. Методы расширения
+15. События
 */

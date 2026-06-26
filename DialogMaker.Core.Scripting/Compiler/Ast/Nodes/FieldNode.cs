@@ -96,55 +96,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 Type = memberInfo.Type
             };
 
-            bool ReadGetter()
+            if (ParseGetterAndSetter(stream, field))
             {
-                if (ObjectDeclarationNode.TryParseAccessModifier(stream, out var access))
-                {
-                    field.GetterAccess = access;
-                }
-                if (TryParseAccessor(stream, DSharpPropertyAccessor.Getter, out var getterBlock))
-                {
-                    field.CanRead = true;
-                    field.Getter = getterBlock;
-                    return true;
-                }
-                return false;
-            }
-            bool ReadSetter()
-            {
-                if (ObjectDeclarationNode.TryParseAccessModifier(stream, out var access))
-                {
-                    field.SetterAccess = access;
-                }
-                if (TryParseAccessor(stream, DSharpPropertyAccessor.Setter, out var setterBlock))
-                {
-                    field.CanWrite = true;
-                    field.Setter = setterBlock;
-                    return true;
-                }
-                return false;
-            }
-
-            if (stream.Check(DSharpTokenType.LeftBrace))
-            {
-                stream.Eat(DSharpTokenType.LeftBrace);
-
-                field.CanRead = false;
-                field.CanWrite = false;
-                field.CustomGetterSetter = true;
-                bool getterRead = ReadGetter();
-
-                if (!stream.Check(DSharpTokenType.RightBrace))
-                {
-                    ReadSetter();
-
-                    if (!getterRead && !stream.Check(DSharpTokenType.RightBrace))
-                    {
-                        ReadGetter();
-                    }
-                }
-
-                stream.Eat(DSharpTokenType.RightBrace);
+                return field;
             }
             else if (stream.Check(DSharpTokenType.Lambda))
             {
@@ -164,6 +118,72 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
 
             return field;
+        }
+        /// <summary>
+        /// Parse property getter and setter starts with current token
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="node">Node to write parsed getter and setter</param>
+        /// <returns>Is getter and setter parsed</returns>
+        public static bool ParseGetterAndSetter(AstParserStream stream, FieldNode node)
+        {
+            if (!stream.Check(DSharpTokenType.LeftBrace))
+            {
+                return false;
+            }
+
+            bool ReadGetter()
+            {
+                if (ObjectDeclarationNode.TryParseAccessModifier(stream, out var access))
+                {
+                    node.GetterAccess = access;
+                }
+                if (TryParseAccessor(stream, DSharpPropertyAccessor.Getter, out var getterBlock))
+                {
+                    node.CanRead = true;
+                    node.Getter = getterBlock;
+                    return true;
+                }
+                return false;
+            }
+            bool ReadSetter()
+            {
+                if (ObjectDeclarationNode.TryParseAccessModifier(stream, out var access))
+                {
+                    node.SetterAccess = access;
+                }
+                if (TryParseAccessor(stream, DSharpPropertyAccessor.Setter, out var setterBlock))
+                {
+                    node.CanWrite = true;
+                    node.Setter = setterBlock;
+                    return true;
+                }
+                return false;
+            }
+
+            if (stream.Check(DSharpTokenType.LeftBrace))
+            {
+                stream.Eat(DSharpTokenType.LeftBrace);
+
+                node.CanRead = false;
+                node.CanWrite = false;
+                node.CustomGetterSetter = true;
+                bool getterRead = ReadGetter();
+
+                if (!stream.Check(DSharpTokenType.RightBrace))
+                {
+                    ReadSetter();
+
+                    if (!getterRead && !stream.Check(DSharpTokenType.RightBrace))
+                    {
+                        ReadGetter();
+                    }
+                }
+
+                stream.Eat(DSharpTokenType.RightBrace);
+            }
+
+            return true;
         }
 
         private static bool TryParseAccessor(AstParserStream stream, DSharpPropertyAccessor accessor, out BlockStatementNode? result)
@@ -190,7 +210,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
             else if (stream.Check(DSharpTokenType.Lambda))
             {
-                result = BlockStatementNode.Parse(stream, DSharpTokenType.Semicolon);
+                result = BlockStatementNode.Parse(stream, DSharpTokenType.Semicolon, DSharpTokenType.Lambda);
                 return true;
             }
             else if (stream.Check(DSharpTokenType.LeftBrace))

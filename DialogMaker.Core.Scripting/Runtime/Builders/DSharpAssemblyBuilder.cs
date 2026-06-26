@@ -388,28 +388,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             foreach (var property in genericType.GetProperties())
             {
                 var newProperty = newType.CreateProperty(property.Name);
-                newProperty.Access = property.Access;
-                newProperty.IsStatic = property.IsStatic;
-                newProperty.IsSealed = property.IsSealed;
-                newProperty.IsAbstract = property.IsAbstract;
-                newProperty.IsVirtual = property.IsVirtual;
-                newProperty.OverrideProperty = property.OverrideProperty;
-                newProperty.OriginalProperty = property;
-                newProperty.CanRead = property.CanRead;
-                newProperty.CanWrite = property.CanWrite;
-
-                if (property.Getter != null)
-                {
-                    var getter = newProperty.CreateGetter();
-                    ProcessMethod(getter, property.Getter);
-                }
-                if (property.Setter != null)
-                {
-                    var setter = newProperty.CreateSetter();
-                    ProcessMethod(setter, property.Setter);
-                }
+                SetupProperty(newProperty, property);
 
                 replacedMembers.Add(property, newProperty);
+            }
+            foreach (var indexer in genericType.GetIndexers())
+            {
+                var newIndexer = newType.CreateIndexer();
+                SetupProperty(newIndexer, indexer);
+                SetupParameters(newIndexer.Parameters, indexer.GetParameters());
+
+                replacedMembers.Add(newIndexer, indexer);
             }
             foreach (var method in genericType.GetMethods())
             {
@@ -436,6 +425,46 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 ReplaceTypes(childType, newType, replacedTypes);
             }
 
+            if (genericType.Finalizer != null)
+            {
+                var newFinalizer = newType.CreateFinalizer();
+                ProcessMethod(newFinalizer, genericType.Finalizer);
+            }
+
+            void SetupProperty(DSharpPropertyBuilder newProperty, IDSharpPropertyInfo property)
+            {
+                newProperty.Access = property.Access;
+                newProperty.IsStatic = property.IsStatic;
+                newProperty.IsSealed = property.IsSealed;
+                newProperty.IsAbstract = property.IsAbstract;
+                newProperty.IsVirtual = property.IsVirtual;
+                newProperty.OverrideProperty = property.OverrideProperty;
+                newProperty.OriginalProperty = property;
+                newProperty.CanRead = property.CanRead;
+                newProperty.CanWrite = property.CanWrite;
+
+                if (property.Getter != null)
+                {
+                    var getter = newProperty.CreateGetter();
+                    ProcessMethod(getter, property.Getter);
+                }
+                if (property.Setter != null)
+                {
+                    var setter = newProperty.CreateSetter();
+                    ProcessMethod(setter, property.Setter);
+                }
+            }
+            void SetupParameters(IList<DSharpMethodBuilderParameter> newParameters, IDSharpParameterInfo[] parameters)
+            {
+                foreach (var parameter in parameters)
+                {
+                    newParameters.Add(new(this)
+                    {
+                        Name = parameter.Name,
+                        Type = GetTypeToken(ReplaceGenericParameters(parameter.Type, replacedTypes))
+                    });
+                }
+            }
             void ProcessMethod(DSharpMethodBuilder newMethod, IDSharpMethodInfo method)
             {
                 newMethod.Access = method.Access;
@@ -453,14 +482,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                     {
                         newMethod.GenericParameters.Add(GetTypeToken(genericParameter));
                     }
-                    foreach (var parameter in method.GetParameters())
-                    {
-                        newMethod.Parameters.Add(new(this)
-                        {
-                            Name = parameter.Name,
-                            Type = GetTypeToken(ReplaceGenericParameters(parameter.Type, replacedTypes))
-                        });
-                    }
+
+                    SetupParameters(newMethod.Parameters, method.GetParameters());
                 }
 
                 replacedMembers.Add(method, newMethod);

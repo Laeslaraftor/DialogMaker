@@ -31,6 +31,8 @@
         public IDSharpPropertyInfo[] GetProperties(Predicate<IDSharpPropertyInfo> predicate);
         public IDSharpFieldInfo[] GetFields();
         public IDSharpFieldInfo[] GetFields(Predicate<IDSharpFieldInfo> predicate);
+        public IDSharpIndexerInfo[] GetIndexers();
+        public IDSharpIndexerInfo[] GetIndexers(Predicate<IDSharpIndexerInfo> predicate);
         /// <summary>
         /// List of types that must fill generic types. 
         /// Size of this list must be equals to generic types list or empty
