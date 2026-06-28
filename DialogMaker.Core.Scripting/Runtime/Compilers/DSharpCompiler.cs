@@ -1,6 +1,7 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Runtime.Builders;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Runtime.Compilers
 {
@@ -431,19 +432,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             property.IsAbstract = fieldNode.Mode == DSharpObjectMemberMode.Abstract;
             property.IsVirtual = fieldNode.Mode == DSharpObjectMemberMode.Virtual;
 
-            if (fieldNode.CanRead &&
-                ((declareType?.ObjectType == DSharpObjectType.Interface && fieldNode.Getter != null) ||
-                 declareType?.ObjectType != DSharpObjectType.Interface))
+            if (fieldNode.CanRead)
             {
-                var getter = property.CreateGetter();
-                getter.Access = fieldNode.GetterAccess;
+                property.CreateGetter();
+                property.GetterAccess = fieldNode.GetterAccess;
             }
-            if (fieldNode.CanWrite &&
-                ((declareType?.ObjectType == DSharpObjectType.Interface && fieldNode.Setter != null) ||
-                 declareType?.ObjectType != DSharpObjectType.Interface))
+            if (fieldNode.CanWrite)
             {
-                var setter = property.CreateSetter();
-                setter.Access = fieldNode.SetterAccess;
+                property.CreateSetter();
+                property.SetterAccess = fieldNode.SetterAccess;
             }
 
             return property;
@@ -515,7 +512,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     return;
                 }
-                
+
                 var overrideProperty = FindBaseMember(selector, property.DeclaringType, m => m == property);
 
                 if (overrideProperty == null)
@@ -588,21 +585,51 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
             foreach (var enumType in _enumTypes.Keys)
             {
-                enumType.BaseTypes.Add(assemblyBuilder.EnumToken);
+                enumType.AddBaseType(assemblyBuilder.EnumType);
             }
-            foreach (var info in _createdTypes)
-            {
-                foreach (var baseType in info.Value.BaseTypes)
-                {
-                    var typeToken = ResolveType(info.Key, baseType);
 
-                    if (typeToken == info.Key.MetadataToken)
+            Dictionary<IDSharpType, ObjectDeclarationNode> typesToSetupBases = new(_createdTypes.Select(p => new KeyValuePair<IDSharpType, ObjectDeclarationNode>(p.Key, p.Value)));
+
+            bool TryGetBaseTypeToSetup(TypeInfoNode typeInfo, out KeyValuePair<IDSharpType, ObjectDeclarationNode> result)
+            {
+                result = default;
+                
+                foreach (var pair in typesToSetupBases)
+                {
+                    if (pair.Key.Name == typeInfo.Name)
                     {
-                        throw new InvalidOperationException($"Type can not inherit itself \"{info.Key}\": {baseType}");
+                        result = pair;
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+            void SetupBaseTypes(IDSharpType type, ObjectDeclarationNode declaration)
+            {
+                if (type is not DSharpTypeBuilder typeBuilder)
+                {
+                    return;
+                }
+
+                typesToSetupBases.Remove(type);
+
+                foreach (var baseTypeInfo in declaration.BaseTypes)
+                {
+                    if (TryGetBaseTypeToSetup(baseTypeInfo, out var baseTypePair))
+                    {
+                        SetupBaseTypes(baseTypePair.Key, baseTypePair.Value);
                     }
 
-                    info.Key.BaseTypes.Add(typeToken);
+                    var typeToken = ResolveType(typeBuilder, baseTypeInfo);
+                    typeBuilder.AddBaseType(typeToken);
                 }
+            }
+
+            while (typesToSetupBases.Count > 0)
+            {
+                var firstPair = typesToSetupBases.First();
+                SetupBaseTypes(firstPair.Key, firstPair.Value);
             }
 
             foreach (var info in _createdProperties)
@@ -647,6 +674,24 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 info.Key.OverrideMethod = overrideMethod;
             }
 
+            foreach (var info in _createdTypes)
+            {
+                if (info.Key.ObjectType == DSharpObjectType.Interface)
+                {
+                    ValidateInterface(info.Key);
+                }
+                else if (info.Key.BaseTypes.Count > 0)
+                {
+                    foreach (var baseType in info.Key.BaseTypes)
+                    {
+                        if (baseType.ObjectType == DSharpObjectType.Interface)
+                        {
+                            CheckInterfaceImplementation(info.Key, baseType);
+                        }
+                    }
+                }
+            }
+
             foreach (var info in _createdProperties)
             {
                 CompileProperty(info.Key, info.Value);
@@ -666,26 +711,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             foreach (var info in _createdFinalizers)
             {
                 CompileMethod(info.Key, info.Value);
-            }
-
-            foreach (var info in _createdTypes)
-            {
-                if (info.Key.ObjectType == DSharpObjectType.Interface)
-                {
-                    ValidateInterface(info.Key);
-                }
-                else if (info.Key.BaseTypes.Count > 0)
-                {
-                    foreach (var baseTypeToken in info.Key.BaseTypes)
-                    {
-                        var baseType = (IDSharpType)_assemblyBuilder.GetType(baseTypeToken);
-
-                        if (baseType.ObjectType == DSharpObjectType.Interface)
-                        {
-                            CheckInterfaceImplementation(info.Key, baseType);
-                        }
-                    }
-                }
             }
 
             int i = 0;

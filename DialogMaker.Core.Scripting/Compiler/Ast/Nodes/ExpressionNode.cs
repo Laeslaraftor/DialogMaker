@@ -250,6 +250,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns></returns>
         public static ExpressionNode ParsePrimary(AstParserStream stream)
         {
+            if (stream.Check(DSharpTokenType.Throw))
+            {
+                return ThrowExpressionNode.Parse(stream);
+            }
             if (stream.Check(DSharpTokenType.LeftParen))
             {
                 return ParenContainedExpressionNode.Parse(stream);

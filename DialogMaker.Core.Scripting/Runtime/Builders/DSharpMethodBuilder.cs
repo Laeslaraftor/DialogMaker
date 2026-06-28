@@ -213,7 +213,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
             set => base.IsVirtual = value;
         }
-        public override DSharpAccessModifier Access 
+        public override DSharpAccessModifier Access
         {
             get
             {
@@ -221,10 +221,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 {
                     return DSharpAccessModifier.Protected;
                 }
+                if (LinkedProperty != null)
+                {
+                    if (MethodType == DSharpMethodType.Getter)
+                    {
+                        return LinkedProperty.GetterAccess;
+                    }
+
+                    return LinkedProperty.SetterAccess;
+                }
 
                 return base.Access;
             }
-            set => base.Access = value; 
+            set => base.Access = value;
         }
         public bool IsExtern
         {
@@ -316,7 +325,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                     methodTemplate.CopyBytecodeTo(_bytecodeBuilder);
                     _bytecodeBuilder.ReplaceMembers(templatedMembers);
                 }
-            }            
+            }
 
             return _bytecodeBuilder;
         }
@@ -346,8 +355,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
+            string returnType = string.Empty;
             string name = Name + '(';
             int parameterIndex = 0;
+
+            if (ReturnType != null)
+            {
+                returnType = Assembly.GetType(ReturnType) + " ";
+            }
 
             foreach (var parameter in Parameters)
             {
@@ -371,10 +386,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             if (DeclaringType == null)
             {
-                return name;
+                return returnType + name;
             }
 
-            return $"{DeclaringType.FullName}.{name}";
+            return $"{returnType}{DeclaringType.FullName}.{name}";
         }
 
         #endregion

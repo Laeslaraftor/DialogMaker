@@ -3,18 +3,62 @@ using DialogMaker.Core.Scripting.Runtime.Compilers;
 
 namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
+    /// <summary>
+    /// Class that provides information about enumerator
+    /// </summary>
+    /// <param name="type">Any enumerator type</param>
+    /// <param name="currentProperty">Property that contains current item</param>
+    /// <param name="moveNextMethod">Method for moving to next item</param>
+    /// <param name="resetMethod">Method for resetting enumerator</param>
     public class DSharpIEnumeratorType(IDSharpType type, IDSharpPropertyInfo currentProperty, IDSharpMethodInfo moveNextMethod, IDSharpMethodInfo resetMethod)
     {
+        /// <summary>
+        /// Enumerator type
+        /// </summary>
         public IDSharpType Type { get; } = type;
+        /// <summary>
+        /// Property that contains current item
+        /// </summary>
         public IDSharpPropertyInfo CurrentProperty { get; } = currentProperty;
+        /// <summary>
+        /// Method for moving to next item
+        /// </summary>
         public IDSharpMethodInfo MoveNextMethod { get; } = moveNextMethod;
+        /// <summary>
+        /// Method for resetting enumerator
+        /// </summary>
         public IDSharpMethodInfo ResetMethod { get; } = resetMethod;
+
+        #region Управление
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
+        public override string ToString()
+        {
+            return Type.ToString();
+        }
+
+        #endregion
 
         #region Константы
 
+        /// <summary>
+        /// Full name of enumerator interface
+        /// </summary>
         public const string TypeFullName = "System.IEnumerator";
+        /// <summary>
+        /// Name of field that contains current item
+        /// </summary>
         public const string CurrentPropertyName = "Current";
+        /// <summary>
+        /// Name of method for moving to next item
+        /// </summary>
         public const string MoveNextMethodName = "MoveNext";
+        /// <summary>
+        /// Name of method for resetting enumerator
+        /// </summary>
         public const string ResetMethodName = "Reset";
 
         #endregion
@@ -71,11 +115,23 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
         #region Статика
 
+        /// <summary>
+        /// Create information about enumerator interface (<see cref="TypeFullName"/>)
+        /// </summary>
+        /// <param name="assembly">Assembly that will be used for searching interface</param>
+        /// <returns>Information about enumerator interface</returns>
         public static DSharpIEnumeratorType Create(IDSharpAssembly assembly)
         {
             var type = assembly.GetType(TypeFullName);
             return Create(type);
         }
+        /// <summary>
+        /// Create information about enumerator
+        /// </summary>
+        /// <param name="type">Enumerator type</param>
+        /// <returns>Information about enumerator</returns>
+        /// <exception cref="ArgumentException"></exception>
+        /// <exception cref="InvalidDataException"></exception>
         public static DSharpIEnumeratorType Create(IDSharpType type)
         {
             var assembly = type.Assembly;

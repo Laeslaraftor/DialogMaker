@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core.Scripting.Runtime.Builders
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+
+namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
     public class DSharpPropertyBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder declaringType, string name, DSharpTypeToken metadataToken)
         : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken), IDSharpPropertyInfo
@@ -81,6 +83,8 @@
                 }
             }
         }
+        public DSharpAccessModifier GetterAccess { get; set; }
+        public DSharpAccessModifier SetterAccess { get; set; }
         public string GetterMethodName { get; private set; } = string.Empty;
         public string SetterMethodName { get; private set; } = string.Empty;
         public bool CanRead
@@ -215,7 +219,7 @@
 
         public override string ToString()
         {
-            return $"{DeclaringType.FullName}.{Name}";
+            return $"{Assembly.GetTypeOrDefault(PropertyType)} {DeclaringType.FullName}.{Name}";
         }
 
         #endregion

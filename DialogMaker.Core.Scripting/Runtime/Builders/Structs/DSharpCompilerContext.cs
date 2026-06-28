@@ -24,6 +24,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             CurrentMember = currentMember;
             ResolvedTypes = context.ResolvedTypes;
             ParentExpression = context.ParentExpression;
+            CurrentLoopStartInstruction = context.CurrentLoopStartInstruction;
+            CurrentLoopEndInstruction = context.CurrentLoopEndInstruction;
+            NowInCatchBlock = context.NowInCatchBlock;
         }
 
         public DSharpAssemblyBuilder? Assembly { get; set; }
@@ -35,6 +38,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public ExpressionNode? ParentExpression { get; set; }
         public DSharpBytecodeBuilder.Instruction? CurrentLoopStartInstruction { get; set; }
         public DSharpBytecodeBuilder.Instruction? CurrentLoopEndInstruction { get; set; }
+        public bool NowInCatchBlock { get; set; }
 
         #region Доступ
 
@@ -300,6 +304,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 result = type.GetBaseTypes().FirstOrDefault(t => t.ObjectType != DSharpObjectType.Interface) ?? Assembly.ObjectType;
 
                 return true;
+            }
+            else if (expression is AwaitExpressionNode awaitExpression)
+            {
+                if (awaitExpression.Expression == null)
+                {
+                    throw new ArgumentException($"Invalid expression: {awaitExpression}", nameof(expression));
+                }
+
+                return TryResolveMember(awaitExpression.Expression, out result);
             }
             else if (expression is CallExpressionNode callExpression)
             {
@@ -732,7 +745,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 throw new InvalidOperationException($"Unable to find method \"{name}\" with {parameters.Length} parameters", error);
             }
         }
-        public readonly IDSharpIndexerInfo FindIndexer(ArrayAccessExpressionNode arrayAccessExpression)
+        public readonly IDSharpIndexerInfo FindIndexer(ArrayAccessExpressionNode arrayAccessExpression, IDSharpMemberInfo? argumentsMember = null)
         {
             if (arrayAccessExpression.Array == null)
             {
@@ -747,12 +760,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 throw new InvalidOperationException($"Unable to get array type: {arrayAccessExpression.Array}");
             }
 
-            var parameters = GetArgumentTypes(arrayAccessExpression.Arguments);
-            DSharpCompilerContext context = new(this, arrayType);
+            IDSharpType?[] parameters;
+            DSharpCompilerContext arrayContext = new(this, arrayType);
+
+            if (argumentsMember == null)
+            {
+                parameters = GetArgumentTypes(arrayAccessExpression.Arguments);
+            }
+            else
+            {
+                DSharpCompilerContext argumentsContext = new(this, argumentsMember);
+                parameters = argumentsContext.GetArgumentTypes(arrayAccessExpression.Arguments);
+            }
 
             try
             {
-                return context.FindIndexer(parameters);
+                return arrayContext.FindIndexer(parameters);
             }
             catch (Exception error)
             {
@@ -777,8 +800,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return true;
             }
 
-            foreach (var member in currentType.GetAllMembers(m => m is IDSharpIndexerInfo &&
-                                                                   m.DeclaringType?.ObjectType != DSharpObjectType.Interface))
+            foreach (var member in currentType.GetAllMembers(m => m is IDSharpIndexerInfo))
             {
                 if (member is not IDSharpIndexerInfo indexer)
                 {

@@ -128,12 +128,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     throw new ArgumentException($"Invalid statement: {expressionStatement}");
                 }
 
+                settings.LastOperationIsReturnsValue = false;
                 var expressionMember = CompileExpression(method, expressionStatement.Expression, ref settings, null, context);
 
                 if (depth == 0 && parentStatement?.Token.Type == DSharpTokenType.Lambda)
                 {
-                    if (expressionStatement.Expression.IsNullExpression() ||
-                        expressionMember != null && expressionMember.TryGetReturnType(out _))
+                    if (settings.LastOperationIsReturnsValue)
                     {
                         settings.AddReturnMethod(method);
                         return;
@@ -345,12 +345,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 var moveNextOperation = code.CallInstance(enumerator.MoveNextMethod);
                 var skipIteration = code.JumpIfFalse();
                 code.Pop();
-                code.StartStackBlock();
-                code.LoadInstanceProperty(enumerator.CurrentProperty);
+                code.StartScope();
+                code.LoadPropertyOrField(enumerator.CurrentProperty);
                 code.StoreLocal(variable);
                 code.Pop();
 
-                context.CurrentLoopStartInstruction = code.EndStackBlock();
+                context.CurrentLoopStartInstruction = code.EndScope();
                 context.CurrentLoopEndInstruction = code.Pop();
 
                 code.Instructions.Remove(context.CurrentLoopStartInstruction);
@@ -531,7 +531,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                         throw new ArgumentException($"Incomplete expression: {arrayAccess}");
                     }
 
-                    var indexer = GetArrayIndexer(arrayAccess, context);
+                    var indexer = GetArrayIndexer(method, arrayAccess, context);
 
                     CompileValueExpression(method, arrayAccess.Array, ref settings, arrayAccess, context);
 
@@ -581,9 +581,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                             {
                                 code.LoadInstance();
                             }
-                            if (c.TryResolveMember(e, out var resolvedMember))
+
+                            try
                             {
-                                return resolvedMember;
+                                if (c.TryResolveMember(e, out var resolvedMember))
+                                {
+                                    return resolvedMember;
+                                }
+                            }
+                            catch (Exception error)
+                            {
+                                throw new InvalidOperationException($"Unable to resolve member: {e}", error);
                             }
 
                             throw new InvalidOperationException($"Unable to resolve member: {e}");
@@ -664,13 +672,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 return CompileValueExpressionOperation(method, code, decrementExpression.Expression, () => code.Decrement(), ref settings, context);
             }
-            else if (expression is CallExpressionNode ||
+            else if (expression is CallExpressionNode || 
+                     expression is AwaitExpressionNode ||
                      expression is MemberAccessExpressionNode ||
                      expression is BinaryExpressionNode ||
                      expression is UnaryExpressionNode ||
                      expression is LiteralExpressionNode ||
                      expression is IdentifierExpressionNode ||
-                     expression is ArrayAccessExpressionNode)
+                     expression is ArrayAccessExpressionNode ||
+                     expression is ThrowExpressionNode)
             {
                 return CompileValueExpression(method, expression, ref settings, parentExpression, context);
             }
@@ -704,6 +714,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     if (!settings.DoNotCompileEndPointMember)
                     {
                         code.LoadArgument(parameter);
+                        settings.LastOperationIsReturnsValue = true;
                     }
 
                     return null;
@@ -713,6 +724,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     if (!settings.DoNotCompileEndPointMember)
                     {
                         code.LoadLocal(variable);
+                        settings.LastOperationIsReturnsValue = true;
                     }
 
                     return null;
@@ -749,6 +761,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     {
                         code.LoadPropertyOrField(member, settings.NextNonVirtualizedAccess);
                         settings.NextNonVirtualizedAccess = false;
+                        settings.LastOperationIsReturnsValue = true;
 
                         if (instanceLoaded)
                         {
@@ -764,14 +777,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 return CompileMemberAccessExpression(method, memberAccessExpression, (p, e, ref s, c) =>
                 {
                     c.ParentExpression = p;
-
-                    if (c.CurrentMember != null &&
-                        c.CurrentMember is not IDSharpType &&
-                        c.CurrentMember.TryGetReturnType(out var memberType))
-                    {
-                        c.CurrentMember = memberType;
-                    }
-
                     var result = CompileValueExpression(method, e, ref s, p, c);
 
                     return result;
@@ -810,8 +815,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 void CallAuto(IDSharpMethodInfo method, ref DSharpMethodCompileSettings settings)
                 {
-                    code.CallAuto(method, settings.Await(callExpression), ref settings);
+                    bool awaitMethod = false;
+
+                    if (settings.Await(method))
+                    {
+                        awaitMethod = true;
+                        settings.CallingsToAwait?.Remove(method);
+                    }
+
+                    code.CallAuto(method, awaitMethod, ref settings);
                     settings.NextNonVirtualizedAccess = false;
+
+                    if (method.ReturnType != null)
+                    {
+                        settings.LastOperationIsReturnsValue = true;
+                    }
                 }
 
                 if (!calledMethod.IsStatic && method.IsStatic &&
@@ -873,7 +891,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     CompileValueExpression(method, arg, ref settings, arrayExpression, context);
                 }
 
-                var indexer = GetArrayIndexer(arrayExpression, context);
+                IDSharpIndexerInfo indexer;
+
+                try
+                {
+                    indexer = GetArrayIndexer(method, arrayExpression, context);
+                }
+                catch (Exception error)
+                {
+                    throw new InvalidOperationException($"Unable to find indexer: {arrayExpression}", error);
+                }
 
                 if (indexer.Getter == null)
                 {
@@ -882,12 +909,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 code.CallAuto(indexer.Getter);
                 code.PopOffsetRepeat(1, 2);
+                settings.LastOperationIsReturnsValue = true;
 
-                return array;
+                return indexer.PropertyType;
             }
             else if (expression.TrySimplifyToLiteral(out var literal))
             {
                 code.Push(literal);
+                settings.LastOperationIsReturnsValue = true;
                 return null;
             }
             else if (expression is UnaryExpressionNode unaryExpression)
@@ -916,6 +945,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
 
                 CompileValueExpression(method, unaryExpression.Operand, ref settings, expression, context);
+
+                settings.LastOperationIsReturnsValue = true;
 
                 if (unaryExpression.Operator == DSharpUnaryOperator.Not)
                 {
@@ -1018,6 +1049,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 binaryExpression.CompileExpression(Handle);
 
+                settings.LastOperationIsReturnsValue = true;
+
                 return null;
             }
             else if (expression is NewInstanceExpressionNode newExpression)
@@ -1097,29 +1130,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     }
 
                     var name = identifier.GetName(false);
-                    var property = type.GetProperty(name);
+                    IDSharpMemberInfo? member = type.GetPropertyOrDefault(name);
+                    member ??= type.GetFieldOrDefault(name);
+
+                    if (member == null)
+                    {
+                        throw new ArgumentException($"Unknown member {name} at \"{type}\": {initializer}", nameof(initializer));
+                    }
 
                     CompileValueExpression(method, initializer.Right, ref settings, initializer, context);
 
-                    if (property != null)
-                    {
-                        code.StoreInstanceProperty(property);
-                    }
-
-                    var field = type.GetField(name);
-
-                    if (field != null)
-                    {
-                        code.StoreInstanceField(field);
-                    }
-
+                    code.StorePropertyOrField(member);
                     code.Pop();
-
-                    if (property == null && field == null)
-                    {
-                        throw new ArgumentException($"Unknown member {name} at {type}: {initializer}", nameof(initializer));
-                    }
                 }
+
+                settings.LastOperationIsReturnsValue = true;
 
                 return type;
             }
@@ -1143,6 +1168,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
 
                 var type = (IDSharpType)_assemblyBuilder.GetType(typeToken);
+                type = _assemblyBuilder.CreateArray(type);
+                var arrayInfo = DSharpArrayType.Create(type);
                 int arraySize = newArrayExpression.SizeExpressions.Count;
 
                 if (newArrayExpression.SizeExpressions.Count > 0)
@@ -1157,35 +1184,39 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 code.NewArray(type);
                 code.PopOffset(1);
 
-                if (newArrayExpression.ItemsExpressions.Count > 0)
+                for (int i = 0; i < newArrayExpression.ItemsExpressions.Count; i++)
                 {
-                    code.Push(0);
-                }
-                foreach (var item in newArrayExpression.ItemsExpressions)
-                {
+                    var item = newArrayExpression.ItemsExpressions[i];
+
                     CompileValueExpression(method, item, ref settings, expression, context);
-                    code.StoreArrayItem();
-                    code.Pop();
-                    code.Increment();
+                    code.Push(i);
+                    code.CallAuto(arrayInfo.IndexerSetter);
+                    code.PopRepeat(2);
                 }
-                if (newArrayExpression.ItemsExpressions.Count > 0)
-                {
-                    code.Pop();
-                }
+
+                settings.LastOperationIsReturnsValue = true;
 
                 return _assemblyBuilder.CreateArray(type);
             }
             else if (expression is AwaitExpressionNode awaitExpression)
             {
-                if (awaitExpression.Expression is not CallExpressionNode calling)
+                if (awaitExpression.Expression == null)
+                {
+                    throw new ArgumentException($"Invalid expression: {awaitExpression}", nameof(expression));
+                }
+                if (!context.TryResolveMember(awaitExpression, out var awaitMember))
+                {
+                    throw new InvalidOperationException($"Unable to resolve member for awaiting: {awaitExpression}");
+                }
+                if (awaitMember is not IDSharpMethodInfo methodToAwait)
                 {
                     throw new ArgumentException($"await appliable only for methods and functions", nameof(expression));
                 }
 
                 settings.CallingsToAwait ??= [];
-                settings.CallingsToAwait.Add(calling);
+                settings.CallingsToAwait.Add(methodToAwait);
 
-                return CompileValueExpression(method, calling, ref settings, expression, context);
+                return CompileValueExpression(method, awaitExpression.Expression, ref settings, expression, context);
             }
             else if (expression is LiteralExpressionNode literalExpression)
             {
@@ -1205,6 +1236,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 if (parentExpression is not MemberAccessExpressionNode)
                 {
                     code.LoadInstance();
+                    settings.LastOperationIsReturnsValue = true;
                 }
 
                 return method.DeclaringType;
@@ -1266,10 +1298,61 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 CompileExpression(method, assignmentExpression, ref settings, parentExpression, context);
                 return null;
             }
+            else if (expression is ThrowExpressionNode throwExpression)
+            {
+                var throwValue = throwExpression.ValueExpression;
+                DSharpCompilerContext throwContext = context;
+
+                if (throwValue != null)
+                {
+                    if (!throwValue.IsNullExpression())
+                    {
+                        var originalResolver = context.TypeResolver;
+
+                        IDSharpType? TypeResolver(object? expression)
+                        {
+                            if (expression == null || 
+                                (expression is NewExpressionNode newExpression && 
+                                newExpression.Type == null &&
+                                Equals(expression, throwValue)))
+                            {
+                                return _assemblyBuilder.ExceptionType;
+                            }
+
+                            return originalResolver?.Invoke(expression!);
+                        }
+
+                        throwContext = new(context)
+                        {
+                            TypeResolver = TypeResolver
+                        };
+
+                        if (throwValue.GetExpressionType(_assemblyBuilder, throwContext) is not IDSharpType valueType)
+                        {
+                            throw new InvalidOperationException($"Unable to get type of throwing value: {throwValue}");
+                        }
+                        if (!valueType.IsAssignableTo(_assemblyBuilder.ExceptionType))
+                        {
+                            throw new InvalidOperationException($"Throwing value should be \"{_assemblyBuilder.ExceptionType}\" or inherit it, but got \"{valueType}\": {throwValue}");
+                        }
+                    }
+
+                    CompileValueExpression(method, throwValue, ref settings, throwExpression, throwContext);
+                }
+                else if (!context.NowInCatchBlock)
+                {
+                    throw new InvalidOperationException($"Operator \"throw\" without parameters in unavailable outside of catch block");
+                }
+
+                code.Throw();
+                settings.LastOperationIsReturnsValue = true;
+
+                return null;
+            }
 
             throw new ArgumentException($"Unable to compile expression: {expression}", nameof(expression));
         }
-        private IDSharpIndexerInfo GetArrayIndexer(ArrayAccessExpressionNode arrayExpression, DSharpCompilerContext context)
+        private IDSharpIndexerInfo GetArrayIndexer(DSharpMethodBuilder method, ArrayAccessExpressionNode arrayExpression, DSharpCompilerContext context)
         {
             if (arrayExpression.Array == null)
             {
@@ -1287,24 +1370,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 throw new InvalidOperationException($"Unable to get type of array expression: {arrayExpression}");
             }
 
-            DSharpCompilerContext indexerContext = new(context, arrayType);
-            return indexerContext.FindIndexer(arrayExpression);
+            return context.FindIndexer(arrayExpression, method);
         }
         private IDSharpMemberInfo? CompileMemberAccessExpression(DSharpMethodBuilder method, MemberAccessExpressionNode memberAccessExpression, MemberAccessExpressionEndPointHandler endPointHandler, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context = default)
         {
             var startDoNotCompileEndPointMemberValue = settings.DoNotCompileEndPointMember;
-
-            if (context.CurrentMember == null)
-            {
-                context.CurrentMember = method.DeclaringType;
-            }
-            else if (context.CurrentMember != null &&
-                     context.CurrentMember is not IDSharpType &&
-                     context.CurrentMember.TryGetReturnType(out var contextMemberType))
-            {
-                context.CurrentMember = contextMemberType;
-            }
-
             settings.DoNotCompileEndPointMember = false;
 
             var currentMemberAccess = memberAccessExpression;
@@ -1345,28 +1415,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     {
                         context.ThrowBaseIsUnavailable(baseExpression);
                     }
-
-                    IDSharpType currentMemberType;
-
-                    if (context.CurrentMember is IDSharpType type)
-                    {
-                        currentMemberType = type;
-                    }
-                    else
-                    {
-                        if (context.CurrentMember.DeclaringType == null)
-                        {
-                            context.ThrowBaseIsUnavailable(baseExpression);
-                        }
-
-                        currentMemberType = context.CurrentMember.DeclaringType;
-                    }
-                    if (currentMemberType == method.Assembly.ObjectType)
+                    if (!context.CurrentMember.TryGetBase(out var baseType))
                     {
                         context.ThrowBaseIsUnavailable(baseExpression);
                     }
 
-                    var baseType = currentMemberType.GetBaseTypes().FirstOrDefault(t => t.ObjectType != DSharpObjectType.Interface);
                     currentIsBase = true;
                     currentType = baseType ?? method.Assembly.ObjectType;
                     currentMember = currentType;
@@ -1491,6 +1544,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     if (popLast)
                     {
                         code.Pop();
+                    }
+                    else
+                    {
+                        settings.LastOperationIsReturnsValue = true;
                     }
 
                     return null;

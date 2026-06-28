@@ -276,6 +276,42 @@
 
             #endregion
         }
+        public class IndexLiteralInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation, int index, DSharpLiteralValue value)
+            : LiteralInstruction(builder, operation, value)
+        {
+            public int Index { get; set; } = index;
+
+            #region Управление
+
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <param name="builder"><inheritdoc/></param>
+            /// <returns><inheritdoc/></returns>
+            public override Instruction Copy(DSharpBytecodeBuilder builder)
+            {
+                return new IndexLiteralInstruction(builder, Operation, Index, Value);
+            }
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <returns><inheritdoc/></returns>
+            public override object[] GetArguments()
+            {
+                return [Index, Value];
+            }
+
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <returns><inheritdoc/></returns>
+            public override string ToString()
+            {
+                return $"{Index} {base.ToString()}";
+            }
+
+            #endregion
+        }
         public class ReferenceInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation) 
             : Instruction(builder, operation)
         {

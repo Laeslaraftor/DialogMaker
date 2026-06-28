@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Builders;
 using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
@@ -23,11 +24,44 @@ namespace DialogMaker.Core.Scripting.Runtime
             {
                 return type.GetPropertyOrDefault(name) ?? throw new ArgumentException($"Unable to find property {name} at {type}");
             }
-            public IDSharpPropertyInfo? GetIndexerOrDefault(IEnumerable<IDSharpParameterInfo> parameters)
+            public IDSharpIndexerInfo? GetIndexerOrDefault(params IEnumerable<IDSharpType> parametersType)
+            {
+                int paramsCount = parametersType.Count();
+
+                return type.GetMemberOrDefault(t => t.GetIndexers(), indexer =>
+                {
+                    var parameters = indexer.GetParameters();
+
+                    if (parameters.Length != paramsCount)
+                    {
+                        return false;
+                    }
+
+                    int i = 0;
+
+                    foreach (var type in parametersType)
+                    {
+                        if (type != parameters[i].Type)
+                        {
+                            return false;
+                        }
+
+                        i++;
+                    }
+
+                    return true;
+                });
+            }
+            public IDSharpIndexerInfo? GetIndexerOrDefault(params IEnumerable<IDSharpParameterInfo> parameters)
             {
                 return type.GetMemberOrDefault(t => t.GetIndexers(), i => i.GetParameters().SequenceEqual(parameters, IDSharpParameterInfo.Comparer.Instance));
             }
-            public IDSharpPropertyInfo GetIndexer(IEnumerable<IDSharpParameterInfo> parameters)
+            public IDSharpIndexerInfo GetIndexer(params IEnumerable<IDSharpType> parametersType)
+            {
+                return type.GetIndexerOrDefault(parametersType)
+                    ?? throw new ArgumentException($"Unable to find indexer with {parametersType.Count()} parameters at {type}");
+            }
+            public IDSharpIndexerInfo GetIndexer(params IEnumerable<IDSharpParameterInfo> parameters)
             {
                 return type.GetIndexerOrDefault(parameters) 
                     ?? throw new ArgumentException($"Unable to find indexer with {parameters.Count()} parameters at {type}");

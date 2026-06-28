@@ -121,8 +121,32 @@ namespace DialogMaker.Core.Tests
 
             foreach (var type in assembly.Types)
             {
+                if (type.IsGeneric)
+                {
+                    continue;
+                }
+
                 Console.Write(type.ObjectType.ToString().ToLower() + " ");
-                Console.WriteLine(type.FullName);
+                Console.Write(type.FullName);
+
+                if (type.BaseTypes.Count > 0)
+                {
+                    Console.Write(" : ");
+                    bool isFirst = true;
+
+                    foreach (var baseType in type.BaseTypes)
+                    {
+                        if (!isFirst)
+                        {
+                            Console.Write(", ");
+                        }
+
+                        Console.Write(baseType.FullName);
+                        isFirst = false;
+                    }
+                }
+
+                Console.WriteLine();
 
                 if (type.Properties.Count > 0)
                 {
@@ -227,8 +251,19 @@ namespace DialogMaker.Core.Tests
 
                 Console.Write(" { ");
 
+                void PrintAccess(DSharpAccessModifier access)
+                {
+                    if (access == DSharpAccessModifier.Public)
+                    {
+                        return;
+                    }
+
+                    Console.Write(access.ToString().ToLower() + " ");
+                }
+
                 if (property.CanRead)
                 {
+                    PrintAccess(property.GetterAccess);
                     Console.Write("get;");
                 }
                 if (property.CanWrite)
@@ -238,6 +273,7 @@ namespace DialogMaker.Core.Tests
                         Console.Write(" ");
                     }
 
+                    PrintAccess(property.SetterAccess);
                     Console.Write("set;");
                 }
 

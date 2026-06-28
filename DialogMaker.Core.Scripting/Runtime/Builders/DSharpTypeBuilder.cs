@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Runtime.Builders
 {
-    public class DSharpTypeBuilder(DSharpAssemblyBuilder assembly, bool isGeneric, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken) 
+    public class DSharpTypeBuilder(DSharpAssemblyBuilder assembly, bool isGeneric, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken)
         : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken), IDSharpType
     {
         public DSharpTypeBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken)
@@ -66,7 +66,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return result;
             }
         }
-        public List<DSharpTypeToken> BaseTypes { get; } = [];
+        public ReferenceReadOnlyList<IDSharpType> BaseTypes
+        {
+            get
+            {
+                field ??= new(_baseTypes);
+                return field;
+            }
+        }
         /// <summary>
         /// <inheritdoc cref="IDSharpType.GetGenericParameters"/>
         /// </summary>
@@ -154,6 +161,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
         IDSharpMethodInfo? IDSharpType.Finalizer => Finalizer;
 
+        private readonly List<IDSharpType> _baseTypes = [];
         private readonly List<DSharpMethodBuilder> _constructors = [];
         private readonly List<DSharpMethodBuilder> _methods = [];
         private readonly List<DSharpPropertyBuilder> _properties = [];
@@ -193,6 +201,56 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             UpdateAll(Properties);
             UpdateAll(Indexers);
         }
+
+        public void AddBaseType(DSharpTypeToken typeToken)
+        {
+            if (Assembly.GetType(typeToken) is not IDSharpType type)
+            {
+                throw new ArgumentException($"Provided token is not referencing to type: {typeToken}", nameof(type));
+            }
+
+            AddBaseType(type);
+        }
+        public void AddBaseType(IDSharpType type)
+        {
+            if (type == this)
+            {
+                throw new ArgumentException($"Type \"{this}\" can not inherit itself", nameof(type));
+            }
+            if (ObjectType == DSharpObjectType.Enum &&
+                type != Assembly.EnumType)
+            {
+                throw new ArgumentException($"Enum \"{this}\" can not inherit \"{type}\" because enums can not inherit anything", nameof(type));
+            }
+            if (ObjectType == DSharpObjectType.Interface &&
+                type.ObjectType != DSharpObjectType.Interface)
+            {
+                throw new ArgumentException($"Interface \"{this}\" can not inherit \"{type}\" because interfaces can only inherit interfaces", nameof(type));
+            }
+            if (ObjectType == DSharpObjectType.Struct &&
+                type.ObjectType != DSharpObjectType.Interface)
+            {
+                throw new ArgumentException($"Structure \"{this}\" can not inherit \"{type}\" because structures can only inherit interfaces", nameof(type));
+            }
+            if (ObjectType == DSharpObjectType.Class &&
+                type.ObjectType != DSharpObjectType.Interface &&
+                type.ObjectType != DSharpObjectType.Class)
+            {
+                throw new ArgumentException($"Class \"{this}\" can not inherit \"{type}\" because classes can only inherit other classes or interfaces", nameof(type));
+            }
+            if (_baseTypes.Contains(type))
+            {
+                throw new ArgumentException($"Type \"{this}\" already inherits \"{type}\"", nameof(type));
+            }
+            if (ContainsInBaseTypes(this, type) ||
+                ContainsInBaseTypes(type, this))
+            {
+                throw new ArgumentException($"Inheriting loop detected between \"{this}\" and \"{type}\"", nameof(type));
+            }
+
+            _baseTypes.Add(type);
+        }
+        public bool RemoveBaseType(IDSharpType type) => _baseTypes.Remove(type);
 
         public DSharpTypeBuilder CreateGenericType(string name)
         {
@@ -482,9 +540,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public IDSharpPropertyInfo[] GetProperties(Predicate<IDSharpPropertyInfo> predicate) => [.. _properties.Where(p => predicate(p))];
         public IDSharpIndexerInfo[] GetIndexers() => [.. _indexers];
         public IDSharpIndexerInfo[] GetIndexers(Predicate<IDSharpIndexerInfo> predicate) => [.. _indexers.Where(i => predicate(i))];
-        public IDSharpFieldInfo[] GetFields() => [.._fields];
+        public IDSharpFieldInfo[] GetFields() => [.. _fields];
         public IDSharpFieldInfo[] GetFields(Predicate<IDSharpFieldInfo> predicate) => [.. _fields.Where(f => predicate(f))];
-        public IDSharpType[] GetBaseTypes() => [.. BaseTypes.Select(t => (IDSharpType)Assembly.GetType(t))];
+        public IDSharpType[] GetBaseTypes() => [.. _baseTypes];
         public IDSharpMethodInfo[] GetConstructors() => [.. _constructors];
         public IDSharpMethodInfo[] GetConstructors(Predicate<IDSharpMethodInfo> predicate) => [.. _constructors.Where(c => predicate(c))];
         public IDSharpType[] GetGenericParameters() => [.. GenericParameters.Select(t => (IDSharpType)Assembly.GetType(t))];
@@ -498,6 +556,34 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public const string ConstructorName = "ctor";
         public const string FinalizerName = "Finalize";
         public const string IndexerName = "Item";
+
+        #endregion
+
+        #region Статика
+
+        /// <summary>
+        /// Check containing base type by specified type
+        /// </summary>
+        /// <param name="type">Type to checking for containing provided base type</param>
+        /// <param name="baseType">Base type to check for containing</param>
+        /// <returns>Is base type contains in specified type</returns>
+        public static bool ContainsInBaseTypes(IDSharpType type, IDSharpType baseType)
+        {
+            bool Contains(IDSharpType type)
+            {
+                foreach (var bType in type.GetBaseTypes())
+                {
+                    if (bType == baseType || Contains(bType))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            return Contains(type);
+        }
 
         #endregion
     }

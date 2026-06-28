@@ -14,6 +14,7 @@ namespace DialogMaker.Core.Tests
         [TestCase(ScriptCompilerTests.SimpleScript, "getGenericValue")]
         [TestCase(ScriptCompilerTests.SimpleScript, "getLines")]
         [TestCase(ScriptCompilerTests.SimpleScript, "foreachTest")]
+        [TestCase(ScriptCompilerTests.SimpleScript, "System.Threading.Thread.Increment")]
         [TestCase(ScriptCompilerTests.SimpleScript, "System.Number.GetSquared")]
         [TestCase(ScriptCompilerTests.SimpleScript, "System.List`1.Add")]
         [TestCase(ScriptCompilerTests.SimpleScript, "System.List`1.Remove")]

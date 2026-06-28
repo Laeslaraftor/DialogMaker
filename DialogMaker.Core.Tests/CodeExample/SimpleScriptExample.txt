@@ -244,6 +244,11 @@
 			Count = 0;
 		}
 		
+		public IEnumerator<T> GetEnumerator()
+		{
+			return new ListEnumerator<T>(this);
+		}
+		
 		private func ExpandIfNeed()
 		{
 			if (Count + 1 > Capacity)
@@ -257,6 +262,37 @@
 			T[] newItems = new T[Capacity];
 			Array<T>.Copy(_items, 0, newItems, 0, _items.Length);			
 			_items = newItems;
+		}
+	}
+	public class ListEnumerator<T> : IEnumerator<T>
+	{
+		public Enumerator(IList<T> list)
+		{
+			_list = list;
+		}
+		
+		public T Current { get; private set; }
+		
+		private readonly IList<T> _list;
+		private number _currentIndex;
+		
+		public bool MoveNext()
+		{
+			if (_list.Count == 0 ||
+				_currentIndex + 1 >= _list.Count)
+			{
+				return false;
+			}
+			
+			_currentIndex++;
+			Current = _list[_currentIndex];
+			
+			return true;
+		}
+		public func Reset()
+		{
+			_currentIndex = -1;
+			Current = null;
 		}
 	}
 	public interface IList<T> : IEnumerable<T>
@@ -287,12 +323,12 @@
 	{
 		private readonly List<KeyValuePair<TKey, TValue>> _values = new();
 		
-		/*
+		
 		public bool ContainsKey(TKey key)
 		{
-			for (number i = 0; i < _values.Count; i++)
+			foreach (var pair in _values)
 			{
-				if (_values[i].Key == key)
+				if (pair.Key == key)
 				{
 					return true;
 				}
@@ -300,7 +336,27 @@
 			
 			return false;
 		}
-		*/
+		
+	}
+	public class Exception
+	{
+		public Exception()
+		{
+		}
+		public Exception(string message)
+		{
+			Message = message;
+		}
+		public Exception(string message, Exception innerException) 
+		{
+			InnerException = innerException;
+		}	
+		
+		public string Message { get; }
+		public Exception InnerException { get; }
+	}
+	public class NotImplementedException : Exception
+	{
 	}
 	public class Console
 	{
@@ -313,6 +369,18 @@
 		{
 			~Thread() 
 			{
+			}
+			
+			public func Start()
+			{
+				throw new NotImplementedException();
+			}
+			
+			number someNumber = 0;
+
+			func Increment()
+			{
+				this.someNumber++;
 			}
 		}
 	}
@@ -386,19 +454,20 @@ func foreachTest()
 	foreach (var line in guideText)
 	{
 		Console.WriteLine(line.ToString());
-		Console.ReadLine();
+		await Console.ReadLine();
 	}
 }
+
 
 /*
 Надо сделать:
 1. Деструктор (готово)
 2. Исправить вложенные namespace (готово)
 3. Вызов полей и методов из базового класса (base.Property, base.Method()) (готово)
-4. Индексаторы (this[]) (частично готово, надо сделать вызов геттеров и сеттеров)
-5. Заменить опкоды свойств на вызовы геттеров и сеттеров
-6. using для IDisposable
-7. try, catch, finally
+4. Индексаторы (this[]) (готово)
+5. Заменить опкоды свойств на вызовы геттеров и сеттеров (готово)
+6. try, catch, finally
+7. using для IDisposable
 8. Проработка реализации абстрактных классов
 9. Проверка на правильные наследования: классы от классов, структуры от структур
 10. Делегаты, анонимные делегаты и лямбда-выражения

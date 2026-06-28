@@ -41,7 +41,44 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 return result != null;
             }
-            public bool SameSignatureTo(IDSharpMemberInfo otherMember)
+            /// <summary>
+            /// Try get base of current member. 
+            /// If current member is type then will be returned base type that is not interface.
+            /// If current member is method or property then will be returned override member,
+            /// and if override member not found then will be returned base type of declaring type
+            /// </summary>
+            /// <param name="result">Base of current member</param>
+            /// <returns>Is base member found</returns>
+            public bool TryGetBase([NotNullWhen(true)] out IDSharpMemberInfo? result)
+            {
+                result = null;
+
+                if (member == member.Assembly.ObjectType)
+                {
+                    return false;
+                }
+                if (member is IDSharpType typeMember)
+                {
+                    result = typeMember.GetBaseTypes().FirstOrDefault(t => t.ObjectType != DSharpObjectType.Interface) 
+                        ?? member.Assembly.ObjectType;
+                    return true;
+                }
+                if (member is IDSharpMethodInfo method)
+                {
+                    result = method.OverrideMethod;
+                }
+                else if (member is IDSharpPropertyInfo property)
+                {
+                    result = property.OverrideProperty;
+                }
+                if (result == null && member.DeclaringType is IDSharpType declaringType)
+                {
+                    result = declaringType.GetBaseTypes().FirstOrDefault(t => t.ObjectType != DSharpObjectType.Interface);
+                }
+
+                return result != null;
+            }
+            public bool SameSignatureTo(IDSharpMemberInfo otherMember, bool strict = false)
             {
                 if (member.Name != otherMember.Name ||
                     member.Access != otherMember.Access)
@@ -55,20 +92,48 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
                 else if (member is IDSharpFieldInfo currentField && otherMember is IDSharpFieldInfo otherField)
                 {
-                    return currentField.FieldType == otherField.FieldType;
+                    return currentField.FieldType.IsAssignableTo(otherField.FieldType);
                 }
                 else if (member is IDSharpPropertyInfo currentProperty && otherMember is IDSharpPropertyInfo otherProperty)
                 {
-                    return currentProperty.PropertyType == otherProperty.PropertyType;
+                    if (strict)
+                    {
+                        if (currentProperty.CanRead != otherProperty.CanRead ||
+                            currentProperty.CanWrite != otherProperty.CanWrite ||
+                            currentProperty.Getter?.Access != otherProperty.Getter?.Access ||
+                            currentProperty.Setter?.Access != otherProperty.Setter?.Access)
+                        {
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        if ((otherProperty.CanWrite && !currentProperty.CanWrite) ||
+                            (otherProperty.CanRead && !currentProperty.CanRead) ||
+                            (otherProperty.CanWrite && currentProperty.Setter?.Access != otherProperty.Setter?.Access) ||
+                            (otherProperty.CanRead && currentProperty.Getter?.Access != otherProperty.Getter?.Access))
+                        {
+                            return false;
+                        }
+                    }
+
+                    return currentProperty.PropertyType.IsAssignableTo(otherProperty.PropertyType);
                 }
                 else if (member is IDSharpIndexerInfo currentIndexer && otherMember is IDSharpIndexerInfo otherIndexer)
                 {
-                    return currentIndexer.PropertyType == otherIndexer.PropertyType &&
+                    return currentIndexer.PropertyType.IsAssignableTo(otherIndexer.PropertyType) &&
                            currentIndexer.GetParameters().SequenceEqual(otherIndexer.GetParameters(), IDSharpParameterInfo.Comparer.Instance);
                 }
                 else if (member is IDSharpMethodInfo currentMethod && otherMember is IDSharpMethodInfo otherMethod)
                 {
-                    return currentMethod.ReturnType == otherMethod.ReturnType &&
+                    if ((currentMethod.ReturnType == null && otherMethod.ReturnType != null) ||
+                        (currentMethod.ReturnType != null && otherMethod.ReturnType == null))
+                    {
+                        return false;
+                    }
+
+                    return ((currentMethod.ReturnType == null && otherMethod.ReturnType == null) ||
+                           currentMethod.ReturnType!.IsAssignableTo(otherMethod.ReturnType!)) &&
                            currentMethod.GetParameters().SequenceEqual(otherMethod.GetParameters(), IDSharpParameterInfo.Comparer.Instance) &&
                            currentMethod.GetGenericParameters().SequenceEqual(otherMethod.GetGenericParameters());
                 }
@@ -111,7 +176,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     }
                 }
 
-                foreach (var baseType in type.GetBaseTypes())
+                foreach (var baseType in type.GetBaseTypes().Where(t => t.ObjectType == DSharpObjectType.Interface))
                 {
                     foreach (var baseMember in baseType.GetInterfaceMembersToImplement())
                     {

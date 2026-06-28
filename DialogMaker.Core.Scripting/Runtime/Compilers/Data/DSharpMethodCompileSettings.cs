@@ -10,10 +10,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         public Dictionary<string, DSharpPropertyBuilder>? IdentifiersAsProperties { get; set; }
         public Dictionary<string, DSharpMethodBuilderParameter>? LocalVariables { get; set; }
         public HashSet<DSharpMethodBuilder>? AlwaysReturnMethods { get; set; }
-        public HashSet<CallExpressionNode>? CallingsToAwait { get; set; }
+        public HashSet<IDSharpMethodInfo>? CallingsToAwait { get; set; }
         public HashSet<ExpressionNode>? BannedExpressions { get; set; }
         public bool DoNotCompileEndPointMember { get; set; }
         public bool NextNonVirtualizedAccess { get; set; }
+        public bool LastOperationIsReturnsValue { get; set; }
 
         public readonly bool BanExpression(ExpressionNode expression) => BannedExpressions?.Add(expression) == true;
         public readonly bool IsExpressionBanned(ExpressionNode? expression)
@@ -79,7 +80,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             return false;
         }
-        public readonly bool Await(CallExpressionNode callExpression) => CallingsToAwait?.Contains(callExpression) == true;
+        public readonly bool Await(IDSharpMethodInfo method) => CallingsToAwait?.Contains(method) == true;
         public readonly bool AddReturnMethod(DSharpMethodBuilder method) => AlwaysReturnMethods?.Add(method) == true;
         public readonly bool AlwaysReturn(DSharpMethodBuilder method) => AlwaysReturnMethods?.Contains(method) == true;
     }

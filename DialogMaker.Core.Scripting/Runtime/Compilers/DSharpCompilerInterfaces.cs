@@ -93,6 +93,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 list.Add(member);
             }
+
+            List<IDSharpMemberInfo> implementedDeclarations = [];
+
             foreach (var member in type.GetAllMembers(false, m => m.DeclaringType?.ObjectType != DSharpObjectType.Interface))
             {
                 if (!membersToImplement.TryGetValue(member.Name, out var declarationMembers))
@@ -100,25 +103,24 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     continue;
                 }
 
-                IDSharpMemberInfo? implementedDeclaration = null;
+                implementedDeclarations.Clear();
 
                 foreach (var declaration in declarationMembers)
                 {
                     if (member.SameSignatureTo(declaration))
                     {
-                        implementedDeclaration = declaration;
-                        break;
+                        implementedDeclarations.Add(declaration);
                     }
                 }
 
-                if (implementedDeclaration != null)
+                foreach (var implementedDeclaration in implementedDeclarations)
                 {
                     declarationMembers.Remove(implementedDeclaration);
+                }
 
-                    if (declarationMembers.Count == 0)
-                    {
-                        membersToImplement.Remove(member.Name);
-                    }
+                if (declarationMembers.Count == 0)
+                {
+                    membersToImplement.Remove(member.Name);
                 }
             }
 

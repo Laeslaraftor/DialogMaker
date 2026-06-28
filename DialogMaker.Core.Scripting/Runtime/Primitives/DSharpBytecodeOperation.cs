@@ -42,6 +42,12 @@
         [RequestsStackValues(0)]
         PopPreviousTwo,
         /// <summary>
+        /// Replace value in stack at specified index
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        StackReplace,
+        /// <summary>
         /// Load value from argument to stack
         /// </summary>
         [ArgsCount(1)]
@@ -100,73 +106,6 @@
         [ArgsCount(1)]
         [RequestsStackValues(2)]
         StoreInstanceField,
-        /// <summary>
-        /// Load property value to stack
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(0)]
-        LoadProperty,
-        /// <summary>
-        /// Load object instance property value to stack.
-        /// Stack:
-        /// 0: instance
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(1)]
-        LoadInstanceProperty,
-        /// <summary>
-        /// Load object instance property value to stack without searching overriding member.
-        /// Stack:
-        /// 0: instance
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(1)]
-        LoadBaseInstanceProperty,
-        /// <summary>
-        /// Store last value from stack to property.
-        /// Stack:
-        /// 0: value
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(1)]
-        StoreProperty,
-        /// <summary>
-        /// Store last value from stack to object instance property.
-        /// Stack:
-        /// 0: value,
-        /// 1: instance
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(2)]
-        StoreInstanceProperty,
-        /// <summary>
-        /// Store last value from stack to object instance property without searching overriding member.
-        /// Stack:
-        /// 0: value,
-        /// 1: instance
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(2)]
-        StoreBaseInstanceProperty,
-        /// <summary>
-        /// Load item value from array to stack.
-        /// Stack:
-        /// 0: index,
-        /// 1: instance
-        /// </summary>
-        [ArgsCount(0)]
-        [RequestsStackValues(2)]
-        LoadArrayItem,
-        /// <summary>
-        /// Store last value from stack to array. 
-        /// Stack:
-        /// 0: value
-        /// 1: index,
-        /// 2: instance,
-        /// </summary>
-        [ArgsCount(0)]
-        [RequestsStackValues(3)]
-        StoreArrayItem,
         /// <summary>
         /// Load current object instance to stack
         /// </summary>

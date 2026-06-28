@@ -181,6 +181,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         [Keyword("new")]
         New,
         /// <summary>
+        /// Throw keyword
+        /// </summary>
+        [Keyword("throw")]
+        Throw,
+        /// <summary>
         /// Namespace keyword
         /// </summary>
         [Keyword("namespace")]

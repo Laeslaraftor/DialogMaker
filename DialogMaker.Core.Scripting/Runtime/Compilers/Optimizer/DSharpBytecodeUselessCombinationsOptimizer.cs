@@ -16,15 +16,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         ]);
         private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _storeMemberOperations = new([
             DSharpBytecodeOperation.StoreField,
-            DSharpBytecodeOperation.StoreInstanceField,
-            DSharpBytecodeOperation.StoreProperty,
-            DSharpBytecodeOperation.StoreInstanceProperty
+            DSharpBytecodeOperation.StoreInstanceField
         ]);
         private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _loadMemberOperations = new([
             DSharpBytecodeOperation.LoadField,
-            DSharpBytecodeOperation.LoadInstanceField,
-            DSharpBytecodeOperation.LoadProperty,
-            DSharpBytecodeOperation.LoadInstanceProperty
+            DSharpBytecodeOperation.LoadInstanceField
         ]);
         private static readonly Range _uselessPopCombinationsRange = new(0, 5);
         private static readonly ReadOnlyCollection<UselessCombination> _uselessCombinations = new([

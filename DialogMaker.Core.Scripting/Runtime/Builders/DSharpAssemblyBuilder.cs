@@ -81,11 +81,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
+        public DSharpTypeToken ExceptionToken
+        {
+            get
+            {
+                field ??= GetTypeToken(ExceptionTypeFullName);
+                return field;
+            }
+        }
         public DSharpTypeToken ArrayBaseToken
         {
             get
             {
-                field ??= GetTypeToken(ArrayTypeFullName);
+                field ??= GetTypeToken(ArrayBaseType.Type);
                 return field;
             }
         }
@@ -145,11 +153,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
-        public IDSharpType ArrayBaseType
+        public IDSharpType ExceptionType
         {
             get
             {
-                field ??= (IDSharpType)GetType(ArrayBaseToken);
+                field ??= (IDSharpType)GetType(ExceptionToken);
+                return field;
+            }
+        }
+        public DSharpArrayType ArrayBaseType
+        {
+            get
+            {
+                field ??= DSharpArrayType.Create(this);
                 return field;
             }
         }
@@ -236,7 +252,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
                 foreach (var type in _types)
                 {
-                    type.BaseTypes.Remove(typeBuilder.MetadataToken);
+                    type.RemoveBaseType(typeBuilder);
                 }
             }
 
@@ -370,7 +386,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             foreach (var genericTypeBaseType in genericType.GetBaseTypes())
             {
                 var currentBaseType = ReplaceGenericParameters(genericTypeBaseType, replacedTypes);
-                newType.BaseTypes.Add(GetTypeToken(currentBaseType));
+                newType.AddBaseType(GetTypeToken(currentBaseType));
             }
             foreach (var field in genericType.GetFields())
             {
@@ -440,6 +456,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 newProperty.OriginalProperty = property;
                 newProperty.CanRead = property.CanRead;
                 newProperty.CanWrite = property.CanWrite;
+                newProperty.GetterAccess = property.Getter?.Access ?? DSharpAccessModifier.Public;
+                newProperty.SetterAccess = property.Setter?.Access ?? DSharpAccessModifier.Public;
 
                 if (property.Getter != null)
                 {
@@ -526,7 +544,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         }
         public IDSharpType CreateArray(IDSharpType elementType)
         {
-            return FillGeneric(ArrayBaseType, elementType);
+            return FillGeneric(ArrayBaseType.Type, elementType);
         }
 
         private T CreateMember<T>(DSharpMetadataTokenType tokenType, IList<T> members, Func<DSharpTypeToken, T> fabric)
@@ -960,7 +978,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public const string BoolTypeFullName = "System.Boolean";
         public const string CharTypeFullName = "System.Char";
         public const string EnumTypeFullName = "System.Enum";
-        public const string ArrayTypeFullName = "System.Array`1";
+        public const string ExceptionTypeFullName = "System.Exception";
         public const string ObjectName = "object";
         public const string StringName = "string";
         public const string NumberName = "number";

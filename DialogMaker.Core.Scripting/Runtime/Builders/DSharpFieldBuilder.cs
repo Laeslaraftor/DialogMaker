@@ -82,12 +82,14 @@
         /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
+            var fieldType = Assembly.GetTypeOrDefault(FieldType)?.ToString();
+
             if (DeclaringType == null)
             {
-                return Name;
+                return $"{fieldType} {Name}";
             }
 
-            return $"{DeclaringType.FullName}.{Name}";
+            return $"{fieldType} {DeclaringType.FullName}.{Name}";
         }
 
         #endregion

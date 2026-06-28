@@ -288,6 +288,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             return CreateInstruction<OffsetCountInstruction>(this, DSharpBytecodeOperation.PopOffsetRepeat, offset, count);
         }
         /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.StackReplace"/>
+        /// </summary>
+        /// <param name="index">Index for replacing value</param>
+        /// <param name="value">New value</param>
+        /// <returns></returns>
+        public IndexLiteralInstruction StackReplace(int index, DSharpLiteralValue value)
+        {
+            return CreateInstruction<IndexLiteralInstruction>(this, DSharpBytecodeOperation.StackReplace, index, value);
+        }
+        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.New"/>
         /// </summary>
         /// <param name="type">Type of object that needs to instantiate</param>
@@ -407,66 +417,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         }
 
         /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.LoadProperty"/>
-        /// </summary>
-        /// <param name="member">Property to load to stack</param>
-        /// <returns></returns>
-        public TypeInstruction LoadProperty(IDSharpPropertyInfo member)
-        {
-            CheckAccess(member);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadProperty, member);
-        }
-        /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.LoadInstanceProperty"/>
-        /// </summary>
-        /// <param name="member">Property to load to stack</param>
-        /// <returns></returns>
-        public TypeInstruction LoadInstanceProperty(IDSharpPropertyInfo member)
-        {
-            CheckAccess(member);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadInstanceProperty, member);
-        }
-        /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.LoadBaseInstanceProperty"/>
-        /// </summary>
-        /// <param name="member">Property to load to stack</param>
-        /// <returns></returns>
-        public TypeInstruction LoadBaseInstanceProperty(IDSharpPropertyInfo member)
-        {
-            CheckAccess(member);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadBaseInstanceProperty, member);
-        }
-        /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.StoreProperty"/>
-        /// </summary>
-        /// <param name="member">Property for writing value from stack</param>
-        /// <returns></returns>
-        public TypeInstruction StoreProperty(IDSharpPropertyInfo member)
-        {
-            CheckAccess(member);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreProperty, member);
-        }
-        /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.StoreInstanceProperty"/>
-        /// </summary>
-        /// <param name="member">Property for writing value from stack</param>
-        /// <returns></returns>
-        public TypeInstruction StoreInstanceProperty(IDSharpPropertyInfo member)
-        {
-            CheckAccess(member);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreInstanceProperty, member);
-        }
-        /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.StoreBaseInstanceProperty"/>
-        /// </summary>
-        /// <param name="member">Property for writing value from stack</param>
-        /// <returns></returns>
-        public TypeInstruction StoreBaseInstanceProperty(IDSharpPropertyInfo member)
-        {
-            CheckAccess(member);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreBaseInstanceProperty, member);
-        }
-        /// <summary>
         /// Auto load for specified member.
         /// </summary>
         /// <param name="propertyOrField">Property or field</param>
@@ -476,20 +426,20 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             if (propertyOrField is IDSharpPropertyInfo property)
             {
-                if (!property.CanRead)
+                if (property.Getter == null)
                 {
                     throw new InvalidOperationException($"Unable to read value from property because it have not getter: \"{property}\"");
                 }
                 if (propertyOrField.IsStatic)
                 {
-                    return LoadProperty(property);
+                    return Call(property.Getter);
                 }
                 if (isBase)
                 {
-                    return LoadBaseInstanceProperty(property);
+                    return CallBaseInstance(property.Getter);
                 }
 
-                return LoadInstanceProperty(property);
+                return CallInstance(property.Getter);
             }
             else if (propertyOrField is IDSharpFieldInfo field)
             {
@@ -513,20 +463,20 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             if (propertyOrField is IDSharpPropertyInfo property)
             {
-                if (!property.CanWrite)
+                if (property.Setter == null)
                 {
                     throw new InvalidOperationException($"Unable to write value to property because it have not setter: \"{property}\"");
                 }
                 if (propertyOrField.IsStatic)
                 {
-                    return StoreProperty(property);
+                    return Call(property.Setter);
                 }
                 if (isBase)
                 {
-                    return StoreBaseInstanceProperty(property);
+                    return CallBaseInstance(property.Setter);
                 }
 
-                return StoreInstanceProperty(property);
+                return CallInstance(property.Setter);
             }
             else if (propertyOrField is IDSharpFieldInfo field)
             {
@@ -542,22 +492,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         }
 
         /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.LoadArrayItem"/>
-        /// </summary>
-        /// <returns></returns>
-        public Instruction LoadArrayItem()
-        {
-            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.LoadArrayItem);
-        }
-        /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.StoreArrayItem"/>
-        /// </summary>
-        /// <returns></returns>
-        public Instruction StoreArrayItem()
-        {
-            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.StoreArrayItem);
-        }
-        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.LoadInstance"/>
         /// </summary>
         /// <returns></returns>
@@ -570,7 +504,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <inheritdoc cref="DSharpBytecodeOperation.StartScope"/>
         /// </summary>
         /// <returns></returns>
-        public Instruction StartStackBlock()
+        public Instruction StartScope()
         {
             return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.StartScope);
         }
@@ -578,7 +512,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <inheritdoc cref="DSharpBytecodeOperation.EndScope"/>
         /// </summary>
         /// <returns></returns>
-        public Instruction EndStackBlock()
+        public Instruction EndScope()
         {
             return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.EndScope);
         }
