@@ -8,11 +8,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
     public enum DSharpTokenType
     {
         /// <summary>
-        /// Function or method
-        /// </summary>
-        [Keyword("func")]
-        Func,
-        /// <summary>
         /// Variable with unknown type (object)
         /// </summary>
         [Keyword("var")]
@@ -135,6 +130,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// </summary>
         [Keyword("in")]
         In,
+
+        /// <summary>
+        /// Function or method
+        /// </summary>
+        [Keyword("void")]
+        Void,
         /// <summary>
         /// Object keyword for variable or property with unknown type. This is root of all type system
         /// </summary>
@@ -151,15 +152,81 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         [Keyword("char")]
         Char,
         /// <summary>
-        /// Number keyword (int, float, double)
+        /// Int keyword
         /// </summary>
-        [Keyword("number")]
-        Number,
+        [Keyword("int")]
+        Int,
+        /// <summary>
+        /// Uint keyword
+        /// </summary>
+        [Keyword("uint")]
+        UInt,
+        /// <summary>
+        /// long keyword
+        /// </summary>
+        [Keyword("long")]
+        Long,
+        /// <summary>
+        /// Ulong keyword
+        /// </summary>
+        [Keyword("ulong")]
+        ULong,
+        /// <summary>
+        /// Nint keyword
+        /// </summary>
+        [Keyword("nint")]
+        Nint,
+        /// <summary>
+        /// Nuint keyword
+        /// </summary>
+        [Keyword("nuint")]
+        Nuint,
+        /// <summary>
+        /// short keyword
+        /// </summary>
+        [Keyword("short")]
+        Short,
+        /// <summary>
+        /// Ushort keyword
+        /// </summary>
+        [Keyword("ushort")]
+        UShort,
+        /// <summary>
+        /// Byte keyword
+        /// </summary>
+        [Keyword("byte")]
+        Byte,
+        /// <summary>
+        /// Sbyte keyword
+        /// </summary>
+        [Keyword("sbyte")]
+        SByte,
+        /// <summary>
+        /// Decimal keyword
+        /// </summary>
+        [Keyword("decimal")]
+        Decimal,
+        /// <summary>
+        /// Double keyword
+        /// </summary>
+        [Keyword("double")]
+        Double,
+        /// <summary>
+        /// Float keyword
+        /// </summary>
+        [Keyword("float")]
+        Float,
         /// <summary>
         /// Bool keyword (bool)
         /// </summary>
         [Keyword("bool")]
         Bool,
+
+        /// <summary>
+        /// Delegate keyword
+        /// </summary>
+        [Keyword("delegate")]
+        Delegate,
         /// <summary>
         /// Getter keyword
         /// </summary>
@@ -205,6 +272,31 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// </summary>
         [Keyword("base")]
         Base,
+        /// <summary>
+        /// Ref keyword
+        /// </summary>
+        [Keyword("ref")]
+        Ref,
+        /// <summary>
+        /// Out keyword
+        /// </summary>
+        [Keyword("out")]
+        Out,
+        /// <summary>
+        /// Nameof keyword
+        /// </summary>
+        [Keyword("nameof")]
+        NameOf,
+        /// <summary>
+        /// Typeof keyword
+        /// </summary>
+        [Keyword("typeof")]
+        TypeOf,
+        /// <summary>
+        /// Sizeof keyword
+        /// </summary>
+        [Keyword("sizeof")]
+        SizeOf,
 
         /// <summary>
         /// Public access modifier
@@ -271,6 +363,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// Mod operator (%)
         /// </summary>
         Mod,
+        /// <summary>
+        /// Shift left operator (<<)
+        /// </summary>
+        ShiftLeft,
+        /// <summary>
+        /// Shift right operator (>>)
+        /// </summary>
+        ShiftRight,
+        /// <summary>
+        /// Xor operator (^)
+        /// </summary>
+        Xor,
         /// <summary>
         /// Equal operator (==)
         /// </summary>

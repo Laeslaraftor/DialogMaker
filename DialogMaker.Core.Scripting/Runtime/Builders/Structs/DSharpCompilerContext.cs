@@ -360,6 +360,56 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             return TryResolveMember(name, false, out result);
         }
+        public readonly bool TryResolveType(ExpressionNode typeExpression, [NotNullWhen(true)] out DSharpTypeToken? result)
+        {
+            return TryResolveType(typeExpression, out result, out _);
+        }
+        public readonly bool TryResolveType(ExpressionNode typeExpression, [NotNullWhen(true)] out DSharpTypeToken? result, [NotNullWhen(true)] out string? name)
+        {
+            name = null;
+
+            if (typeExpression is IdentifierExpressionNode identifier)
+            {
+                if (TryResolveType(identifier.Name, identifier.GenericParameters, 0, false, out result))
+                {
+                    name = identifier.GetName(false);
+                    return true;
+                }
+            }
+            else if (typeExpression is MemberAccessExpressionNode memberAccess)
+            {
+                IdentifierExpressionNode? endPointIdentifier = null;
+                var memberAccessFull = memberAccess.GetName(false, false);
+                var memberAccessName = memberAccess.GetName(false, true);
+
+                do
+                {
+                    if (memberAccess.Member is IdentifierExpressionNode endIdentifier)
+                    {
+                        endPointIdentifier = endIdentifier;
+                        break;
+                    }
+                    if (memberAccess.Member is MemberAccessExpressionNode nextMemberAccess)
+                    {
+                        memberAccess = nextMemberAccess;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                while(true);
+
+                if (endPointIdentifier != null && TryResolveType(memberAccessName, endPointIdentifier.GenericParameters, 0, false, out result))
+                {
+                    name = memberAccessFull;
+                    return true;
+                }
+            }
+
+            result = null;
+            return false;
+        }
         public readonly bool TryResolveType(TypeInfoNode typeInfo, [NotNullWhen(true)] out DSharpTypeToken? result)
         {
             if (TryResolveType(typeInfo, false, out result))

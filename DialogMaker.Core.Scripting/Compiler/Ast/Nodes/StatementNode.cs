@@ -75,7 +75,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     Variable = variable
                 };
             }
-            if (stream.Check(DSharpTokenType.Extern) || stream.Check(DSharpTokenType.Func))
+            if (stream.Check(DSharpTokenType.Extern) || stream.Check(DSharpTokenType.Void))
             {
                 if (!ObjectDeclarationNode.TryStartParseMember(stream, out var memberInfo))
                 {

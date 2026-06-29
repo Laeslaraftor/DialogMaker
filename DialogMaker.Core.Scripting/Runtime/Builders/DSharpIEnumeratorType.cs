@@ -45,10 +45,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         #region Константы
 
         /// <summary>
-        /// Full name of enumerator interface
-        /// </summary>
-        public const string TypeFullName = "System.IEnumerator";
-        /// <summary>
         /// Name of field that contains current item
         /// </summary>
         public const string CurrentPropertyName = "Current";
@@ -122,7 +118,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns>Information about enumerator interface</returns>
         public static DSharpIEnumeratorType Create(IDSharpAssembly assembly)
         {
-            var type = assembly.GetType(TypeFullName);
+            var type = assembly.GetType(DSharpBuildInTypes.Extra.IEnumerator);
             return Create(type);
         }
         /// <summary>

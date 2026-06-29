@@ -529,7 +529,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             foreach (var enumValue in _enumValues.Keys)
             {
-                enumValue.FieldType = _assemblyBuilder.NumberToken;
+                enumValue.FieldType = _assemblyBuilder.Int32Token;
             }
             foreach (var info in _createdGlobalVariables)
             {

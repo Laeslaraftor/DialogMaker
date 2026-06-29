@@ -17,8 +17,10 @@
             }
             set;
         }
+        public DSharpMethodParameterMode Mode { get; set; }
         public Func<DSharpTypeToken?>? TypeGetter { get; set; }
-        
+
+
         string IDSharpParameterInfo.Name => Name ?? string.Empty;
         IDSharpType IDSharpParameterInfo.Type
         {

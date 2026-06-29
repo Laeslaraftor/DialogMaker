@@ -1,11 +1,14 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+using System.Globalization;
+using System.Numerics;
+using System.Reflection;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
     /// Literal value of D#
     /// </summary>
-    public readonly struct DSharpLiteralValue : IEquatable<DSharpLiteralValue>
+    public struct DSharpLiteralValue : IEquatable<DSharpLiteralValue>
     {
         /// <summary>
         /// Create literal value based on string
@@ -14,6 +17,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         public DSharpLiteralValue(string? text)
         {
             _stringValue = text;
+            Type = text != null ? DSharpLiteralType.String : DSharpLiteralType.Null;
         }
         /// <summary>
         /// Create literal value based on number
@@ -22,6 +26,88 @@ namespace DialogMaker.Core.Scripting.Runtime
         public DSharpLiteralValue(int number)
         {
             _numberValue = number;
+            Type = DSharpLiteralType.Int;
+        }
+        /// <summary>
+        /// Create literal value based on number
+        /// </summary>
+        /// <param name="text">Number as value literal value</param>
+        public DSharpLiteralValue(uint number)
+        {
+            _numberValue = number;
+            Type = DSharpLiteralType.UInt;
+        }
+        /// <summary>
+        /// Create literal value based on number
+        /// </summary>
+        /// <param name="text">Number as value literal value</param>
+        public DSharpLiteralValue(long number)
+        {
+            _numberValue = number;
+            Type = DSharpLiteralType.Long;
+        }
+        /// <summary>
+        /// Create literal value based on number
+        /// </summary>
+        /// <param name="text">Number as value literal value</param>
+        public DSharpLiteralValue(ulong number)
+        {
+            _numberValue = number;
+            Type = DSharpLiteralType.ULong;
+        }
+        /// <summary>
+        /// Create literal value based on number
+        /// </summary>
+        /// <param name="text">Number as value literal value</param>
+        public DSharpLiteralValue(short number)
+        {
+            _numberValue = number;
+            Type = DSharpLiteralType.Short;
+        }
+        /// <summary>
+        /// Create literal value based on number
+        /// </summary>
+        /// <param name="text">Number as value literal value</param>
+        public DSharpLiteralValue(ushort number)
+        {
+            _numberValue = number;
+            Type = DSharpLiteralType.UShort;
+        }
+        /// <summary>
+        /// Create literal value based on number
+        /// </summary>
+        /// <param name="text">Number as value literal value</param>
+        public DSharpLiteralValue(byte number)
+        {
+            _numberValue = number;
+            Type = DSharpLiteralType.Byte;
+        }
+        /// <summary>
+        /// Create literal value based on number
+        /// </summary>
+        /// <param name="text">Number as value literal value</param>
+        public DSharpLiteralValue(sbyte number)
+        {
+            _numberValue = number;
+            Type = DSharpLiteralType.SByte;
+        }
+        /// <summary>
+        /// Create literal value based on number
+        /// </summary>
+        /// <param name="text">Number as value literal value</param>
+        public DSharpLiteralValue(nint number)
+        {
+            _numberValue = number;
+            Type = DSharpLiteralType.NInt;
+        }
+        /// <summary>
+        /// Create literal value based on number
+        /// </summary>
+        /// <param name="text">Number as value literal value</param>
+        public DSharpLiteralValue(nuint number)
+        {
+            _numberValue = number;
+            Type = DSharpLiteralType.NUInt;
         }
         /// <summary>
         /// Create literal value based on number
@@ -30,6 +116,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         public DSharpLiteralValue(float number)
         {
             _numberValue = number;
+            Type = DSharpLiteralType.Float;
         }
         /// <summary>
         /// Create literal value based on number
@@ -38,6 +125,16 @@ namespace DialogMaker.Core.Scripting.Runtime
         public DSharpLiteralValue(double number)
         {
             _numberValue = number;
+            Type = DSharpLiteralType.Double;
+        }
+        /// <summary>
+        /// Create literal value based on number
+        /// </summary>
+        /// <param name="text">Number as value literal value</param>
+        public DSharpLiteralValue(decimal number)
+        {
+            _numberValue = number;
+            Type = DSharpLiteralType.Decimal;
         }
         /// <summary>
         /// Create literal value based on boolean
@@ -46,6 +143,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         public DSharpLiteralValue(bool boolean)
         {
             _boolValue = boolean;
+            Type = DSharpLiteralType.Bool;
         }
         /// <summary>
         /// Create literal value based on char
@@ -54,96 +152,85 @@ namespace DialogMaker.Core.Scripting.Runtime
         public DSharpLiteralValue(char character)
         {
             _charValue = character;
+            Type = DSharpLiteralType.Char;
         }
 
+        /// <summary>
+        /// Type of literal value
+        /// </summary>
+        public DSharpLiteralType Type { get; private set; } = DSharpLiteralType.Null;
         /// <summary>
         /// Is literal value empty
         /// </summary>
-        public bool IsNull => _stringValue == null && _numberValue == null && _boolValue == null && _charValue == null;
+        public readonly bool IsNull => _stringValue == null && _numberValue == null && _boolValue == null && _charValue == null;
         /// <summary>
         /// Is literal value string
         /// </summary>
-        public bool IsString => _stringValue != null;
+        public readonly bool IsString => _stringValue != null;
         /// <summary>
         /// Is literal value number
         /// </summary>
-        public bool IsNumber => _numberValue != null;
+        public readonly bool IsNumber => _numberValue != null;
         /// <summary>
         /// Is literal value boolean
         /// </summary>
-        public bool IsBool => _boolValue != null;
+        public readonly bool IsBool => _boolValue != null;
         /// <summary>
         /// Is literal value char
         /// </summary>
-        public bool IsChar => _charValue != null;
+        public readonly bool IsChar => _charValue != null;
 
         private readonly string? _stringValue;
-        private readonly double? _numberValue;
         private readonly bool? _boolValue;
         private readonly char? _charValue;
+        private object? _numberValue;
 
         #region Управление
-
-        /// <summary>
-        /// Get literal value type
-        /// </summary>
-        /// <returns>Type of literal value</returns>
-        public DSharpLiteralType GetValueType()
-        {
-            if (IsNull)
-            {
-                return DSharpLiteralType.Null;
-            }
-            else if (IsString)
-            {
-                return DSharpLiteralType.String;
-            }
-            else if (IsNumber)
-            {
-                return DSharpLiteralType.Number;
-            }
-            else if (IsChar)
-            {
-                return DSharpLiteralType.Char;
-            }
-            else if (IsBool)
-            {
-                return DSharpLiteralType.Bool;
-            }
-
-            throw new InvalidDataException("Invalid literal value");
-        }
 
         /// <summary>
         /// Get string value of this literal value
         /// </summary>
         /// <returns>String value</returns>
         /// <exception cref="InvalidCastException">Literal value is not a string</exception>
-        public string AsString() => _stringValue ?? throw new InvalidCastException("Literal value is not a string");
+        public readonly string AsString() => _stringValue ?? throw new InvalidCastException("Literal value is not a string");
         /// <summary>
         /// Get number value of this literal value
         /// </summary>
         /// <returns>Number value</returns>
         /// <exception cref="InvalidCastException">Literal value is not a number</exception>
-        public double AsNumber() => _numberValue ?? throw new InvalidCastException("Literal value is not a number");
+        public readonly object AsNumber() => _numberValue ?? throw new InvalidCastException("Literal value is not a number");
+        /// <summary>
+        /// Get number value of this literal value
+        /// </summary>
+        /// <returns>Number value</returns>
+        /// <exception cref="InvalidCastException">Literal value is not a number</exception>
+        public readonly T AsNumber<T>() where T : struct
+        {
+            if (_numberValue == null)
+            {
+                throw new InvalidCastException("Literal value is not a number");
+            }
+
+            return (T)_numberValue;
+        }
         /// <summary>
         /// Get boolean value of this literal value
         /// </summary>
         /// <returns>Boolean value</returns>
         /// <exception cref="InvalidCastException">Literal value is not a boolean</exception>
-        public bool AsBool() => _boolValue ?? throw new InvalidCastException("Literal value is not a boolean");
+        public readonly bool AsBool() => _boolValue ?? throw new InvalidCastException("Literal value is not a boolean");
         /// <summary>
         /// Get boolean value of this literal value
         /// </summary>
         /// <returns>Boolean value</returns>
         /// <exception cref="InvalidCastException">Literal value is not a boolean</exception>
-        public char AsChar() => _charValue ?? throw new InvalidCastException("Literal value is not a char");
+        public readonly char AsChar() => _charValue ?? throw new InvalidCastException("Literal value is not a char");
 
         /// <summary>
         /// <inheritdoc/>
         /// </summary>
         /// <returns><inheritdoc/></returns>
-        public override string ToString()
+        public readonly override string ToString()
         {
             return _stringValue ?? _numberValue?.ToString() ?? _charValue?.ToString() ?? _boolValue?.ToString() ?? NullString;
         }
@@ -151,7 +238,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <inheritdoc/>
         /// </summary>
         /// <returns><inheritdoc/></returns>
-        public override int GetHashCode()
+        public readonly override int GetHashCode()
         {
             return HashCode.Combine(_stringValue, _numberValue, _charValue, _boolValue);
         }
@@ -170,12 +257,13 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         /// <param name="other"><inheritdoc/></param>
         /// <returns><inheritdoc/></returns>
-        public bool Equals(DSharpLiteralValue other)
+        public readonly bool Equals(DSharpLiteralValue other)
         {
-            return _stringValue == other._stringValue &&
-                   _numberValue == other._numberValue &&
-                   _boolValue == other._boolValue &&
-                   _charValue == other._charValue;
+            return ToString() == other.ToString();
+            //return _stringValue == other._stringValue &&
+            //       _numberValue == other._numberValue &&
+            //       _boolValue == other._boolValue &&
+            //       _charValue == other._charValue;
         }
 
         #endregion
@@ -216,7 +304,57 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <inheritdoc/>
         /// </summary>
         /// <param name="number"><inheritdoc/></param>
+        public static implicit operator DSharpLiteralValue(uint number) => new(number);
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="number"><inheritdoc/></param>
+        public static implicit operator DSharpLiteralValue(long number) => new(number);
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="number"><inheritdoc/></param>
+        public static implicit operator DSharpLiteralValue(ulong number) => new(number);
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="number"><inheritdoc/></param>
+        public static implicit operator DSharpLiteralValue(short number) => new(number);
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="number"><inheritdoc/></param>
+        public static implicit operator DSharpLiteralValue(ushort number) => new(number);
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="number"><inheritdoc/></param>
+        public static implicit operator DSharpLiteralValue(byte number) => new(number);
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="number"><inheritdoc/></param>
+        public static implicit operator DSharpLiteralValue(sbyte number) => new(number);
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="number"><inheritdoc/></param>
+        public static implicit operator DSharpLiteralValue(nint number) => new(number);
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="number"><inheritdoc/></param>
+        public static implicit operator DSharpLiteralValue(nuint number) => new(number);
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="number"><inheritdoc/></param>
         public static implicit operator DSharpLiteralValue(float number) => new(number);
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="number"><inheritdoc/></param>
+        public static implicit operator DSharpLiteralValue(decimal number) => new(number);
         /// <summary>
         /// <inheritdoc/>
         /// </summary>
@@ -245,6 +383,393 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// Null literal value
         /// </summary>
         public static readonly DSharpLiteralValue Null = new();
+
+        private static readonly DSharpLiteralType[] _floatingPointTypes =
+        [
+            DSharpLiteralType.Decimal,
+            DSharpLiteralType.Double,
+            DSharpLiteralType.Float
+        ];
+        private static readonly DSharpLiteralType[][] _typesSortedBySize =
+        [
+            [
+                DSharpLiteralType.Long, DSharpLiteralType.ULong,
+                DSharpLiteralType.NInt, DSharpLiteralType.NUInt,
+                DSharpLiteralType.Decimal, DSharpLiteralType.Double
+            ],
+            [DSharpLiteralType.Int, DSharpLiteralType.UInt, DSharpLiteralType.Float],
+            [DSharpLiteralType.Short, DSharpLiteralType.UShort, DSharpLiteralType.Char],
+            [DSharpLiteralType.Byte, DSharpLiteralType.SByte],
+        ];
+
+        /// <summary>
+        /// Get larger type between two number types
+        /// </summary>
+        /// <param name="t1">First number type</param>
+        /// <param name="t2">Second number type</param>
+        /// <returns>Larger type between two number types</returns>
+        public static DSharpLiteralType GetLargerType(DSharpLiteralType t1, DSharpLiteralType t2)
+        {
+            foreach (var types in _typesSortedBySize)
+            {
+                if (types.Contains(t1))
+                {
+                    return t1;
+                }
+                if (types.Contains(t2))
+                {
+                    return t2;
+                }
+            }
+
+            return t1;
+        }
+        /// <summary>
+        /// Perform binary operation with literal values
+        /// </summary>
+        /// <param name="op">Binary operator</param>
+        /// <param name="n1">First value</param>
+        /// <param name="n2">Second value</param>
+        /// <returns>Result of binary operation</returns>
+        /// <exception cref="ArgumentException">Values must be numbers</exception>
+        /// <exception cref="InvalidOperationException">Unable to get information about type</exception>
+        public static DSharpLiteralValue MathOperation(DSharpBinaryOperator op, DSharpLiteralValue n1, DSharpLiteralValue n2)
+        {
+            if (op == DSharpBinaryOperator.LogicalEquals)
+            {
+                return n1.Equals(n2);
+            }
+            else if (op == DSharpBinaryOperator.LogicalNotEquals)
+            {
+                return !n1.Equals(n2);
+            }
+            else if (op == DSharpBinaryOperator.LogicalXor)
+            {
+                return n1.AsBool() ^ n2.AsBool();
+            }
+            else if (op == DSharpBinaryOperator.LogicalOr)
+            {
+                return n1.AsBool() || n2.AsBool();
+            }
+            else if (op == DSharpBinaryOperator.LogicalAnd)
+            {
+                return n1.AsBool() && n2.AsBool();
+            }
+            if (!n1.IsNumber || n2.IsNumber)
+            {
+                throw new ArgumentException($"Values must be numbers, got: {n1}, {n2}");
+            }
+            if (op == DSharpBinaryOperator.LogicalLess)
+            {
+                return n1.AsNumber<decimal>() < n2.AsNumber<decimal>();
+            }
+            else if (op == DSharpBinaryOperator.LogicalLessOrEquals)
+            {
+                return n1.AsNumber<decimal>() <= n2.AsNumber<decimal>();
+            }
+            else if (op == DSharpBinaryOperator.LogicalGreater)
+            {
+                return n1.AsNumber<decimal>() > n2.AsNumber<decimal>();
+            }
+            else if (op == DSharpBinaryOperator.LogicalGreaterOrEquals)
+            {
+                return n1.AsNumber<decimal>() >= n2.AsNumber<decimal>();
+            }
+
+            var largerType = GetLargerType(n1.Type, n2.Type);
+
+            if (_floatingPointTypes.Contains(n1.Type) && !_floatingPointTypes.Contains(n2.Type))
+            {
+                largerType = n1.Type;
+            }
+            else if (!_floatingPointTypes.Contains(n1.Type) && _floatingPointTypes.Contains(n2.Type))
+            {
+                largerType = n2.Type;
+            }
+            if (!DSharpBuildInTypes.TryGetTypeInfo(largerType, out var info))
+            {
+                throw new InvalidOperationException($"Unable to get information about type: {largerType}");
+            }
+
+            var numberType = Assembly.GetExecutingAssembly().GetType(info.FullName);
+            object value = 0;
+
+            if (op == DSharpBinaryOperator.Plus)
+            {
+                value = n1.AsNumber<decimal>() + n2.AsNumber<decimal>();
+            }
+            else if (op == DSharpBinaryOperator.Minus)
+            {
+                value = n1.AsNumber<decimal>() - n2.AsNumber<decimal>();
+            }
+            else if (op == DSharpBinaryOperator.Multiply)
+            {
+                value = n1.AsNumber<decimal>() * n2.AsNumber<decimal>();
+            }
+            else if (op == DSharpBinaryOperator.Divide)
+            {
+                value = n1.AsNumber<decimal>() * n2.AsNumber<decimal>();
+            }
+            else if (op == DSharpBinaryOperator.Mod)
+            {
+                value = n1.AsNumber<decimal>() % n2.AsNumber<decimal>();
+            }
+            else if (op == DSharpBinaryOperator.ShiftLeft)
+            {
+                value = n1.AsNumber<long>() << n2.AsNumber<int>();
+            }
+            else if (op == DSharpBinaryOperator.ShiftRight)
+            {
+                value = n1.AsNumber<long>() >> n2.AsNumber<int>();
+            }
+
+            return new()
+            {
+                Type = largerType,
+                _numberValue = Convert.ChangeType(value, numberType)
+            };
+        }
+        /// <summary>
+        /// Parse number literal
+        /// </summary>
+        /// <param name="numberLiteral">Number in text format</param>
+        public static DSharpLiteralValue Parse(string numberLiteral)
+        {
+            numberLiteral = numberLiteral.Replace("_", string.Empty).Trim();
+
+            if (numberLiteral.EndsWith("UL", StringComparison.OrdinalIgnoreCase))
+            {
+                return ParseUnsignedLong(numberLiteral[..^2]);
+            }
+            if (numberLiteral.EndsWith("LU", StringComparison.OrdinalIgnoreCase))
+            {
+                return ParseUnsignedLong(numberLiteral[..^2]);
+            }
+            if (numberLiteral.EndsWith("U", StringComparison.OrdinalIgnoreCase))
+            {
+                return ParseUnsignedInteger(numberLiteral[..^1]);
+            }
+            if (numberLiteral.EndsWith("L", StringComparison.OrdinalIgnoreCase))
+            {
+                return ParseLong(numberLiteral[..^1]);
+            }
+            if (numberLiteral.EndsWith("F", StringComparison.OrdinalIgnoreCase))
+            {
+                return ParseFloat(numberLiteral[..^1]);
+            }
+            if (numberLiteral.EndsWith("D", StringComparison.OrdinalIgnoreCase))
+            {
+                return ParseDouble(numberLiteral[..^1]);
+            }
+            if (numberLiteral.EndsWith("M", StringComparison.OrdinalIgnoreCase))
+            {
+                return ParseDecimal(numberLiteral[..^1]);
+            }
+
+            if (numberLiteral.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            {
+                return ParseHex(numberLiteral[2..]);
+            }
+            if (numberLiteral.StartsWith("0b", StringComparison.OrdinalIgnoreCase))
+            {
+                return ParseBinary(numberLiteral[2..]);
+            }
+            if (numberLiteral.StartsWith("0o", StringComparison.OrdinalIgnoreCase))
+            {
+                return ParseOctal(numberLiteral[2..]);
+            }
+
+            return ParseDecimalAuto(numberLiteral);
+        }
+
+        private static DSharpLiteralValue ParseUnsignedLong(string value)
+        {
+            if (ulong.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out ulong result))
+            {
+                return result;
+            }
+
+            throw new FormatException($"Invalid number format: {value}");
+        }
+        private static DSharpLiteralValue ParseUnsignedInteger(string value)
+        {
+            if (uint.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out uint result))
+            {
+                return result;
+            }
+            if (ulong.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out ulong longResult))
+            {
+                return longResult;
+            }
+
+            throw new FormatException($"Invalid number format: {value}");
+        }
+        private static DSharpLiteralValue ParseLong(string value)
+        {
+            if (long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out long result))
+            {
+                return result;
+            }
+
+            throw new FormatException($"Invalid number format: {value}");
+        }
+        private static DSharpLiteralValue ParseFloat(string value)
+        {
+            if (float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out float result))
+            {
+                return result;
+            }
+
+            throw new FormatException($"Invalid number format: {value}");
+        }
+        private static DSharpLiteralValue ParseDouble(string value)
+        {
+            if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double result))
+            {
+                return result;
+            }
+
+            throw new FormatException($"Invalid number format: {value}");
+        }
+        private static DSharpLiteralValue ParseDecimal(string value)
+        {
+            if (decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal result))
+            {
+                return result;
+            }
+
+            throw new FormatException($"Invalid number format: {value}");
+        }
+        private static DSharpLiteralValue ParseHex(string value)
+        {
+            if (value.Length <= 8)
+            {
+                if (int.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int intResult))
+                {
+                    return intResult;
+                }
+            }
+            if (value.Length <= 16)
+            {
+                if (long.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out long longResult))
+                {
+                    return longResult;
+                }
+            }
+
+            throw new FormatException($"Invalid hex number format: {value}");
+        }
+        private static DSharpLiteralValue ParseBinary(string value)
+        {
+            try
+            {
+                BigInteger result = 0;
+
+                foreach (char c in value)
+                {
+                    if (c != '0' && c != '1')
+                    {
+                        throw new FormatException($"Invalid character in binary number: {c}");
+                    }
+
+                    result = (result << 1) | (c - '0');
+                }
+
+                if (result <= int.MaxValue && result >= int.MinValue)
+                {
+                    return (int)result;
+                }
+                if (result <= long.MaxValue && result >= long.MinValue)
+                {
+                    return (long)result;
+                }
+                if (result <= ulong.MaxValue && result >= 0)
+                {
+                    return (ulong)result;
+                }
+
+                return (int)result;
+            }
+            catch (Exception ex)
+            {
+                throw new FormatException($"Unable to parse binary number: {ex.Message}");
+            }
+        }
+        private static DSharpLiteralValue ParseOctal(string value)
+        {
+            try
+            {
+                BigInteger result = 0;
+
+                foreach (char c in value)
+                {
+                    if (c < '0' || c > '7')
+                    {
+                        throw new FormatException($"Invalid character in hex number: {c}");
+                    }
+
+                    result = (result << 3) + (c - '0');
+                }
+
+                if (result <= int.MaxValue && result >= int.MinValue)
+                {
+                    return (int)result;
+                }
+                if (result <= long.MaxValue && result >= long.MinValue)
+                {
+                    return (long)result;
+                }
+                if (result <= ulong.MaxValue && result >= 0)
+                {
+                    return (ulong)result;
+                }
+
+                return (int)result;
+            }
+            catch (Exception ex)
+            {
+                throw new FormatException($"Unable to parse hex number: {ex.Message}");
+            }
+        }
+        private static DSharpLiteralValue ParseDecimalAuto(string value)
+        {
+            if (value.Contains('.') || value.Contains('e') || value.Contains('E'))
+            {
+                if (decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var decimalResult))
+                {
+                    return decimalResult;
+                }
+                if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var doubleResult))
+                {
+                    return doubleResult;
+                }
+                if (float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var floatResult))
+                {
+                    return floatResult;
+                }
+            }
+            else
+            {
+                if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var intResult))
+                {
+                    return intResult;
+                }
+                if (uint.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var uintResult))
+                {
+                    return uintResult;
+                }
+                if (long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var longResult))
+                {
+                    return longResult;
+                }
+                if (ulong.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var ulongResult))
+                {
+                    return ulongResult;
+                }
+            }
+
+            throw new FormatException($"Unable to parse number: {value}");
+        }
 
         #endregion
     }

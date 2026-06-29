@@ -21,6 +21,10 @@
         /// Type that used as template to create current type
         /// </summary>
         public IDSharpType? GenericTemplate { get; }
+        /// <summary>
+        /// Size of type in bytes
+        /// </summary>
+        public int Size { get; }
 
         public IDSharpType[] GetBaseTypes();
         public IDSharpMethodInfo[] GetConstructors();

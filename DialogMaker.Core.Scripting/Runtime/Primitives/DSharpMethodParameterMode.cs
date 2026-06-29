@@ -1,0 +1,23 @@
+﻿namespace DialogMaker.Core.Scripting.Runtime
+{
+    /// <summary>
+    /// Parameter mode
+    /// </summary>
+    public enum DSharpMethodParameterMode
+    {
+        /// <summary>
+        /// Default parameter
+        /// </summary>
+        Default,
+        /// <summary>
+        /// Reference parameter. 
+        /// It's directly refences to property, field, variable or other parameter
+        /// </summary>
+        Ref,
+        /// <summary>
+        /// Output parameter. 
+        /// This parameter provides value after executing method or function
+        /// </summary>
+        Out
+    }
+}

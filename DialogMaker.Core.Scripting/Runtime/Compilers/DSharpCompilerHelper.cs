@@ -11,6 +11,26 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
     /// </summary>
     public static class DSharpCompilerExpressionExtensions
     {
+        extension(DSharpTokenType token)
+        {
+            /// <summary>
+            /// Get parameter mode from token
+            /// </summary>
+            /// <returns>Parameter mode</returns>
+            public DSharpMethodParameterMode ToParameterType()
+            {
+                if (token == DSharpTokenType.Ref)
+                {
+                    return DSharpMethodParameterMode.Ref;
+                }
+                else if (token == DSharpTokenType.Out)
+                {
+                    return DSharpMethodParameterMode.Out;
+                }
+
+                return DSharpMethodParameterMode.Default;
+            }
+        }
         extension(IDSharpMemberInfo member)
         {
             /// <summary>
@@ -336,6 +356,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     return assembly.GetType(literalExpression.Type);
                 }
+                else if (expression is NameOfExpressionNode)
+                {
+                    return assembly.StringType;
+                }
+                else if (expression is TypeOfExpressionNode)
+                {
+                    return assembly.TypeType;
+                }
+                else if (expression is SizeOfExpressionNode)
+                {
+                    return assembly.Int32Type;
+                }
                 else if (expression is CallExpressionNode callExpression)
                 {
                     return context.FindMethod(callExpression).ReturnType;
@@ -420,7 +452,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
                 else if (expression.TrySimplifyToLiteral(out var literal))
                 {
-                    return assembly.GetType(literal.GetValueType());
+                    return assembly.GetType(literal.Type);
                 }
                 else if (expression is UnaryExpressionNode unaryExpression)
                 {
@@ -435,7 +467,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     if (binaryExpression.Operator == DSharpBinaryOperator.Mod)
                     {
-                        return assembly.GetType(DSharpLiteralType.Number);
+                        return assembly.Int32Type;
                     }
                     else if (binaryExpression.Operator == DSharpBinaryOperator.LogicalOr ||
                              binaryExpression.Operator == DSharpBinaryOperator.LogicalAnd ||
@@ -446,7 +478,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                              binaryExpression.Operator == DSharpBinaryOperator.LogicalGreater ||
                              binaryExpression.Operator == DSharpBinaryOperator.LogicalGreaterOrEquals)
                     {
-                        return assembly.GetType(DSharpLiteralType.Bool);
+                        return assembly.BoolType;
                     }
                     if (binaryExpression.Left == null ||
                         binaryExpression.Right == null)
@@ -680,19 +712,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                             }
                             if (@operator == DSharpBinaryOperator.LogicalLess)
                             {
-                                value = leftValue.AsNumber() < rightValue.AsNumber();
+                                value = leftValue.AsNumber<double>() < rightValue.AsNumber<double>();
                             }
                             else if (@operator == DSharpBinaryOperator.LogicalLessOrEquals)
                             {
-                                value = leftValue.AsNumber() <= rightValue.AsNumber();
+                                value = leftValue.AsNumber<double>() <= rightValue.AsNumber<double>();
                             }
                             if (@operator == DSharpBinaryOperator.LogicalGreater)
                             {
-                                value = leftValue.AsNumber() > rightValue.AsNumber();
+                                value = leftValue.AsNumber<double>() > rightValue.AsNumber<double>();
                             }
                             else if (@operator == DSharpBinaryOperator.LogicalGreaterOrEquals)
                             {
-                                value = leftValue.AsNumber() >= rightValue.AsNumber();
+                                value = leftValue.AsNumber<double>() >= rightValue.AsNumber<double>();
                             }
                         }
                     }
@@ -716,15 +748,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                         }
                         else if (leftValue.IsNumber && rightValue.IsNumber)
                         {
-                            value = leftValue.AsNumber() + rightValue.AsNumber();
+                            value = leftValue.AsNumber<double>() + rightValue.AsNumber<double>();
                         }
                         else if (leftValue.IsNumber && rightValue.IsChar)
                         {
-                            value = leftValue.AsNumber() + rightValue.AsChar();
+                            value = leftValue.AsNumber<double>() + rightValue.AsChar();
                         }
                         else if (leftValue.IsChar && rightValue.IsNumber)
                         {
-                            value = leftValue.AsChar() + rightValue.AsNumber();
+                            value = leftValue.AsChar() + rightValue.AsNumber<double>();
                         }
                         else
                         {
@@ -739,19 +771,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                         }
                         if (@operator == DSharpBinaryOperator.Minus)
                         {
-                            value = leftValue.AsNumber() - rightValue.AsNumber();
+                            value = leftValue.AsNumber<double>() - rightValue.AsNumber<double>();
                         }
                         else if (@operator == DSharpBinaryOperator.Multiply)
                         {
-                            value = leftValue.AsNumber() * rightValue.AsNumber();
+                            value = leftValue.AsNumber<double>() * rightValue.AsNumber<double>();
                         }
                         else if (@operator == DSharpBinaryOperator.Divide)
                         {
-                            value = leftValue.AsNumber() / rightValue.AsNumber();
+                            value = leftValue.AsNumber<double>() / rightValue.AsNumber<double>();
                         }
                         else if (@operator == DSharpBinaryOperator.Mod)
                         {
-                            value = leftValue.AsNumber() % rightValue.AsNumber();
+                            value = leftValue.AsNumber<double>() % rightValue.AsNumber<double>();
                         }
                     }
 
@@ -977,6 +1009,57 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
 
                 return false;
+            }
+        }
+        extension(NameOfExpressionNode nameofExpression)
+        {
+            /// <summary>
+            /// Get value of nameof expression
+            /// </summary>
+            /// <param name="method">Method that contains this expression</param>
+            /// <param name="context">Compiler context</param>
+            /// <returns>Resolved name of expression</returns>
+            /// <exception cref="ArgumentException">Invalid expression</exception>
+            /// <exception cref="InvalidOperationException">Unable to resolve name of expression</exception>
+            public string GetValue(DSharpMethodBuilder method, DSharpCompilerContext context)
+            {
+                if (nameofExpression.Value == null)
+                {
+                    throw new ArgumentException($"Invalid expression: {nameofExpression}", nameof(nameofExpression));
+                }
+                if (nameofExpression.Value is IdentifierExpressionNode identifier)
+                {
+                    var parameter = method.Parameters.FirstOrDefault(p => p.Name == identifier.Name);
+
+                    if (parameter != null)
+                    {
+                        return parameter.Name ?? string.Empty;
+                    }
+
+                    var code = method.GetBytecodeBuilder();
+                    parameter = code.LocalVariables.FirstOrDefault(p => p.Name == identifier.Name);
+
+                    if (parameter != null)
+                    {
+                        return parameter.Name ?? string.Empty;
+                    }
+                }
+                try
+                {
+                    if (context.TryResolveMember(nameofExpression.Value, out var member))
+                    {
+                        return member.Name;
+                    }
+                }
+                catch
+                {
+                }
+                if (context.TryResolveType(nameofExpression.Value, out _, out var name))
+                {
+                    return name;
+                }
+
+                throw new InvalidOperationException($"Unable to resolve name of expression: {nameofExpression.Value}");
             }
         }
     }

@@ -1,6 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Builders;
 using System.Diagnostics.CodeAnalysis;
-using System.Security.Cryptography;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
@@ -8,6 +7,25 @@ namespace DialogMaker.Core.Scripting.Runtime
     {
         extension(IDSharpType type)
         {
+            /// <summary>
+            /// Check number is number
+            /// </summary>
+            /// <returns>Is number type</returns>
+            public bool IsNumber()
+            {
+                var fullName = type.FullName;
+
+                foreach (var info in DSharpBuildInTypes.AllValueTypes.Values)
+                {
+                    if (fullName == info.FullName)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
             public IDSharpFieldInfo? GetFieldOrDefault(string name)
             {
                 return type.GetMemberOrDefault(t => t.GetFields(), name);

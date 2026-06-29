@@ -1,5 +1,4 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
-using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
@@ -253,6 +252,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             if (stream.Check(DSharpTokenType.Throw))
             {
                 return ThrowExpressionNode.Parse(stream);
+            }
+            if (DelegateExpressionNode.IsDelegate(stream))
+            {
+                return DelegateExpressionNode.Parse(stream);
+            }
+            if (stream.Check(DSharpTokenType.TypeOf))
+            {
+                return TypeOfExpressionNode.Parse(stream);
+            }
+            if (stream.Check(DSharpTokenType.NameOf))
+            {
+                return NameOfExpressionNode.Parse(stream);
+            }
+            if (stream.Check(DSharpTokenType.SizeOf))
+            {
+                return SizeOfExpressionNode.Parse(stream);
             }
             if (stream.Check(DSharpTokenType.LeftParen))
             {

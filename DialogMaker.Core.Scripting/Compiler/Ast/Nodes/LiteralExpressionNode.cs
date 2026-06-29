@@ -34,14 +34,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #region Статика
 
-        private static readonly Dictionary<DSharpTokenType, LiteralInfo> _literals = new()
+        private static readonly Dictionary<DSharpTokenType, Func<string, DSharpLiteralValue>> _literals = new()
         {
-            [DSharpTokenType.NumberLiteral] = new(DSharpLiteralType.Number, v => double.Parse(v.Replace(".", ","))),
-            [DSharpTokenType.StringLiteral] = new(DSharpLiteralType.String, v => v),
-            [DSharpTokenType.CharLiteral] = new(DSharpLiteralType.Char, v => v.Length == 0 ? '\0' : v[0]),
-            [DSharpTokenType.False] = new(DSharpLiteralType.Bool, v => false),
-            [DSharpTokenType.True] = new(DSharpLiteralType.Bool, v => true),
-            [DSharpTokenType.Null] = new(DSharpLiteralType.Null, v => null)
+            [DSharpTokenType.NumberLiteral] = v => DSharpLiteralValue.Parse(v.Replace(".", ",")),
+            [DSharpTokenType.StringLiteral] = v => v,
+            [DSharpTokenType.CharLiteral] = v => v.Length == 0 ? '\0' : v[0],
+            [DSharpTokenType.False] = v => false,
+            [DSharpTokenType.True] = v => true,
+            [DSharpTokenType.Null] = v => null
         };
 
         /// <summary>
@@ -81,10 +81,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 if (stream.Check(info.Key))
                 {
                     var token = stream.Eat(info.Key);
+                    var literalValue = info.Value(token.Value);
                     result = new(token)
                     {
-                        Value = info.Value.Parser(token.Value),
-                        Type = info.Value.Type,
+                        Value = literalValue,
+                        Type = literalValue.Type,
                     };
 
                     return true;
@@ -92,16 +93,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
 
             return false;
-        }
-
-        #endregion
-
-        #region Структуры
-
-        private readonly struct LiteralInfo(DSharpLiteralType type, Func<string, DSharpLiteralValue> parser)
-        {
-            public DSharpLiteralType Type { get; } = type;
-            public Func<string, DSharpLiteralValue> Parser { get; } = parser;
         }
 
         #endregion

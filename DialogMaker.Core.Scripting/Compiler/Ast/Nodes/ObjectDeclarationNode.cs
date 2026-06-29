@@ -292,7 +292,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     memberInfo.IsExtern = true;
                     eatToken = true;
                 }
-                else if (currentToken.Type == DSharpTokenType.Func)
+                else if (currentToken.Type == DSharpTokenType.Void)
                 {
                     if (memberInfo.Type != null)
                     {

@@ -37,15 +37,6 @@
 
         #endregion
 
-        #region Константы
-
-        /// <summary>
-        /// Full name of array type
-        /// </summary>
-        public const string TypeFullName = "System.Array`1";
-
-        #endregion
-
         #region Статика
 
         /// <summary>
@@ -55,7 +46,7 @@
         /// <returns>Information about array type</returns>
         public static DSharpArrayType Create(IDSharpAssembly assembly)
         {
-            var type = assembly.GetType(TypeFullName);
+            var type = assembly.GetType(DSharpBuildInTypes.Extra.Array);
             return Create(type);
         }
         /// <summary>

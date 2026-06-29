@@ -490,7 +490,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 if (assignExpression.Left is IdentifierExpressionNode identifier)
                 {
-
                     var localName = identifier.GetName(false);
                     var parameter = method.Parameters.FirstOrDefault(p => p.Name == localName);
 
@@ -567,42 +566,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
                 else
                 {
-                    settings.DoNotCompileEndPointMember = true;
-                    IDSharpMemberInfo? member;
-
-                    if (assignExpression.Left is MemberAccessExpressionNode leftMemberAccess)
-                    {
-                        member = CompileMemberAccessExpression(method, leftMemberAccess, (p, e, ref s, c) =>
-                        {
-                            c.ParentExpression = p;
-
-                            if (p is ThisExpressionNode ||
-                                p is BaseExpressionNode)
-                            {
-                                code.LoadInstance();
-                            }
-
-                            try
-                            {
-                                if (c.TryResolveMember(e, out var resolvedMember))
-                                {
-                                    return resolvedMember;
-                                }
-                            }
-                            catch (Exception error)
-                            {
-                                throw new InvalidOperationException($"Unable to resolve member: {e}", error);
-                            }
-
-                            throw new InvalidOperationException($"Unable to resolve member: {e}");
-                        }, ref settings, context);
-                    }
-                    else
-                    {
-                        member = CompileValueExpression(method, assignExpression.Left, ref settings, expression, context);
-                    }
-
-                    settings.DoNotCompileEndPointMember = false;
+                    IDSharpMemberInfo? member = CompileEndPointMember(method, code, assignExpression.Left, assignExpression, ref settings, context);
                     bool isComplexAssignment = assignExpression.Operator != DSharpAssignmentOperator.Assign;
 
                     if (member == null)
@@ -672,7 +636,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 return CompileValueExpressionOperation(method, code, decrementExpression.Expression, () => code.Decrement(), ref settings, context);
             }
-            else if (expression is CallExpressionNode || 
+            else if (expression is CallExpressionNode ||
                      expression is AwaitExpressionNode ||
                      expression is MemberAccessExpressionNode ||
                      expression is BinaryExpressionNode ||
@@ -680,7 +644,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                      expression is LiteralExpressionNode ||
                      expression is IdentifierExpressionNode ||
                      expression is ArrayAccessExpressionNode ||
-                     expression is ThrowExpressionNode)
+                     expression is ThrowExpressionNode ||
+                     expression is NameOfExpressionNode ||
+                     expression is TypeOfExpressionNode ||
+                     expression is SizeOfExpressionNode)
             {
                 return CompileValueExpression(method, expression, ref settings, parentExpression, context);
             }
@@ -931,7 +898,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 bool CheckIsNumber(bool throwException = true)
                 {
-                    if (expressionType.MetadataToken != _assemblyBuilder.NumberToken)
+                    if (expressionType != _assemblyBuilder.Int32Type)
                     {
                         if (throwException)
                         {
@@ -1311,8 +1278,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                         IDSharpType? TypeResolver(object? expression)
                         {
-                            if (expression == null || 
-                                (expression is NewExpressionNode newExpression && 
+                            if (expression == null ||
+                                (expression is NewExpressionNode newExpression &&
                                 newExpression.Type == null &&
                                 Equals(expression, throwValue)))
                             {
@@ -1347,6 +1314,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 code.Throw();
                 settings.LastOperationIsReturnsValue = true;
 
+                return null;
+            }
+            else if (expression is NameOfExpressionNode nameofExpression)
+            {
+                var value = nameofExpression.GetValue(method, context);
+                code.Push(value);
                 return null;
             }
 
@@ -1516,6 +1489,48 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             return result;
         }
+        private IDSharpMemberInfo? CompileEndPointMember(DSharpMethodBuilder method, DSharpBytecodeBuilder code, ExpressionNode expression, ExpressionNode? parentExpression, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context)
+        {
+            bool startDoNotCompileEndPointMember = settings.DoNotCompileEndPointMember;
+            settings.DoNotCompileEndPointMember = true;
+            IDSharpMemberInfo? member;
+
+            if (expression is MemberAccessExpressionNode leftMemberAccess)
+            {
+                member = CompileMemberAccessExpression(method, leftMemberAccess, (p, e, ref s, c) =>
+                {
+                    c.ParentExpression = p;
+
+                    if (p is ThisExpressionNode ||
+                        p is BaseExpressionNode)
+                    {
+                        code.LoadInstance();
+                    }
+
+                    try
+                    {
+                        if (c.TryResolveMember(e, out var resolvedMember))
+                        {
+                            return resolvedMember;
+                        }
+                    }
+                    catch (Exception error)
+                    {
+                        throw new InvalidOperationException($"Unable to resolve member: {e}", error);
+                    }
+
+                    throw new InvalidOperationException($"Unable to resolve member: {e}");
+                }, ref settings, context);
+            }
+            else
+            {
+                member = CompileValueExpression(method, expression, ref settings, parentExpression, context);
+            }
+
+            settings.DoNotCompileEndPointMember = startDoNotCompileEndPointMember;
+
+            return member;
+        }
         private IDSharpMemberInfo? CompileValueExpressionOperation(DSharpMethodBuilder method, DSharpBytecodeBuilder code, ExpressionNode expression, Action operation, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context = default, bool popLast = true)
         {
             if (expression is IdentifierExpressionNode identifier)
@@ -1554,10 +1569,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
             }
 
-            settings.DoNotCompileEndPointMember = true;
+            //settings.DoNotCompileEndPointMember = true;
 
-            var member = CompileValueExpression(method, expression, ref settings, expression, context)
+            var member = CompileEndPointMember(method, code, expression, null, ref settings, context)
                 ?? throw new ArgumentException($"Unable to find member: {expression}", nameof(expression));
+            //var member = CompileValueExpression(method, expression, ref settings, null, context)
 
             code.LoadPropertyOrField(member, settings.NextNonVirtualizedAccess);
             settings.NextNonVirtualizedAccess = false;
@@ -1567,7 +1583,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             if (popLast)
             {
-                code.Pop();
+                if (member.IsStatic)
+                {
+                    code.Pop();
+                }
+                else
+                {
+                    code.PopRepeat(2);
+                }
+            }
+            else if (member.IsStatic)
+            {
+                code.PopOffset(1);
             }
 
             return member;

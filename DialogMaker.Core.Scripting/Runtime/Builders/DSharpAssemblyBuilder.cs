@@ -33,19 +33,119 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
+        IReadOnlyCollection<IDSharpType> IDSharpAssembly.Types => Types;
+
+        #region Встроенные типы
+
+        public DSharpTypeToken Int32Token
+        {
+            get
+            {
+                field ??= GetTypeToken(DSharpBuildInTypes.Int);
+                return field;
+            }
+        }
+        public DSharpTypeToken UInt32Token
+        {
+            get
+            {
+                field ??= GetTypeToken(DSharpBuildInTypes.UnsignedInt);
+                return field;
+            }
+        }
+        public DSharpTypeToken Int64Token
+        {
+            get
+            {
+                field ??= GetTypeToken(DSharpBuildInTypes.Long);
+                return field;
+            }
+        }
+        public DSharpTypeToken UInt64Token
+        {
+            get
+            {
+                field ??= GetTypeToken(DSharpBuildInTypes.UnsignedLong);
+                return field;
+            }
+        }
+        public DSharpTypeToken ShortToken
+        {
+            get
+            {
+                field ??= GetTypeToken(DSharpBuildInTypes.Short);
+                return field;
+            }
+        }
+        public DSharpTypeToken UShortToken
+        {
+            get
+            {
+                field ??= GetTypeToken(DSharpBuildInTypes.UnsignedShort);
+                return field;
+            }
+        }
+        public DSharpTypeToken ByteToken
+        {
+            get
+            {
+                field ??= GetTypeToken(DSharpBuildInTypes.Byte);
+                return field;
+            }
+        }
+        public DSharpTypeToken SByteToken
+        {
+            get
+            {
+                field ??= GetTypeToken(DSharpBuildInTypes.SignedByte);
+                return field;
+            }
+        }
+        public DSharpTypeToken NIntToken
+        {
+            get
+            {
+                field ??= GetTypeToken(DSharpBuildInTypes.NativeInt);
+                return field;
+            }
+        }
+        public DSharpTypeToken NUIntToken
+        {
+            get
+            {
+                field ??= GetTypeToken(DSharpBuildInTypes.NativeUnsignedInt);
+                return field;
+            }
+        }
+        public DSharpTypeToken DecimalToken
+        {
+            get
+            {
+                field ??= GetTypeToken(DSharpBuildInTypes.Decimal);
+                return field;
+            }
+        }
+        public DSharpTypeToken DoubleToken
+        {
+            get
+            {
+                field ??= GetTypeToken(DSharpBuildInTypes.Double);
+                return field;
+            }
+        }
+        public DSharpTypeToken SingleToken
+        {
+            get
+            {
+                field ??= GetTypeToken(DSharpBuildInTypes.Single);
+                return field;
+            }
+        }
         public DSharpTypeToken StringToken
         {
             get
             {
-                field ??= GetTypeToken(StringTypeFullName);
-                return field;
-            }
-        }
-        public DSharpTypeToken NumberToken
-        {
-            get
-            {
-                field ??= GetTypeToken(NumberTypeFullName);
+                field ??= GetTypeToken(DSharpBuildInTypes.String);
                 return field;
             }
         }
@@ -53,7 +153,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             get
             {
-                field ??= GetTypeToken(CharTypeFullName);
+                field ??= GetTypeToken(DSharpBuildInTypes.Char);
                 return field;
             }
         }
@@ -61,7 +161,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             get
             {
-                field ??= GetTypeToken(BoolTypeFullName);
+                field ??= GetTypeToken(DSharpBuildInTypes.Boolean);
                 return field;
             }
         }
@@ -69,7 +169,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             get
             {
-                field ??= GetTypeToken(ObjectTypeFullName);
+                field ??= GetTypeToken(DSharpBuildInTypes.Object);
                 return field;
             }
         }
@@ -77,7 +177,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             get
             {
-                field ??= GetTypeToken(EnumTypeFullName);
+                field ??= GetTypeToken(DSharpBuildInTypes.Extra.Enum);
                 return field;
             }
         }
@@ -85,7 +185,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             get
             {
-                field ??= GetTypeToken(ExceptionTypeFullName);
+                field ??= GetTypeToken(DSharpBuildInTypes.Extra.Exception);
+                return field;
+            }
+        }
+        public DSharpTypeToken TypeToken
+        {
+            get
+            {
+                field ??= GetTypeToken(DSharpBuildInTypes.Extra.Type);
                 return field;
             }
         }
@@ -113,11 +221,107 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
-        public IDSharpType NumberType
+        public IDSharpType Int32Type
         {
             get
             {
-                field ??= (IDSharpType)GetType(NumberToken);
+                field ??= (IDSharpType)GetType(Int32Token);
+                return field;
+            }
+        }
+        public IDSharpType UInt32Type
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(UInt32Token);
+                return field;
+            }
+        }
+        public IDSharpType Int64Type
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(Int64Token);
+                return field;
+            }
+        }
+        public IDSharpType UInt64Type
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(UInt64Token);
+                return field;
+            }
+        }
+        public IDSharpType ShortType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(ShortToken);
+                return field;
+            }
+        }
+        public IDSharpType UShortType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(UShortToken);
+                return field;
+            }
+        }
+        public IDSharpType ByteType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(ByteToken);
+                return field;
+            }
+        }
+        public IDSharpType SByteType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(SByteToken);
+                return field;
+            }
+        }
+        public IDSharpType DecimalType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(DecimalToken);
+                return field;
+            }
+        }
+        public IDSharpType DoubleType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(DoubleToken);
+                return field;
+            }
+        }
+        public IDSharpType SingleType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(SingleToken);
+                return field;
+            }
+        }
+        public IDSharpType NIntType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(NIntToken);
+                return field;
+            }
+        }
+        public IDSharpType NUIntType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(NUIntToken);
                 return field;
             }
         }
@@ -161,6 +365,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
+        public IDSharpType TypeType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(TypeToken);
+                return field;
+            }
+        }
         public DSharpArrayType ArrayBaseType
         {
             get
@@ -177,7 +389,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
-        IReadOnlyCollection<IDSharpType> IDSharpAssembly.Types => Types;
+
+        #endregion
 
         private readonly ObservableCollection<DSharpTypeBuilder> _types = [];
         private readonly ObservableCollection<DSharpFieldBuilder> _globalVariables = [];
@@ -606,33 +819,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         }
         public bool TryGetStandardType(string name, [NotNullWhen(true)] out DSharpTypeToken? result)
         {
-            if (name == StringTypeFullName || name == StringName)
+            if (DSharpBuildInTypes.TryGetTypeInfo(name, out var info) && 
+                TryGetTypeToken(info.FullName, out result))
             {
-                result = StringToken;
-                return true;
-            }
-            if (name == NumberTypeFullName || name == NumberName)
-            {
-                result = NumberToken;
-                return true;
-            }
-            if (name == BoolTypeFullName || name == BoolName)
-            {
-                result = BoolToken;
-                return true;
-            }
-            if (name == ObjectTypeFullName || name == ObjectName)
-            {
-                result = ObjectToken;
-                return true;
-            }
-            if (name == CharTypeFullName || name == CharName)
-            {
-                result = CharToken;
                 return true;
             }
 
             result = null;
+
             return false;
         }
         public bool TryGetTypeToken(string fullName, [NotNullWhen(true)] out DSharpTypeToken? result)
@@ -843,10 +1037,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             return literalType switch
             {
                 DSharpLiteralType.Null => throw new ArgumentException("Can not get type for null literal value", nameof(literalType)),
-                DSharpLiteralType.String => (IDSharpType)GetType(StringToken),
-                DSharpLiteralType.Char => (IDSharpType)GetType(CharToken),
-                DSharpLiteralType.Number => (IDSharpType)GetType(NumberToken),
-                DSharpLiteralType.Bool => (IDSharpType)GetType(BoolToken),
+                DSharpLiteralType.String => StringType,
+                DSharpLiteralType.Char => CharType,
+                DSharpLiteralType.Bool => BoolType,
+                DSharpLiteralType.Int => Int32Type,
+                DSharpLiteralType.UInt => UInt32Type,
+                DSharpLiteralType.Long => Int64Type,
+                DSharpLiteralType.ULong => UInt64Type,
+                DSharpLiteralType.Short => ShortType,
+                DSharpLiteralType.UShort => UShortType,
+                DSharpLiteralType.Byte => ByteType,
+                DSharpLiteralType.SByte => SByteType,
+                DSharpLiteralType.NInt => NIntType,
+                DSharpLiteralType.NUInt => NUIntType,
+                DSharpLiteralType.Decimal => DecimalType,
+                DSharpLiteralType.Double => DoubleType,
+                DSharpLiteralType.Float => SingleType,
                 _ => throw new ArgumentException($"Invalid literal type: {literalType}", nameof(literalType))
             };
         }
@@ -972,18 +1178,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
         #region Константы
 
-        public const string ObjectTypeFullName = "System.Object";
-        public const string StringTypeFullName = "System.String";
-        public const string NumberTypeFullName = "System.Number";
-        public const string BoolTypeFullName = "System.Boolean";
-        public const string CharTypeFullName = "System.Char";
-        public const string EnumTypeFullName = "System.Enum";
-        public const string ExceptionTypeFullName = "System.Exception";
-        public const string ObjectName = "object";
-        public const string StringName = "string";
-        public const string NumberName = "number";
-        public const string BoolName = "bool";
-        public const string CharName = "char";
         public const string VarName = "var";
 
         #endregion
