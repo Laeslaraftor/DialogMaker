@@ -12,10 +12,12 @@ namespace DialogMaker.Core.Tests
     {
         public const string SimpleScript = "SimpleScriptExample";
         public const string TypeScript = "TypeDetectionScript";
+        public const string MathScript = "MathScript";
 
         [Test]
         [TestCase(SimpleScript)]
         [TestCase(TypeScript)]
+        [TestCase(MathScript)]
         public static void TestSimpleScriptCompiling(string fileName)
         {
             var assembly = CompileScript(fileName);

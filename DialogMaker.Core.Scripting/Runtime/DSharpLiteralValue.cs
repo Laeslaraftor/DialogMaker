@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+using DialogMaker.Core.Scripting.Compiler.Lexer;
 using System.Globalization;
 using System.Numerics;
 using System.Reflection;
@@ -211,7 +212,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                 throw new InvalidCastException("Literal value is not a number");
             }
 
-            return (T)_numberValue;
+            return (T)Convert.ChangeType(_numberValue, typeof(T));
         }
         /// <summary>
         /// Get boolean value of this literal value
@@ -247,7 +248,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         /// <param name="obj"><inheritdoc/></param>
         /// <returns><inheritdoc/></returns>
-        public override bool Equals(object obj)
+        public readonly override bool Equals(object obj)
         {
             return obj is DSharpLiteralValue other &&
                    Equals(other);
@@ -384,6 +385,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         public static readonly DSharpLiteralValue Null = new();
 
+        private static readonly Assembly _standardAssembly = typeof(int).Assembly;
         private static readonly DSharpLiteralType[] _floatingPointTypes =
         [
             DSharpLiteralType.Decimal,
@@ -425,6 +427,57 @@ namespace DialogMaker.Core.Scripting.Runtime
             return t1;
         }
         /// <summary>
+        /// Perform unary operation with literal value
+        /// </summary>
+        /// <param name="op">Unary operator</param>
+        /// <param name="value">Value to perform operation</param>
+        /// <returns>Result of binary operation</returns>
+        /// <exception cref="ArgumentException">Not operator (!) available only to boolean value</exception>
+        /// <exception cref="ArgumentException">Operator available only to number value</exception>
+        /// <exception cref="InvalidOperationException">Unable to get information about type</exception>
+        public static DSharpLiteralValue MathOperation(DSharpUnaryOperator op, DSharpLiteralValue value)
+        {
+            if (op == DSharpUnaryOperator.Not)
+            {
+                if (!value.IsBool)
+                {
+                    throw new ArgumentException($"Not operator (!) available only to boolean value, got: {value.Type}", nameof(value));
+                }
+
+                return !value.AsBool();
+            }
+            if (!value.IsNumber)
+            {
+                throw new ArgumentException($"{(DSharpTokenType)op} operator available only to number value, got: {value.Type}", nameof(value));
+            }
+            if (!DSharpBuildInTypes.TryGetTypeInfo(value.Type, out var info))
+            {
+                throw new InvalidOperationException($"Unable to get information about type: {value.Type}");
+            }
+
+            var numberType = _standardAssembly.GetType(info.FullName, true);
+            var decimalValue = value.AsNumber<decimal>();
+
+            if (op == DSharpUnaryOperator.Minus)
+            {
+                decimalValue = -decimalValue;
+            }
+            else if (op == DSharpUnaryOperator.Increment)
+            {
+                decimalValue++;
+            }
+            else if (op == DSharpUnaryOperator.Decrement)
+            {
+                decimalValue--;
+            }
+
+            return new()
+            {
+                Type = value.Type,
+                _numberValue = Convert.ChangeType(decimalValue, numberType)
+            };
+        }
+        /// <summary>
         /// Perform binary operation with literal values
         /// </summary>
         /// <param name="op">Binary operator</param>
@@ -455,7 +508,7 @@ namespace DialogMaker.Core.Scripting.Runtime
             {
                 return n1.AsBool() && n2.AsBool();
             }
-            if (!n1.IsNumber || n2.IsNumber)
+            if ((!n1.IsNumber || !n2.IsNumber) && op != DSharpBinaryOperator.Plus)
             {
                 throw new ArgumentException($"Values must be numbers, got: {n1}, {n2}");
             }
@@ -491,11 +544,22 @@ namespace DialogMaker.Core.Scripting.Runtime
                 throw new InvalidOperationException($"Unable to get information about type: {largerType}");
             }
 
-            var numberType = Assembly.GetExecutingAssembly().GetType(info.FullName);
+            var numberType = _standardAssembly.GetType(info.FullName, true);
             object value = 0;
 
             if (op == DSharpBinaryOperator.Plus)
             {
+                if (n1.IsString && !n2.IsString ||
+                    !n1.IsString && n2.IsString ||
+                    n1.IsString && n2.IsString)
+                {
+                    return n1.ToString() + n2.ToString();
+                }
+                if (!n1.IsNumber || !n2.IsNumber)
+                {
+                    throw new ArgumentException($"Values must be numbers, got: {n1}, {n2}");
+                }
+
                 value = n1.AsNumber<decimal>() + n2.AsNumber<decimal>();
             }
             else if (op == DSharpBinaryOperator.Minus)
@@ -733,19 +797,30 @@ namespace DialogMaker.Core.Scripting.Runtime
         }
         private static DSharpLiteralValue ParseDecimalAuto(string value)
         {
+            value = value.Replace(',', '.');
+
             if (value.Contains('.') || value.Contains('e') || value.Contains('E'))
             {
+                bool skipFloat = false;
+
+                if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var doubleResult))
+                {
+                    var textValue = doubleResult.ToString().Replace(',', '.');
+
+                    if (textValue == value)
+                    {
+                        return doubleResult;
+                    }
+
+                    skipFloat = true;
+                }
+                if (!skipFloat && float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var floatResult))
+                {
+                    return floatResult;
+                }
                 if (decimal.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var decimalResult))
                 {
                     return decimalResult;
-                }
-                if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var doubleResult))
-                {
-                    return doubleResult;
-                }
-                if (float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var floatResult))
-                {
-                    return floatResult;
                 }
             }
             else

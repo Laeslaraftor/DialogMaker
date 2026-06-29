@@ -158,8 +158,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <inheritdoc/>
         /// </summary>
         public override bool IsDeclaration => false;
+        public int Size => throw new NotImplementedException();
 
         IDSharpMethodInfo? IDSharpType.Finalizer => Finalizer;
+
 
         private readonly List<IDSharpType> _baseTypes = [];
         private readonly List<DSharpMethodBuilder> _constructors = [];

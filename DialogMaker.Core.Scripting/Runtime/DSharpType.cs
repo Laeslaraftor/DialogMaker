@@ -32,6 +32,8 @@ namespace DialogMaker.Core.Scripting.Runtime
 
         public IDSharpMethodInfo? Finalizer => throw new NotImplementedException();
 
+        public int Size => throw new NotImplementedException();
+
         #region Управление
 
         public IDSharpMethodInfo[] GetMethods() => [.. Methods];

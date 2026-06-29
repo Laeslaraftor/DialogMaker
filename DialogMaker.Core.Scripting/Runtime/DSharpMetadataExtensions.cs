@@ -150,7 +150,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                 }
                 if (type == destination ||
                     (type.GenericTemplate != null && type.GenericTemplate == destination) ||
-                    destination.FullName == DSharpAssemblyBuilder.ObjectTypeFullName)
+                    destination.FullName == DSharpBuildInTypes.Object)
                 {
                     return true;
                 }

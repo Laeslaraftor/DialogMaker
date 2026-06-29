@@ -94,6 +94,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         private bool IsEndOfFile() => _position >= _source.Length;
         private char Peek() => IsEndOfFile() ? '\0' : _source[_position];
         private char PeekNext() => _position + 1 >= _source.Length ? '\0' : _source[_position + 1];
+        private char PeekPrevious() => _position - 1 >= 0 ? '\0' : _source[_position - 1];
         private char GetNext()
         {
             char value = Peek();
@@ -244,15 +245,36 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
             StringBuilder builder = new();
             bool hasDot = false;
 
+            var current = Peek().ToString();
+            var next = PeekNext().ToString();
+            var prefix = current + next;
+
+            if (prefix == "0x" || prefix == "0b" || prefix == "0o")
+            {
+                builder.Append(GetNext());
+                builder.Append(GetNext());
+                current = Peek().ToString();
+                next = PeekNext().ToString();
+            }
             if (Peek() == '-')
             {
                 builder.Append(GetNext());
             }
 
-            while (!IsEndOfFile() && (char.IsDigit(Peek()) || (Peek() == '.' && !hasDot)))
+            var previous = PeekPrevious().ToString();
+
+            while (!IsEndOfFile() && 
+                   ((char.IsDigit(Peek()) || (Peek() == '.' && !hasDot))) ||
+                   NumberIdentifiers.Contains(previous + current) ||
+                   NumberIdentifiers.Contains(current + next) ||
+                   NumberIdentifiers.Contains(current))
             {
                 hasDot = Peek() == '.';
                 builder.Append(GetNext());
+
+                previous = PeekPrevious().ToString();
+                current = Peek().ToString();
+                next = PeekNext().ToString();
             }
 
             AddToken(DSharpTokenType.NumberLiteral, builder.ToString(), startLine, startCol);
@@ -501,6 +523,23 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
 
                     field = new(keywords);
                 }
+
+                return field;
+            }
+        }
+        private static ReadOnlyCollection<string> NumberIdentifiers
+        {
+            get
+            {
+                field ??= new([
+                    "ul",
+                    "lu",
+                    "u",
+                    "l",
+                    "f",
+                    "d",
+                    "m",
+                ]);
 
                 return field;
             }

@@ -1,7 +1,7 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime.Builders;
-using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Runtime.Compilers
 {
@@ -22,6 +22,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         private readonly List<string> _usings = [];
         private readonly Dictionary<DSharpTypeBuilder, ObjectDeclarationNode> _createdTypes = [];
         private readonly Dictionary<DSharpFieldBuilder, FieldNode> _createdFields = [];
+        private readonly Dictionary<DSharpFieldBuilder, ExpressionNode> _createdGlobalVariablesRawValueExpressions = [];
         private readonly Dictionary<DSharpFieldBuilder, VariableNode> _createdGlobalVariables = [];
         private readonly Dictionary<DSharpPropertyBuilder, FieldNode> _createdProperties = [];
         private readonly Dictionary<DSharpMethodBuilder, MethodNode> _createdMethods = [];
@@ -49,6 +50,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             _usings.Clear();
             _propertiesWithCustomAccessors.Clear();
             _propertyFields.Clear();
+            _createdGlobalVariablesRawValueExpressions.Clear();
             _currentNamespace = null;
 
             foreach (var treeRoot in treeRoots)
@@ -243,6 +245,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             if (variableNode.Initializer?.TrySimplifyToLiteral(out var rawValue) == true)
             {
                 variable.RawValue = rawValue;
+                _createdGlobalVariablesRawValueExpressions.Add(variable, variableNode.Initializer);
             }
 
             _createdGlobalVariables.Add(variable, variableNode);
@@ -403,7 +406,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             {
                 var field = type.CreateField(enumValue.Name);
 
-                if (enumValue.Type != DSharpLiteralType.Number)
+                if (!enumValue.Value.IsNumber)
                 {
                     throw new InvalidDataException($"Enum value must be a number, got: {enumValue.Value}");
                 }
@@ -571,7 +574,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 ResolveParameters(info.Value.Parameters, info.Key.Parameters, context);
 
-                if (info.Value.ReturnType != null && info.Value.ReturnType.Name != "func")
+                if (info.Value.ReturnType != null && info.Value.ReturnType.Token.Type != DSharpTokenType.Void)
                 {
                     info.Key.ReturnTypeResolver = () => context.ResolveType(info.Value.ReturnType);
                 }
@@ -727,6 +730,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         {
             var context = _context;
             context.CurrentMember = member;
+
+            if (typeInfo.Name == DSharpAssemblyBuilder.VarName &&
+                member.DeclaringType == null &&
+                member is DSharpFieldBuilder field && 
+                _createdGlobalVariablesRawValueExpressions.TryGetValue(field, out var valueExpression))
+            {
+                context.ParentExpression = valueExpression;
+            }
+
             var typeToken = context.ResolveType(typeInfo);
             var type = _assemblyBuilder.GetType(typeToken);
 

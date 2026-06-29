@@ -36,7 +36,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         private static readonly Dictionary<DSharpTokenType, Func<string, DSharpLiteralValue>> _literals = new()
         {
-            [DSharpTokenType.NumberLiteral] = v => DSharpLiteralValue.Parse(v.Replace(".", ",")),
+            [DSharpTokenType.NumberLiteral] = v => DSharpLiteralValue.Parse(v),
             [DSharpTokenType.StringLiteral] = v => v,
             [DSharpTokenType.CharLiteral] = v => v.Length == 0 ? '\0' : v[0],
             [DSharpTokenType.False] = v => false,

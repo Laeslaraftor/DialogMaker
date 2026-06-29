@@ -74,7 +74,19 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         public static bool IsStandardTypeIdentifier(DSharpTokenType type, bool allowVarToken = true)
         {
             return type == DSharpTokenType.String ||
-                   type == DSharpTokenType.Number ||
+                   type == DSharpTokenType.Int ||
+                   type == DSharpTokenType.UInt ||
+                   type == DSharpTokenType.Long||
+                   type == DSharpTokenType.ULong ||
+                   type == DSharpTokenType.Short ||
+                   type == DSharpTokenType.UShort ||
+                   type == DSharpTokenType.Byte ||
+                   type == DSharpTokenType.SByte ||
+                   type == DSharpTokenType.Nint ||
+                   type == DSharpTokenType.Nuint ||
+                   type == DSharpTokenType.Decimal ||
+                   type == DSharpTokenType.Double ||
+                   type == DSharpTokenType.Float ||
                    type == DSharpTokenType.Bool ||
                    type == DSharpTokenType.Char ||
                    type == DSharpTokenType.Object ||

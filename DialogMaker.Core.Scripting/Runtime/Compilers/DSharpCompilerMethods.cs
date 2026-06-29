@@ -1664,6 +1664,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 throw new ArgumentException($"Invalid object as type: {type}", nameof(type));
             }
 
+            if (initializerExpression != null)
+            {
+                var expressionValue = initializerExpression.GetExpressionType(_assemblyBuilder, context);
+                var requestedType = (IDSharpType)_assemblyBuilder.GetType(typeToken);
+
+                if (expressionValue == null || expressionValue is not IDSharpType valueType)
+                {
+                    throw new InvalidOperationException($"Unable to get type of expression: {expressionValue}");
+                }
+                if (!valueType.IsAssignableTo(requestedType))
+                {
+                    throw new InvalidOperationException($"Unable to assign value with type \"{valueType}\" to variable with \"{requestedType}\" type: {initializerExpression}");
+                }
+            }
+
             DSharpMethodBuilderParameter variable = new(method.Assembly)
             {
                 Name = name,

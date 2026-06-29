@@ -142,7 +142,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             {
                 throw new InvalidDataException($"\"{currentProperty}\" property of \"{type}\" should return an object");
             }
-            if (moveNextMethod.ReturnType != assembly.GetType(DSharpAssemblyBuilder.BoolTypeFullName))
+            if (moveNextMethod.ReturnType != assembly.GetType(DSharpBuildInTypes.Boolean))
             {
                 throw new InvalidDataException($"\"{moveNextMethod}\" method of \"{type}\" should return an boolean value");
             }

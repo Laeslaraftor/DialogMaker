@@ -56,8 +56,7 @@
         /// <returns>Information about array type</returns>
         public static DSharpArrayType Create(IDSharpType type)
         {
-            var numberType = type.Assembly.GetType(DSharpAssemblyBuilder.NumberTypeFullName);
-            var indexer = type.GetIndexer(numberType);
+            var indexer = GetIndexer(type);
 
             if (indexer.Setter == null)
             {
@@ -77,8 +76,8 @@
         /// <returns>Items indexer</returns>
         public static IDSharpIndexerInfo GetIndexer(IDSharpType type)
         {
-            var numberType = type.Assembly.GetType(DSharpAssemblyBuilder.NumberTypeFullName);
-            return type.GetIndexer(numberType);
+            var intType = type.Assembly.GetType(DSharpBuildInTypes.Int);
+            return type.GetIndexer(intType);
         }
 
         #endregion

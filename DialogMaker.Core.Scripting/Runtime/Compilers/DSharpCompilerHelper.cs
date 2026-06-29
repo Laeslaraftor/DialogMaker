@@ -678,115 +678,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                         }
                     }
 
-                    if (@operator.IsLogical())
-                    {
-                        if (@operator == DSharpBinaryOperator.LogicalAnd ||
-                            @operator == DSharpBinaryOperator.LogicalOr)
-                        {
-                            if (!leftValue.IsBool || !rightValue.IsBool)
-                            {
-                                throw new ArgumentException($"Logical operators requires boolean values. Left: {leftValue}, right: {rightValue}, operator: {(DSharpTokenType)@operator}");
-                            }
-                            if (@operator == DSharpBinaryOperator.LogicalAnd)
-                            {
-                                value = leftValue.AsBool() && rightValue.AsBool();
-                            }
-                            else if (@operator == DSharpBinaryOperator.LogicalOr)
-                            {
-                                value = leftValue.AsBool() || rightValue.AsBool();
-                            }
-                        }
-                        else if (@operator == DSharpBinaryOperator.LogicalEquals)
-                        {
-                            value = leftValue == rightValue;
-                        }
-                        else if (@operator == DSharpBinaryOperator.LogicalNotEquals)
-                        {
-                            value = leftValue != rightValue;
-                        }
-                        else
-                        {
-                            if (!leftValue.IsNumber || !rightValue.IsNumber)
-                            {
-                                throw new ArgumentException($"Operator {(DSharpTokenType)@operator} requires numbers for comparison. Left: {leftValue}, right: {rightValue}");
-                            }
-                            if (@operator == DSharpBinaryOperator.LogicalLess)
-                            {
-                                value = leftValue.AsNumber<double>() < rightValue.AsNumber<double>();
-                            }
-                            else if (@operator == DSharpBinaryOperator.LogicalLessOrEquals)
-                            {
-                                value = leftValue.AsNumber<double>() <= rightValue.AsNumber<double>();
-                            }
-                            if (@operator == DSharpBinaryOperator.LogicalGreater)
-                            {
-                                value = leftValue.AsNumber<double>() > rightValue.AsNumber<double>();
-                            }
-                            else if (@operator == DSharpBinaryOperator.LogicalGreaterOrEquals)
-                            {
-                                value = leftValue.AsNumber<double>() >= rightValue.AsNumber<double>();
-                            }
-                        }
-                    }
-                    else if (@operator == DSharpBinaryOperator.Plus)
-                    {
-                        if (leftValue.IsString || rightValue.IsString ||
-                            (leftValue.IsChar && rightValue.IsChar))
-                        {
-                            if (leftValue.IsNull)
-                            {
-                                value = rightValue;
-                            }
-                            else if (rightValue.IsNull)
-                            {
-                                value = leftValue;
-                            }
-                            else
-                            {
-                                value = leftValue.ToString() + rightValue.ToString();
-                            }
-                        }
-                        else if (leftValue.IsNumber && rightValue.IsNumber)
-                        {
-                            value = leftValue.AsNumber<double>() + rightValue.AsNumber<double>();
-                        }
-                        else if (leftValue.IsNumber && rightValue.IsChar)
-                        {
-                            value = leftValue.AsNumber<double>() + rightValue.AsChar();
-                        }
-                        else if (leftValue.IsChar && rightValue.IsNumber)
-                        {
-                            value = leftValue.AsChar() + rightValue.AsNumber<double>();
-                        }
-                        else
-                        {
-                            throw new ArgumentException($"Operator {(DSharpTokenType)@operator} got invalid values. Left: {leftValue}, right: {rightValue}");
-                        }
-                    }
-                    else
-                    {
-                        if (!leftValue.IsNumber || !rightValue.IsNumber)
-                        {
-                            throw new ArgumentException($"Operator {(DSharpTokenType)@operator} requires numbers. Left: {leftValue}, right: {rightValue}");
-                        }
-                        if (@operator == DSharpBinaryOperator.Minus)
-                        {
-                            value = leftValue.AsNumber<double>() - rightValue.AsNumber<double>();
-                        }
-                        else if (@operator == DSharpBinaryOperator.Multiply)
-                        {
-                            value = leftValue.AsNumber<double>() * rightValue.AsNumber<double>();
-                        }
-                        else if (@operator == DSharpBinaryOperator.Divide)
-                        {
-                            value = leftValue.AsNumber<double>() / rightValue.AsNumber<double>();
-                        }
-                        else if (@operator == DSharpBinaryOperator.Mod)
-                        {
-                            value = leftValue.AsNumber<double>() % rightValue.AsNumber<double>();
-                        }
-                    }
-
+                    value = DSharpLiteralValue.MathOperation(@operator, leftValue, rightValue);
                     expressionValues ??= [];
                     lastExpressionValue = value;
 
@@ -805,46 +697,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                         return false;
                     }
 
-                    if (unaryExpression.Operator == DSharpUnaryOperator.Not)
-                    {
-                        if (!literal.IsBool)
-                        {
-                            throw new ArgumentException($"Not operator (!) available only to boolean value");
-                        }
-
-                        result = !literal.AsBool();
-                        return true;
-                    }
-                    else if (unaryExpression.Operator == DSharpUnaryOperator.Increment)
-                    {
-                        if (!literal.IsNumber)
-                        {
-                            throw new ArgumentException($"Increment operator available only to number value");
-                        }
-
-                        result = literal.AsNumber() + 1;
-                        return true;
-                    }
-                    else if (unaryExpression.Operator == DSharpUnaryOperator.Decrement)
-                    {
-                        if (!literal.IsNumber)
-                        {
-                            throw new ArgumentException($"Decrement operator available only to number value");
-                        }
-
-                        result = literal.AsNumber() - 1;
-                        return true;
-                    }
-                    else if (unaryExpression.Operator == DSharpUnaryOperator.Minus)
-                    {
-                        if (!literal.IsNumber)
-                        {
-                            throw new ArgumentException($"Minus operator available only to number value");
-                        }
-
-                        result = -literal.AsNumber();
-                        return true;
-                    }
+                    result = DSharpLiteralValue.MathOperation(unaryExpression.Operator, literal);
+                    return true;
                 }
                 else if (expression is BinaryExpressionNode binaryExpression)
                 {

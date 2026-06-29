@@ -68,7 +68,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     member = new(memberToken)
                     {
                         Value = memberIndex,
-                        Type = DSharpLiteralType.Number
+                        Type = DSharpLiteralType.Int
                     };
                 }
 

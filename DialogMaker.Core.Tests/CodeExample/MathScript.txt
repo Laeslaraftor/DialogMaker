@@ -1,7 +1,18 @@
 ﻿namespace System
 {
-	public struct Number {}
+	public struct Byte {}
+	public struct Int32 {}
+	public struct Decimal {}
+	public struct Single {}
+	public struct Double {}
+	public class String {}
+	public struct Void {}
 }
 	
+var value1 = 2.845934593434769374637;
+var value = ((2.845934593434769374637 + 2) * (2 + 2));
 
-number value = "Some text: " + ((2 + 2) * (2 + 2));
+void globalFunction()
+{
+	byte data = 1000;
+}
