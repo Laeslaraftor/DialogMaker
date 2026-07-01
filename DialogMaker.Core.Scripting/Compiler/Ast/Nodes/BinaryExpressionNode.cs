@@ -39,6 +39,40 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #region Статика
 
+        /// <summary>
+        /// Check is current token binary operator
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser</param>
+        /// <returns>Is current token binary operator</returns>
+        public static bool IsBinaryOperator(AstParserStream stream)
+        {
+            var currentToken = stream.Current;
+
+            if (currentToken == null)
+            {
+                return false;
+            }
+
+            var tokenType = currentToken.Type;
+
+            return tokenType == DSharpTokenType.Plus ||
+                   tokenType == DSharpTokenType.Minus ||
+                   tokenType == DSharpTokenType.Multiply ||
+                   tokenType == DSharpTokenType.Divide ||
+                   tokenType == DSharpTokenType.Mod ||
+                   tokenType == DSharpTokenType.Xor ||
+                   tokenType == DSharpTokenType.ShiftLeft ||
+                   tokenType == DSharpTokenType.ShiftRight ||
+                   tokenType == DSharpTokenType.Or ||
+                   tokenType == DSharpTokenType.And ||
+                   tokenType == DSharpTokenType.Equal ||
+                   tokenType == DSharpTokenType.NotEqual ||
+                   tokenType == DSharpTokenType.Less ||
+                   tokenType == DSharpTokenType.LessEqual ||
+                   tokenType == DSharpTokenType.Greater ||
+                   tokenType == DSharpTokenType.GreaterEqual;
+        }
+
         public static ExpressionNode ParseLogicalOr(AstParserStream stream)
         {
             return ParseOperation(stream, ParseLogicalAnd, DSharpTokenType.Or);
@@ -66,9 +100,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         }
         public static ExpressionNode ParseMultiplicative(AstParserStream stream)
         {
-            return ParseOperation(stream, UnaryExpressionNode.Parse, DSharpTokenType.Multiply, 
+            return ParseOperation(stream, ParseShift, DSharpTokenType.Multiply, 
                                                                      DSharpTokenType.Divide, 
                                                                      DSharpTokenType.Mod);
+        }
+        public static ExpressionNode ParseShift(AstParserStream stream)
+        {
+            return ParseOperation(stream, UnaryExpressionNode.Parse, DSharpTokenType.ShiftLeft, 
+                                                                     DSharpTokenType.ShiftRight);
         }
 
         private static ExpressionNode ParseOperation(AstParserStream stream, Func<AstParserStream, ExpressionNode> parser, params DSharpTokenType[] tokens)

@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+using DialogMaker.Core.Scripting.Compiler.Lexer;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 
@@ -137,6 +138,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 return field;
             }
         }
+        public ReferenceReadOnlyList<DSharpOperatorBuilder> CastOperators
+        {
+            get
+            {
+                field ??= new(_castOperators);
+                return field;
+            }
+        }
+        public ReferenceReadOnlyList<DSharpOperatorBuilder> Operators
+        {
+            get
+            {
+                field ??= new(_operators);
+                return field;
+            }
+        }
         /// <summary>
         /// <inheritdoc cref="IDSharpType.Finalizer"/>
         /// </summary>
@@ -169,6 +186,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         private readonly List<DSharpPropertyBuilder> _properties = [];
         private readonly List<DSharpIndexerBuilder> _indexers = [];
         private readonly List<DSharpFieldBuilder> _fields = [];
+        private readonly List<DSharpOperatorBuilder> _castOperators = [];
+        private readonly List<DSharpOperatorBuilder> _operators = [];
         private readonly List<DSharpTypeBuilder> _genericTypes = [];
         private readonly List<DSharpTypeBuilder> _childrenTypes = [];
         internal IReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo>? _templatedMembers;
@@ -338,6 +357,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             _childrenTypes.Add(type);
 
             return type;
+        }
+
+        public DSharpOperatorBuilder CreateImplicitOperator() => CreateOperator<DSharpBinaryOperator>(DSharpOperatorType.Implicit);
+        public DSharpOperatorBuilder CreateExplicitOperator() => CreateOperator<DSharpBinaryOperator>(DSharpOperatorType.Explicit);
+        public DSharpOperatorBuilder CreateOperator(DSharpBinaryOperator @operator)
+        {
+            return CreateOperator<DSharpBinaryOperator>(DSharpOperatorType.Binary, @operator);
+        }
+        public DSharpOperatorBuilder CreateOperator(DSharpUnaryOperator @operator)
+        {
+            return CreateOperator<DSharpUnaryOperator>(DSharpOperatorType.Binary, @operator);
         }
 
         public bool RemoveGenericType(DSharpTypeBuilder type)
@@ -531,33 +561,129 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             _genericTypes.Clear();
         }
+        private DSharpOperatorBuilder CreateOperator<T>(DSharpOperatorType type, T? @operator = null)
+            where T : struct, Enum
+        {
+            var operatorsList = _castOperators;
+
+            if (type != DSharpOperatorType.Implicit && 
+                type != DSharpOperatorType.Explicit)
+            {
+                operatorsList = _operators;
+            }
+
+            string name = $"{OperatorPrefixName}{type}";
+
+            if (@operator != null)
+            {
+                name += $"_{(DSharpTokenType)(object)@operator.Value}";
+            }
+            if (operatorsList.Count > 0)
+            {
+                name += "_" + operatorsList.Count;
+            }
+
+            var result = CreateMember(DSharpMetadataTokenType.Operator, operatorsList, t => new(this, name, t));
+            result.Type = type;
+
+            if (type == DSharpOperatorType.Binary)
+            {
+                result.BinaryOperator = (DSharpBinaryOperator)(object)@operator.GetValueOrDefault();
+            }
+            else if (type == DSharpOperatorType.Unary)
+            {
+                result.UnaryOperator = (DSharpUnaryOperator)(object)@operator.GetValueOrDefault();
+            }
+
+            return result;
+        }
 
         #endregion
 
         #region Получение членов
 
-        public IDSharpMethodInfo[] GetMethods() => [.. _methods];
-        public IDSharpMethodInfo[] GetMethods(Predicate<IDSharpMethodInfo> predicate) => [.. _methods.Where(m => predicate(m))];
-        public IDSharpPropertyInfo[] GetProperties() => [.. _properties];
-        public IDSharpPropertyInfo[] GetProperties(Predicate<IDSharpPropertyInfo> predicate) => [.. _properties.Where(p => predicate(p))];
-        public IDSharpIndexerInfo[] GetIndexers() => [.. _indexers];
-        public IDSharpIndexerInfo[] GetIndexers(Predicate<IDSharpIndexerInfo> predicate) => [.. _indexers.Where(i => predicate(i))];
-        public IDSharpFieldInfo[] GetFields() => [.. _fields];
-        public IDSharpFieldInfo[] GetFields(Predicate<IDSharpFieldInfo> predicate) => [.. _fields.Where(f => predicate(f))];
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
         public IDSharpType[] GetBaseTypes() => [.. _baseTypes];
-        public IDSharpMethodInfo[] GetConstructors() => [.. _constructors];
-        public IDSharpMethodInfo[] GetConstructors(Predicate<IDSharpMethodInfo> predicate) => [.. _constructors.Where(c => predicate(c))];
-        public IDSharpType[] GetGenericParameters() => [.. GenericParameters.Select(t => (IDSharpType)Assembly.GetType(t))];
-        public IDSharpType[] GetGenericTypes() => [.. GenericTypes];
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
         public IDSharpType[] GetChildrenTypes() => [.. ChildrenTypes];
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
+        public IDSharpType[] GetGenericParameters() => [.. GenericParameters.Select(t => (IDSharpType)Assembly.GetType(t))];
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
+        public IDSharpType[] GetGenericTypes() => [.. GenericTypes];
+
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="predicate"><inheritdoc/></param>
+        /// <returns><inheritdoc/></returns>
+        public IDSharpMethodInfo[] GetMethods(Predicate<IDSharpMethodInfo> predicate) => [.. _methods.Where(m => predicate(m))];
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="predicate"><inheritdoc/></param>
+        /// <returns><inheritdoc/></returns>
+        public IDSharpPropertyInfo[] GetProperties(Predicate<IDSharpPropertyInfo> predicate) => [.. _properties.Where(p => predicate(p))];
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="predicate"><inheritdoc/></param>
+        /// <returns><inheritdoc/></returns>
+        public IDSharpIndexerInfo[] GetIndexers(Predicate<IDSharpIndexerInfo> predicate) => [.. _indexers.Where(i => predicate(i))];
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="predicate"><inheritdoc/></param>
+        /// <returns><inheritdoc/></returns>
+        public IDSharpFieldInfo[] GetFields(Predicate<IDSharpFieldInfo> predicate) => [.. _fields.Where(f => predicate(f))];
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <param name="predicate"><inheritdoc/></param>
+        /// <returns><inheritdoc/></returns>
+        public IDSharpMethodInfo[] GetConstructors(Predicate<IDSharpMethodInfo> predicate) => [.. _constructors.Where(c => predicate(c))];
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
+        public IDSharpOperatorInfo[] GetCastOperators() => [.. _castOperators];
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
+        /// <returns><inheritdoc/></returns>
+        public IDSharpOperatorInfo[] GetOperators() => [.. _operators];
 
         #endregion
 
         #region Константы
 
+        /// <summary>
+        /// Name for all constructors
+        /// </summary>
         public const string ConstructorName = "ctor";
+        /// <summary>
+        /// Name for all finalizer methods
+        /// </summary>
         public const string FinalizerName = "Finalize";
+        /// <summary>
+        /// Name for all indexers
+        /// </summary>
         public const string IndexerName = "Item";
+        /// <summary>
+        /// Name prefix for all operators
+        /// </summary>
+        public const string OperatorPrefixName = "__Operator_";
 
         #endregion
 

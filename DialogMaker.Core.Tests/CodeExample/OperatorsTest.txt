@@ -1,0 +1,41 @@
+﻿namespace System
+{
+	public struct Boolean {}
+	public class Object {}
+}
+
+public class Type1
+{
+	public static implicit operator Type2(Type1 type) => new();
+	public static implicit operator bool(Type1 type) => false;
+	public static bool operator ==(Type1 l, Type1 r) => new();
+}
+public class Type2
+{
+	public static implicit operator Type1(Type2 type) => new();
+	public static Type1 operator +(Type2 l, Type2 r) => new();
+}
+
+void castTypes()
+{
+	Type1 first = new();
+	Type2 second = (Type2)first;
+}
+void sumTypes()
+{
+	Type2 value = new();
+	value = value + value;
+}
+void unaryTest()
+{
+	Type1 value = new();
+	
+	if (!value)
+	{
+		sumTypes();
+	}
+	else 
+	{
+		castTypes();
+	}	
+}

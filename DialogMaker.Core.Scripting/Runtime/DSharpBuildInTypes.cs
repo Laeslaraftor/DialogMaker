@@ -227,6 +227,16 @@ namespace DialogMaker.Core.Scripting.Runtime
             return false;
         }
         /// <summary>
+        /// Try get information about standard type
+        /// </summary>
+        /// <param name="type">Standard type</param>
+        /// <param name="result">Information about type</param>
+        /// <returns>Is information found</returns>
+        public static bool TryGetInfo(IDSharpType type, [NotNullWhen(true)] out DSharpBuildInTypeInfo result)
+        {
+            return TryGetTypeInfo(type.FullName, out result);
+        }
+        /// <summary>
         /// Try get information about standard type by literal type
         /// </summary>
         /// <param name="type">Literal type</param>
@@ -247,6 +257,80 @@ namespace DialogMaker.Core.Scripting.Runtime
 
             result = default;
             return false;
+        }
+        /// <summary>
+        /// Check type is point-floating
+        /// </summary>
+        /// <param name="type">Type to check</param>
+        /// <returns>Is specified type point-floating</returns>
+        public static bool IsPointFloating(this DSharpBuildInTypeInfo type)
+        {
+            return type == Single ||
+                   type == Double ||
+                   type == Decimal;
+        }
+        /// <summary>
+        /// Check type is unsigned
+        /// </summary>
+        /// <param name="type">Type to check</param>
+        /// <returns>Is specified type unsigned</returns>
+        public static bool IsUnsigned(this DSharpBuildInTypeInfo type)
+        {
+            return type == Byte ||
+                   type == UnsignedInt ||
+                   type == UnsignedLong ||
+                   type == UnsignedShort ||
+                   type == NativeUnsignedInt;
+        }
+        /// <summary>
+        /// Check type is number
+        /// </summary>
+        /// <param name="type">Type to check</param>
+        /// <returns>Is specified type number</returns>
+        public static bool IsNumber(this DSharpBuildInTypeInfo type)
+        {
+            return type.Size > 0 && type != Boolean;
+        }
+        /// <summary>
+        /// Check type is number
+        /// </summary>
+        /// <param name="type">Type to check</param>
+        /// <returns>Is specified type number</returns>
+        public static bool IsNumber(this IDSharpType type)
+        {
+            if (TryGetInfo(type, out var info))
+            {
+                return info.IsNumber();
+            }
+
+            return false;
+        }
+        /// <summary>
+        /// Check is target build-in type can be casted to destination build-in type
+        /// </summary>
+        /// <param name="target">Type to casting</param>
+        /// <param name="destination">Cast destination type</param>
+        /// <returns>Is target type can be casted to destination type</returns>
+        public static DSharpCastAvailability CanCast(this DSharpBuildInTypeInfo target, DSharpBuildInTypeInfo destination)
+        {
+            if (target == destination)
+            {
+                return DSharpCastAvailability.Implicit;
+            }
+            if (!IsNumber(target) || !IsNumber(destination))
+            {
+                return DSharpCastAvailability.No;
+            }
+            if (IsPointFloating(target) && !IsPointFloating(destination) ||
+                !IsPointFloating(target) && IsPointFloating(destination) ||
+                IsUnsigned(target) && !IsUnsigned(destination) ||
+                !IsUnsigned(target) && IsUnsigned(destination) ||
+                destination.Size > target.Size)
+            {
+                return DSharpCastAvailability.Explicit;
+            }
+
+            return DSharpCastAvailability.Implicit;
         }
     }
 }

@@ -11,6 +11,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             LinkedProperty = property;
             MethodType = isSetter ? DSharpMethodType.Setter : DSharpMethodType.Getter;
         }
+        private DSharpMethodBuilder(DSharpOperatorBuilder @operator, DSharpTypeToken metadataToken)
+            : this(@operator.Assembly, @operator.DeclaringType, @operator.Name, metadataToken)
+        {
+            LinkedOperator = @operator;
+            MethodType = DSharpMethodType.Operator;
+        }
         private DSharpMethodBuilder(DSharpMethodType methodType, string name, DSharpTypeBuilder type, DSharpTypeToken metadataToken)
             : this(type.Assembly, type, name, metadataToken)
         {
@@ -24,13 +30,24 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// </summary>
         public DSharpPropertyBuilder? LinkedProperty { get; }
         /// <summary>
+        /// This method is operator only if this property not null 
+        /// </summary>
+        public DSharpOperatorBuilder? LinkedOperator { get; }
+        /// <summary>
         /// This method is constructor only if this property not null 
         /// </summary>
         public DSharpTypeBuilder? LinkedType { get; }
+        /// <summary>
+        /// <inheritdoc/>
+        /// </summary>
         public override string Name
         {
             get
             {
+                if (LinkedOperator != null)
+                {
+                    return LinkedOperator.Name;
+                }
                 if (MethodType == DSharpMethodType.Finalizer)
                 {
                     return DSharpTypeBuilder.FinalizerName;
@@ -71,6 +88,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 if (field == null && OriginalMethod?.ReturnType != null)
                 {
                     field = GetReplacedType(OriginalMethod.ReturnType);
+                }
+                if (LinkedOperator != null)
+                {
+                    return LinkedOperator.ReturnType;
                 }
                 if (LinkedType != null || MethodType == DSharpMethodType.Finalizer)
                 {
@@ -161,6 +182,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 {
                     return false;
                 }
+                else if (MethodType == DSharpMethodType.Operator)
+                {
+                    return true;
+                }
 
                 return LinkedProperty?.IsStatic ?? base.IsStatic;
             }
@@ -229,6 +254,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                     }
 
                     return LinkedProperty.SetterAccess;
+                }
+                if (LinkedOperator != null)
+                {
+                    return LinkedOperator.Access;
                 }
 
                 return base.Access;
@@ -435,6 +464,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public static DSharpMethodBuilder CreateSetter(DSharpPropertyBuilder property, string name, DSharpTypeToken metadataToken)
         {
             return new(property, true, name, metadataToken);
+        }
+        /// <summary>
+        /// Create operator method
+        /// </summary>
+        /// <param name="operator">Operator that must contains method</param>
+        /// <param name="metadataToken">Token for new method</param>
+        /// <returns>Operator method</returns>
+        public static DSharpMethodBuilder CreateOperator(DSharpOperatorBuilder @operator, DSharpTypeToken metadataToken)
+        {
+            return new(@operator, metadataToken);
         }
 
 

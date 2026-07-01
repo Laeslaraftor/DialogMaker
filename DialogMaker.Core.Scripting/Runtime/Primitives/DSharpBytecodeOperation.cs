@@ -204,6 +204,12 @@
         EndScope,
 
         /// <summary>
+        /// Casts last value in stack to specified type
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(1)]
+        Cast,
+        /// <summary>
         /// Addition math operation (+).
         /// Result will be added to stack
         /// </summary>
@@ -238,6 +244,27 @@
         [ArgsCount(0)]
         [RequestsStackValues(2)]
         Mod,
+        /// <summary>
+        /// Shift left (<<).
+        /// Result will be added to stack
+        /// </summary>
+        [ArgsCount(0)]
+        [RequestsStackValues(2)]
+        ShiftLeft,
+        /// <summary>
+        /// Shift right (>>).
+        /// Result will be added to stack
+        /// </summary>
+        [ArgsCount(0)]
+        [RequestsStackValues(2)]
+        ShiftRight,
+        /// <summary>
+        /// Xor (^).
+        /// Result will be added to stack
+        /// </summary>
+        [ArgsCount(0)]
+        [RequestsStackValues(2)]
+        Xor,
         /// <summary>
         /// Increase last stack value by 1.
         /// </summary>

@@ -1,12 +1,35 @@
-﻿namespace DialogMaker.Core.Scripting.Runtime
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+
+namespace DialogMaker.Core.Scripting.Runtime
 {
     public interface IDSharpType : IDSharpMemberInfo
     {
+        /// <summary>
+        /// Is type generic. 
+        /// Generic types is template for normal types
+        /// </summary>
         public bool IsGeneric { get; }
+        /// <summary>
+        /// Namespace of this type
+        /// </summary>
         public string? Namespace { get; }
+        /// <summary>
+        /// Type full name. 
+        /// It contains namespace, name and generic parameters or types amount
+        /// </summary>
         public string FullName { get; }
+        /// <summary>
+        /// Type of object
+        /// </summary>
         public DSharpObjectType ObjectType { get; }
+        /// <summary>
+        /// Is type abstract. 
+        /// Abstract types can not be instantiated, but it's can contains abstract members
+        /// </summary>
         public bool IsAbstract { get; }
+        /// <summary>
+        /// Is type sealed. Sealed types can not be inherited
+        /// </summary>
         public bool IsSealed { get; }
         /// <summary>
         /// Finalizer/destructor of this object.
@@ -27,16 +50,6 @@
         public int Size { get; }
 
         public IDSharpType[] GetBaseTypes();
-        public IDSharpMethodInfo[] GetConstructors();
-        public IDSharpMethodInfo[] GetConstructors(Predicate<IDSharpMethodInfo> predicate);
-        public IDSharpMethodInfo[] GetMethods();
-        public IDSharpMethodInfo[] GetMethods(Predicate<IDSharpMethodInfo> predicate);
-        public IDSharpPropertyInfo[] GetProperties();
-        public IDSharpPropertyInfo[] GetProperties(Predicate<IDSharpPropertyInfo> predicate);
-        public IDSharpFieldInfo[] GetFields();
-        public IDSharpFieldInfo[] GetFields(Predicate<IDSharpFieldInfo> predicate);
-        public IDSharpIndexerInfo[] GetIndexers();
-        public IDSharpIndexerInfo[] GetIndexers(Predicate<IDSharpIndexerInfo> predicate);
         /// <summary>
         /// List of types that must fill generic types. 
         /// Size of this list must be equals to generic types list or empty
@@ -51,5 +64,48 @@
         /// </summary>
         /// <returns>Array of types that contain in current type</returns>
         public IDSharpType[] GetChildrenTypes();
+
+        /// <summary>
+        /// Get all constructors that passes specified predicate
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <returns>All constructors that passes specified predicate</returns>
+        public IDSharpMethodInfo[] GetConstructors(Predicate<IDSharpMethodInfo> predicate);
+        /// <summary>
+        /// Get all methods that passes specified predicate
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <returns>All methods that passes specified predicate</returns>
+        public IDSharpMethodInfo[] GetMethods(Predicate<IDSharpMethodInfo> predicate);
+        /// <summary>
+        /// Get all properties that passes specified predicate
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <returns>All properties that passes specified predicate</returns>
+        public IDSharpPropertyInfo[] GetProperties(Predicate<IDSharpPropertyInfo> predicate);
+        /// <summary>
+        /// Get all fields that passes specified predicate
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <returns>All fields that passes specified predicate</returns>
+        public IDSharpFieldInfo[] GetFields(Predicate<IDSharpFieldInfo> predicate);
+        /// <summary>
+        /// Get all indexers that passes specified predicate
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <returns>All indexers that passes specified predicate</returns>
+
+        public IDSharpIndexerInfo[] GetIndexers(Predicate<IDSharpIndexerInfo> predicate);
+
+        /// <summary>
+        /// Get all custom cast operators for this type
+        /// </summary>
+        /// <returns>Array of custom cast operators</returns>
+        public IDSharpOperatorInfo[] GetCastOperators();
+        /// <summary>
+        /// Get all custom math operators for this type
+        /// </summary>
+        /// <returns>Array of custom math operators</returns>
+        public IDSharpOperatorInfo[] GetOperators();
     }
 }

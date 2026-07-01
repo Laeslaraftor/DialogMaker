@@ -36,6 +36,6 @@
         /// <summary>
         /// Generic parameter metadata
         /// </summary>
-        GenericParameter = 0x2A000000,
+        Operator = 0x2A000000,
     }
 }

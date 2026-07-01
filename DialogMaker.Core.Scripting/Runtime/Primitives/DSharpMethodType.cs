@@ -24,6 +24,10 @@
         /// <summary>
         /// Finalizer/destructor
         /// </summary>
-        Finalizer
+        Finalizer,
+        /// <summary>
+        /// Method that used as operator
+        /// </summary>
+        Operator
     }
 }

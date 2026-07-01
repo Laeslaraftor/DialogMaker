@@ -1,6 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
-using System.Diagnostics.SymbolStore;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
@@ -70,6 +69,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// List of indexers
         /// </summary>
         public List<IndexerNode> Indexers { get; set; } = [];
+        /// <summary>
+        /// List of operators
+        /// </summary>
+        public List<OperatorNode> Operators { get; set; } = [];
 
         #region Константы
 
@@ -192,6 +195,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             DSharpAccessModifier? accessModifier = null;
             DSharpObjectMemberMode? mode = null;
             bool tilde = false;
+            bool isOperator = false;
+            DSharpOperatorType? castOperatorType = null;
             var currentToken = stream.Current ?? throw new Exception("Unable to read member");
 
             if (AttributeNode.TryParse(stream, out var attributeNodes))
@@ -302,11 +307,33 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     memberInfo.Type = new(currentToken);
                     eatToken = true;
                 }
+                else if (currentToken.Type == DSharpTokenType.Operator)
+                {
+                    if (isOperator)
+                    {
+                        stream.ThrowPositionException("Multiple operator modifiers");
+                    }
+
+                    isOperator = true;
+                    stream.Eat(currentToken.Type);
+                    break;
+                }
                 else if (currentToken.Type == DSharpTokenType.This)
                 {
                     memberInfo.Identifier = new(currentToken);
                     stream.Eat(currentToken.Type);
                     break;
+                }
+                else if (currentToken.Type == DSharpTokenType.Explicit ||
+                         currentToken.Type == DSharpTokenType.Implicit)
+                {
+                    if (castOperatorType != null)
+                    {
+                        stream.ThrowPositionException($"Multiply operator type identifier");
+                    }
+
+                    castOperatorType = (DSharpOperatorType)currentToken.Type;
+                    eatToken = true;
                 }
                 else
                 {
@@ -339,7 +366,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
             while (!IsDefinitionEnded(0));
 
-            if (memberInfo.Identifier == null)
+            if (memberInfo.Identifier == null && !isOperator)
             {
                 stream.Position = startPosition;
                 return false;
@@ -347,6 +374,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             memberInfo.AccessModifier = accessModifier ?? DSharpAccessModifier.Private;
             memberInfo.Mode = mode ?? DSharpObjectMemberMode.Default;
+            memberInfo.OperatorType = castOperatorType ?? DSharpOperatorType.Unary;
+
+            if (isOperator)
+            {
+                memberInfo.MemberType = DSharpTypeMember.Operator;
+                return true;
+            }
 
             if (stream.Check(DSharpTokenType.LeftParen))
             {
@@ -383,7 +417,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 return false;
             }
 
-            if (memberInfo.Identifier.Token.Type == DSharpTokenType.This)
+            if (memberInfo.Identifier!.Token.Type == DSharpTokenType.This)
             {
                 memberInfo.MemberType = DSharpTypeMember.Indexer;
             }
@@ -555,6 +589,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 {
                     node.Methods.Add(method);
                 }
+                else if (member is OperatorNode @operator)
+                {
+                    node.Operators.Add(@operator);
+                }
                 else if (member is IndexerNode indexer)
                 {
                     node.Indexers.Add(indexer);
@@ -633,14 +671,25 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
             else if (memberInfo.MemberType == DSharpTypeMember.Indexer)
             {
-                var finalizer = IndexerNode.ParseIndexer(stream, memberInfo);
+                var indexer = IndexerNode.ParseIndexer(stream, memberInfo);
 
                 if (attributes != null)
                 {
-                    finalizer.Attributes = attributes;
+                    indexer.Attributes = attributes;
                 }
 
-                return finalizer;
+                return indexer;
+            }
+            else if (memberInfo.MemberType == DSharpTypeMember.Operator)
+            {
+                var @operator = OperatorNode.Parse(stream, memberInfo);
+
+                if (attributes != null)
+                {
+                    @operator.Attributes = attributes;
+                }
+
+                return @operator;
             }
             else
             {
@@ -666,6 +715,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             /// </summary>
             public DSharpObjectMemberMode Mode { get; set; }
             /// <summary>
+            /// Cast type
+            /// </summary>
+            public DSharpOperatorType OperatorType { get; set; }
+            /// <summary>
             /// Is member override
             /// </summary>
             public bool IsOverride { get; set; }
@@ -681,6 +734,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             /// Static flag of member
             /// </summary>
             public bool IsStatic { get; set; }
+            /// <summary>
+            /// Is member readonly
+            /// </summary>
             public bool IsReadOnly { get; set; }
             /// <summary>
             /// Member's return type

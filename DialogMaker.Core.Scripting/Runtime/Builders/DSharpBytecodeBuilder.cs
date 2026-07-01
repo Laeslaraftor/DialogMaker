@@ -1,5 +1,8 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime.Compilers;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace DialogMaker.Core.Scripting.Runtime.Builders
@@ -516,6 +519,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         {
             return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.EndScope);
         }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.Cast"/>
+        /// </summary>
+        /// <param name="type">Type to cast</param>
+        /// <returns></returns>
+        public TypeInstruction Cast(IDSharpType type)
+        {
+            CheckAccess(type);
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.Cast, type);
+        }
 
         #endregion
 
@@ -829,6 +842,30 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Mod);
         }
         /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.ShiftLeft"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction ShiftLeft()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.ShiftLeft);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.ShiftRight"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction ShiftRight()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.ShiftRight);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.Xor"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction Xor()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Xor);
+        }
+        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.Increment"/>
         /// </summary>
         /// <returns></returns>
@@ -843,6 +880,64 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public Instruction Decrement()
         {
             return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Decrement);
+        }
+
+        #endregion
+
+        #region Операторы
+
+        /// <summary>
+        /// Add unary operation
+        /// </summary>
+        /// <param name="unaryOperator">Unary operator</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">Unknown operator</exception>
+        public Instruction UnaryOperation(DSharpUnaryOperator unaryOperator)
+        {
+            switch (unaryOperator)
+            {
+                case DSharpUnaryOperator.Not:
+                    return Not();
+                case DSharpUnaryOperator.Minus:
+                    Push(-1);
+                    Multiply();
+                    return PopOffsetRepeat(1, 2);
+                case DSharpUnaryOperator.Increment:
+                    return Increment();
+                case DSharpUnaryOperator.Decrement:
+                    return Decrement();
+                default:
+                    throw new ArgumentException($"Unknown operator \"{(DSharpTokenType)unaryOperator}\"", nameof(unaryOperator));
+            }
+        }
+        /// <summary>
+        /// Add binary operation
+        /// </summary>
+        /// <param name="binaryOperator">Binary operator</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">Unknown operator</exception>
+        public Instruction BinaryOperation(DSharpBinaryOperator binaryOperator)
+        {
+            return binaryOperator switch
+            {
+                DSharpBinaryOperator.Plus => Add(),
+                DSharpBinaryOperator.Minus => Subtract(),
+                DSharpBinaryOperator.Multiply => Multiply(),
+                DSharpBinaryOperator.Divide => Divide(),
+                DSharpBinaryOperator.Mod => Mod(),
+                DSharpBinaryOperator.ShiftLeft => ShiftLeft(),
+                DSharpBinaryOperator.ShiftRight => ShiftRight(),
+                DSharpBinaryOperator.LogicalAnd => And(),
+                DSharpBinaryOperator.LogicalOr => Or(),
+                DSharpBinaryOperator.LogicalLess => Less(),
+                DSharpBinaryOperator.LogicalLessOrEquals => LessOrEqual(),
+                DSharpBinaryOperator.LogicalGreater => Greater(),
+                DSharpBinaryOperator.LogicalGreaterOrEquals => GreaterOrEqual(),
+                DSharpBinaryOperator.LogicalEquals => Equals(),
+                DSharpBinaryOperator.LogicalNotEquals => NotEquals(),
+                DSharpBinaryOperator.LogicalXor => Xor(),
+                _ => throw new ArgumentException($"Unknown operator \"{(DSharpTokenType)binaryOperator}\"", nameof(binaryOperator)),
+            };
         }
 
         #endregion

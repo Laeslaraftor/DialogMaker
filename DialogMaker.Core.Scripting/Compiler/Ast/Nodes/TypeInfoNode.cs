@@ -76,7 +76,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             return type == DSharpTokenType.String ||
                    type == DSharpTokenType.Int ||
                    type == DSharpTokenType.UInt ||
-                   type == DSharpTokenType.Long||
+                   type == DSharpTokenType.Long ||
                    type == DSharpTokenType.ULong ||
                    type == DSharpTokenType.Short ||
                    type == DSharpTokenType.UShort ||
@@ -104,7 +104,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             var current = stream.Peek(offset) ?? throw new Exception("Unable to read type identifier");
 
             return IsStandardTypeIdentifier(current.Type) ||
-                   stream.Check(DSharpTokenType.Identifier);
+                   current.Type == DSharpTokenType.Identifier;
         }
         /// <summary>
         /// Parse type info with only name of type starts with current token at parser stream
@@ -201,59 +201,117 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             return result;
         }
-        public static void ParseGenericParameters(AstParserStream stream, List<TypeInfoNode> buffer, bool checkExistence = false)
+        /// <summary>
+        /// Check is type parse availability
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="offset">Check token offset</param>
+        /// <returns>Is type parse available</returns>
+        public static bool CanParse(AstParserStream stream, int offset = 1)
         {
-            if (checkExistence)
+            int typesCount = 0;
+            bool previousIsDot = false;
+
+            while (true)
             {
-                if (!stream.Check(DSharpTokenType.Less))
+                if (stream.Check(DSharpTokenType.Dot))
                 {
-                    return;
-                }
-
-                int offset = 1;
-                int inner = 1;
-
-                bool IsEnd(int offset)
-                {
-                    return stream.Check(DSharpTokenType.Semicolon, offset) ||
-                           stream.Check(DSharpTokenType.Assign, offset) ||
-                           stream.Check(DSharpTokenType.LeftParen, offset) ||
-                           stream.Check(DSharpTokenType.LeftBrace, offset) ||
-                           stream.Check(DSharpTokenType.LeftBracket, offset);
-                }
-
-                while (!IsEnd(offset))
-                {
-                    if (stream.Check(DSharpTokenType.Less, offset))
+                    if (previousIsDot)
                     {
-                        inner++;
-                    }
-                    else if (stream.Check(DSharpTokenType.Greater, offset))
-                    {
-                        inner--;
-
-                        if (0 >= inner)
-                        {
-                            break;
-                        }
-                    }
-                    else if (stream.Check(DSharpTokenType.Semicolon, offset) ||
-                             stream.Check(DSharpTokenType.And, offset))
-                    {
-                        return;
-                    }
-                    if (!ArrayExpressionNode.CheckTokenAfterComma(stream, DSharpTokenType.Greater))
-                    {
-                        return;
+                        return false;
                     }
 
                     offset++;
+                    previousIsDot = true;
+                }
+                if (CanParseIdentifier(stream, offset))
+                {
+                    if (stream.Check(DSharpTokenType.Less, offset) && !IsGenericParameters(stream, offset + 1))
+                    {
+                        return false;
+                    }
+
+                    offset++;
+                    typesCount++;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return typesCount > 0;
+        }
+        /// <summary>
+        /// Check is next tokens are generic parameters
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="offset">Tokens offset</param>
+        /// <returns>Is next tokens are generic parameters</returns>
+        public static bool IsGenericParameters(AstParserStream stream, int offset = 1)
+        {
+            if (!stream.Check(DSharpTokenType.Less))
+            {
+                return false;
+            }
+
+            int inner = 1;
+
+            bool IsEnd(int offset)
+            {
+                return stream.Check(DSharpTokenType.Semicolon, offset) ||
+                       stream.Check(DSharpTokenType.Assign, offset) ||
+                       stream.Check(DSharpTokenType.LeftParen, offset) ||
+                       stream.Check(DSharpTokenType.LeftBrace, offset) ||
+                       stream.Check(DSharpTokenType.LeftBracket, offset);
+            }
+
+            while (!IsEnd(offset))
+            {
+                if (stream.Check(DSharpTokenType.Less, offset))
+                {
+                    inner++;
+                }
+                else if (stream.Check(DSharpTokenType.Greater, offset))
+                {
+                    inner--;
+
+                    if (0 >= inner)
+                    {
+                        break;
+                    }
+                }
+                else if (stream.Check(DSharpTokenType.Semicolon, offset) ||
+                         stream.Check(DSharpTokenType.And, offset))
+                {
+                    return false;
+                }
+                if (!ArrayExpressionNode.CheckTokenAfterComma(stream, DSharpTokenType.Greater))
+                {
+                    return false;
                 }
 
-                if (inner != 0)
-                {
-                    return;
-                }
+                offset++;
+            }
+
+            if (inner != 0)
+            {
+                return false;
+            }
+
+            return true;
+        }
+        /// <summary>
+        /// Parse generic parameter start with current token
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="buffer">Buffer for writing generic parameters</param>
+        /// <param name="checkExistence">Check on parameters existance</param>
+        public static void ParseGenericParameters(AstParserStream stream, List<TypeInfoNode> buffer, bool checkExistence = false)
+        {
+            if (checkExistence && !IsGenericParameters(stream))
+            {
+                return;
             }
 
             stream.Eat(DSharpTokenType.Less);

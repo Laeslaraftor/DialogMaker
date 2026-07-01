@@ -25,6 +25,9 @@ namespace DialogMaker.Core.Tests
         [TestCase(ScriptCompilerTests.TypeScript, "Player.SetValues")]
         [TestCase(ScriptCompilerTests.TypeScript, "Player.GetValues")]
         [TestCase(ScriptCompilerTests.MathScript, "globalFunction")]
+        [TestCase(ScriptCompilerTests.OperatorsScript, "castTypes")]
+        [TestCase(ScriptCompilerTests.OperatorsScript, "sumTypes")]
+        [TestCase(ScriptCompilerTests.OperatorsScript, "unaryTest")]
         public static void PrintSimpleFunctionBytecode(string scriptName, string functionName)
         {
             var assembly = ScriptCompilerTests.CompileScript(scriptName);

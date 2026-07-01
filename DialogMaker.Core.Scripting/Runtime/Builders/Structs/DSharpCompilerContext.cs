@@ -873,8 +873,28 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         }
         public readonly IDSharpMethodInfo FindMethod(string name, params IDSharpType?[] parameters)
         {
-            IDSharpType? currentType = (CurrentMember as IDSharpType ?? CurrentMember?.DeclaringType)
-                ?? throw new InvalidOperationException($"Unable to find method when current member not provided");
+            IDSharpType? currentType = CurrentMember as IDSharpType ?? CurrentMember?.DeclaringType;
+            IEnumerable<IDSharpMemberInfo> members;
+            object membersSource;
+
+            if (currentType == null)
+            {
+                if (Assembly == null)
+                {
+                    throw new InvalidOperationException($"Unable to find method when current member and assembly not provided");
+                }
+
+                members = Assembly.GetGlobalFunctions().Where(m => m.Name == name);
+                membersSource = Assembly;
+            }
+            else
+            {
+                membersSource = currentType;
+                members = currentType.GetAllMembers(m => m.Name == name &&
+                                                         m is IDSharpMethodInfo method &&
+                                                         m.DeclaringType?.ObjectType != DSharpObjectType.Interface &&
+                                                         method.MethodType == DSharpMethodType.Default);
+            }
 
             bool IsValid(IDSharpParameterInfo[] methodParameters)
             {
@@ -891,10 +911,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
             IDSharpMethodInfo? result = null;
 
-            foreach (var member in currentType.GetAllMembers(m => m.Name == name &&
-                                                                  m is IDSharpMethodInfo method &&
-                                                                  m.DeclaringType?.ObjectType != DSharpObjectType.Interface &&
-                                                                  method.MethodType == DSharpMethodType.Default))
+            foreach (var member in members)
             {
                 if (member is not IDSharpMethodInfo method)
                 {
@@ -933,7 +950,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                             }
                         }
 
-                        throw new InvalidOperationException($"Multiple methods \"{name}\" with same parameters was found at \"{currentType}\"");
+                        throw new InvalidOperationException($"Multiple methods \"{name}\" with same parameters was found at \"{membersSource}\"");
                     }
 
                     result = method;

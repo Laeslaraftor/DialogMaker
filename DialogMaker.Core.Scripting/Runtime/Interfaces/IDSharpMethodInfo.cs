@@ -4,7 +4,13 @@ namespace DialogMaker.Core.Scripting.Runtime
 {
     public interface IDSharpMethodInfo : IDSharpMemberInfo
     {
+        /// <summary>
+        /// Type of object that returns by method
+        /// </summary>
         public IDSharpType? ReturnType { get; }
+        /// <summary>
+        /// Type of method
+        /// </summary>
         public DSharpMethodType MethodType { get; }
         /// <summary>
         /// Method that was overriden by current method

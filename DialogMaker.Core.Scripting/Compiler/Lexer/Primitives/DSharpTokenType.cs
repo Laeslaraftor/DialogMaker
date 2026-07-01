@@ -96,10 +96,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         [Keyword("enum")]
         Enum,
         /// <summary>
-        /// Attribute keyword. Works like struct keyword, but it purpose for defining attributes
+        /// Operator keyword
         /// </summary>
-        [Keyword("attribute")]
-        Attribute,
+        [Keyword("operator")]
+        Operator,
+        /// <summary>
+        /// Implicit keyword
+        /// </summary>
+        [Keyword("implicit")]
+        Implicit,
+        /// <summary>
+        /// Explicit keyword
+        /// </summary>
+        [Keyword("explicit")]
+        Explicit,
         /// <summary>
         /// True keyword (true)
         /// </summary>
@@ -130,6 +140,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// </summary>
         [Keyword("in")]
         In,
+        /// <summary>
+        /// Ref keyword
+        /// </summary>
+        [Keyword("ref")]
+        Ref,
+        /// <summary>
+        /// Out keyword
+        /// </summary>
+        [Keyword("out")]
+        Out,
 
         /// <summary>
         /// Function or method
@@ -272,16 +292,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// </summary>
         [Keyword("base")]
         Base,
-        /// <summary>
-        /// Ref keyword
-        /// </summary>
-        [Keyword("ref")]
-        Ref,
-        /// <summary>
-        /// Out keyword
-        /// </summary>
-        [Keyword("out")]
-        Out,
         /// <summary>
         /// Nameof keyword
         /// </summary>

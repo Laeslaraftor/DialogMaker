@@ -13,11 +13,13 @@ namespace DialogMaker.Core.Tests
         public const string SimpleScript = "SimpleScriptExample";
         public const string TypeScript = "TypeDetectionScript";
         public const string MathScript = "MathScript";
+        public const string OperatorsScript = "OperatorsTest";
 
         [Test]
         [TestCase(SimpleScript)]
         [TestCase(TypeScript)]
         [TestCase(MathScript)]
+        [TestCase(OperatorsScript)]
         public static void TestSimpleScriptCompiling(string fileName)
         {
             var assembly = CompileScript(fileName);
@@ -166,6 +168,18 @@ namespace DialogMaker.Core.Tests
                     foreach (var indexer in type.Indexers)
                     {
                         PrintProperty(indexer, indexer.Parameters);
+                    }
+                }
+
+                List<IDSharpOperatorInfo> operators = [.. type.GetCastOperators().Union(type.GetOperators())];
+
+                if (operators.Count > 0)
+                {
+                    Console.WriteLine("    Operators:");
+
+                    foreach (var @operator in operators)
+                    {
+                        Console.WriteLine($"        {@operator}");
                     }
                 }
                 if (type.Fields.Count > 0)

@@ -271,6 +271,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
             if (stream.Check(DSharpTokenType.LeftParen))
             {
+                if (TypeInfoNode.CanParse(stream))
+                {
+                    return CastExpressionNode.Parse(stream);
+                }
+
                 return ParenContainedExpressionNode.Parse(stream);
             }
             if (stream.Check(DSharpTokenType.This) ||

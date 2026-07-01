@@ -14,5 +14,5 @@ var value = ((2.845934593434769374637 + 2) * (2 + 2));
 
 void globalFunction()
 {
-	byte data = 1000;
+	//byte data = 1000;
 }

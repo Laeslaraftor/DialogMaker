@@ -399,6 +399,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         private readonly List<DSharpTypeToken> _methodsDefinitions = [];
         private readonly List<DSharpTypeToken> _fieldsDefinitions = [];
         private readonly List<DSharpTypeToken> _propertiesDefinitions = [];
+        private readonly List<DSharpTypeToken> _operatorsDefinitions = [];
 
         #region Управление
 
@@ -421,6 +422,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             else if (type == DSharpMetadataTokenType.Method)
             {
                 tokensBuffer = _methodsDefinitions;
+            }
+            else if (type == DSharpMetadataTokenType.Operator)
+            {
+                tokensBuffer = _operatorsDefinitions;
             }
             else
             {
@@ -451,6 +456,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             else if (member.MetadataToken.Type == DSharpMetadataTokenType.Field)
             {
                 tokens = _fieldsDefinitions;
+            }
+            else if (member.MetadataToken.Type == DSharpMetadataTokenType.Operator)
+            {
+                tokens = _operatorsDefinitions;
             }
             else
             {
@@ -627,6 +636,40 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
 
                 replacedMembers.Add(newIndexer, indexer);
             }
+            foreach (var @operator in genericType.GetCastOperators())
+            {
+                DSharpOperatorBuilder newOperator;
+
+                if (@operator.Type == DSharpOperatorType.Implicit)
+                {
+                    newOperator = newType.CreateImplicitOperator();
+                }
+                else
+                {
+                    newOperator = newType.CreateExplicitOperator();
+                }
+
+                SetupOperator(newOperator, @operator);
+
+                replacedMembers.Add(newOperator, newOperator);
+            }
+            foreach (var @operator in genericType.GetOperators())
+            {
+                DSharpOperatorBuilder newOperator;
+
+                if (@operator.BinaryOperator != null)
+                {
+                    newOperator = newType.CreateOperator(@operator.BinaryOperator.Value);
+                }
+                else
+                {
+                    newOperator = newType.CreateOperator(@operator.UnaryOperator.GetValueOrDefault());
+                }
+
+                SetupOperator(newOperator, @operator);
+
+                replacedMembers.Add(newOperator, newOperator);
+            }
             foreach (var method in genericType.GetMethods())
             {
                 if (method.MethodType != DSharpMethodType.Default)
@@ -656,8 +699,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             {
                 var newFinalizer = newType.CreateFinalizer();
                 ProcessMethod(newFinalizer, genericType.Finalizer);
-            }
+            } 
 
+            void SetupOperator(DSharpOperatorBuilder newOperator, IDSharpOperatorInfo @operator)
+            {
+                newOperator.Access = @operator.Access;
+                newOperator.Type = @operator.Type;
+                newOperator.BinaryOperator = @operator.BinaryOperator;
+                newOperator.UnaryOperator = @operator.UnaryOperator;
+                newOperator.OriginalOperator = @operator;
+
+                ProcessMethod(newOperator.Method, @operator.Method);
+            }
             void SetupProperty(DSharpPropertyBuilder newProperty, IDSharpPropertyInfo property)
             {
                 newProperty.Access = property.Access;
@@ -819,7 +872,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         }
         public bool TryGetStandardType(string name, [NotNullWhen(true)] out DSharpTypeToken? result)
         {
-            if (DSharpBuildInTypes.TryGetTypeInfo(name, out var info) && 
+            if (DSharpBuildInTypes.TryGetTypeInfo(name, out var info) &&
                 TryGetTypeToken(info.FullName, out result))
             {
                 return true;
@@ -1133,6 +1186,20 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                     if (property != null)
                     {
                         return property;
+                    }
+                }
+
+                throw new ArgumentException($"Unable to find method for token: {metadata}", nameof(metadata));
+            }
+            else if (metadata.Type == DSharpMetadataTokenType.Operator)
+            {
+                foreach (var type in _types)
+                {
+                    var @operator = type.Operators.FirstOrDefault(p => p.MetadataToken == metadata);
+
+                    if (@operator != null)
+                    {
+                        return @operator;
                     }
                 }
 

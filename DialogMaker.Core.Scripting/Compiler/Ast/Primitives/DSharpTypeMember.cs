@@ -25,5 +25,9 @@
         /// Indexer (this[int] { get; set; })
         /// </summary>
         Indexer,
+        /// <summary>
+        /// Operator member
+        /// </summary>
+        Operator,
     }
 }

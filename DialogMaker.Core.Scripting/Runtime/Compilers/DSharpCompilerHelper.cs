@@ -3,6 +3,7 @@ using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime.Builders;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection.Emit;
 
 namespace DialogMaker.Core.Scripting.Runtime.Compilers
 {
@@ -325,7 +326,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                        @operator == DSharpBinaryOperator.LogicalLess ||
                        @operator == DSharpBinaryOperator.LogicalLessOrEquals ||
                        @operator == DSharpBinaryOperator.LogicalGreater ||
-                       @operator == DSharpBinaryOperator.LogicalGreaterOrEquals;
+                       @operator == DSharpBinaryOperator.LogicalGreaterOrEquals ||
+                       @operator == DSharpBinaryOperator.LogicalXor;
             }
         }
         extension(ExpressionNode expression)
@@ -465,25 +467,46 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
                 else if (expression is BinaryExpressionNode binaryExpression)
                 {
-                    if (binaryExpression.Operator == DSharpBinaryOperator.Mod)
-                    {
-                        return assembly.Int32Type;
-                    }
-                    else if (binaryExpression.Operator == DSharpBinaryOperator.LogicalOr ||
-                             binaryExpression.Operator == DSharpBinaryOperator.LogicalAnd ||
-                             binaryExpression.Operator == DSharpBinaryOperator.LogicalEquals ||
-                             binaryExpression.Operator == DSharpBinaryOperator.LogicalNotEquals ||
-                             binaryExpression.Operator == DSharpBinaryOperator.LogicalLess ||
-                             binaryExpression.Operator == DSharpBinaryOperator.LogicalLessOrEquals ||
-                             binaryExpression.Operator == DSharpBinaryOperator.LogicalGreater ||
-                             binaryExpression.Operator == DSharpBinaryOperator.LogicalGreaterOrEquals)
-                    {
-                        return assembly.BoolType;
-                    }
+                    //if (binaryExpression.Operator == DSharpBinaryOperator.Mod)
+                    //{
+                    //    return assembly.Int32Type;
+                    //}
+                    //else if (binaryExpression.Operator == DSharpBinaryOperator.LogicalOr ||
+                    //         binaryExpression.Operator == DSharpBinaryOperator.LogicalAnd ||
+                    //         binaryExpression.Operator == DSharpBinaryOperator.LogicalEquals ||
+                    //         binaryExpression.Operator == DSharpBinaryOperator.LogicalNotEquals ||
+                    //         binaryExpression.Operator == DSharpBinaryOperator.LogicalLess ||
+                    //         binaryExpression.Operator == DSharpBinaryOperator.LogicalLessOrEquals ||
+                    //         binaryExpression.Operator == DSharpBinaryOperator.LogicalGreater ||
+                    //         binaryExpression.Operator == DSharpBinaryOperator.LogicalGreaterOrEquals)
+                    //{
+                    //    return assembly.BoolType;
+                    //}
                     if (binaryExpression.Left == null ||
                         binaryExpression.Right == null)
                     {
                         throw new ArgumentException($"Incomplete operator expression: {expression}", nameof(expression));
+                    }
+
+                    var left = binaryExpression.Left;
+                    var right = binaryExpression.Right;
+                    var binaryOperator = binaryExpression.Operator;
+
+                    if (left.GetExpressionType(assembly, context) is not IDSharpType leftType)
+                    {
+                        throw new InvalidOperationException($"Unable to compile binary operation. Unable to get type of left expression: {left}");
+                    }
+                    if (right.GetExpressionType(assembly, context) is not IDSharpType rightType)
+                    {
+                        throw new InvalidOperationException($"Unable to compile binary operation. Unable to get type of right expression: {right}");
+                    }
+                    if (!leftType.CanPerformBinaryOperation(rightType, binaryOperator, out var @operator))
+                    {
+                        throw new InvalidOperationException($"Unable to perform {binaryOperator} operation with \"{leftType}\" and \"{rightType}\": {left}");
+                    }
+                    if (@operator != null)
+                    {
+                        return @operator.ReturnType;
                     }
 
                     return binaryExpression.Left.VerifyAndUniteType(assembly, binaryExpression.Right, context);
@@ -556,6 +579,27 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     var indexer = context.FindIndexer(arrayExpression);
                     return indexer.PropertyType;
+                }
+                else if (expression is CastExpressionNode castExpression)
+                {
+                    if (castExpression.Type == null || castExpression.Expression == null)
+                    {
+                        throw new ArgumentException($"Invalid expression: {expression}", nameof(expression));
+                    }
+
+                    var typeToken = context.ResolveType(castExpression.Type);
+                    var type = (IDSharpType)assembly.GetType(typeToken);
+                    
+                    if (castExpression.Expression.GetExpressionType(assembly, context) is not IDSharpType expressionType)
+                    {
+                        throw new InvalidOperationException($"Unable to get type of expression: {castExpression.Expression}");
+                    }
+                    if (!expressionType.IsAssignableTo(type))
+                    {
+                        throw new InvalidOperationException($"Unable to cast \"{expressionType}\" to \"{type}\"");
+                    }
+
+                    return type;
                 }
 
                 throw new ArgumentException($"Unable to get type of expression: {expression}", nameof(expression));
@@ -652,7 +696,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                         expressionValues[operation] = value;
                     }
                 }
-                void HandleExpression(ExpressionNode left, ExpressionNode right, DSharpBinaryOperator @operator)
+                void HandleExpression(ExpressionNode left, ExpressionNode right, DSharpBinaryOperator @operator, ref DSharpMethodCompileSettings settings)
                 {
                     if (expressionFailed ||
                         left is not LiteralExpressionNode leftLiteral ||
@@ -724,10 +768,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         {
             public void CompileExpression(BinaryExpressionCompileHandler handler)
             {
-                expression.CompileExpression(handler, []);
+                DSharpMethodCompileSettings settings = default;
+                expression.CompileExpression(handler, [], ref settings);
+            }
+            public void CompileExpression(BinaryExpressionCompileHandler handler, ref DSharpMethodCompileSettings settings)
+            {
+                expression.CompileExpression(handler, [], ref settings);
             }
 
-            private void CompileExpression(BinaryExpressionCompileHandler handler, HashSet<BinaryExpressionNode> compiledExpressions)
+            private void CompileExpression(BinaryExpressionCompileHandler handler, HashSet<BinaryExpressionNode> compiledExpressions, ref DSharpMethodCompileSettings settings)
             {
                 if (expression.Left == null || expression.Right == null)
                 {
@@ -782,7 +831,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                     if (leftParenContained.Expression is BinaryExpressionNode leftBinaryExpression)
                     {
-                        leftBinaryExpression.CompileExpression(handler, compiledExpressions);
+                        leftBinaryExpression.CompileExpression(handler, compiledExpressions, ref settings);
                         leftExpression = GetTargetExpression(leftBinaryExpression, b => b.Right);
                     }
                     else
@@ -792,7 +841,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
                 else if (expression.Left is BinaryExpressionNode leftBinaryExpression)
                 {
-                    leftBinaryExpression.CompileExpression(handler, compiledExpressions);
+                    leftBinaryExpression.CompileExpression(handler, compiledExpressions, ref settings);
                     leftExpression = GetTargetExpression(leftBinaryExpression, b => b.Right);
                 }
                 if (expression.Right is ParenContainedExpressionNode rightParenContained)
@@ -804,7 +853,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                     if (rightParenContained.Expression is BinaryExpressionNode rightBinaryExpression)
                     {
-                        rightBinaryExpression.CompileExpression(handler, compiledExpressions);
+                        rightBinaryExpression.CompileExpression(handler, compiledExpressions, ref settings);
                         rightExpression = GetTargetExpression(rightBinaryExpression, b => b.Left);
                     }
                     else
@@ -816,9 +865,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     if (rightBinaryExpression.Operator == DSharpBinaryOperator.Multiply ||
                         rightBinaryExpression.Operator == DSharpBinaryOperator.Divide ||
+                        rightBinaryExpression.Operator == DSharpBinaryOperator.ShiftLeft ||
+                        rightBinaryExpression.Operator == DSharpBinaryOperator.ShiftRight ||
                         expression.Operator.IsLogical())
                     {
-                        rightBinaryExpression.CompileExpression(handler, compiledExpressions);
+                        rightBinaryExpression.CompileExpression(handler, compiledExpressions, ref settings);
                     }
                     if (rightBinaryExpression.Left == null)
                     {
@@ -828,7 +879,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     rightExpression = GetTargetExpression(rightBinaryExpression, b => b.Left);
                 }
 
-                handler(leftExpression, rightExpression, expression.Operator);
+                handler(leftExpression, rightExpression, expression.Operator, ref settings);
             }
         }
         extension(IdentifierExpressionNode identifierExpression)

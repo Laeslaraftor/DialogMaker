@@ -28,6 +28,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         private readonly Dictionary<DSharpMethodBuilder, MethodNode> _createdMethods = [];
         private readonly Dictionary<DSharpMethodBuilder, FinalizerNode> _createdFinalizers = [];
         private readonly Dictionary<DSharpIndexerBuilder, IndexerNode> _createdIndexers = [];
+        private readonly Dictionary<DSharpOperatorBuilder, OperatorNode> _createdOperators = [];
         private readonly Dictionary<DSharpMethodBuilder, ConstructorNode> _createdConstructors = [];
         private readonly Dictionary<DSharpTypeBuilder, ObjectDeclarationNode> _enumTypes = [];
         private readonly Dictionary<DSharpFieldBuilder, LiteralExpressionNode> _enumValues = [];
@@ -218,6 +219,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             {
                 CreateFinalizer(assemblyBuilder, type, finalizer);
             }
+            foreach (var @operator in declaration.Operators)
+            {
+                CreateOperator(assemblyBuilder, type, @operator);
+            }
             foreach (var constructor in declaration.Constructors)
             {
                 CreateConstructor(assemblyBuilder, type, constructor);
@@ -384,6 +389,57 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             var indexer = CreateProperty(assemblyBuilder, declareType, indexerNode, (t, n) => t.CreateIndexer());
             _createdIndexers.Add(indexer, indexerNode);
         }
+        private void CreateOperator(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder declareType, OperatorNode operatorNode)
+        {
+            if (operatorNode.OperatorType != DSharpOperatorType.Binary &&
+                operatorNode.Parameters.Count != 1)
+            {
+                throw new ArgumentException($"Explicit, implicit and unary operators must contains 1 parameters: {operatorNode}", nameof(operatorNode));
+            }
+            if (operatorNode.OperatorType == DSharpOperatorType.Binary &&
+                operatorNode.Parameters.Count != 2)
+            {
+                throw new ArgumentException($"Binary operators must contains 2 parameters: {operatorNode}", nameof(operatorNode));
+            }
+            if (operatorNode.ReturnType == null)
+            {
+                throw new ArgumentException($"Operators must contains return type: {operatorNode}", nameof(operatorNode));
+            }
+            if (operatorNode.Body == null)
+            {
+                throw new ArgumentException($"Operators must contains body: {operatorNode}", nameof(operatorNode));
+            }
+
+            DSharpOperatorBuilder @operator;
+
+            if (operatorNode.OperatorType == DSharpOperatorType.Implicit)
+            {
+                @operator = declareType.CreateImplicitOperator();
+            }
+            else if (operatorNode.OperatorType == DSharpOperatorType.Explicit)
+            {
+                @operator = declareType.CreateExplicitOperator();
+            }
+            else if (operatorNode.OperatorType == DSharpOperatorType.Unary)
+            {
+                @operator = declareType.CreateOperator(operatorNode.UnaryOperator.GetValueOrDefault());
+            }
+            else if (operatorNode.OperatorType == DSharpOperatorType.Binary)
+            {
+                @operator = declareType.CreateOperator(operatorNode.BinaryOperator.GetValueOrDefault());
+            }
+            else
+            {
+                throw new ArgumentException($"Invalid operator type: {operatorNode}", nameof(operatorNode));
+            }
+
+            @operator.Access = operatorNode.Access;
+            @operator.Type = operatorNode.OperatorType;
+            @operator.BinaryOperator = operatorNode.BinaryOperator;
+            @operator.UnaryOperator = operatorNode.UnaryOperator;
+
+            _createdOperators.Add(@operator, operatorNode);
+        }
         private void CreateConstructor(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder? declareType, ConstructorNode constructorNode)
         {
             if (declareType == null)
@@ -529,6 +585,44 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                 property.OverrideProperty = overrideProperty;
             }
+            void ValidateInvokableNodeParameters(InvokableNode invokable)
+            {
+                try
+                {
+                    ValidateParameters(invokable.Parameters);
+                }
+                catch (Exception error)
+                {
+                    throw new ArgumentException($"Invalid parameters at: {invokable}", error);
+                }
+            }
+            void ValidateParameters(List<VariableNode> variables)
+            {
+                int CountNames(string name)
+                {
+                    int count = 0;
+
+                    foreach (var parameter in variables)
+                    {
+                        if (parameter.Name == name)
+                        {
+                            count++;
+                        }
+                    }
+
+                    return count;
+                }
+
+                foreach (var parameter in variables)
+                {
+                    int namesCount = CountNames(parameter.Name);
+
+                    if (namesCount > 1)
+                    {
+                        throw new ArgumentException($"Parameter \"{parameter.Name}\" repeat {namesCount} times. Parameter names should be unique");
+                    }
+                }
+            }
 
             foreach (var enumValue in _enumValues.Keys)
             {
@@ -565,6 +659,28 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     info.Key.PropertyTypeResolver = () => ResolveType(info.Key, info.Value.Type);
                 }
 
+                try
+                {
+                    ValidateParameters(info.Value.Parameters);
+                }
+                catch (Exception error)
+                {
+                    throw new ArgumentException($"Invalid parameters at: {info.Value}", error);
+                }
+
+                ResolveParameters(info.Value.Parameters, info.Key.Parameters, context);
+            }
+            foreach (var info in _createdOperators)
+            {
+                var context = _context;
+                context.CurrentMember = info.Key;
+
+                if (info.Value.ReturnType != null)
+                {
+                    info.Key.ReturnTypeResolver = () => ResolveType(info.Key, info.Value.ReturnType);
+                }
+
+                ValidateInvokableNodeParameters(info.Value);
                 ResolveParameters(info.Value.Parameters, info.Key.Parameters, context);
             }
             foreach (var info in _createdMethods)
@@ -572,6 +688,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 var context = _context;
                 context.CurrentMember = info.Key;
 
+                ValidateInvokableNodeParameters(info.Value);
                 ResolveParameters(info.Value.Parameters, info.Key.Parameters, context);
 
                 if (info.Value.ReturnType != null && info.Value.ReturnType.Token.Type != DSharpTokenType.Void)
@@ -584,6 +701,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 var context = _context;
                 context.CurrentMember = info.Key;
 
+                ValidateInvokableNodeParameters(info.Value);
                 ResolveParameters(info.Value.Parameters, info.Key.Parameters, context);
             }
             foreach (var enumType in _enumTypes.Keys)

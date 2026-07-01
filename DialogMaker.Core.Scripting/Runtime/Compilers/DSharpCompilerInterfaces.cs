@@ -51,6 +51,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
             }
 
+            if (type.Operators.Count > 0 ||
+                type.CastOperators.Count > 0)
+            {
+                throw new ArgumentException($"Interfaces can not contains custom operators: \"{type}\"");
+            }
+
             foreach (var property in type.Properties)
             {
                 CheckProperty(property);

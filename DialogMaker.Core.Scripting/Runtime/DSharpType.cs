@@ -79,6 +79,16 @@ namespace DialogMaker.Core.Scripting.Runtime
             throw new NotImplementedException();
         }
 
+        public IDSharpOperatorInfo[] GetCastOperators()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IDSharpOperatorInfo[] GetOperators()
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
     }
 }

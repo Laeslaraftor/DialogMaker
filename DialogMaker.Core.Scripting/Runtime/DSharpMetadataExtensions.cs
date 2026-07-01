@@ -1,4 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Runtime.Builders;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Runtime
@@ -7,23 +7,28 @@ namespace DialogMaker.Core.Scripting.Runtime
     {
         extension(IDSharpType type)
         {
+            public IDSharpFieldInfo[] GetFields() => type.GetFields(f => true);
+            public IDSharpPropertyInfo[] GetProperties() => type.GetProperties(p => true);
+            public IDSharpMethodInfo[] GetMethods() => type.GetMethods(p => true);
+            public IDSharpMethodInfo[] GetConstructors() => type.GetConstructors(p => true);
+            public IDSharpIndexerInfo[] GetIndexers() => type.GetIndexers(p => true);
             /// <summary>
-            /// Check number is number
+            /// Get all custom binary operators for specified operator
             /// </summary>
-            /// <returns>Is number type</returns>
-            public bool IsNumber()
+            /// <param name="binaryOperator">Binary operator</param>
+            /// <returns>Array of custom binary operators</returns>
+            public IDSharpOperatorInfo[] GetOperators(DSharpBinaryOperator binaryOperator)
             {
-                var fullName = type.FullName;
-
-                foreach (var info in DSharpBuildInTypes.AllValueTypes.Values)
-                {
-                    if (fullName == info.FullName)
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
+                return [.. type.GetOperators().Where(o => o.BinaryOperator == binaryOperator)];
+            }
+            /// <summary>
+            /// Get all custom unary operators for specified operator
+            /// </summary>
+            /// <param name="unaryOperator">Unary operator</param>
+            /// <returns>Array of custom unary operators</returns>
+            public IDSharpOperatorInfo[] GetOperators(DSharpUnaryOperator unaryOperator)
+            {
+                return [.. type.GetOperators().Where(o => o.UnaryOperator == unaryOperator)];
             }
 
             public IDSharpFieldInfo? GetFieldOrDefault(string name)
@@ -81,7 +86,7 @@ namespace DialogMaker.Core.Scripting.Runtime
             }
             public IDSharpIndexerInfo GetIndexer(params IEnumerable<IDSharpParameterInfo> parameters)
             {
-                return type.GetIndexerOrDefault(parameters) 
+                return type.GetIndexerOrDefault(parameters)
                     ?? throw new ArgumentException($"Unable to find indexer with {parameters.Count()} parameters at {type}");
             }
             public IDSharpMethodInfo? GetMethodOrDefault(string name)
@@ -138,23 +143,37 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// <returns>Is type assignable to destination type</returns>
             public bool IsAssignableTo(IDSharpType destination)
             {
-                if (type == null)
-                {
-                    if (destination.ObjectType == DSharpObjectType.Struct ||
-                        destination.ObjectType == DSharpObjectType.Enum)
-                    {
-                        return false;
-                    }
-
-                    return true;
-                }
-                if (type == destination ||
-                    (type.GenericTemplate != null && type.GenericTemplate == destination) ||
-                    destination.FullName == DSharpBuildInTypes.Object)
-                {
-                    return true;
-                }
-
+                return type.CanCastTo(destination) != DSharpCastAvailability.No;
+            }
+            /// <summary>
+            /// Check is type can be null
+            /// </summary>
+            /// <returns>Is type can be null</returns>
+            public bool CanBeNull()
+            {
+                return type.ObjectType == DSharpObjectType.Class ||
+                       type.ObjectType == DSharpObjectType.Interface;
+            }
+            /// <summary>
+            /// Check is current type can be casted to destination type
+            /// </summary>
+            /// <param name="destination">Cast destination type</param>
+            /// <returns>Is current type can be casted to destination type</returns>
+            public DSharpCastAvailability CanCastTo(IDSharpType destination)
+            {
+                return type.CanCastTo(destination, out _);
+            }
+            /// <summary>
+            /// Check is current type can be casted to destination type.
+            /// If cast requires custom operator and it was found it will be provided and returned <c>true</c>.
+            /// If cast requires custom operator and it was NOT found will be returned <c>false</c>
+            /// Also some build in types can be casted without any operators
+            /// </summary>
+            /// <param name="destination">Cast destination type</param>
+            /// <param name="castOperator">Custom operator that allows to cast types</param>
+            /// <returns>Types cast availability</returns>
+            public DSharpCastAvailability CanCastTo(IDSharpType destination, out IDSharpOperatorInfo? castOperator)
+            {
                 bool ContainsInBaseType(IDSharpType currentType)
                 {
                     foreach (var baseType in currentType.GetBaseTypes())
@@ -172,17 +191,151 @@ namespace DialogMaker.Core.Scripting.Runtime
                     return false;
                 }
 
-                if (ContainsInBaseType(type))
+                if (type == null)
+                {
+                    castOperator = null;
+                    return destination.CanBeNull() ? DSharpCastAvailability.Implicit : DSharpCastAvailability.No;
+                }
+                if (type == destination ||
+                    destination == type.Assembly.ObjectType)
+                {
+                    castOperator = null;
+                    return DSharpCastAvailability.Implicit;
+                }
+                if (type == type.Assembly.ObjectType)
+                {
+                    castOperator = null;
+                    return DSharpCastAvailability.Explicit;
+                }
+
+                foreach (var @operator in type.GetCastOperators().Union(destination.GetCastOperators()))
+                {
+                    if (@operator.ReturnType != destination)
+                    {
+                        continue;
+                    }
+
+                    var parameters = @operator.GetParameters();
+
+                    if (parameters.Length == 1 && parameters[0].Type == type)
+                    {
+                        castOperator = @operator;
+
+                        if (@operator.Type == DSharpOperatorType.Implicit)
+                        {
+                            return DSharpCastAvailability.Implicit;
+                        }
+
+                        return DSharpCastAvailability.Explicit;
+                    }
+                }
+
+                castOperator = null;
+
+                if (DSharpBuildInTypes.TryGetInfo(type, out var targetTypeInfo) &&
+                    DSharpBuildInTypes.TryGetInfo(destination, out var destinationTypeInfo))
+                {
+                    return DSharpBuildInTypes.CanCast(targetTypeInfo, destinationTypeInfo);
+                }
+
+                if (ContainsInBaseType(type) ||
+                    (type.GenericTemplate != null && ContainsInBaseType(type.GenericTemplate)))
+                {
+                    return DSharpCastAvailability.Implicit;
+                }
+
+                return DSharpCastAvailability.No;
+            }
+            /// <summary>
+            /// Check current and destination type can perform specified binary operator
+            /// </summary>
+            /// <param name="destination">Type to perform binary operation</param>
+            /// <param name="operator">Binary operator</param>
+            /// <returns>Is operation can be performed</returns>
+            public bool CanPerformBinaryOperation(IDSharpType destination, DSharpBinaryOperator @operator)
+            {
+                return type.CanPerformBinaryOperation(destination, @operator, out _);
+            }
+            /// <summary>
+            /// Check current and destination type can perform specified binary operator.
+            /// If operation requires custom operator and it was found it will be provided and returned <c>true</c>.
+            /// If operation requires custom operator and it was NOT found will be returned <c>false</c>
+            /// Also some build in types can be perform some binary operations without any custom operators
+            /// </summary>
+            /// <param name="destination">Type to perform binary operation</param>
+            /// <param name="operator">Binary operator</param>
+            /// <param name="binaryOperator">Custom operator that was found to perform operation</param>
+            /// <returns>Is operation can be performed</returns>
+            public bool CanPerformBinaryOperation(IDSharpType destination, DSharpBinaryOperator @operator, out IDSharpOperatorInfo? binaryOperator)
+            {
+                binaryOperator = null;
+
+                if (DSharpBuildInTypes.TryGetInfo(type, out var leftTypeInfo) &&
+                    DSharpBuildInTypes.TryGetInfo(destination, out var rightTypeInfo) &&
+                    leftTypeInfo.Size > 0 && rightTypeInfo.Size > 0)
                 {
                     return true;
                 }
-                if (type.GenericTemplate != null)
+
+                var customOperators = type.GetOperators(@operator).Union(destination.GetOperators(@operator));
+
+                foreach (var customOperator in customOperators)
                 {
-                    return ContainsInBaseType(type.GenericTemplate);
+                    var parameters = customOperator.GetParameters();
+
+                    if (parameters.Length == 2 &&
+                        parameters[0].Type == type &&
+                        parameters[1].Type == destination)
+                    {
+                        binaryOperator = customOperator;
+                        return true;
+                    }
                 }
 
                 return false;
             }
+            /// <summary>
+            /// Check current type can perform specified unary operator.
+            /// If operation requires custom operator and it was found it will be provided and returned <c>true</c>.
+            /// If operation requires custom operator and it was NOT found will be returned <c>false</c>
+            /// Also some build in types can be perform some binary operations without any custom operators
+            /// </summary>
+            /// <param name="destination">Type to perform unary operation</param>
+            /// <param name="operator">Unary operator</param>
+            /// <param name="unaryOperator">Custom operator that was found to perform operation</param>
+            /// <param name="outputType">Type of object that will be returned by specified unary operation</param>
+            /// <returns>Is operation can be performed</returns>
+            public bool CanPerformUnaryOperation(DSharpUnaryOperator @operator, out IDSharpOperatorInfo? unaryOperator, [NotNullWhen(true)] out IDSharpType? outputType)
+            {
+                unaryOperator = null;
+
+                if (DSharpBuildInTypes.TryGetInfo(type, out var typeInfo) &&
+                    (@operator == DSharpUnaryOperator.Not && typeInfo == DSharpBuildInTypes.Boolean ||
+                    @operator != DSharpUnaryOperator.Not && typeInfo.IsNumber()))
+                {
+                    outputType = type.Assembly.GetType(typeInfo.FullName);
+                    return true;
+                }
+
+                var customOperators = type.GetOperators(@operator);
+
+                foreach (var customOperator in customOperators)
+                {
+                    var parameters = customOperator.GetParameters();
+
+                    if (parameters.Length == 1 &&
+                        parameters[0].Type == type)
+                    {
+                        unaryOperator = customOperator;
+                        outputType = customOperator.ReturnType;
+                        return true;
+                    }
+                }
+
+                outputType = null;
+                return false;
+            }
+
             public bool ContainsBaseType(IDSharpType baseType)
             {
                 foreach (var bType in type.GetBaseTypes())
