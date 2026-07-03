@@ -175,10 +175,49 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <inheritdoc/>
         /// </summary>
         public override bool IsDeclaration => false;
-        public int Size => throw new NotImplementedException();
+        public int Size
+        {
+            get
+            {
+                if (ObjectType == DSharpObjectType.Struct && 
+                    DSharpBuildInTypes.TryGetTypeInfo(FullName, out var info))
+                {
+                    return info.Size;
+                }
+
+                int resultSize = 0;
+
+                foreach (var baseType in _baseTypes.Where(t => t.ObjectType != DSharpObjectType.Interface))
+                {
+                    var size = baseType.Size;
+
+                    if (size == -1)
+                    {
+                        return -1;
+                    }
+
+                    resultSize += size;
+                }
+                foreach (var fieldInfo in _fields)
+                {
+                    var fieldType = Assembly.GetTypeOrDefault(fieldInfo.FieldType) as IDSharpType 
+                        ?? throw new InvalidOperationException($"Unable to get type of field: \"{fieldInfo}\"");
+                    var size = fieldType.Size;
+
+                    if (size == -1)
+                    {
+                        return -1;
+                    }
+
+                    resultSize += size;
+                }
+
+                return resultSize;
+            }
+        }
+        public DSharpGenericTypeAttributes GenericAttributes { get; set; }
 
         IDSharpMethodInfo? IDSharpType.Finalizer => Finalizer;
-
 
         private readonly List<IDSharpType> _baseTypes = [];
         private readonly List<DSharpMethodBuilder> _constructors = [];
@@ -238,6 +277,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             {
                 throw new ArgumentException($"Type \"{this}\" can not inherit itself", nameof(type));
             }
+            if (type.IsSealed)
+            {
+                throw new ArgumentException($"Unable to inherit \"{this}\" by sealed type \"{type}\"", nameof(type));
+            }
             if (ObjectType == DSharpObjectType.Enum &&
                 type != Assembly.EnumType)
             {
@@ -262,6 +305,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             if (_baseTypes.Contains(type))
             {
                 throw new ArgumentException($"Type \"{this}\" already inherits \"{type}\"", nameof(type));
+            }
+            if (IsGeneric && 
+                GenericAttributes.HasFlag(DSharpGenericTypeAttributes.Struct) && 
+                type.ObjectType == DSharpObjectType.Class)
+            {
+                throw new ArgumentException($"Generic type \"{this}\" marked as struct and can not implement \"{type}\"", nameof(type));
             }
             if (ContainsInBaseTypes(this, type) ||
                 ContainsInBaseTypes(type, this))
@@ -577,10 +626,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             if (@operator != null)
             {
                 name += $"_{(DSharpTokenType)(object)@operator.Value}";
-            }
-            if (operatorsList.Count > 0)
-            {
-                name += "_" + operatorsList.Count;
             }
 
             var result = CreateMember(DSharpMetadataTokenType.Operator, operatorsList, t => new(this, name, t));

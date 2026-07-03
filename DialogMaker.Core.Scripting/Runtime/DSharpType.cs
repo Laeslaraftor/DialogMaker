@@ -34,6 +34,8 @@ namespace DialogMaker.Core.Scripting.Runtime
 
         public int Size => throw new NotImplementedException();
 
+        public DSharpGenericTypeAttributes GenericAttributes => throw new NotImplementedException();
+
         #region Управление
 
         public IDSharpMethodInfo[] GetMethods() => [.. Methods];

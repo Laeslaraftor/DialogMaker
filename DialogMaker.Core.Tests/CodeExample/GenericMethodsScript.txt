@@ -1,0 +1,35 @@
+﻿namespace System
+{
+	public sealed struct Byte {}
+	public sealed struct Int32 {}
+	public sealed struct Decimal {}
+	public sealed struct Single {}
+	public sealed struct Double {}
+	public sealed class String {}
+	public sealed class Object {}
+	public sealed struct Void {}
+}
+
+public class Ura
+{
+	public abstract string Name { get; }
+}
+public class HudoiUra : Ura
+{
+	public override string Name => "Hudoi";
+}
+
+public class MegaClass<T> where T : Ura
+{	
+	public string GetTypeName(T instance)
+	{
+		return instance.Name;
+	}
+}
+
+void GetHudoeName()
+{
+	MegaClass<HudoiUra> mega = new();
+	HudoiUra hudoi = new();
+	var name = mega.GetTypeName(hudoi);
+}

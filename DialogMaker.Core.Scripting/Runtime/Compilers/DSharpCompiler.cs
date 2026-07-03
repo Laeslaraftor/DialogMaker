@@ -182,6 +182,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             type.IsAbstract = declaration.IsAbstract;
             type.ObjectType = declaration.Type;
             type.Access = declaration.Access;
+            type.IsSealed = declaration.IsSealed;
             type.Namespace = _currentNamespace;
 
             void CreateGenerics(DSharpTypeBuilder builder, IEnumerable<TypeInfoNode> types)
@@ -426,7 +427,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
             else if (operatorNode.OperatorType == DSharpOperatorType.Binary)
             {
-                @operator = declareType.CreateOperator(operatorNode.BinaryOperator.GetValueOrDefault());
+                var binaryOperator = operatorNode.BinaryOperator.GetValueOrDefault();
+
+                try 
+                {
+                    if (binaryOperator == DSharpBinaryOperator.LogicalAnd)
+                    {
+                        throw new InvalidOperationException($"Logical AND operator (&&) is unavailable for overloading: {operatorNode}");
+                    }
+                    else if (binaryOperator == DSharpBinaryOperator.LogicalOr)
+                    {
+                        throw new InvalidOperationException($"Logical OR operator (||) is unavailable for overloading: {operatorNode}");
+                    }
+                }
+                catch (Exception error)
+                {
+                    throw new InvalidOperationException($"Invalid logical operator. For logical operator like && and || use & and |: {operatorNode}", error);
+                }
+
+                @operator = declareType.CreateOperator(binaryOperator);
             }
             else
             {
@@ -744,6 +763,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
                     var typeToken = ResolveType(typeBuilder, baseTypeInfo);
                     typeBuilder.AddBaseType(typeToken);
+                }
+                foreach (var genericDescription in declaration.GenericDescriptions)
+                {
+                    if (genericDescription.Type == null)
+                    {
+                        throw new InvalidOperationException($"Invalid generic description: {genericDescription}");
+                    }
+
+                    var typeName = genericDescription.Type.Name;
+                    var genericType = typeBuilder.GenericTypes.FirstOrDefault(t => t.Name == typeName) 
+                        ?? throw new InvalidOperationException($"Unable to find generic type with name \"{typeName}\": {genericDescription}");
+
+                    genericType.GenericAttributes = genericDescription.Attributes;
+
+                    foreach (var baseType in genericDescription.BaseTypes)
+                    {
+                        var typeToken = ResolveType(typeBuilder, baseType);
+                        genericType.AddBaseType(typeToken);
+                    }
                 }
             }
 

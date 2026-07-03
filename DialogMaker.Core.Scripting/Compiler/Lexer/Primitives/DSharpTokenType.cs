@@ -61,7 +61,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         [Keyword("await")]
         Await,
         /// <summary>
-        /// Extern keyword for function or methods which must me added by compiler or execution handler/
+        /// Extern keyword for function or methods which must me added by compiler or execution handler
         /// </summary>
         [Keyword(ObjectDeclarationNode.ExternModifier)]
         Extern,
@@ -70,6 +70,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// </summary>
         [Keyword(ObjectDeclarationNode.StaticModifier)]
         Static,
+        /// <summary>
+        /// Where keyword
+        /// </summary>
+        [Keyword("where")]
+        Where,
+        /// <summary>
+        /// Notnull keyword
+        /// </summary>
+        [Keyword("notnull")]
+        NotNull,
         /// <summary>
         /// Readonly keyword
         /// </summary>
@@ -412,11 +422,19 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// <summary>
         /// Logical multiply operator (&&)
         /// </summary>
-        And, 
+        LogicalAnd, 
         /// <summary>
         /// Logical addition operator (||)
         /// </summary>
-        Or, 
+        LogicalOr,
+        /// <summary>
+        /// Logical multiply operator (&)
+        /// </summary>
+        And,
+        /// <summary>
+        /// Logical addition operator (|)
+        /// </summary>
+        Or,
         /// <summary>
         /// Logical NOT operator (!)
         /// </summary>
@@ -445,6 +463,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// Assign with multiply operator (*=)
         /// </summary>
         MultiplyAssign,
+        /// <summary>
+        /// Assign with mod operator (%=)
+        /// </summary>
+        ModAssign,
+        /// <summary>
+        /// Assign with OR operator (|=)
+        /// </summary>
+        OrAssign,
+        /// <summary>
+        /// Assign with AND operator (&=)
+        /// </summary>
+        AndAssign,
+        /// <summary>
+        /// Assign with XOR operator (^=)
+        /// </summary>
+        XorAssign,
 
         /// <summary>
         /// (

@@ -38,6 +38,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public List<TypeInfoNode> BaseTypes { get; set; } = [];
         /// <summary>
+        /// List of descriptions for generic parameters
+        /// </summary>
+        public List<WhereNode> GenericDescriptions { get; set; } = [];
+        /// <summary>
         /// Field of object
         /// </summary>
         public List<FieldNode> Fields { get; set; } = [];
@@ -466,6 +470,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 return stream.Check(DSharpTokenType.Static, offset);
             }
+            bool IsSealed(int offset)
+            {
+                return stream.Check(DSharpTokenType.Sealed, offset);
+            }
 
             if (IsDeclarationKeyword(0))
             {
@@ -477,6 +485,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             return isAccessModifier && IsDeclarationKeyword(1) ||
                    IsStatic(0) && IsDeclarationKeyword(1) ||
                    IsMemberMode(stream) && IsDeclarationKeyword(1) ||
+                   isAccessModifier && IsSealed(1) && IsDeclarationKeyword(2) ||
                    isAccessModifier && IsStatic(1) && IsDeclarationKeyword(2) ||
                    isAccessModifier && IsMemberMode(stream, 1) && IsDeclarationKeyword(2);
         }
@@ -557,6 +566,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     }
                 }
             }
+
+            WhereNode.ParseAll(stream, node.GenericDescriptions);
 
             stream.Eat(DSharpTokenType.LeftBrace);
 

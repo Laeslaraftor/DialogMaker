@@ -356,6 +356,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             {
                 if (expression is LiteralExpressionNode literalExpression)
                 {
+                    if (literalExpression.Type == DSharpLiteralType.Null)
+                    {
+                        var resolvedType = context.TypeResolver?.Invoke(expression);
+                        
+                        if (resolvedType != null)
+                        {
+                            return resolvedType;
+                        }
+                    }
+
                     return assembly.GetType(literalExpression.Type);
                 }
                 else if (expression is NameOfExpressionNode)
@@ -463,25 +473,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                         throw new ArgumentException($"Unable to get type of expression because operand of expression is null: {expression}", nameof(expression));
                     }
 
-                    return unaryExpression.Operand.GetExpressionType(assembly, context);
+                    var operandMember = unaryExpression.Operand.GetExpressionType(assembly, context);
+
+                    if (unaryExpression.Operator == DSharpUnaryOperator.Not)
+                    {
+                        if (operandMember is IDSharpType operandType &&
+                            operandType.CanCastTo(assembly.BoolType, out var castOperator) == DSharpCastAvailability.Implicit)
+                        {
+                            return assembly.BoolType;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"NOT operator requires boolean value, got \"{operandMember}\": {expression}");
+                        }
+                    }
+
+                    return operandMember;
                 }
                 else if (expression is BinaryExpressionNode binaryExpression)
                 {
-                    //if (binaryExpression.Operator == DSharpBinaryOperator.Mod)
-                    //{
-                    //    return assembly.Int32Type;
-                    //}
-                    //else if (binaryExpression.Operator == DSharpBinaryOperator.LogicalOr ||
-                    //         binaryExpression.Operator == DSharpBinaryOperator.LogicalAnd ||
-                    //         binaryExpression.Operator == DSharpBinaryOperator.LogicalEquals ||
-                    //         binaryExpression.Operator == DSharpBinaryOperator.LogicalNotEquals ||
-                    //         binaryExpression.Operator == DSharpBinaryOperator.LogicalLess ||
-                    //         binaryExpression.Operator == DSharpBinaryOperator.LogicalLessOrEquals ||
-                    //         binaryExpression.Operator == DSharpBinaryOperator.LogicalGreater ||
-                    //         binaryExpression.Operator == DSharpBinaryOperator.LogicalGreaterOrEquals)
-                    //{
-                    //    return assembly.BoolType;
-                    //}
                     if (binaryExpression.Left == null ||
                         binaryExpression.Right == null)
                     {
@@ -507,6 +517,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     if (@operator != null)
                     {
                         return @operator.ReturnType;
+                    }
+                    if (binaryExpression.Operator.IsLogical())
+                    {
+                        return assembly.BoolType;
                     }
 
                     return binaryExpression.Left.VerifyAndUniteType(assembly, binaryExpression.Right, context);
@@ -865,6 +879,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     if (rightBinaryExpression.Operator == DSharpBinaryOperator.Multiply ||
                         rightBinaryExpression.Operator == DSharpBinaryOperator.Divide ||
+                        rightBinaryExpression.Operator == DSharpBinaryOperator.And ||
                         rightBinaryExpression.Operator == DSharpBinaryOperator.ShiftLeft ||
                         rightBinaryExpression.Operator == DSharpBinaryOperator.ShiftRight ||
                         expression.Operator.IsLogical())

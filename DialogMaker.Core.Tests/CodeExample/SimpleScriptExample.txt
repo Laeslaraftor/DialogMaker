@@ -1,12 +1,17 @@
 ﻿namespace System 
 {
-	public struct Number 
+	public struct Byte {}
+	public struct Int32 {}
+	public struct Decimal {}
+	public struct Single {}
+	public struct Void {}
+	public struct Double 
 	{
-		public number GetSquared(number power)
+		public int GetSquared(int power)
 		{
 			var result = this;
 			
-			for (number i = 0; i < power; i++)
+			for (int i = 0; i < power; i++)
 			{
 				result *= result;
 			}
@@ -14,9 +19,31 @@
 			return result;
 		}
 	}
-	public class String : Array<char>
+	public class String : IEnumerable<char>
 	{
+		public String()
+		{
+			_chars = Array<char>.Empty;
+		}
+		public String(char[] chars)
+		{
+			_chars = new char[chars.Length];
+			Array<char>.Copy(chars, 0, _chars, 0, chars.Length);
+		}
+		
+		public int Length => _chars.Length;
+		public char this[int index] => _chars[index];
+		
+		private readonly char[] _chars;
+		
+		public IEnumerator<char> GetEnumerator()
+		{
+			return _chars.GetEnumerator();
+		}
+		
 		public static readonly string Empty = "";
+		
+		public static string operator +(string l, string r) => l;
 	}
 	public class Object
 	{
@@ -35,24 +62,26 @@
 	public struct Char {}
 	public class Array<T> : IEnumerable<T>
 	{
-		public number Length { get; }
-		public T this[number index]
+		public int Length { get; }
+		public T this[int index]
 		{
 			get => GetValue(index);
 			set => SetValue(index, value);
 		}
 		
-		private extern func SetValue(number index, T value);
-		private extern T GetValue(number index);
+		private extern void SetValue(int index, T value);
+		private extern T GetValue(int index);
 		
 		public IEnumerator<T> GetEnumerator()
 		{
 			return new Enumerator(this);
 		}
 		
-		public static func Copy(Array<T> source, number sourceIndex, Array<T> destination, number destinationIndex, number count)
+		public static readonly T[] Empty = new T[0];
+		
+		public static void Copy(Array<T> source, int sourceIndex, Array<T> destination, int destinationIndex, int count)
 		{
-			for (number i = 0; i < count; i++)
+			for (int i = 0; i < count; i++)
 			{
 				destination[destinationIndex + i] = source[sourceIndex + i];
 			}
@@ -68,7 +97,7 @@
 			public T Current { get; private set; }
 		
 			private readonly T[] _items;
-			private number _currentIndex;
+			private int _currentIndex;
 		
 			public bool MoveNext()
 			{
@@ -83,7 +112,7 @@
 				
 				return true;
 			}
-			public func Reset()
+			public void Reset()
 			{
 				_currentIndex = -1;
 				Current = null;
@@ -93,37 +122,41 @@
 	
 	public struct Color 
 	{
-		public Color(number r, number g, number b) 
+		public Color(int r, int g, int b) 
 		{
 			R = r;
 			G = g;
 			B = b;
 		}
 		
-		public number R { get; }
-		public number G { get; }
-		public number B { get; }
+		public int R { get; }
+		public int G { get; }
+		public int B { get; }
 		
 		public static readonly Color Black = new Color(0, 0, 0);
 	}
-	public interface IEnumerable<T> : IEnumerable
+	
+	namespace Collections
 	{
-		public IEnumerator<T> GetEnumerator();
-	}
-	public interface IEnumerable
-	{
-		public IEnumerator GetEnumerator();
-	}
-	public interface IEnumerator<T> : IEnumerator
-	{
-		public T Current { get; }
-	}
-	public interface IEnumerator
-	{
-		public object Current { get; }
-		
-		public bool MoveNext();
-		public func Reset();
+		public interface IEnumerable<T> : IEnumerable
+		{
+			public IEnumerator<T> GetEnumerator();
+		}
+		public interface IEnumerable
+		{
+			public IEnumerator GetEnumerator();
+		}
+		public interface IEnumerator<T> : IEnumerator
+		{
+			public T Current { get; }
+		}
+		public interface IEnumerator
+		{
+			public object Current { get; }
+			
+			public bool MoveNext();
+			public void Reset();
+		}
 	}
 	
 	public class SomeGeneric<T>
@@ -144,9 +177,9 @@
 			Capacity = 4;
 		}
 		
-		public number Count { get; private set; }
-		public number Capacity { get; private set; }
-		public T this[number index]
+		public int Count { get; private set; }
+		public int Capacity { get; private set; }
+		public T this[int index]
 		{
 			get => _items[index];
 			set => _items[index] = value;
@@ -154,9 +187,9 @@
 		
 		private T[] _items;
 		
-		public number IndexOf(T item)
+		public int IndexOf(T item)
 		{
-			for (number i = 0; i < Count; i++)
+			for (int i = 0; i < Count; i++)
 			{
 				if (_items[i] == item)
 				{
@@ -167,7 +200,7 @@
 			return -1;
 		}
 		public bool Contains(T item) => IndexOf(item) != -1;
-		public func Insert(number index, T item)
+		public void Insert(int index, T item)
 		{
 			if (index >= Count)
 			{
@@ -178,7 +211,7 @@
 			ExpandIfNeed();
 			bool isAdded = false;
 			
-			for (number i = Count - 1; i >= 0; i--)
+			for (int i = Count - 1; i >= 0; i--)
 			{
 				_items[i + 1] = _items[i];
 				
@@ -191,7 +224,7 @@
 			
 			Count++;
 		}
-		public func Add(T item)
+		public void Add(T item)
 		{
 			ExpandIfNeed();
 			
@@ -207,7 +240,7 @@
 			
 			bool isRemoved = false;
 			
-			for (number i = 0; i < Count; i++)
+			for (int i = 0; i < Count; i++)
 			{
 				T currentItem = _items[i];
 				
@@ -229,14 +262,14 @@
 			
 			return isRemoved;
 		}
-		public func Clear()
+		public void Clear()
 		{
 			if (Count == 0)
 			{
 				return;
 			}
 			
-			for (number i = 0; i < Count; i++)
+			for (int i = 0; i < Count; i++)
 			{
 				_items[i] = null;
 			}
@@ -249,14 +282,14 @@
 			return new ListEnumerator<T>(this);
 		}
 		
-		private func ExpandIfNeed()
+		private void ExpandIfNeed()
 		{
 			if (Count + 1 > Capacity)
 			{
 				Expand();
 			}
 		}
-		private func Expand()
+		private void Expand()
 		{
 			Capacity *= 2;
 			T[] newItems = new T[Capacity];
@@ -274,7 +307,7 @@
 		public T Current { get; private set; }
 		
 		private readonly IList<T> _list;
-		private number _currentIndex;
+		private int _currentIndex;
 		
 		public bool MoveNext()
 		{
@@ -289,7 +322,7 @@
 			
 			return true;
 		}
-		public func Reset()
+		public void Reset()
 		{
 			_currentIndex = -1;
 			Current = null;
@@ -297,16 +330,16 @@
 	}
 	public interface IList<T> : IEnumerable<T>
 	{
-		public number Count { get; }
-		public number Capacity { get; }
-		public T this[number index] { get; set; }
+		public int Count { get; }
+		public int Capacity { get; }
+		public T this[int index] { get; set; }
 		
-		public number IndexOf(T item);
+		public int IndexOf(T item);
 		public bool Contains(T item);
-		public func Add(T item);
-		public func Insert(number index, T item);
+		public void Add(T item);
+		public void Insert(int index, T item);
 		public bool Remove(T item);
-		public func Clear();
+		public void Clear();
 	}
 	public struct KeyValuePair<TKey, TValue>
 	{
@@ -360,7 +393,7 @@
 	}
 	public class Console
 	{
-		public static extern func WriteLine(string text);
+		public static extern void WriteLine(string text);
 		public static extern string ReadLine();
 	}
 	namespace Threading
@@ -371,31 +404,32 @@
 			{
 			}
 			
-			public func Start()
+			public void Start()
 			{
 				throw new NotImplementedException();
 			}
 			
-			number someNumber = 0;
+			int someint = 0;
 			Thread instance;
 
-			func Increment()
+			void Increment()
 			{
-				instance.someNumber++;
+				instance.someint++;
 			}
 		}
 	}
 }
 
 using System;
+using System.Collections;
 
 string guideText = "awdawd";
 
-string repeat(string str, number count) 
+string repeat(string str, int count) 
 {
 	string result = string.Empty;
 	
-	for (number i = 0; i < count; i++) 
+	for (int i = 0; i < count; i++) 
 	{
 		result += str;
 	}
@@ -409,12 +443,12 @@ Color getTextColor(string text)
 		return Color.Black;
 	}
 	
-	number[] channels = new number[3];
-	number charsPerChannel = text.Length / 3;	
+	int[] channels = new int[3];
+	int charsPerChannel = text.Length / 3;	
 
-	for (number channel = 0; channel < channels.Length; channel++) 
+	for (int channel = 0; channel < channels.Length; channel++) 
 	{
-		for (number i = channel; i < charsPerChannel; i++)
+		for (int i = channel; i < charsPerChannel; i++)
 		{
 			channels[channel] += text[i + channel * charsPerChannel];
 		}
@@ -424,9 +458,9 @@ Color getTextColor(string text)
 	
 	return new Color(channels[0], channels[1], channels[2]);
 }
-number getNumberNameType() 
+int getintNameType() 
 {
-	number value = 10;
+	int value = 10;
 	return value.GetType().Name.GetType().Name.Length;
 }
 string getGenericValue()
@@ -434,10 +468,10 @@ string getGenericValue()
 	SomeGeneric<string> instance = new("test value");
 	return instance.Value;
 }
-number sum(number count)
+int sum(int count)
 {
-	number result = 0;
-	number i = 0;
+	int result = 0;
+	int i = 0;
 	
 	while (i < count)
 	{
@@ -450,7 +484,7 @@ string[] getLines()
 {
 	return new string[] { "Text 1", "Text 2" };
 }
-func foreachTest()
+void foreachTest()
 {
 	foreach (var line in guideText)
 	{

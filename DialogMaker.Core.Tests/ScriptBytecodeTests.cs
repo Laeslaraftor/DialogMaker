@@ -28,6 +28,8 @@ namespace DialogMaker.Core.Tests
         [TestCase(ScriptCompilerTests.OperatorsScript, "castTypes")]
         [TestCase(ScriptCompilerTests.OperatorsScript, "sumTypes")]
         [TestCase(ScriptCompilerTests.OperatorsScript, "unaryTest")]
+        [TestCase(ScriptCompilerTests.OperatorsScript, "customBinaryOperatorWithAssignment")]
+        [TestCase(ScriptCompilerTests.GenericMethodsScript, "MegaClass`1.GetTypeName")]
         public static void PrintSimpleFunctionBytecode(string scriptName, string functionName)
         {
             var assembly = ScriptCompilerTests.CompileScript(scriptName);

@@ -263,7 +263,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
 
             var previous = PeekPrevious().ToString();
 
-            while (!IsEndOfFile() && 
+            while (!IsEndOfFile() &&
                    ((char.IsDigit(Peek()) || (Peek() == '.' && !hasDot))) ||
                    NumberIdentifiers.Contains(previous + current) ||
                    NumberIdentifiers.Contains(current + next) ||
@@ -300,11 +300,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
             int startLine = _line;
             int startColumn = _column;
             char current = GetNext();
+            char next = Peek();
 
             switch (current)
             {
                 case '=':
-                    var next = Peek();
                     if (next == '=')
                     {
                         GetNext();
@@ -322,7 +322,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
 
                     break;
                 case '!':
-                    if (Peek() == '=')
+                    if (next == '=')
                     {
                         GetNext();
                         AddToken(DSharpTokenType.NotEqual, "!=", startLine, startColumn);
@@ -334,7 +334,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
 
                     break;
                 case '<':
-                    if (Peek() == '=')
+                    if (next == '=')
                     {
                         GetNext();
                         AddToken(DSharpTokenType.LessEqual, "<=", startLine, startColumn);
@@ -346,7 +346,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
 
                     break;
                 case '>':
-                    if (Peek() == '=')
+                    if (next == '=')
                     {
                         GetNext();
                         AddToken(DSharpTokenType.GreaterEqual, ">=", startLine, startColumn);
@@ -358,26 +358,44 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
 
                     break;
                 case '&':
-                    if (Peek() == '&')
+                    if (next == '&')
                     {
                         GetNext();
-                        AddToken(DSharpTokenType.And, "&&", startLine, startColumn);
+                        AddToken(DSharpTokenType.LogicalAnd, "&&", startLine, startColumn);
+                    }
+                    else if (next == '=')
+                    {
+                        GetNext();
+                        AddToken(DSharpTokenType.AndAssign, "&=", startLine, startColumn);
+                    }
+                    else
+                    {
+                        AddToken(DSharpTokenType.And, "&", startLine, startColumn);
                     }
                     break;
                 case '|':
-                    if (Peek() == '|')
+                    if (next == '|')
                     {
                         GetNext();
+                        AddToken(DSharpTokenType.LogicalOr, "||", startLine, startColumn);
+                    }
+                    else if (next == '=')
+                    {
+                        GetNext();
+                        AddToken(DSharpTokenType.OrAssign, "|=", startLine, startColumn);
+                    }
+                    else
+                    {
                         AddToken(DSharpTokenType.Or, "||", startLine, startColumn);
                     }
                     break;
                 case '+':
-                    if (Peek() == '+')
+                    if (next == '+')
                     {
                         GetNext();
                         AddToken(DSharpTokenType.Increment, "++", startLine, startColumn);
                     }
-                    else if (Peek() == '=')
+                    else if (next == '=')
                     {
                         GetNext();
                         AddToken(DSharpTokenType.PlusAssign, "+=", startLine, startColumn);
@@ -389,12 +407,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
 
                     break;
                 case '-':
-                    if (Peek() == '-')
+                    if (next == '-')
                     {
                         GetNext();
                         AddToken(DSharpTokenType.Decrement, "--", startLine, startColumn);
                     }
-                    else if (Peek() == '=')
+                    else if (next == '=')
                     {
                         GetNext();
                         AddToken(DSharpTokenType.MinusAssign, "-=", startLine, startColumn);
@@ -406,7 +424,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
 
                     break;
                 case '*':
-                    if (Peek() == '=')
+                    if (next == '=')
                     {
                         GetNext();
                         AddToken(DSharpTokenType.MultiplyAssign, "*=", startLine, startColumn);
@@ -418,7 +436,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
 
                     break;
                 case '/':
-                    if (Peek() == '=')
+                    if (next == '=')
                     {
                         GetNext();
                         AddToken(DSharpTokenType.MultiplyAssign, "/=", startLine, startColumn);
@@ -430,7 +448,26 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
 
                     break;
                 case '%':
-                    AddToken(DSharpTokenType.Mod, "%", startLine, startColumn);
+                    if (next == '=')
+                    {
+                        GetNext();
+                        AddToken(DSharpTokenType.ModAssign, "%=", startLine, startColumn);
+                    }
+                    else
+                    {
+                        AddToken(DSharpTokenType.Mod, "%", startLine, startColumn);
+                    }
+                    break;
+                case '^':
+                    if (next == '=')
+                    {
+                        GetNext();
+                        AddToken(DSharpTokenType.XorAssign, "^=", startLine, startColumn);
+                    }
+                    else
+                    {
+                        AddToken(DSharpTokenType.Xor, "^", startLine, startColumn);
+                    }
                     break;
                 case '(':
                     AddToken(DSharpTokenType.LeftParen, "(", startLine, startColumn);

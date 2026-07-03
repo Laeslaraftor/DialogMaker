@@ -977,6 +977,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
                 {
                     if (!typeGenerics[i].CanReplaceGenericType(genericTypes![i]))
                     {
+                        throw new ArgumentException($"\"{genericTypes[i]}\" can not replace generic type in \"{type}\" at {i} index");
                         return false;
                     }
                 }

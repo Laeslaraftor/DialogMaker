@@ -100,12 +100,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 return field;
             }
-            else if (stream.Check(DSharpTokenType.Lambda))
-            {
-                field.CanWrite = false;
-                field.Getter = BlockStatementNode.Parse(stream, DSharpTokenType.Semicolon, DSharpTokenType.Lambda);
-                field.CustomGetterSetter = true;
-            }
             else if (stream.Check(DSharpTokenType.Assign))
             {
                 stream.Eat(DSharpTokenType.Assign);
@@ -127,7 +121,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Is getter and setter parsed</returns>
         public static bool ParseGetterAndSetter(AstParserStream stream, FieldNode node)
         {
-            if (!stream.Check(DSharpTokenType.LeftBrace))
+            if (!stream.Check(DSharpTokenType.LeftBrace) &&
+                !stream.Check(DSharpTokenType.Lambda))
             {
                 return false;
             }
@@ -181,9 +176,19 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
 
                 stream.Eat(DSharpTokenType.RightBrace);
+
+                return true;
+            }
+            else if (stream.Check(DSharpTokenType.Lambda))
+            {
+                node.CanWrite = false;
+                node.Getter = BlockStatementNode.Parse(stream, DSharpTokenType.Semicolon, DSharpTokenType.Lambda);
+                node.CustomGetterSetter = true;
+
+                return true;
             }
 
-            return true;
+            return false;
         }
 
         private static bool TryParseAccessor(AstParserStream stream, DSharpPropertyAccessor accessor, out BlockStatementNode? result)

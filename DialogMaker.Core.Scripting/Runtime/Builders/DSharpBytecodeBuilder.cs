@@ -326,6 +326,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns></returns>
         public Instruction New(IDSharpType type)
         {
+            if (type.IsStatic)
+            {
+                throw new ArgumentException($"Unable to create new instance of static type");
+            }
+
             CheckAccess(type);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.New, type);
         }
@@ -336,6 +341,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// <returns></returns>
         public TypeInstruction NewArray(IDSharpType type)
         {
+            if (type.IsStatic)
+            {
+                throw new ArgumentException($"Unable to create array of static types");
+            }
+
             CheckAccess(type);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.NewArray, type);
         }
@@ -687,6 +697,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             }
 
             return result;
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.SkipNext"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction SkipNext()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.SkipNext);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.Return"/>

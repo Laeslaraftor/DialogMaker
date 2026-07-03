@@ -214,7 +214,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             while (true)
             {
-                if (stream.Check(DSharpTokenType.Dot))
+                if (stream.Check(DSharpTokenType.Dot, offset))
                 {
                     if (previousIsDot)
                     {
@@ -282,7 +282,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     }
                 }
                 else if (stream.Check(DSharpTokenType.Semicolon, offset) ||
-                         stream.Check(DSharpTokenType.And, offset))
+                         stream.Check(DSharpTokenType.LogicalAnd, offset))
                 {
                     return false;
                 }

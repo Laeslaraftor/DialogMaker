@@ -292,7 +292,8 @@ namespace DialogMaker.Core.Scripting.Runtime
                     }
                 }
 
-                return false;
+                return @operator == DSharpBinaryOperator.LogicalEquals ||
+                       @operator == DSharpBinaryOperator.LogicalNotEquals;
             }
             /// <summary>
             /// Check current type can perform specified unary operator.

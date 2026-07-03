@@ -9,6 +9,8 @@ public class Type1
 	public static implicit operator Type2(Type1 type) => new();
 	public static implicit operator bool(Type1 type) => false;
 	public static bool operator ==(Type1 l, Type1 r) => new();
+	public static Type1 operator |(Type1 l, Type1 r) => l;
+	public static Type1 operator +(Type1 l, Type1 r) => l;
 }
 public class Type2
 {
@@ -25,6 +27,12 @@ void sumTypes()
 {
 	Type2 value = new();
 	value = value + value;
+}
+void customBinaryOperatorWithAssignment()
+{
+	Type1 first = new();
+	Type1 second = new();
+	first += second;
 }
 void unaryTest()
 {

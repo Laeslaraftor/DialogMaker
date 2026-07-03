@@ -1,6 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
-
-namespace DialogMaker.Core.Scripting.Runtime
+﻿namespace DialogMaker.Core.Scripting.Runtime
 {
     public interface IDSharpType : IDSharpMemberInfo
     {
@@ -48,6 +46,10 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// Size of type in bytes
         /// </summary>
         public int Size { get; }
+        /// <summary>
+        /// Extra generic type attributes 
+        /// </summary>
+        public DSharpGenericTypeAttributes GenericAttributes { get; }
 
         public IDSharpType[] GetBaseTypes();
         /// <summary>

@@ -8,10 +8,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// <param name="token">Token that represents identifier (name)</param>
     public class IdentifierExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
+        /// <summary>
+        /// List of generic parameters
+        /// </summary>
         public List<TypeInfoNode> GenericParameters { get; set; } = [];
 
         #region Управление
 
+        /// <summary>
+        /// Get full name of this identifier include generic parameters
+        /// </summary>
+        /// <param name="simplifyGenerics">If this sets as <c>True</c> then generic parameters will be replaced with it's count</param>
+        /// <returns>Full name of this identifier</returns>
         public string GetName(bool simplifyGenerics)
         {
             return Name + GenericParameters.GetGenericsName(simplifyGenerics);

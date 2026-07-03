@@ -14,12 +14,14 @@ namespace DialogMaker.Core.Tests
         public const string TypeScript = "TypeDetectionScript";
         public const string MathScript = "MathScript";
         public const string OperatorsScript = "OperatorsTest";
+        public const string GenericMethodsScript = "GenericMethodsScript";
 
         [Test]
         [TestCase(SimpleScript)]
         [TestCase(TypeScript)]
         [TestCase(MathScript)]
         [TestCase(OperatorsScript)]
+        [TestCase(GenericMethodsScript)]
         public static void TestSimpleScriptCompiling(string fileName)
         {
             var assembly = CompileScript(fileName);

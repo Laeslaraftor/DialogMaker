@@ -9,6 +9,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     public class MethodNode(DSharpToken token) : InvokableNode(token)
     {
         /// <summary>
+        /// Descriptions of generic parameters
+        /// </summary>
+        public List<WhereNode> GenericDescriptions { get; set; } = [];
+        /// <summary>
         /// Method returning type
         /// </summary>
         public TypeInfoNode? ReturnType { get; set; }
@@ -67,6 +71,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             };
 
             ParseParameters(stream, method.Parameters);
+            WhereNode.ParseAll(stream, method.GenericDescriptions);
 
             if (stream.Check(DSharpTokenType.Lambda))
             {

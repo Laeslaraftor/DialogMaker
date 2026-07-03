@@ -61,10 +61,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                    tokenType == DSharpTokenType.Divide ||
                    tokenType == DSharpTokenType.Mod ||
                    tokenType == DSharpTokenType.Xor ||
+                   tokenType == DSharpTokenType.And ||
+                   tokenType == DSharpTokenType.Or ||
                    tokenType == DSharpTokenType.ShiftLeft ||
                    tokenType == DSharpTokenType.ShiftRight ||
-                   tokenType == DSharpTokenType.Or ||
-                   tokenType == DSharpTokenType.And ||
+                   tokenType == DSharpTokenType.LogicalOr ||
+                   tokenType == DSharpTokenType.LogicalAnd ||
                    tokenType == DSharpTokenType.Equal ||
                    tokenType == DSharpTokenType.NotEqual ||
                    tokenType == DSharpTokenType.Less ||
@@ -75,11 +77,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         public static ExpressionNode ParseLogicalOr(AstParserStream stream)
         {
-            return ParseOperation(stream, ParseLogicalAnd, DSharpTokenType.Or);
+            return ParseOperation(stream, ParseLogicalAnd, DSharpTokenType.LogicalOr);
         }
         public static ExpressionNode ParseLogicalAnd(AstParserStream stream)
         {
-            return ParseOperation(stream, ParseEquality, DSharpTokenType.And);
+            return ParseOperation(stream, ParseEquality, DSharpTokenType.LogicalAnd);
         }
         public static ExpressionNode ParseEquality(AstParserStream stream)
         {

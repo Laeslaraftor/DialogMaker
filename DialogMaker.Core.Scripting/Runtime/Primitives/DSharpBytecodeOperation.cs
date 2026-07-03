@@ -184,6 +184,12 @@
         [RequestsStackValues(1)]
         JumpIfFalse,
         /// <summary>
+        /// Skips next instruction
+        /// </summary>
+        [ArgsCount(0)]
+        [RequestsStackValues(0)]
+        SkipNext,
+        /// <summary>
         /// Return from current method or function
         /// </summary>
         [ArgsCount(0)]
