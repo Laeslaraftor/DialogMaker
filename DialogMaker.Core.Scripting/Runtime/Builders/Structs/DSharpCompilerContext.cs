@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime.Compilers;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
@@ -27,6 +28,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
             CurrentLoopStartInstruction = context.CurrentLoopStartInstruction;
             CurrentLoopEndInstruction = context.CurrentLoopEndInstruction;
             NowInCatchBlock = context.NowInCatchBlock;
+            Scope = context.Scope;
         }
 
         public DSharpAssemblyBuilder? Assembly { get; set; }
@@ -39,6 +41,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         public DSharpBytecodeBuilder.Instruction? CurrentLoopStartInstruction { get; set; }
         public DSharpBytecodeBuilder.Instruction? CurrentLoopEndInstruction { get; set; }
         public bool NowInCatchBlock { get; set; }
+        public DSharpCompilerScope? Scope { get; set; }
 
         #region Доступ
 
@@ -149,6 +152,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         #endregion
 
         #region Поиск типов
+
+        public readonly bool TryResolveVariable(string name, [NotNullWhen(true)] out IDSharpParameterInfo? result)
+        {
+            if (Scope == null)
+            {
+                result = null;
+                return false;
+            }
+
+            return Scope.TryGetVariable(name, out result);
+        }
 
         /// <summary>
         /// Try to resolve type that referenced by identifier. 

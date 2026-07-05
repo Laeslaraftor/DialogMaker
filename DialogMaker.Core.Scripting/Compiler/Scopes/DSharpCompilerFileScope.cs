@@ -1,6 +1,7 @@
-﻿using DialogMaker.Core.Scripting.Runtime.Builders;
+﻿using DialogMaker.Core.Scripting.Runtime;
+using DialogMaker.Core.Scripting.Runtime.Builders;
 
-namespace DialogMaker.Core.Scripting.Runtime.Compilers.Scopes
+namespace DialogMaker.Core.Scripting.Compiler.Scopes
 {
     /// <summary>
     /// File scope
@@ -67,7 +68,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers.Scopes
         {
             yield break;
         }
-        protected override IDSharpParameterInfo? CreateVariable(string name, IDSharpType type)
+        protected override IDSharpParameterInfo? CreateLocalVariable(string name, IDSharpType type)
         {
             return null;
         }

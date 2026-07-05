@@ -355,18 +355,20 @@ namespace DialogMaker.Core.Scripting.Runtime.Builders
         /// </summary>
         /// <param name="parameter">Argument of method or function to load to stack</param>
         /// <returns></returns>
+        [Obsolete]
         public ParameterInstruction LoadArgument(IDSharpParameterInfo parameter)
         {
-            return CreateInstruction<ParameterInstruction>(this, DSharpBytecodeOperation.LoadArgument, parameter);
+            return LoadLocal(parameter);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.StoreArgument"/>
         /// </summary>
         /// <param name="parameter">Argument of method or function for writing value from stack</param>
         /// <returns></returns>
+        [Obsolete]
         public ParameterInstruction StoreArgument(IDSharpParameterInfo parameter)
         {
-            return CreateInstruction<ParameterInstruction>(this, DSharpBytecodeOperation.StoreArgument, parameter);
+            return StoreLocal(parameter);
         }
 
         /// <summary>

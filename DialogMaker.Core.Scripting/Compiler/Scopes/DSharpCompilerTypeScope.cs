@@ -1,19 +1,22 @@
-﻿using DialogMaker.Core.Scripting.Runtime.Builders;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+using DialogMaker.Core.Scripting.Runtime;
+using DialogMaker.Core.Scripting.Runtime.Builders;
+using DialogMaker.Core.Scripting.Runtime.Compilers;
 
-namespace DialogMaker.Core.Scripting.Runtime.Compilers.Scopes
+namespace DialogMaker.Core.Scripting.Compiler.Scopes
 {
     /// <summary>
     /// Type scope
     /// </summary>
     /// <param name="type">Type that contain current scope</param>
     /// <param name="parent">Parent scope</param>
-    public class DSharpCompilerTypeScope(DSharpTypeBuilder type, DSharpCompilerScope? parent) 
-        : DSharpCompilerScope(type.Assembly, parent)
+    public class DSharpCompilerTypeScope(DSharpAssemblyBuilder assembly, IDSharpType type, DSharpCompilerScope? parent)
+        : DSharpCompilerScope(assembly, parent)
     {
         /// <summary>
         /// Type that contain current scope
         /// </summary>
-        public DSharpTypeBuilder Type { get; } = type;
+        public IDSharpType Type { get; } = type;
 
         protected override IEnumerable<IDSharpType> GetTypes(string name)
         {
@@ -25,16 +28,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers.Scopes
                 yield return Type;
             }
 
-            if (Type.GenericTypes.Count > 0)
+            foreach (var genericType in Type.GetGenericTypes().Where(t => t.Name == name))
             {
-                foreach (var genericType in Type.GenericTypes.Where(t => t.Name == name))
-                {
-                    yield return genericType;
-                }
+                yield return genericType;
             }
 
             IDSharpType? declaringType = Type.DeclaringType;
             IDSharpType? previousDeclaringType = Type;
+
+            foreach (var child in GetBaseTypes(Type, name))
+            {
+                yield return child;
+            }
 
             while (declaringType != null)
             {
@@ -51,7 +56,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers.Scopes
                     yield return genericType;
                 }
 
-                foreach (var childType in GetChildTypes(declaringType, name, TypeNameEqualityCheckMode.SkipShortName))
+                foreach (var childType in GetChildTypes(declaringType, name, true, TypeNameEqualityCheckMode.SkipShortName))
                 {
                     if (childType == previousDeclaringType)
                     {
@@ -87,15 +92,44 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers.Scopes
         {
             yield break;
         }
-        protected override IDSharpParameterInfo? CreateVariable(string name, IDSharpType type)
+        protected override IDSharpParameterInfo? CreateLocalVariable(string name, IDSharpType type)
         {
             return null;
         }
 
-        private static IEnumerable<IDSharpType> GetChildTypes(IDSharpType parent, string name, TypeNameEqualityCheckMode mode = TypeNameEqualityCheckMode.Full)
+        private IEnumerable<IDSharpType> GetBaseTypes(IDSharpType parent, string name, TypeNameEqualityCheckMode mode = TypeNameEqualityCheckMode.Full)
+        {
+            foreach (var baseType in parent.GetBaseTypes().Where(t => t.ObjectType == parent.ObjectType))
+            {
+                foreach (var baseTypeChild in GetChildTypes(baseType, name, false, mode))
+                {
+                    if (baseTypeChild.Access == DSharpAccessModifier.Private ||
+                        (baseTypeChild.Access == DSharpAccessModifier.Internal && baseTypeChild.Assembly != Assembly))
+                    {
+                        continue;
+                    }
+
+                    yield return baseTypeChild;
+                }
+
+                foreach (var baseChilds in GetBaseTypes(baseType, name, mode))
+                {
+                    yield return baseChilds;
+                }
+            }
+        }
+        private IEnumerable<IDSharpType> GetChildTypes(IDSharpType parent, string name, bool skipPrivate = false, TypeNameEqualityCheckMode mode = TypeNameEqualityCheckMode.Full)
         {
             foreach (var child in parent.GetChildrenTypes())
             {
+                if (skipPrivate &&
+                    child.Access == DSharpAccessModifier.Private ||
+                    child.Access == DSharpAccessModifier.Protected ||
+                    (child.Access == DSharpAccessModifier.Internal && child.Assembly != Assembly))
+                {
+                    continue;
+                }
+
                 var equality = DSharpCompilerFileScope.IsNameEquals(child, name, mode);
 
                 if (equality.IsNotEquals())
@@ -105,7 +139,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers.Scopes
 
                 yield return child;
 
-                foreach (var childrenChild in GetChildTypes(child, name, mode))
+                foreach (var childrenChild in GetChildTypes(child, name, skipPrivate, mode))
                 {
                     yield return childrenChild;
                 }

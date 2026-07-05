@@ -1,7 +1,8 @@
-﻿using DialogMaker.Core.Scripting.Runtime.Builders;
+﻿using DialogMaker.Core.Scripting.Runtime;
+using DialogMaker.Core.Scripting.Runtime.Builders;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DialogMaker.Core.Scripting.Runtime.Compilers.Scopes
+namespace DialogMaker.Core.Scripting.Compiler.Scopes
 {
     /// <summary>
     /// Base type of scope
@@ -224,10 +225,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers.Scopes
         {
             result = RecursiveCheck(scope =>
             {
-                return scope.CreateVariable(name, type);
+                return scope.CreateLocalVariable(name, type);
             });
 
-            return false;
+            return result != null;
         }
 
         /// <summary>
@@ -274,6 +275,129 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers.Scopes
 
             return false;
         }
+        /// <summary>
+        /// Try to resolve methods with specified generic parameters.
+        /// </summary>
+        /// <param name="name">Name of method</param>
+        /// <param name="genericParameters">Method generic parameters</param>
+        /// <param name="result">Resolved methods</param>
+        /// <returns>Is methods resolved</returns>
+        public bool TryResolveMethods(string name, IList<IDSharpType>? genericParameters, [NotNullWhen(true)] out List<IDSharpMethodInfo>? result)
+        {
+            result = null;
+
+            if (!TryResolveMultipleMembers<IDSharpMethodInfo>(name, out var methods))
+            {
+                return false;
+            }
+
+            if (genericParameters == null)
+            {
+                result = methods;
+                return true;
+            }
+
+            foreach (var method in methods)
+            {
+                var methodGenericParameters = method.GetGenericParameters();
+
+                if (methodGenericParameters.SequenceEqual(genericParameters))
+                {
+                    result ??= [];
+                    result.Add(method);
+                }
+            }
+
+            return result != null;
+        }
+
+        public IDSharpType ResolveType(string name, params IList<IDSharpType>? genericTypes)
+        {
+            if (TryResolveType(name, out var result, genericTypes))
+            {
+                return result;
+            }
+
+            throw new ArgumentException($"Unable to resolve type \"{name}\"", nameof(name));
+        }
+        public List<T> ResolveMultipleMembers<T>(string name)
+            where T : IDSharpMemberInfo
+        {
+            if (TryResolveMultipleMembers<T>(name, out var result))
+            {
+                return result;
+            }
+
+            throw new ArgumentException($"Unable to resolve any member with name \"{name}\"", nameof(name));
+        }
+        public List<IDSharpMemberInfo> ResolveMultipleMembers(string name)
+        {
+            return ResolveMultipleMembers<IDSharpMemberInfo>(name);
+        }
+        public T ResolveMember<T>(string name)
+            where T : IDSharpMemberInfo
+        {
+            if (TryResolveMember<T>(name, out var result))
+            {
+                return result;
+            }
+
+            throw new ArgumentException($"Unable to resolve member \"{name}\"", nameof(name));
+        }
+        public IDSharpMemberInfo ResolveMember(string name)
+        {
+            return ResolveMember<IDSharpMemberInfo>(name);
+        }
+        public IDSharpParameterInfo GetVariable(string name)
+        {
+            if (TryGetVariable(name, out var result))
+            {
+                return result;
+            }
+
+            throw new ArgumentException($"Unable to get variable \"{name}\"", nameof(name));
+        }
+        public IDSharpParameterInfo CreateVariable(string name, IDSharpType type)
+        {
+            if (TryCreateVariable(name, type, out var result))
+            {
+                return result;
+            }
+
+            throw new ArgumentException($"Unable to create variable \"{name}\"", nameof(name));
+        }
+        public IDSharpMemberInfo ResolvePropertyOrField(string name)
+        {
+            if (TryResolvePropertyOrField(name, out var result))
+            {
+                return result;
+            }
+
+            throw new ArgumentException($"Unable to resolve property or field \"{name}\"", nameof(name));
+        }
+        public void ResolvePropertyOrFieldOrVariable(string name, Action<IDSharpMemberInfo> propertyOrFieldHandler, Action<IDSharpParameterInfo> variableHandler)
+        {
+            if (!TryResolvePropertyOrFieldOrVariable(name, propertyOrFieldHandler, variableHandler))
+            {
+                throw new ArgumentException($"Unable to resolve property, field or variable \"{name}\"", nameof(name));
+            }
+        }
+        public List<IDSharpMethodInfo> ResolveMethods(string name, IList<IDSharpType>? genericParameters)
+        {
+            if (TryResolveMethods(name, genericParameters, out var result))
+            {
+                return result;
+            }
+
+            string message = $"Unable to resolve any method \"{name}\"";
+
+            if (genericParameters != null && genericParameters.Count > 0)
+            {
+                message += $" with {genericParameters.Count} generic parameters";
+            }
+
+            throw new ArgumentException(message, nameof(name));
+        }
 
         /// <summary>
         /// Get all types in current scope with specified name
@@ -297,14 +421,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers.Scopes
         /// <param name="name">Name of new variable</param>
         /// <param name="type">Type of new variable</param>
         /// <returns>Created variable or <c>null</c> if variable with same name already exists in current scope</returns>
-        protected abstract IDSharpParameterInfo? CreateVariable(string name, IDSharpType type);
+        protected abstract IDSharpParameterInfo? CreateLocalVariable(string name, IDSharpType type);
 
         private T? RecursiveCheck<T>(Func<DSharpCompilerScope, T?> handler)
         {
             DSharpCompilerScope? scope = this;
             T? result = default;
 
-            while (scope != null && result != null)
+            while (scope != null && result == null)
             {
                 result = handler(scope);
                 scope = scope.Parent;

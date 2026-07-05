@@ -1,6 +1,7 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
+using DialogMaker.Core.Scripting.Compiler;
 using DialogMaker.Core.Scripting.Runtime.Builders;
 using System.Diagnostics.CodeAnalysis;
 

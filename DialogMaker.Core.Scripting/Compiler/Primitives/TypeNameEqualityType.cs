@@ -1,4 +1,4 @@
-﻿namespace DialogMaker.Core.Scripting.Runtime.Compilers
+﻿namespace DialogMaker.Core.Scripting.Compiler
 {
     /// <summary>
     /// Type of type name equality

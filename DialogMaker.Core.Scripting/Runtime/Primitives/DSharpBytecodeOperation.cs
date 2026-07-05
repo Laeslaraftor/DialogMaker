@@ -68,7 +68,7 @@
         [RequestsStackValues(0)]
         LoadLocal,
         /// <summary>
-        /// Store last value from stack to local variable.
+        /// Store last value from stack to local variable
         /// Stack:
         /// 0: value
         /// </summary>

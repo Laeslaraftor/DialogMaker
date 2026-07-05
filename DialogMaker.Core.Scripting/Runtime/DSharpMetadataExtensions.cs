@@ -284,8 +284,8 @@ namespace DialogMaker.Core.Scripting.Runtime
                     var parameters = customOperator.GetParameters();
 
                     if (parameters.Length == 2 &&
-                        parameters[0].Type == type &&
-                        parameters[1].Type == destination)
+                        type.IsAssignableTo(parameters[0].Type) &&
+                        destination.IsAssignableTo(parameters[1].Type))
                     {
                         binaryOperator = customOperator;
                         return true;

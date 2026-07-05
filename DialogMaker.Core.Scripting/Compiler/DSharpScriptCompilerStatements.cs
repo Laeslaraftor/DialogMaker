@@ -1,26 +1,15 @@
-﻿using DialogMaker.Core.Scripting.Compiler;
-using DialogMaker.Core.Scripting.Compiler.Ast;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
+using DialogMaker.Core.Scripting.Runtime;
 using DialogMaker.Core.Scripting.Runtime.Builders;
+using DialogMaker.Core.Scripting.Runtime.Compilers;
+using System.Reflection.Emit;
 
-namespace DialogMaker.Core.Scripting.Runtime.Compilers
+namespace DialogMaker.Core.Scripting.Compiler
 {
-    public partial class DSharpCompiler
+    public partial class DSharpScriptCompiler
     {
-        public DSharpCompiler(DSharpAssemblyBuilder assemblyBuilder)
-        {
-            _assemblyBuilder = assemblyBuilder;
-            _context = new()
-            {
-                Assembly = _assemblyBuilder,
-                Usings = _usings,
-                ResolvedTypes = _resolvedTypes
-            };
-        }
-
-        private readonly DSharpAssemblyBuilder _assemblyBuilder;
-        private readonly List<string> _usings = [];
         private readonly Dictionary<DSharpTypeBuilder, ObjectDeclarationNode> _createdTypes = [];
         private readonly Dictionary<DSharpFieldBuilder, FieldNode> _createdFields = [];
         private readonly Dictionary<DSharpFieldBuilder, ExpressionNode> _createdGlobalVariablesRawValueExpressions = [];
@@ -33,96 +22,27 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
         private readonly Dictionary<DSharpMethodBuilder, ConstructorNode> _createdConstructors = [];
         private readonly Dictionary<DSharpTypeBuilder, ObjectDeclarationNode> _enumTypes = [];
         private readonly Dictionary<DSharpFieldBuilder, LiteralExpressionNode> _enumValues = [];
-        private readonly Dictionary<string, DSharpTypeToken> _resolvedTypes = [];
+        private string? _currentNamespace = null;
 
-        private readonly Dictionary<DSharpTreeRoot, DSharpScriptCompiler> _scripts = [];
+        #region Statements
 
-        private string? _currentNamespace;
-        private DSharpCompilerContext _context;
-
-        #region Управление
-
-        public void Clear()
-        {
-            foreach (var script in _scripts.Values)
-            {
-                script.Reset();
-            }
-
-            _scripts.Clear();
-        }
-        public void CompileTrees(params IEnumerable<DSharpTreeRoot> treeRoots)
-        {
-            List<DSharpScriptCompiler> scriptsToCompile = [];
-
-            foreach (var treeRoot in treeRoots)
-            {
-                if (_scripts.TryGetValue(treeRoot, out var script))
-                {
-                    script.Reset();
-                }
-                else
-                {
-                    script = new(_assemblyBuilder)
-                    {
-                        TreeRoot = treeRoot
-                    };
-                    _scripts.Add(treeRoot, script);
-                }
-
-                scriptsToCompile.Add(script);
-            }
-            foreach (var script in scriptsToCompile)
-            {
-                script.DeclareTypes();
-            }
-            foreach (var script in scriptsToCompile)
-            {
-                script.ResolveTypes();
-            }
-            foreach (var script in scriptsToCompile)
-            {
-                script.CompileCode();
-            }
-            foreach (var script in scriptsToCompile)
-            {
-                script.ApplyTypes();
-            }
-
-            //_resolvedTypes.Clear();
-            //_createdTypes.Clear();
-            //_createdFields.Clear();
-            //_createdProperties.Clear();
-            //_createdMethods.Clear();
-            //_enumTypes.Clear();
-            //_enumValues.Clear();
-            //_usings.Clear();
-            //_propertiesWithCustomAccessors.Clear();
-            //_propertyFields.Clear();
-            //_createdGlobalVariablesRawValueExpressions.Clear();
-            //_currentNamespace = null;
-
-            //foreach (var treeRoot in treeRoots)
-            //{
-            //    ParseStatements(_assemblyBuilder, treeRoot.Statements);
-            //}
-
-            //SetupTypes(_assemblyBuilder);
-        }
-
-        #endregion
-
-        #region Парсинг
-
-        private void ParseStatements(DSharpAssemblyBuilder assemblyBuilder, List<StatementNode> statements)
+        private void ParseStatements(IEnumerable<StatementNode> statements)
         {
             foreach (var statement in statements)
             {
-                ParseStatement(assemblyBuilder, statement);
+                ParseStatement(statement);
             }
         }
-        private void ParseStatement(DSharpAssemblyBuilder assemblyBuilder, StatementNode statement)
+        private void ParseStatement(StatementNode statement)
         {
+            void AddNamespace(string @namespace)
+            {
+                if (!Scope.Namespaces.Contains(@namespace))
+                {
+                    Scope.Namespaces.Add(@namespace);
+                }
+            }
+
             if (statement is ObjectDeclarationStatementNode declarationNode)
             {
                 if (declarationNode.ObjectDeclaration == null)
@@ -130,7 +50,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     throw new ArgumentException($"Object declaration is null at: {declarationNode}", nameof(statement));
                 }
 
-                CreateType(assemblyBuilder, null, declarationNode.ObjectDeclaration);
+                CreateType(null, declarationNode.ObjectDeclaration);
             }
             else if (statement is EnumStatementNode enumStatement)
             {
@@ -146,11 +66,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     throw new ArgumentException($"Using statement must contains namespace identifier: {usingStatement}", nameof(statement));
                 }
 
-                _usings.Add(usingStatement.GetNamespace());
+                AddNamespace(usingStatement.GetNamespace());
             }
             else if (statement is BlockStatementNode block)
             {
-                ParseStatements(assemblyBuilder, block.Statements);
+                ParseStatements(block.Statements);
             }
             else if (statement is NamespaceBlockStatementBlock namespaceBlockStatement)
             {
@@ -166,9 +86,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     _currentNamespace = currentNamespace;
                 }
 
+                AddNamespace(_currentNamespace);
+
                 if (namespaceBlockStatement.Block?.Statements != null)
                 {
-                    ParseStatements(assemblyBuilder, namespaceBlockStatement.Block.Statements);
+                    ParseStatements(namespaceBlockStatement.Block.Statements);
                 }
 
                 _currentNamespace = previousNamespace;
@@ -188,7 +110,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     throw new ArgumentException($"Only global functions can contains in root of script");
                 }
 
-                CreateMethod(assemblyBuilder, null, methodNode);
+                CreateMethod(null, methodNode);
             }
             else if (statement is VariableStatementNode variableStatement)
             {
@@ -198,19 +120,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 }
                 if (variableStatement.Variable is FieldNode field)
                 {
-                    CreateField(assemblyBuilder, null, field);
+                    CreateField(null, field);
                     return;
                 }
 
-                CreateGlobalVariable(assemblyBuilder, variableStatement.Variable);
+                CreateGlobalVariable(variableStatement.Variable);
             }
         }
 
         #endregion
 
-        #region Создание типов
+        #region Creating type and members
 
-        private void CreateType(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder? parent, ObjectDeclarationNode declaration)
+        private void CreateType(DSharpTypeBuilder? parent, ObjectDeclarationNode declaration)
         {
             if (declaration.Identifier == null)
             {
@@ -225,7 +147,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 throw new ArgumentException($"Objects in namespace only can be public: {declaration}", nameof(declaration));
             }
 
-            var type = assemblyBuilder.CreateType(declaration.Identifier.Name, parent);
+            var type = Assembly.CreateType(declaration.Identifier.Name, parent);
             type.IsStatic = declaration.IsStatic;
             type.IsAbstract = declaration.IsAbstract;
             type.ObjectType = declaration.Type;
@@ -246,52 +168,52 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             foreach (var childType in declaration.Children)
             {
-                CreateType(assemblyBuilder, type, childType);
+                CreateType(type, childType);
             }
             foreach (var childEnum in declaration.ChildrenEnums)
             {
-                CreateEnum(assemblyBuilder, type, childEnum);
+                CreateEnum(type, childEnum);
             }
             foreach (var field in declaration.Fields)
             {
-                CreateFieldOrProperty(assemblyBuilder, type, field);
+                CreateFieldOrProperty(type, field);
             }
             foreach (var indexer in declaration.Indexers)
             {
-                CreateIndexer(assemblyBuilder, type, indexer);
+                CreateIndexer(type, indexer);
             }
             foreach (var method in declaration.Methods)
             {
-                CreateMethod(assemblyBuilder, type, method);
+                CreateMethod(type, method);
             }
             foreach (var finalizer in declaration.Finalizers)
             {
-                CreateFinalizer(assemblyBuilder, type, finalizer);
+                CreateFinalizer(type, finalizer);
             }
             foreach (var @operator in declaration.Operators)
             {
-                CreateOperator(assemblyBuilder, type, @operator);
+                CreateOperator(type, @operator);
             }
             foreach (var constructor in declaration.Constructors)
             {
-                CreateConstructor(assemblyBuilder, type, constructor);
+                CreateConstructor(type, constructor);
             }
 
             _createdTypes.Add(type, declaration);
         }
-        private void CreateFieldOrProperty(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder? declareType, FieldNode fieldNode)
+        private void CreateFieldOrProperty(DSharpTypeBuilder? declareType, FieldNode fieldNode)
         {
             if (fieldNode.CustomGetterSetter)
             {
-                CreateProperty(assemblyBuilder, declareType, fieldNode);
+                CreateProperty(declareType, fieldNode);
                 return;
             }
 
-            CreateField(assemblyBuilder, declareType, fieldNode);
+            CreateField(declareType, fieldNode);
         }
-        private void CreateGlobalVariable(DSharpAssemblyBuilder assemblyBuilder, VariableNode variableNode)
+        private void CreateGlobalVariable(VariableNode variableNode)
         {
-            var variable = assemblyBuilder.CreateGlobalVariable(variableNode.Name);
+            var variable = Assembly.CreateGlobalVariable(variableNode.Name);
             variable.Namespace = _currentNamespace;
             variable.Access = DSharpAccessModifier.Public;
             variable.IsStatic = true;
@@ -304,7 +226,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             _createdGlobalVariables.Add(variable, variableNode);
         }
-        private void CreateField(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder? declareType, FieldNode fieldNode)
+        private void CreateField(DSharpTypeBuilder? declareType, FieldNode fieldNode)
         {
             if (fieldNode.Identifier == null)
             {
@@ -327,12 +249,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             _createdFields.Add(field, fieldNode);
         }
-        private void CreateProperty(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder? declareType, FieldNode fieldNode)
+        private void CreateProperty(DSharpTypeBuilder? declareType, FieldNode fieldNode)
         {
-            var property = CreateProperty(assemblyBuilder, declareType, fieldNode, (t, n) => t.CreateProperty(n));
+            var property = CreateProperty(declareType, fieldNode, (t, n) => t.CreateProperty(n));
             _createdProperties.Add(property, fieldNode);
         }
-        private void CreateMethod(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder? declareType, MethodNode methodNode)
+        private void CreateMethod(DSharpTypeBuilder? declareType, MethodNode methodNode)
         {
             if (methodNode.Identifier == null)
             {
@@ -371,7 +293,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     throw new ArgumentException("Global function can not contains generic parameters");
                 }
 
-                method = assemblyBuilder.CreateGlobalFunction(methodNode.Identifier.Name);
+                method = Assembly.CreateGlobalFunction(methodNode.Identifier.Name);
                 method.Namespace = _currentNamespace;
             }
             else
@@ -396,7 +318,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             _createdMethods.Add(method, methodNode);
         }
-        private void CreateFinalizer(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder declareType, FinalizerNode finalizerNode)
+        private void CreateFinalizer(DSharpTypeBuilder declareType, FinalizerNode finalizerNode)
         {
             if (finalizerNode.Parameters.Count > 0)
             {
@@ -424,7 +346,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             _createdFinalizers.Add(finalizer, finalizerNode);
         }
-        private void CreateIndexer(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder? declareType, IndexerNode indexerNode)
+        private void CreateIndexer(DSharpTypeBuilder? declareType, IndexerNode indexerNode)
         {
             if (indexerNode.Parameters.Count == 0)
             {
@@ -435,10 +357,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 throw new ArgumentException($"Indexers can not be static: {indexerNode}", nameof(indexerNode));
             }
 
-            var indexer = CreateProperty(assemblyBuilder, declareType, indexerNode, (t, n) => t.CreateIndexer());
+            var indexer = CreateProperty(declareType, indexerNode, (t, n) => t.CreateIndexer());
             _createdIndexers.Add(indexer, indexerNode);
         }
-        private void CreateOperator(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder declareType, OperatorNode operatorNode)
+        private void CreateOperator(DSharpTypeBuilder declareType, OperatorNode operatorNode)
         {
             if (operatorNode.OperatorType != DSharpOperatorType.Binary &&
                 operatorNode.Parameters.Count != 1)
@@ -507,7 +429,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             _createdOperators.Add(@operator, operatorNode);
         }
-        private void CreateConstructor(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder? declareType, ConstructorNode constructorNode)
+        private void CreateConstructor(DSharpTypeBuilder? declareType, ConstructorNode constructorNode)
         {
             if (declareType == null)
             {
@@ -518,9 +440,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             constructor.Access = constructorNode.Access;
             _createdConstructors.Add(constructor, constructorNode);
         }
-        private void CreateEnum(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder? parent, EnumNode enumNode)
+        private void CreateEnum(DSharpTypeBuilder? parent, EnumNode enumNode)
         {
-            var type = assemblyBuilder.CreateType(enumNode.Name, parent);
+            var type = Assembly.CreateType(enumNode.Name, parent);
             type.ObjectType = DSharpObjectType.Struct;
             type.Name = enumNode.Name;
             type.Namespace = _currentNamespace;
@@ -539,7 +461,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
         }
 
-        private T CreateProperty<T>(DSharpAssemblyBuilder assemblyBuilder, DSharpTypeBuilder? declareType, FieldNode fieldNode, Func<DSharpTypeBuilder, string, T> fabric)
+        private T CreateProperty<T>(DSharpTypeBuilder? declareType, FieldNode fieldNode, Func<DSharpTypeBuilder, string, T> fabric)
             where T : DSharpPropertyBuilder
         {
             if (fieldNode.Identifier == null)
@@ -574,9 +496,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
         #endregion
 
-        #region Разрешение типов
+        #region Resolving types
 
-        private void SetupTypes(DSharpAssemblyBuilder assemblyBuilder)
+        private void ResolveCreatedTypes()
         {
             T? FindBaseMember<T>(Func<IDSharpType, T> selector, IDSharpType type, Predicate<T>? extraPredicate = null)
                 where T : IDSharpMemberInfo
@@ -587,7 +509,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                 {
                     member = default;
                 }
-                if (member == null && type != _assemblyBuilder.ObjectType)
+                if (member == null && type != Assembly.ObjectType)
                 {
                     var baseTypes = type.GetBaseTypes();
 
@@ -610,7 +532,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     }
                     else
                     {
-                        member = FindBaseMember(selector, _assemblyBuilder.ObjectType, extraPredicate);
+                        member = FindBaseMember(selector, Assembly.ObjectType, extraPredicate);
                     }
                 }
 
@@ -625,7 +547,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                         throw new InvalidOperationException($"Parameter must have a type: {parameter}");
                     }
 
-                    parameters.Add(new(assemblyBuilder)
+                    parameters.Add(new(Assembly)
                     {
                         Name = parameter.Name,
                         TypeGetter = () => context.ResolveType(parameter.Type)
@@ -693,7 +615,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
 
             foreach (var enumValue in _enumValues.Keys)
             {
-                enumValue.FieldType = _assemblyBuilder.Int32Token;
+                enumValue.FieldType = Assembly.Int32Token;
             }
             foreach (var info in _createdGlobalVariables)
             {
@@ -718,7 +640,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
             foreach (var info in _createdIndexers)
             {
-                var context = _context;
+                var context = Context;
                 context.CurrentMember = info.Key;
 
                 if (info.Value.Type != null)
@@ -739,7 +661,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
             foreach (var info in _createdOperators)
             {
-                var context = _context;
+                var context = Context;
                 context.CurrentMember = info.Key;
 
                 if (info.Value.ReturnType != null)
@@ -752,7 +674,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
             foreach (var info in _createdMethods)
             {
-                var context = _context;
+                var context = Context;
                 context.CurrentMember = info.Key;
 
                 ValidateInvokableNodeParameters(info.Value);
@@ -765,7 +687,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
             foreach (var info in _createdConstructors)
             {
-                var context = _context;
+                var context = Context;
                 context.CurrentMember = info.Key;
 
                 ValidateInvokableNodeParameters(info.Value);
@@ -773,7 +695,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
             }
             foreach (var enumType in _enumTypes.Keys)
             {
-                enumType.AddBaseType(assemblyBuilder.EnumType);
+                enumType.AddBaseType(Assembly.EnumType);
             }
 
             Dictionary<IDSharpType, ObjectDeclarationNode> typesToSetupBases = new(_createdTypes.Select(p => new KeyValuePair<IDSharpType, ObjectDeclarationNode>(p.Key, p.Value)));
@@ -898,60 +820,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
                     }
                 }
             }
-
-            foreach (var info in _createdProperties)
-            {
-                CompileProperty(info.Key, info.Value);
-            }
-            foreach (var info in _createdIndexers)
-            {
-                CompileProperty(info.Key, info.Value);
-            }
-            foreach (var info in _createdMethods)
-            {
-                CompileMethod(info.Key, info.Value);
-            }
-            foreach (var info in _createdConstructors)
-            {
-                CompileMethod(info.Key, info.Value);
-            }
-            foreach (var info in _createdFinalizers)
-            {
-                CompileMethod(info.Key, info.Value);
-            }
-
-            int i = 0;
-
-            while (i < _assemblyBuilder.Types.Count)
-            {
-                var type = _assemblyBuilder.Types[i];
-                type.Update();
-                i++;
-            }
-        }
-
-        private DSharpTypeToken ResolveType(DSharpMemberInfoBuilder member, TypeInfoNode typeInfo)
-        {
-            var context = _context;
-            context.CurrentMember = member;
-
-            if (typeInfo.Name == DSharpAssemblyBuilder.VarName &&
-                member.DeclaringType == null &&
-                member is DSharpFieldBuilder field &&
-                _createdGlobalVariablesRawValueExpressions.TryGetValue(field, out var valueExpression))
-            {
-                context.ParentExpression = valueExpression;
-            }
-
-            var typeToken = context.ResolveType(typeInfo);
-            var type = _assemblyBuilder.GetType(typeToken);
-
-            if (!context.CanAccessTo(type))
-            {
-                context.ThrowCanNotAccessException(type);
-            }
-
-            return typeToken;
         }
 
         #endregion

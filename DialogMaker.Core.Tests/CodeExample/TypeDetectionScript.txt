@@ -2,18 +2,18 @@
 {
 	public class Array<T>
 	{
-		public T this[number index]
+		public T this[int index]
 		{
 			get => GetValue(index);
 			set => SetValue(index, value);
 		}
 		
-		private extern T GetValue(number index);
-		private extern func SetValue(number index, T value);
+		private extern T GetValue(int index);
+		private extern void SetValue(int index, T value);
 	}
 	public class String
 	{
-		public char this[number index]
+		public char this[int index]
 		{
 			get => GetValue(index);
 			set => SetValue(index, value);
@@ -21,8 +21,12 @@
 		
 		public char GetFirstSymbol() => this[0];
 		
-		private extern char GetValue(number index);
-		private extern func SetValue(number index, char value);
+		public static string operator +(string l, object r) => l + r.ToString();
+		public static string operator +(object l, string r) => l.ToString() + r;
+		public static string operator +(string l, string r) => l;
+		
+		private extern char GetValue(int index);
+		private extern void SetValue(int index, char value);
 	}
 	public class Object
 	{
@@ -31,7 +35,8 @@
 	}
 	public struct Char {}
 	public struct Boolean {}
-	public struct Number {}
+	public struct Int32 {}
+	public struct Void {}
 	
 	public class Type
 	{
@@ -41,7 +46,7 @@
 
 public class Group
 {
-	public virtual Character this[number index]
+	public virtual Character this[int index]
 	{
 		get => _characters[index];
 		set => _characters[index] = value;
@@ -51,7 +56,7 @@ public class Group
 }
 public class PlayerGroup : Group
 {
-	public override Character this[number index]
+	public override Character this[int index]
 	{
 		get => base.this[index];
 		set => base.this[index] = value;
@@ -70,11 +75,11 @@ public class Character
 		
 		return base.ToString();
 	}
-	public func PrintName()
+	public void PrintName()
 	{
 		Name[10] = 'c';
 	}
-	protected Character GetPath(number depth)
+	protected Character GetPath(int depth)
 	{
 		return this;
 	}
@@ -83,13 +88,13 @@ public class Player : Character
 {
 	public class Data
 	{
-		public static number Id { get; set; }
+		public static int Id { get; set; }
 	}
 	
-	public number Hp { get; set; }
+	public int Hp { get; set; }
 	public Player OtherPlayer { get; set; }
 
-	public func SetValues() 
+	public void SetValues() 
 	{
 		OtherPlayer.Name += "awdawda";
 	}
@@ -104,4 +109,4 @@ public class Player : Character
 	private Player GetPlayer() => OtherPlayer;
 }
 
-number value = new System.Type();
+int value = new System.Type();
