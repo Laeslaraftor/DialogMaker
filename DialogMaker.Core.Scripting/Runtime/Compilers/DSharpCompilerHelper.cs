@@ -3,7 +3,6 @@ using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime.Builders;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection.Emit;
 
 namespace DialogMaker.Core.Scripting.Runtime.Compilers
 {
@@ -12,6 +11,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Compilers
     /// </summary>
     public static class DSharpCompilerExpressionExtensions
     {
+        extension(TypeNameEqualityType type)
+        {
+            public bool IsEquals() => type != TypeNameEqualityType.None;
+            public bool IsNotEquals() => type == TypeNameEqualityType.None;
+        }
         extension(DSharpTokenType token)
         {
             /// <summary>
