@@ -1,9 +1,8 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
-using DialogMaker.Core.Scripting.Runtime.Builders;
-using DialogMaker.Core.Scripting.Runtime.Compilers;
 using System.Reflection.Emit;
 
 namespace DialogMaker.Core.Scripting.Compiler
@@ -626,26 +625,31 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             foreach (var info in _createdFields)
             {
+                DSharpCompilerContext context = new(Context, info.Key);
+
                 if (info.Value.Type != null)
                 {
-                    info.Key.FieldTypeResolver = () => ResolveType(info.Key, info.Value.Type);
+                    info.Key.FieldTypeResolver = () => context.ResolveType(info.Value.Type);
                 }
             }
             foreach (var info in _createdProperties)
             {
+                DSharpCompilerContext context = new(Context, info.Key);
+
                 if (info.Value.Type != null)
                 {
-                    info.Key.PropertyTypeResolver = () => ResolveType(info.Key, info.Value.Type);
+                    info.Key.PropertyTypeResolver = () => context.ResolveType(info.Value.Type);
                 }
             }
             foreach (var info in _createdIndexers)
             {
                 var context = Context;
                 context.CurrentMember = info.Key;
+                context.Scope = GetScope(info.Key.DeclaringType);
 
                 if (info.Value.Type != null)
                 {
-                    info.Key.PropertyTypeResolver = () => ResolveType(info.Key, info.Value.Type);
+                    info.Key.PropertyTypeResolver = () => context.ResolveType(info.Value.Type);
                 }
 
                 try
@@ -663,6 +667,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 var context = Context;
                 context.CurrentMember = info.Key;
+                context.Scope = GetScope(info.Key.DeclaringType);
 
                 if (info.Value.ReturnType != null)
                 {
@@ -676,6 +681,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 var context = Context;
                 context.CurrentMember = info.Key;
+                context.Scope = GetScope(info.Key);
 
                 ValidateInvokableNodeParameters(info.Value);
                 ResolveParameters(info.Value.Parameters, info.Key.Parameters, context);
@@ -689,6 +695,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 var context = Context;
                 context.CurrentMember = info.Key;
+                context.Scope = GetScope(info.Key.DeclaringType!);
 
                 ValidateInvokableNodeParameters(info.Value);
                 ResolveParameters(info.Value.Parameters, info.Key.Parameters, context);

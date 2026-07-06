@@ -1,23 +1,26 @@
-﻿using DialogMaker.Core.Scripting.Runtime;
-using DialogMaker.Core.Scripting.Runtime.Builders;
+﻿using DialogMaker.Core.Scripting.Compiler.Builders;
+using DialogMaker.Core.Scripting.Runtime;
 
 namespace DialogMaker.Core.Scripting.Compiler.Scopes
 {
     /// <summary>
     /// Method scope
     /// </summary>
+    /// <remarks>
+    /// Create new instance of method scope
+    /// </remarks>
     /// <param name="method">Method that contains current scope</param>
     /// <param name="parent">Parent scope</param>
-    public class DSharpCompilerMethodScope(DSharpMethodBuilder method, DSharpCompilerScope? parent)
-        : DSharpCompilerScope(method.Assembly, parent)
+    public class DSharpCompilerMethodScope(DSharpMethodBuilder method, DSharpCompilerScope? parent) : DSharpCompilerScope(method.Assembly, parent)
     {
+
         /// <summary>
         /// Method that contains current scope
         /// </summary>
         public DSharpMethodBuilder Method { get; } = method;
 
         /// <summary>
-        /// Current scope variables
+        /// Current scope variables without arguments
         /// </summary>
         public List<DSharpMethodBuilderParameter> Variables { get; } = [];
         /// <summary>

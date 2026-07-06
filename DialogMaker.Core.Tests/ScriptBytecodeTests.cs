@@ -1,5 +1,5 @@
-﻿using DialogMaker.Core.Scripting.Runtime.Builders;
-using DialogMaker.Core.Scripting.Runtime.Compilers;
+﻿using DialogMaker.Core.Scripting.Compiler;
+using DialogMaker.Core.Scripting.Compiler.Builders;
 using System.Diagnostics;
 
 namespace DialogMaker.Core.Tests

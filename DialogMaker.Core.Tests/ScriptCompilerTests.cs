@@ -1,9 +1,9 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+﻿using DialogMaker.Core.Scripting.Compiler;
+using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
-using DialogMaker.Core.Scripting.Runtime.Builders;
-using DialogMaker.Core.Scripting.Runtime.Compilers;
 using System.Diagnostics;
 
 namespace DialogMaker.Core.Tests
@@ -113,7 +113,7 @@ namespace DialogMaker.Core.Tests
             return assembly;
         }
 
-        private static DSharpTreeRoot ParseScript(string filePath, string name)
+        private static DSharpScript ParseScript(string filePath, string name)
         {
             var script = File.ReadAllText(filePath);
             DSharpLexer lexer = new(script);

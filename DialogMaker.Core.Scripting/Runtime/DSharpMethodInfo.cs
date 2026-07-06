@@ -1,4 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Runtime.Builders;
+﻿using DialogMaker.Core.Scripting.Compiler.Builders;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {

@@ -1,20 +1,35 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
-using DialogMaker.Core.Scripting.Runtime.Builders;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
+    /// <summary>
+    /// D# script compiler
+    /// </summary>
+    /// <param name="assembly">Assembly to compile script</param>
     public partial class DSharpScriptCompiler(DSharpAssemblyBuilder assembly)
     {
+        /// <summary>
+        /// Assembly to compile script
+        /// </summary>
         public DSharpAssemblyBuilder Assembly { get; } = assembly;
+        /// <summary>
+        /// Root scope for this script.
+        /// It contains all usings and namespaces declared in script
+        /// </summary>
         public DSharpCompilerFileScope Scope { get; } = new(assembly, null);
-        public DSharpTreeRoot? TreeRoot { get; set; }
+        /// <summary>
+        /// Current script
+        /// </summary>
+        public DSharpScript? Script { get; set; }
 
         private DSharpCompilerContext Context => new()
         {
             Assembly = Assembly,
+            Compiler = this,
             Usings = Scope.Namespaces,
             Scope = Scope
         };
@@ -24,8 +39,24 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         #region Controls
 
+        /// <summary>
+        /// Reset script and remove all compiled types, global variables and functions from assembly
+        /// </summary>
         public void Reset()
         {
+            foreach (var type in _createdTypes.Keys)
+            {
+                Assembly.RemoveType(type);
+            }
+            foreach (var globalVariable in _createdGlobalVariables.Keys)
+            {
+                Assembly.RemoveGlobalVariable(globalVariable);
+            }
+            foreach (var globalFunction in _createdMethods.Keys.Where(m => m.DeclaringType == null))
+            {
+                Assembly.RemoveGlobalFunction(globalFunction);
+            }
+
             Scope.Namespaces.Clear();
             _createdGlobalVariables.Clear();
             _createdTypes.Clear();
@@ -43,19 +74,29 @@ namespace DialogMaker.Core.Scripting.Compiler
             _propertiesWithCustomAccessors.Clear();
             _currentNamespace = null;
         }
+        /// <summary>
+        /// Parse script and create types that declared in it
+        /// </summary>
+        /// <exception cref="InvalidOperationException">Unable to declare types when tree root not specified</exception>
         public void DeclareTypes()
         {
-            if (TreeRoot == null)
+            if (Script == null)
             {
-                throw new InvalidOperationException($"Unable to declare types when tree root not specified");
+                throw new InvalidOperationException("Unable to declare types when tree root not specified");
             }
 
-            ParseStatements(TreeRoot.Statements);
+            ParseStatements(Script.Statements);
         }
+        /// <summary>
+        /// Resolve types on created types and members
+        /// </summary>
         public void ResolveTypes()
         {
             ResolveCreatedTypes();
         }
+        /// <summary>
+        /// Compile code inside script methods
+        /// </summary>
         public void CompileCode()
         {
             foreach (var info in _createdProperties)
@@ -79,6 +120,9 @@ namespace DialogMaker.Core.Scripting.Compiler
                 CompileMethod(info.Key, info.Value);
             }
         }
+        /// <summary>
+        /// Final resolving types and creating all required generics
+        /// </summary>
         public void ApplyTypes()
         {
             int i = 0;
@@ -95,7 +139,34 @@ namespace DialogMaker.Core.Scripting.Compiler
         #endregion
 
         #region Scopes
+        
+        /// <summary>
+        /// Get scope for member based on current script
+        /// </summary>
+        /// <param name="member">Member to creating scope</param>
+        /// <returns>Member scope</returns>
+        public DSharpCompilerScope GetScope(IDSharpMemberInfo member)
+        {
+            if (member is DSharpMethodBuilder method)
+            {
+                return GetScope(method);
+            }
+            else if (member is IDSharpType typeMember)
+            {
+                return GetScope(typeMember);
+            }
+            else if (member.DeclaringType != null)
+            {
+                return GetScope(member.DeclaringType);
+            }
 
+            return Scope;
+        }
+        /// <summary>
+        /// Get scope for type based on current script
+        /// </summary>
+        /// <param name="type">Type to creating scope</param>
+        /// <returns>Type scope</returns>
         public DSharpCompilerTypeScope GetScope(IDSharpType type)
         {
             if (!_typeScopes.TryGetValue(type, out var scope))
@@ -106,6 +177,11 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             return scope;
         }
+        /// <summary>
+        /// Get scope for method based on current script
+        /// </summary>
+        /// <param name="method">Method to creating scope</param>
+        /// <returns>Method scope</returns>
         public DSharpCompilerMethodScope GetScope(DSharpMethodBuilder method)
         {
             if (!_methodScopes.TryGetValue(method, out var scope))
@@ -117,7 +193,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                     parentScope = GetScope(method.DeclaringType);
                 }
 
-                scope = new(method, parentScope);
+                scope = new(method, parentScope)
+                {
+                    IsRoot = true
+                };
                 _methodScopes.Add(method, scope);
             }
 
@@ -132,6 +211,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             var context = Context;
             context.CurrentMember = member;
+            context.Scope = GetScope(member);
 
             if (typeInfo.Name == DSharpAssemblyBuilder.VarName &&
                 member.DeclaringType == null &&

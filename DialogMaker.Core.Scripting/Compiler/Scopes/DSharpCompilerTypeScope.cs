@@ -1,7 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Runtime;
-using DialogMaker.Core.Scripting.Runtime.Builders;
-using DialogMaker.Core.Scripting.Runtime.Compilers;
 
 namespace DialogMaker.Core.Scripting.Compiler.Scopes
 {
@@ -79,12 +78,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         {
             foreach (var member in Type.GetAllMembers())
             {
-                if (member.DeclaringType != Type &&
-                    !member.IsStatic)
-                {
-                    continue;
-                }
-
                 yield return member;
             }
         }

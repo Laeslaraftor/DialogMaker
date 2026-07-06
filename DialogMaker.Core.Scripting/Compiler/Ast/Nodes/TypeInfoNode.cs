@@ -306,7 +306,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         /// <param name="stream">Abstract syntax tree parser stream</param>
         /// <param name="buffer">Buffer for writing generic parameters</param>
-        /// <param name="checkExistence">Check on parameters existance</param>
+        /// <param name="checkExistence">Check on parameters existence</param>
         public static void ParseGenericParameters(AstParserStream stream, List<TypeInfoNode> buffer, bool checkExistence = false)
         {
             if (checkExistence && !IsGenericParameters(stream))

@@ -1,9 +1,9 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+﻿using DialogMaker.Core.Scripting.Compiler;
+using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
-using DialogMaker.Core.Scripting.Runtime.Builders;
-using DialogMaker.Core.Scripting.Runtime.Compilers;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -36,7 +36,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 TypeResolver = code.ExpressionTypeResolver,
                 MemberResolver = code.ExpressionMemberResolver,
             };
-            context.Scope = GetScope(method);
+            //context.Scope = GetScope(method);
 
             CompileStatement(method, body, 0, code, ref settings, context);
 
@@ -1489,13 +1489,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 else if (!previousIsThis && !settings.NextNonVirtualizedAccess &&
                          currentMemberAccess.Target is IdentifierExpressionNode identifier &&
-                         identifier.TryGetLocalMember(method, out var localMemberInfo))
+                         identifier.TryGetLocalMember(context, out var localMember))
                 {
-                    currentType = localMemberInfo.Value.Type;
+                    currentType = localMember.Type;
                     lastAccessedAsLocalMember = true;
                     accessedAsLocalMember = true;
 
-                    code.LoadLocal(localMemberInfo.Value);
+                    code.LoadLocal(localMember);
                 }
                 else
                 {

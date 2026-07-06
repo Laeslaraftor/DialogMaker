@@ -1,5 +1,5 @@
-﻿using DialogMaker.Core.Scripting.Runtime;
-using DialogMaker.Core.Scripting.Runtime.Builders;
+﻿using DialogMaker.Core.Scripting.Compiler.Builders;
+using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Compiler.Scopes
@@ -23,7 +23,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// <summary>
         /// Try to resolve type in current and parent scope
         /// </summary>
-        /// <param name="namespace">Type's namespace</param>
         /// <param name="name">Name of type</param>
         /// <param name="result">Resolved type</param>
         /// <param name="genericTypes">List of types for searching generic types</param>
@@ -31,8 +30,28 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// <exception cref="ArgumentException">Specified type can not replace generic type</exception>
         public bool TryResolveType(string name, [NotNullWhen(true)] out IDSharpType? result, params IList<IDSharpType>? genericTypes)
         {
+            return TryResolveType(name, 0, out result, genericTypes);
+        }
+        /// <summary>
+        /// Try to resolve type in current and parent scope
+        /// </summary>
+        /// <param name="name">Name of type</param>
+        /// <param name="arrayDimension">Array dimensions amount</param>
+        /// <param name="result">Resolved type</param>
+        /// <param name="genericTypes">List of types for searching generic types</param>
+        /// <returns>Is type resolved</returns>
+        /// <exception cref="ArgumentException">Specified type can not replace generic type</exception>
+        public bool TryResolveType(string name, int arrayDimensions, [NotNullWhen(true)] out IDSharpType? result, params IList<IDSharpType>? genericTypes)
+        {
+            if (Assembly.TryGetStandardType(name, out var standardTypeToken))
+            {
+                result = (IDSharpType)Assembly.GetType(standardTypeToken);
+                result = CreateArray(result);
+                return true;
+            }
+
             result = null;
-            int genericTypesCount = 0;
+            int genericTypesCount = genericTypes?.Count ?? 0;
             IDSharpType? foundAssignableTemplate = null;
 
             bool? IsValid(IDSharpType type)
@@ -99,6 +118,23 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
 
                 return null;
             }
+            IDSharpType CreateArray(IDSharpType type)
+            {
+                if (0 >= arrayDimensions)
+                {
+                    return type;
+                }
+
+                int dimension = 0;
+
+                while (dimension < arrayDimensions)
+                {
+                    type = Assembly.CreateArray(type);
+                    dimension++;
+                }
+
+                return type;
+            }
 
             result = RecursiveCheck(scope =>
             {
@@ -107,11 +143,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
 
             if (result != null)
             {
+                result = CreateArray(result);
                 return true;
             }
             else if (foundAssignableTemplate != null)
             {
                 result = Assembly.FillGeneric(foundAssignableTemplate, genericTypes!);
+                result = CreateArray(result);
                 return true;
             }
 
@@ -140,7 +178,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
 
             RecursiveCheck<T>(scope =>
             {
-                foreach (var member in GetMembers())
+                foreach (var member in scope.GetMembers())
                 {
                     if (member is T typedMember &&
                         member.Name == name)
@@ -177,7 +215,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         {
             result = RecursiveCheck(scope =>
             {
-                foreach (var member in GetMembers())
+                foreach (var member in scope.GetMembers())
                 {
                     if (member is T typedMember &&
                         member.Name == name)
@@ -201,7 +239,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         {
             result = RecursiveCheck(scope =>
             {
-                foreach (var variable in GetVariables())
+                foreach (var variable in scope.GetVariables())
                 {
                     if (variable.Name == name)
                     {

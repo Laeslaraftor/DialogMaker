@@ -9,10 +9,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
 
         #region Управление
 
-        public DSharpTreeRoot Parse(string treeName)
+        public DSharpScript Parse(string treeName)
         {
             _stream.Position = 0;
-            DSharpTreeRoot program = new(treeName);
+            DSharpScript program = new(treeName);
             BlockStatementNode.ParseBody(_stream, program.Statements);
 
             return program;
