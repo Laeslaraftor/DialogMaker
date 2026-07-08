@@ -113,7 +113,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             set;
         }
         public List<DSharpMethodBuilderParameter> Parameters { get; } = [];
-        public List<DSharpTypeToken> GenericParameters { get; } = [];
+        public ReferenceReadOnlyList<DSharpTypeBuilder> GenericParameters
+        {
+            get
+            {
+                field ??= new(_genericParameters);
+                return field;
+            }
+        }
         public IDSharpMethodInfo? OverrideMethod
         {
             get
@@ -251,10 +258,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 {
                     if (MethodType == DSharpMethodType.Getter)
                     {
-                        return LinkedProperty.GetterAccess;
+                        return LinkedProperty.GetterAccess.GetValueOrDefault();
                     }
 
-                    return LinkedProperty.SetterAccess;
+                    return LinkedProperty.SetterAccess.GetValueOrDefault();
                 }
                 if (LinkedOperator != null)
                 {
@@ -289,7 +296,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                     return false;
                 }
 
-                return GetBytecodeBuilder().Instructions.Count > 0;
+                return _bytecodeBuilder != null;
             }
         }
         internal IDSharpMethodInfo? OriginalMethod { get; set; }
@@ -308,6 +315,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
         }
 
+        private readonly List<DSharpTypeBuilder> _genericParameters = [];
         private DSharpBytecodeBuilder? _bytecodeBuilder;
 
         #region Управление
@@ -316,6 +324,28 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             base.Update();
             _ = ReturnType;
+        }
+
+        public DSharpTypeBuilder CreateGenericParameter(string name)
+        {
+            if (DeclaringType == null)
+            {
+                throw new InvalidOperationException($"Unable to create generic parameter \"{name}\" for method without declaring type: {this}");
+            }
+
+            var type = DeclaringType.CreateType(name, true, true);
+            _genericParameters.Add(type);
+
+            return type;
+        }
+        public bool RemoveGenericParameter(DSharpTypeBuilder type)
+        {
+            if (DeclaringType != null && _genericParameters.Remove(type))
+            {
+                return DeclaringType.RemoveChildType(type);
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -383,44 +413,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <inheritdoc/>
         /// </summary>
         /// <returns><inheritdoc/></returns>
-        public override string ToString()
-        {
-            string returnType = string.Empty;
-            string name = Name + '(';
-            int parameterIndex = 0;
-
-            if (ReturnType != null)
-            {
-                returnType = Assembly.GetType(ReturnType) + " ";
-            }
-
-            foreach (var parameter in Parameters)
-            {
-                if (parameterIndex > 0)
-                {
-                    name += ", ";
-                }
-
-                if (parameter.Type != null)
-                {
-                    var type = Assembly.GetType(parameter.Type);
-                    name += $"{type} ";
-                }
-
-                name += $"{parameter.Name}";
-
-                parameterIndex++;
-            }
-
-            name += ')';
-
-            if (DeclaringType == null)
-            {
-                return returnType + name;
-            }
-
-            return $"{returnType}{DeclaringType.FullName}.{name}";
-        }
+        public override string ToString() => this.ToString(null);
 
         #endregion
 

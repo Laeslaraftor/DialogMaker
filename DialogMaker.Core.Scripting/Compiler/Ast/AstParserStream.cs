@@ -14,10 +14,21 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
 
         public DSharpToken? Peek(int offset = 1)
         {
-            return Position + offset < _lexer.Tokens.Count ? _lexer.Tokens[Position + offset] : null;
+            var position = Position + offset;
+
+            if (position >= _lexer.Tokens.Count)
+            {
+                return null;
+            }
+
+            return _lexer.Tokens[position];
         }
         public bool IsEndOfFile() => Current?.Type == DSharpTokenType.EndOfFile;
-        public bool Check(DSharpTokenType type, int offset = 0) => Peek(offset)?.Type == type;
+        public bool Check(DSharpTokenType type, int offset = 0)
+        {
+            var token = Peek(offset);
+            return token?.Type == type;
+        }
         public bool Check(params DSharpTokenType[] types) => types.Contains(Current?.Type ?? DSharpTokenType.EndOfFile);
         public bool CheckAll<T>() where T : struct
         {

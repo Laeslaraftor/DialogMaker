@@ -3,6 +3,7 @@ using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
+using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
 
 namespace DialogMaker.Core.Scripting.Compiler
@@ -36,7 +37,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 TypeResolver = code.ExpressionTypeResolver,
                 MemberResolver = code.ExpressionMemberResolver,
             };
-            //context.Scope = GetScope(method);
 
             CompileStatement(method, body, 0, code, ref settings, context);
 
@@ -62,6 +62,15 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         private void CompileStatement(DSharpMethodBuilder method, BlockStatementNode blockStatement, int depth, DSharpBytecodeBuilder code, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context = default)
         {
+            if (context.Scope?.Parent == null || depth == 0)
+            {
+                context.Scope = GetScope(method);
+            }
+            else
+            {
+                context.Scope = new DSharpCompilerMethodScope(method, context.Scope);
+            }
+
             foreach (var statement in blockStatement.Statements)
             {
                 CompileStatement(method, statement, blockStatement, depth, code, ref settings, context);
@@ -104,10 +113,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     throw new ArgumentException($"Unable to declare local variable because current scope contains parameter with such name ({variableName}): {variableStatement}");
                 }
-                //if (settings.TryGetVariable(variableName, out _))
-                //{
-                //    throw new ArgumentException($"Unable to declare local variable because variable with such name already declared ({variableName}): {variableStatement}");
-                //}
 
                 IDSharpParameterInfo variable;
 
@@ -136,7 +141,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 if (initializer != null)
                 {
                     CompileExpressionValueWithRequestedType(method, variable.Type, code, initializer, ref settings, null, context);
-                    //CompileValueExpression(method, initializer, ref settings, null, context);
                     code.StoreLocal(variable);
                     code.Pop();
                 }
@@ -202,6 +206,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                 if (ifStatement.ElseBranch != null)
                 {
                     skipOtherOperation = code.Jump();
+                }
+                else
+                {
+                    code.SkipNext();
                 }
 
                 jumpOperation.ReferencedInstruction = code.Pop();
@@ -438,8 +446,22 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                     else
                     {
+                        var originalTypeResolver = context.TypeResolver;
+                        context.TypeResolver = obj =>
+                        {
+                            if (obj == returnStatement.Value &&
+                                obj is NewExpressionNode newExpression &&
+                                newExpression.Type == null)
+                            {
+                                return Assembly.GetTypeOrDefault(method.ReturnType) as IDSharpType;
+                            }
+
+                            return originalTypeResolver?.Invoke(obj);
+                        };
+
                         expressionType = returnStatement.Value.GetExpressionType(Assembly, context) as IDSharpType
                             ?? throw new ArgumentException($"Unable to get expression type: {returnStatement.Value}", nameof(statement));
+                        context.TypeResolver = originalTypeResolver;
                     }
 
                     if (!isNullValue && expressionType?.IsAssignableTo(methodReturnType) != true)
@@ -569,7 +591,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                         CompileExpressionValueWithRequestedType(method, requestedType, code, arg, ref settings, arrayAccess, context);
                     }
 
-                    code.CallAuto(indexer.Setter);
+                    code.LoadPropertyOrField(indexer, settings.NextNonVirtualizedAccess);
+                    //code.CallAuto(indexer.Setter);
                     code.PopRepeat(arrayAccess.Arguments.Count + 2);
                 }
                 else
@@ -741,11 +764,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 var startCurrentMember = context.CurrentMember;
+                DSharpMethodCallingInfo calledMethodInfo;
                 IDSharpMethodInfo calledMethod;
 
                 try
                 {
-                    calledMethod = context.FindMethod(callExpression, method);
+                    calledMethodInfo = context.FindMethod(callExpression, method);
+                    calledMethod = calledMethodInfo.Method;
                 }
                 catch (Exception error)
                 {
@@ -774,7 +799,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                         settings.CallingsToAwait?.Remove(method);
                     }
 
-                    code.CallAuto(method, awaitMethod, ref settings);
+                    code.CallAuto(calledMethodInfo, awaitMethod, ref settings);
                     settings.NextNonVirtualizedAccess = false;
 
                     if (method.ReturnType != null)
@@ -853,12 +878,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new InvalidOperationException($"Unable to find indexer: {arrayExpression}", error);
                 }
 
-                if (indexer.Getter == null)
+                if (!indexer.CanRead)
                 {
                     throw new InvalidOperationException($"Unable to get value from \"{indexer}\" because it have not getter");
                 }
 
-                code.CallAuto(indexer.Getter);
+                code.LoadPropertyOrField(indexer, settings.NextNonVirtualizedAccess);
+                //code.CallAuto(indexer.Getter);
                 code.PopOffsetRepeat(1, 2);
                 settings.LastOperationIsReturnsValue = true;
 
@@ -921,6 +947,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                 if (type.IsStatic)
                 {
                     throw new ArgumentException($"Can not create new instance of static object \"{type}\": {expression}", nameof(expression));
+                }
+                if (type.IsGeneric && !type.GenericAttributes.HasFlag(DSharpGenericTypeAttributes.EmptyConstructor))
+                {
+                    throw new ArgumentException($"Can not create new instance of generic type \"{type}\" without constructor: {expression}");
                 }
 
                 if (newExpression.Parameters.Count == 0)
@@ -1036,7 +1066,8 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     CompileValueExpression(method, item, ref settings, expression, context);
                     code.Push(i);
-                    code.CallAuto(arrayInfo.IndexerSetter);
+                    code.StorePropertyOrField(arrayInfo.Indexer);
+                    //code.CallAuto(arrayInfo.IndexerSetter);
                     code.PopRepeat(2);
                 }
 
@@ -1358,11 +1389,13 @@ namespace DialogMaker.Core.Scripting.Compiler
             if (@operator == null)
             {
                 code.BinaryOperation(binaryOperator);
+                code.PopPreviousTwo();
                 resultType = leftType;
             }
             else
             {
                 code.CallAuto(@operator.Method);
+                code.PopPreviousTwo();
                 resultType = @operator.ReturnType;
 
                 if (binaryOperator.IsLogical())

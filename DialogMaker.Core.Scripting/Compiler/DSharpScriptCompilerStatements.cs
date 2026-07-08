@@ -117,11 +117,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     throw new ArgumentException($"Variable statement must provide variable node: {variableStatement}", nameof(statement));
                 }
-                if (variableStatement.Variable is FieldNode field)
-                {
-                    CreateField(null, field);
-                    return;
-                }
 
                 CreateGlobalVariable(variableStatement.Variable);
             }
@@ -153,15 +148,6 @@ namespace DialogMaker.Core.Scripting.Compiler
             type.Access = declaration.Access;
             type.IsSealed = declaration.IsSealed;
             type.Namespace = _currentNamespace;
-
-            void CreateGenerics(DSharpTypeBuilder builder, IEnumerable<TypeInfoNode> types)
-            {
-                foreach (var type in types)
-                {
-                    var genericType = builder.CreateGenericType(type.Name);
-                    CreateGenerics(genericType, type.GenericParameters);
-                }
-            }
 
             CreateGenerics(type, declaration.Identifier.GenericParameters);
 
@@ -233,7 +219,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             if (declareType == null)
             {
-                throw new ArgumentException($"Field must have a type that declares it", nameof(declareType));
+                throw new ArgumentException($"Field must have a type that declares it: {fieldNode}", nameof(declareType));
             }
 
             DSharpFieldBuilder field = declareType.CreateField(fieldNode.Identifier.GetName(false));
@@ -298,6 +284,17 @@ namespace DialogMaker.Core.Scripting.Compiler
             else
             {
                 method = declareType.CreateMethod(methodNode.Identifier.Name);
+
+                foreach (var genericType in methodNode.Identifier.GenericParameters)
+                {
+                    if (declareType.IsNameExists(genericType.Name))
+                    {
+                        throw new InvalidOperationException($"Name \"{genericType.Name}\" already exists in current context: {genericType}");
+                    }
+
+                    var genericParameter = method.CreateGenericParameter(genericType.Name);
+                    CreateGenerics(genericParameter, genericType.GenericParameters);
+                }
             }
 
             method.IsExtern = methodNode.IsExtern;
@@ -459,6 +456,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                 field.RawValue = enumValue.Value;
             }
         }
+        private void CreateGenerics(DSharpTypeBuilder builder, IEnumerable<TypeInfoNode> types)
+        {
+            foreach (var type in types)
+            {
+                var genericType = builder.CreateGenericType(type.Name);
+                CreateGenerics(genericType, type.GenericParameters);
+            }
+        }
 
         private T CreateProperty<T>(DSharpTypeBuilder? declareType, FieldNode fieldNode, Func<DSharpTypeBuilder, string, T> fabric)
             where T : DSharpPropertyBuilder
@@ -478,16 +483,23 @@ namespace DialogMaker.Core.Scripting.Compiler
             property.IsSealed = fieldNode.IsSealed;
             property.IsAbstract = fieldNode.Mode == DSharpObjectMemberMode.Abstract;
             property.IsVirtual = fieldNode.Mode == DSharpObjectMemberMode.Virtual;
+            property.CanRead = fieldNode.CanRead;
+            property.CanWrite = fieldNode.CanWrite;
+            property.GetterAccess = fieldNode.GetterAccess;
+            property.SetterAccess = fieldNode.SetterAccess;
 
-            if (fieldNode.CanRead)
+            if (!property.IsAbstract)
             {
-                property.CreateGetter();
-                property.GetterAccess = fieldNode.GetterAccess;
-            }
-            if (fieldNode.CanWrite)
-            {
-                property.CreateSetter();
-                property.SetterAccess = fieldNode.SetterAccess;
+                if (fieldNode.CanRead && (fieldNode.Getter != null || declareType.ObjectType != DSharpObjectType.Interface))
+                {
+                    var getter = property.CreateGetter();
+                    getter.GetBytecodeBuilder();
+                }
+                if (fieldNode.CanWrite && (fieldNode.Setter != null || declareType.ObjectType != DSharpObjectType.Interface))
+                {
+                    var setter = property.CreateSetter();
+                    setter.GetBytecodeBuilder();
+                }
             }
 
             return property;
@@ -609,6 +621,25 @@ namespace DialogMaker.Core.Scripting.Compiler
                     {
                         throw new ArgumentException($"Parameter \"{parameter.Name}\" repeat {namesCount} times. Parameter names should be unique");
                     }
+                }
+            }
+            void SetupGenericDescription(DSharpMemberInfoBuilder member, Func<string, DSharpTypeBuilder?> typeSelector, WhereNode genericDescription)
+            {
+                if (genericDescription.Type == null)
+                {
+                    throw new InvalidOperationException($"Invalid generic description: {genericDescription}");
+                }
+
+                var typeName = genericDescription.Type.Name;
+                var genericType = typeSelector(typeName)
+                    ?? throw new InvalidOperationException($"Unable to find generic type with name \"{typeName}\": {genericDescription}");
+
+                genericType.GenericAttributes = genericDescription.Attributes;
+
+                foreach (var baseType in genericDescription.BaseTypes)
+                {
+                    var typeToken = ResolveType(member, baseType);
+                    genericType.AddBaseType(typeToken);
                 }
             }
 
@@ -743,22 +774,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 foreach (var genericDescription in declaration.GenericDescriptions)
                 {
-                    if (genericDescription.Type == null)
-                    {
-                        throw new InvalidOperationException($"Invalid generic description: {genericDescription}");
-                    }
-
-                    var typeName = genericDescription.Type.Name;
-                    var genericType = typeBuilder.GenericTypes.FirstOrDefault(t => t.Name == typeName)
-                        ?? throw new InvalidOperationException($"Unable to find generic type with name \"{typeName}\": {genericDescription}");
-
-                    genericType.GenericAttributes = genericDescription.Attributes;
-
-                    foreach (var baseType in genericDescription.BaseTypes)
-                    {
-                        var typeToken = ResolveType(typeBuilder, baseType);
-                        genericType.AddBaseType(typeToken);
-                    }
+                    SetupGenericDescription(typeBuilder, n => typeBuilder.GenericTypes.FirstOrDefault(t => t.Name == n), genericDescription);
                 }
             }
 
@@ -766,6 +782,20 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 var firstPair = typesToSetupBases.First();
                 SetupBaseTypes(firstPair.Key, firstPair.Value);
+            }
+
+            foreach (var info in _createdMethods)
+            {
+                if (info.Key.GenericParameters.Count == 0 ||
+                    info.Value.GenericDescriptions.Count == 0)
+                {
+                    continue;
+                }
+
+                foreach (var genericDescription in info.Value.GenericDescriptions)
+                {
+                    SetupGenericDescription(info.Key, n => info.Key.GenericParameters.FirstOrDefault(t => t.Name == n), genericDescription);
+                }
             }
 
             foreach (var info in _createdProperties)

@@ -31,6 +31,51 @@ namespace DialogMaker.Core.Scripting.Runtime
                 return [.. type.GetOperators().Where(o => o.UnaryOperator == unaryOperator)];
             }
 
+            /// <summary>
+            /// Check name existence in current type includes declaring types
+            /// </summary>
+            /// <param name="name">Name to check</param>
+            /// <returns>Is name exists in current type</returns>
+            public bool IsNameExists(string name)
+            {
+                IDSharpType? declaringType = type;
+
+                bool ExistsIsBaseTypes(IDSharpType type)
+                {
+                    foreach (var baseType in type.GetBaseTypes().Where(t => t.ObjectType == DSharpObjectType.Class))
+                    {
+                        if (Exists(baseType) ||
+                            ExistsIsBaseTypes(baseType))
+                        {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                }
+                bool Exists(IDSharpType type)
+                {
+                    return type.GetGenericTypes().Any(t => t.Name == name) ||
+                           type.GetChildrenTypes().Any(t => t.Name == name) ||
+                           type.GetFields().Any(f => f.Name == name) ||
+                           type.GetProperties().Any(p => p.Name == name) ||
+                           type.GetMethods().Any(m => m.Name == name);
+                }
+
+                do
+                {
+                    if (Exists(declaringType) ||
+                        ExistsIsBaseTypes(declaringType))
+                    {
+                        return true;
+                    }
+
+                    declaringType = type.DeclaringType;
+                }
+                while (declaringType != null);
+
+                return false;
+            }
             public IDSharpFieldInfo? GetFieldOrDefault(string name)
             {
                 return type.GetMemberOrDefault(t => t.GetFields(), name);
@@ -337,6 +382,11 @@ namespace DialogMaker.Core.Scripting.Runtime
                 return false;
             }
 
+            /// <summary>
+            /// Check specified type on containing to base types of current type
+            /// </summary>
+            /// <param name="baseType">Type to check on containing</param>
+            /// <returns>Is specified type contains in current type</returns>
             public bool ContainsBaseType(IDSharpType baseType)
             {
                 foreach (var bType in type.GetBaseTypes())
@@ -349,22 +399,40 @@ namespace DialogMaker.Core.Scripting.Runtime
 
                 return false;
             }
+            /// <summary>
+            /// Can specified type replace current generic type
+            /// </summary>
+            /// <param name="normalType">Type to check on ability to replace</param>
+            /// <returns>Is replace available</returns>
+            /// <exception cref="ArgumentException">Current type must be a generic type</exception>
             public bool CanReplaceGenericType(IDSharpType normalType)
             {
                 if (!type.IsGeneric)
                 {
-                    throw new ArgumentException($"Current type must be a generic type");
+                    throw new ArgumentException($"Current type must be a generic type: {type}");
                 }
 
-                var baseTypes = type.GetBaseTypes();
-
-                if (baseTypes.Length == 0)
+                if (type.GenericAttributes.HasFlag(DSharpGenericTypeAttributes.Struct) &&
+                    normalType.ObjectType != DSharpObjectType.Struct &&
+                    normalType.ObjectType != DSharpObjectType.Enum)
                 {
-                    return true;
+                    return false;
                 }
-                foreach (var baseType in baseTypes)
+                if (type.GenericAttributes.HasFlag(DSharpGenericTypeAttributes.EmptyConstructor))
                 {
-                    if (!normalType.ContainsBaseType(baseType))
+                    var constructors = normalType.GetConstructors();
+
+                    if (constructors.Length > 0 &&
+                        !constructors.Any(c => c.GetParameters().Length == 0))
+                    {
+                        return false;
+                    }
+                }
+                
+                foreach (var genericBaseType in type.GetBaseTypes())
+                {
+                    if (genericBaseType != normalType &&
+                        !normalType.ContainsBaseType(genericBaseType))
                     {
                         return false;
                     }
@@ -411,6 +479,11 @@ namespace DialogMaker.Core.Scripting.Runtime
 
                 return false;
             }
+            /// <summary>
+            /// Find all types in assembly that inherits by specified type
+            /// </summary>
+            /// <param name="baseType">Base type to search</param>
+            /// <returns>List of types that inherits from specified type</returns>
             public List<IDSharpType> FindTypeBasedOn(IDSharpType baseType)
             {
                 List<IDSharpType> result = [];
@@ -422,6 +495,109 @@ namespace DialogMaker.Core.Scripting.Runtime
                         result.Add(type);
                     }
                 }
+
+                return result;
+            }
+        }
+        extension(IDSharpMethodInfo method)
+        {
+            public string ToString(IDictionary<IDSharpType, IDSharpType>? replacedTypes)
+            {
+                string result = " ";
+
+                if (method.DeclaringType != null)
+                {
+                    result += method.DeclaringType.FullName + ".";
+                }
+
+                result += method.Name;
+
+                IDSharpType ReplaceType(IDSharpType type)
+                {
+                    if (replacedTypes != null &&
+                        replacedTypes.TryGetValue(type, out var newType))
+                    {
+                        return newType;
+                    }
+
+                    return type;
+                }
+
+                if (method.ReturnType == null)
+                {
+                    result = DSharpBuildInTypes.Void.ShortName + result;
+                }
+                else
+                {
+                    result = ReplaceType(method.ReturnType) + result;
+                }
+
+                var parameters = method.GetParameters();
+                var genericParameters = method.GetGenericParameters();
+
+                if (genericParameters.Length > 0)
+                {
+                    result += '<';
+                    bool isFirst = true;
+
+                    foreach (var genericParameter in genericParameters)
+                    {
+                        if (!isFirst)
+                        {
+                            result += ", ";
+                        }
+
+                        result += ReplaceType(genericParameter);
+                        isFirst = false;
+                    }
+
+                    result += '>';
+                }
+
+                result += '(';
+
+                if (parameters.Length > 0)
+                {
+                    bool isFirst = true;
+
+                    foreach (var parameter in parameters)
+                    {
+                        if (!isFirst)
+                        {
+                            result += ", ";
+                        }
+
+                        result += parameter.ToString(replacedTypes);
+                        isFirst = false;
+                    }
+                }
+
+                result += ')';
+
+                return result;
+            }
+        }
+        extension(IDSharpParameterInfo parameter)
+        {
+            public string ToString(IDictionary<IDSharpType, IDSharpType>? replacedTypes)
+            {
+                string result = string.Empty;
+
+                if (parameter.Mode != DSharpMethodParameterMode.Default)
+                {
+                    result = parameter.Mode.ToString().ToLower() + " ";
+                }
+
+                if (replacedTypes != null && replacedTypes.TryGetValue(parameter.Type, out var newType))
+                {
+                    result += newType;
+                }
+                else
+                {
+                    result += parameter.Type;
+                }
+
+                result += " " + parameter.Name;
 
                 return result;
             }

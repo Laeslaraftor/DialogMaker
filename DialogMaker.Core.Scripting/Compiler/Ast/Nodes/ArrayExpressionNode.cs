@@ -65,22 +65,41 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Check comma and eat it, then checks next value existents
         /// </summary>
         /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <returns>Returns true when comma not existed or value existed, return false when value not presented after comma</returns>
+        public static bool CheckTokenAfterComma(AstParserStream stream)
+        {
+            return CheckTokenAfterComma(stream, 0);
+        }
+        /// <summary>
+        /// Check comma and eat it, then checks next value existents
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
         /// <param name="endToken">Token which indicates end of list</param>
         /// <param name="eatToken">Flag that indicates intent to eat comma token</param>
         /// <returns>Returns true when comma not existed or value existed, return false when value not presented after comma</returns>
         public static bool CheckTokenAfterComma(AstParserStream stream, DSharpTokenType endToken = DSharpTokenType.RightBracket, bool eatToken = true)
         {
-            if (stream.Check(DSharpTokenType.Comma))
+            return CheckTokenAfterComma(stream, 0, endToken, eatToken);
+        }
+        /// <summary>
+        /// Check comma and eat it, then checks next value existents
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="offset">Check offset</param>
+        /// <param name="endToken">Token which indicates end of list</param>
+        /// <param name="eatToken">Flag that indicates intent to eat comma token</param>
+        /// <returns>Returns true when comma not existed or value existed, return false when value not presented after comma</returns>
+        public static bool CheckTokenAfterComma(AstParserStream stream, int offset = 0, DSharpTokenType endToken = DSharpTokenType.RightBracket, bool eatToken = true)
+        {
+            if (stream.Check(DSharpTokenType.Comma, offset))
             {
-                int offset = 0;
-
                 if (eatToken)
                 {
                     stream.Eat(DSharpTokenType.Comma);
                 }
                 else
                 {
-                    offset = 1;
+                    offset++;
                 }
 
                 if (stream.Check(endToken, offset))

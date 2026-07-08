@@ -15,6 +15,7 @@ namespace DialogMaker.Core.Tests
         public const string MathScript = "MathScript";
         public const string OperatorsScript = "OperatorsTest";
         public const string GenericMethodsScript = "GenericMethodsScript";
+        public const string InterfacesScript = "InterfacesScript";
 
         [Test]
         [TestCase(SimpleScript)]
@@ -22,6 +23,7 @@ namespace DialogMaker.Core.Tests
         [TestCase(MathScript)]
         [TestCase(OperatorsScript)]
         [TestCase(GenericMethodsScript)]
+        [TestCase(InterfacesScript)]
         public static void TestSimpleScriptCompiling(string fileName)
         {
             var assembly = CompileScript(fileName);
@@ -281,7 +283,7 @@ namespace DialogMaker.Core.Tests
 
                 if (property.CanRead)
                 {
-                    PrintAccess(property.GetterAccess);
+                    PrintAccess(property.GetterAccess.GetValueOrDefault());
                     Console.Write("get;");
                 }
                 if (property.CanWrite)
@@ -291,7 +293,7 @@ namespace DialogMaker.Core.Tests
                         Console.Write(" ");
                     }
 
-                    PrintAccess(property.SetterAccess);
+                    PrintAccess(property.SetterAccess.GetValueOrDefault());
                     Console.Write("set;");
                 }
 
@@ -299,11 +301,7 @@ namespace DialogMaker.Core.Tests
             }
             void PrintMethod(DSharpMethodBuilder method)
             {
-                PrintType(method.ReturnType);
-                Console.Write(method.Name);
-                Console.Write('(');
-                PrintParameters(method.Parameters);
-                Console.WriteLine(')');
+                Console.WriteLine(method.ToString());
             }
             void PrintParameters(IEnumerable<DSharpMethodBuilderParameter> parameters)
             {

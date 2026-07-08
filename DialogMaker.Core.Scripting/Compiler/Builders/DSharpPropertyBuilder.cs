@@ -84,8 +84,32 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 }
             }
         }
-        public DSharpAccessModifier GetterAccess { get; set; }
-        public DSharpAccessModifier SetterAccess { get; set; }
+        public DSharpAccessModifier? GetterAccess
+        {
+            get
+            {
+                if (IsDeclaration && CanRead || Getter != null)
+                {
+                    return field;
+                }
+
+                return null;
+            }
+            set;
+        }
+        public DSharpAccessModifier? SetterAccess
+        {
+            get
+            {
+                if (IsDeclaration && CanWrite || Setter != null)
+                {
+                    return field;
+                }
+
+                return null;
+            }
+            set;
+        }
         public string GetterMethodName { get; private set; } = string.Empty;
         public string SetterMethodName { get; private set; } = string.Empty;
         public bool CanRead
@@ -126,13 +150,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 var getter = Getter;
                 var setter = Setter;
 
-                if (getter == null && setter == null)
-                {
-                    return true;
-                }
-
-                return getter?.IsDeclaration == true ||
-                       setter?.IsDeclaration == true;
+                return getter == null && setter == null;
             }
         }
         internal IDSharpPropertyInfo? OriginalProperty { get; set; }

@@ -101,10 +101,30 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <exception cref="Exception">Unable to read type identifier</exception>
         public static bool CanParseIdentifier(AstParserStream stream, int offset = 0)
         {
+            return CanParseIdentifier(stream, offset, out _);
+        }
+        /// <summary>
+        /// Check identifier parse availability
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="offset">Token offset</param>
+        /// <param name="endOffset">Offset to end of identified includes generic parameters</param>
+        /// <returns>Is parse identifier available</returns>
+        /// <exception cref="Exception">Unable to read type identifier</exception>
+        public static bool CanParseIdentifier(AstParserStream stream, int offset, out int endOffset)
+        {
             var current = stream.Peek(offset) ?? throw new Exception("Unable to read type identifier");
+            endOffset = -1;
 
-            return IsStandardTypeIdentifier(current.Type) ||
-                   current.Type == DSharpTokenType.Identifier;
+            if (!IsStandardTypeIdentifier(current.Type) &&
+                current.Type != DSharpTokenType.Identifier)
+            {
+                return false;
+            }
+
+            IsGenericParameters(stream, offset + 1, out endOffset);
+
+            return true;
         }
         /// <summary>
         /// Parse type info with only name of type starts with current token at parser stream
@@ -248,13 +268,27 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <param name="stream">Abstract syntax tree parser stream</param>
         /// <param name="offset">Tokens offset</param>
         /// <returns>Is next tokens are generic parameters</returns>
-        public static bool IsGenericParameters(AstParserStream stream, int offset = 1)
+        public static bool IsGenericParameters(AstParserStream stream, int offset = 0)
         {
-            if (!stream.Check(DSharpTokenType.Less))
+            return IsGenericParameters(stream, offset, out _);
+        }
+        /// <summary>
+        /// Check is next tokens are generic parameters
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="offset">Tokens offset</param>
+        /// <param name="endOffset">Offset to end of generic parameters</param>
+        /// <returns>Is next tokens are generic parameters</returns>
+        public static bool IsGenericParameters(AstParserStream stream, int offset, out int endOffset)
+        {
+            endOffset = -1;
+
+            if (!stream.Check(DSharpTokenType.Less, offset))
             {
                 return false;
             }
 
+            offset++;
             int inner = 1;
 
             bool IsEnd(int offset)
@@ -278,6 +312,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
                     if (0 >= inner)
                     {
+                        offset++;
                         break;
                     }
                 }
@@ -286,7 +321,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 {
                     return false;
                 }
-                if (!ArrayExpressionNode.CheckTokenAfterComma(stream, DSharpTokenType.Greater))
+                if (!ArrayExpressionNode.CheckTokenAfterComma(stream, offset, DSharpTokenType.Greater, false))
                 {
                     return false;
                 }
@@ -298,6 +333,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 return false;
             }
+
+            endOffset = offset;
 
             return true;
         }

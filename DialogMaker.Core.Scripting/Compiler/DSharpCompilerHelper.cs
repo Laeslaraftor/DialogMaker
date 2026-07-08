@@ -136,8 +136,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                     {
                         if ((otherProperty.CanWrite && !currentProperty.CanWrite) ||
                             (otherProperty.CanRead && !currentProperty.CanRead) ||
-                            (otherProperty.CanWrite && currentProperty.Setter?.Access != otherProperty.Setter?.Access) ||
-                            (otherProperty.CanRead && currentProperty.Getter?.Access != otherProperty.Getter?.Access))
+                            (otherProperty.CanWrite && currentProperty.SetterAccess != otherProperty.SetterAccess) ||
+                            (otherProperty.CanRead && currentProperty.GetterAccess != otherProperty.GetterAccess))
                         {
                             return false;
                         }
@@ -387,7 +387,18 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 else if (expression is CallExpressionNode callExpression)
                 {
-                    return context.FindMethod(callExpression).ReturnType;
+                    var callingInfo = context.FindMethod(callExpression);
+
+                    if (callingInfo.Method.ReturnType == null)
+                    {
+                        return null;
+                    }
+                    if (callingInfo.GenericParameters.TryGetValue(callingInfo.Method.ReturnType, out var newReturnType))
+                    {
+                        return newReturnType;
+                    }
+
+                    return callingInfo.Method.ReturnType;
                 }
                 else if (expression is ThisExpressionNode thisExpression)
                 {

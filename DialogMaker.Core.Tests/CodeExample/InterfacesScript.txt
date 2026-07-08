@@ -9,11 +9,14 @@
 	public struct Void {}
 	public class Object {}
 }
-	
-var value1 = 2.845934593434769374637;
-var value = ((2.845934593434769374637 + 2) * (2 + 2));
 
-void globalFunction()
+public interface IExample
 {
-	//byte data = 1000;
+	public string Value { get; }
+}
+
+
+public class ExampleImplementation : IExample
+{
+	public string Value { get; }
 }

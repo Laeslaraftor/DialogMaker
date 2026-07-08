@@ -197,6 +197,54 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             #endregion
         }
+        public class GenericCallingInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation, DSharpMethodCallingInfo callingInfo)
+            : Instruction(builder, operation)
+        {
+            public DSharpMethodCallingInfo CallingInfo { get; set; } = callingInfo;
+
+            #region Управление
+
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <param name="builder"><inheritdoc/></param>
+            /// <returns><inheritdoc/></returns>
+            public override Instruction Copy(DSharpBytecodeBuilder builder)
+            {
+                return new GenericCallingInstruction(builder, Operation, CallingInfo);
+            }
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <returns><inheritdoc/></returns>
+            public override object[] GetArguments()
+            {
+                object[] arguments = new object[CallingInfo.GenericParameters.Count + 1];
+                arguments[0] = CallingInfo.Method;
+
+                int i = 1;
+
+                foreach (var info in CallingInfo.GenericParameters)
+                {
+                    arguments[i] = info.Value;
+                    i++;
+                }
+
+                return arguments;
+            }
+
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <returns><inheritdoc/></returns>
+            public override string ToString()
+            {
+                return $"{Operation} [{CallingInfo.Method.ToString(CallingInfo.GenericParameters)}]";
+            }
+
+            #endregion
+        }
+
         public class SizedTypeInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation, IDSharpMemberInfo memberInfo, int size) 
             : TypeInstruction(builder, operation, memberInfo)
         {

@@ -10,12 +10,11 @@ namespace DialogMaker.Core.Tests
         [TestCase(ScriptCompilerTests.SimpleScript, "repeat")]
         [TestCase(ScriptCompilerTests.SimpleScript, "sum")]
         [TestCase(ScriptCompilerTests.SimpleScript, "getTextColor")]
-        [TestCase(ScriptCompilerTests.SimpleScript, "getNumberNameType")]
         [TestCase(ScriptCompilerTests.SimpleScript, "getGenericValue")]
         [TestCase(ScriptCompilerTests.SimpleScript, "getLines")]
         [TestCase(ScriptCompilerTests.SimpleScript, "foreachTest")]
         [TestCase(ScriptCompilerTests.SimpleScript, "System.Threading.Thread.Increment")]
-        [TestCase(ScriptCompilerTests.SimpleScript, "System.Number.GetSquared")]
+        [TestCase(ScriptCompilerTests.SimpleScript, "System.Double.GetSquared")]
         [TestCase(ScriptCompilerTests.SimpleScript, "System.List`1.Add")]
         [TestCase(ScriptCompilerTests.SimpleScript, "System.List`1.Remove")]
         [TestCase(ScriptCompilerTests.SimpleScript, "System.List`1.Expand")]
@@ -29,14 +28,14 @@ namespace DialogMaker.Core.Tests
         [TestCase(ScriptCompilerTests.OperatorsScript, "sumTypes")]
         [TestCase(ScriptCompilerTests.OperatorsScript, "unaryTest")]
         [TestCase(ScriptCompilerTests.OperatorsScript, "customBinaryOperatorWithAssignment")]
-        [TestCase(ScriptCompilerTests.GenericMethodsScript, "MegaClass`1.GetTypeName")]
+        [TestCase(ScriptCompilerTests.GenericMethodsScript, "GetHudoeName")]
+        [TestCase(ScriptCompilerTests.GenericMethodsScript, "MegaClass.CreateInstance")]
         public static void PrintSimpleFunctionBytecode(string scriptName, string functionName)
         {
             var assembly = ScriptCompilerTests.CompileScript(scriptName);
             ReadFunctionOrMethod(assembly, functionName);
         }
 
-        
         private static void ReadFunctionOrMethod(DSharpAssemblyBuilder assembly, string fullName)
         {
             string[] parts = fullName.Split('.');

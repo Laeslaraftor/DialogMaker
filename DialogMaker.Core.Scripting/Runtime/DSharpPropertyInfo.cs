@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core.Scripting.Runtime
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+
+namespace DialogMaker.Core.Scripting.Runtime
 {
     public abstract class DSharpPropertyInfo : DSharpMemberInfo, IDSharpPropertyInfo
     {
@@ -17,5 +19,9 @@
         public IDSharpPropertyInfo? OverrideProperty => throw new NotImplementedException();
 
         public bool IsAbstract => throw new NotImplementedException();
+
+        public DSharpAccessModifier? GetterAccess => throw new NotImplementedException();
+
+        public DSharpAccessModifier? SetterAccess => throw new NotImplementedException();
     }
 }

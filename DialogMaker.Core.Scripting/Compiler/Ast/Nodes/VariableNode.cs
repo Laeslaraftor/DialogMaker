@@ -68,10 +68,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Is variable definition</returns>
         public static bool IsVariable(AstParserStream stream)
         {
-            bool canParseIdentifier = TypeInfoNode.CanParseIdentifier(stream);
+            if (!TypeInfoNode.CanParseIdentifier(stream, 0, out var endOffset))
+            {
+                return false;
+            }
 
-            return canParseIdentifier && stream.Check(DSharpTokenType.Identifier, 1) && stream.Check(DSharpTokenType.Semicolon, 2) ||
-                   canParseIdentifier && stream.Check(DSharpTokenType.Identifier, 1) && stream.Check(DSharpTokenType.Assign, 2);
+            return stream.Check(DSharpTokenType.Identifier, endOffset) && stream.Check(DSharpTokenType.Semicolon, endOffset + 1) ||
+                   stream.Check(DSharpTokenType.Identifier, endOffset) && stream.Check(DSharpTokenType.Assign, endOffset + 1);
         }
         /// <summary>
         /// Parse variable start with current token

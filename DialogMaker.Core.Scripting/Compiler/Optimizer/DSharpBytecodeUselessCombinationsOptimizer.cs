@@ -8,11 +8,9 @@ namespace DialogMaker.Core.Scripting.Compiler
     public static partial class DSharpBytecodeOptimizer
     {
         private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _storeParameterOperations = new([
-            DSharpBytecodeOperation.StoreArgument,
             DSharpBytecodeOperation.StoreLocal
         ]);
         private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _loadParameterOperations = new([
-            DSharpBytecodeOperation.LoadArgument,
             DSharpBytecodeOperation.LoadLocal
         ]);
         private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _storeMemberOperations = new([

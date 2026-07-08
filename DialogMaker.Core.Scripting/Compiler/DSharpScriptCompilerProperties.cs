@@ -36,6 +36,12 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             void CreateAccessor(Func<DSharpMethodBuilder> fabric, BlockStatementNode? customAccessor, DSharpAccessModifier access, Action<DSharpMethodBuilder, DSharpMethodCompileSettings> compiler)
             {
+                if (customAccessor == null &&
+                    property.DeclaringType.ObjectType == DSharpObjectType.Interface)
+                {
+                    return;
+                }
+
                 DSharpMethodBuilder accessorMethod = fabric();
                 accessorMethod.Access = access;
 

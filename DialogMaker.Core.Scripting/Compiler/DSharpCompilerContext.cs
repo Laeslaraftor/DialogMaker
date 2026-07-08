@@ -31,7 +31,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             CurrentLoopEndInstruction = context.CurrentLoopEndInstruction;
             NowInCatchBlock = context.NowInCatchBlock;
 
-            if (context.Compiler != null)
+            if (context.Compiler != null && context.CurrentMember != currentMember)
             {
                 if (currentMember == null)
                 {
@@ -361,7 +361,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             else if (expression is CallExpressionNode callExpression)
             {
-                result = FindMethod(callExpression);
+                result = FindMethod(callExpression).Method;
             }
             else if (expression is ArrayAccessExpressionNode arrayExpression)
             {
@@ -718,7 +718,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             throw new ArgumentException($"Unable to find constructor with parameters count {parametersCount} at \"{type}\"");
         }
-        public readonly IDSharpMethodInfo FindMethod(CallExpressionNode callExpression, IDSharpMemberInfo? argumentsMember = null)
+        public readonly DSharpMethodCallingInfo FindMethod(CallExpressionNode callExpression, IDSharpMemberInfo? argumentsMember = null)
         {
             if (callExpression.Callee == null)
             {
@@ -765,7 +765,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             if (callee is IdentifierExpressionNode identifier)
             {
-                name = identifier.GetName(true);
+                name = identifier.Name;
             }
             else
             {
@@ -773,20 +773,31 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             IDSharpType?[] parameters;
+            IDSharpType[]? genericParameters = null;
 
             if (argumentsMember == null)
             {
                 parameters = GetArgumentTypes(callExpression.Arguments);
+
+                if (identifier.GenericParameters.Count > 0)
+                {
+                    genericParameters = GetArgumentTypes(identifier.GenericParameters);
+                }
             }
             else
             {
                 DSharpCompilerContext argumentsContext = new(this, argumentsMember);
                 parameters = argumentsContext.GetArgumentTypes(callExpression.Arguments);
+
+                if (identifier.GenericParameters.Count > 0)
+                {
+                    genericParameters = argumentsContext.GetArgumentTypes(identifier.GenericParameters);
+                }
             }
 
             try
             {
-                return context.FindMethod(name, parameters);
+                return context.FindMethod(name, parameters, genericParameters);
             }
             catch (Exception error)
             {
@@ -869,7 +880,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             throw new InvalidOperationException($"Can not find indexer in \"{currentType}\" with {parameters.Length} parameters");
         }
-        public readonly IDSharpMethodInfo FindMethod(string name, params IDSharpType?[] parameters)
+        public readonly DSharpMethodCallingInfo FindMethod(string name, IDSharpType?[] parameters, IDSharpType[]? genericParameters = null)
         {
             IDSharpType? currentType = CurrentMember as IDSharpType ?? CurrentMember?.DeclaringType;
             IEnumerable<IDSharpMemberInfo> members;
@@ -894,20 +905,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                                                          method.MethodType == DSharpMethodType.Default);
             }
 
-            bool IsValid(IDSharpParameterInfo[] methodParameters)
-            {
-                for (int i = 0; i < methodParameters.Length; i++)
-                {
-                    if (!parameters[i]!.IsAssignableTo(methodParameters[i].Type))
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
-            IDSharpMethodInfo? result = null;
+            DSharpMethodCallingInfo? methodCallingInfo = null;
+            List<Exception> callingExceptions = [];
 
             foreach (var member in members)
             {
@@ -917,18 +916,22 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 var methodParameters = method.GetParameters();
+                var methodGenericParameters = method.GetGenericParameters();
 
                 if (methodParameters.Length != parameters.Length)
                 {
                     continue;
                 }
-                if (IsValid(methodParameters))
+
+                try
                 {
-                    if (result != null)
+                    var callingInfo = DSharpMethodCallingInfo.Create(method, parameters, genericParameters);
+
+                    if (methodCallingInfo != null)
                     {
-                        if (result.OverrideMethod != null)
+                        if (methodCallingInfo.Method.OverrideMethod != null)
                         {
-                            var currentOverride = result.OverrideMethod;
+                            var currentOverride = methodCallingInfo.Method.OverrideMethod;
                             bool skipMethod = false;
 
                             while (currentOverride != null)
@@ -951,13 +954,26 @@ namespace DialogMaker.Core.Scripting.Compiler
                         throw new InvalidOperationException($"Multiple methods \"{name}\" with same parameters was found at \"{membersSource}\"");
                     }
 
-                    result = method;
+                    methodCallingInfo = callingInfo;
+                }
+                catch (Exception error)
+                {
+                    callingExceptions.Add(error);
                 }
             }
 
-            if (result != null)
+            if (methodCallingInfo != null)
             {
-                return result;
+                return methodCallingInfo;
+            }
+
+            if (callingExceptions.Count == 1)
+            {
+                throw callingExceptions[0];
+            }
+            else if (callingExceptions.Count > 1)
+            {
+                throw callingExceptions[^1];
             }
 
             string message = $"Can not find method \"{name}\" in \"{currentType}\" with {parameters.Length} parameters";
@@ -975,8 +991,40 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 message = builder.ToString().TrimEnd();
             }
+            if (genericParameters != null && genericParameters.Length > 0)
+            {
+                message += $" and {genericParameters.Length} generic parameters: ";
+                StringBuilder builder = new();
+                builder.AppendLine(message);
+
+                for (int i = 0; i < genericParameters.Length; i++)
+                {
+                    builder.AppendLine($"{i}: {genericParameters[i]}");
+                }
+
+                message = builder.ToString().TrimEnd();
+            }
 
             throw new InvalidOperationException(message);
+        }
+        public readonly IDSharpType[] GetArgumentTypes(IEnumerable<TypeInfoNode> typesInfo)
+        {
+            if (Assembly == null)
+            {
+                throw new InvalidOperationException("Unable to resolve types when assembly not specified");
+            }
+
+            IDSharpType[] parameters = new IDSharpType[typesInfo.Count()];
+            int i = 0;
+
+            foreach (var info in typesInfo)
+            {
+                var typeToken = ResolveType(info);
+                parameters[i] = (IDSharpType)Assembly.GetType(typeToken);
+                i++;
+            }
+
+            return parameters;
         }
         public readonly IDSharpType?[] GetArgumentTypes(IEnumerable<ExpressionNode> arguments)
         {

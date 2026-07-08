@@ -569,7 +569,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             return ReplaceTypes(genericType, parent, replacedTypes);
         }
-        public IDSharpType ReplaceTypes(IDSharpType genericType, DSharpTypeBuilder? parent, IReadOnlyDictionary<IDSharpType, IDSharpType> replacedTypes)
+        public IDSharpType ReplaceTypes(IDSharpType genericType, DSharpTypeBuilder? parent, IDictionary<IDSharpType, IDSharpType> replacedTypes)
         {
             Dictionary<IDSharpMemberInfo, IDSharpMemberInfo> replacedMembers = [];
             DSharpAssemblyBuilder assemblyBuilder = this;
@@ -761,10 +761,30 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 if (newMethod.MethodType != DSharpMethodType.Getter &&
                     newMethod.MethodType != DSharpMethodType.Setter)
                 {
-                    foreach (var genericParameter in method.GetGenericParameters())
+                    var genericParameters = method.GetGenericParameters();
+
+                    foreach (var genericParameter in genericParameters)
                     {
-                        newMethod.GenericParameters.Add(GetTypeToken(genericParameter));
+                        var newGenericParameter = newMethod.CreateGenericParameter(genericParameter.Name);
+                        newGenericParameter.GenericAttributes = genericParameter.GenericAttributes;
+
+                        replacedMembers.Add(genericParameter, newGenericParameter);
+                        replacedTypes.Add(genericParameter, newGenericParameter);
                     }
+                    foreach (var genericParameter in genericParameters)
+                    {
+                        if (!replacedTypes.TryGetValue(genericParameter, out var newGenericParameter) ||
+                            newGenericParameter is not DSharpTypeBuilder parameterBuilder)
+                        {
+                            continue;
+                        }
+                        foreach (var baseType in genericParameter.GetBaseTypes())
+                        {
+                            var replacedType = ReplaceGenericParameters(baseType, replacedTypes);
+                            parameterBuilder.AddBaseType(replacedType);
+                        }
+                    }
+
 
                     SetupParameters(newMethod.Parameters, method.GetParameters());
                 }
@@ -773,11 +793,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
 
             newType._templatedMembers = new ReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo>(replacedMembers);
-            newType._replacedTypes = replacedTypes;
+            newType._replacedTypes = new(replacedTypes);
 
             return newType;
         }
-        public IDSharpType ReplaceGenericParameters(IDSharpType genericType, IReadOnlyDictionary<IDSharpType, IDSharpType> replacedTypes)
+        public IDSharpType ReplaceGenericParameters(IDSharpType genericType, IDictionary<IDSharpType, IDSharpType> replacedTypes)
         {
             if (replacedTypes.Count == 0)
             {

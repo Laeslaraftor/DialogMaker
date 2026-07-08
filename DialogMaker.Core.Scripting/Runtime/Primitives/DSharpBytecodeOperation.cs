@@ -48,20 +48,6 @@
         [RequestsStackValues(0)]
         StackReplace,
         /// <summary>
-        /// Load value from argument to stack
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(0)]
-        LoadArgument,
-        /// <summary>
-        /// Store last value from stack to argument variable.
-        /// Stack:
-        /// 0: value
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(1)]
-        StoreArgument,
-        /// <summary>
         /// Load value from local variable to stack
         /// </summary>
         [ArgsCount(1)]
@@ -106,6 +92,91 @@
         [ArgsCount(1)]
         [RequestsStackValues(2)]
         StoreInstanceField,
+
+        /// <summary>
+        /// Store last value from stack to static property.
+        /// Stack:
+        /// 0: value
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(1)]
+        StoreProperty,
+        /// <summary>
+        /// Store last value from stack to object instance property.
+        /// Stack:
+        /// 0: instance
+        /// 1: value
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(2)]
+        StoreInstanceProperty,
+        /// <summary>
+        /// Store last value from stack to object instance property without searching overriding member. 
+        /// Stack:
+        /// 0: instance
+        /// 1: value
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(2)]
+        StoreBaseInstanceProperty,
+        /// <summary>
+        /// Load value from static property to stack.
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(0)]
+        LoadProperty,
+        /// <summary>
+        /// Load value from object instance property to stack.
+        /// Stack:
+        /// 0: instance
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(1)]
+        LoadInstanceProperty,
+        /// <summary>
+        /// Load value from object instance property to stack without searching overriding member. 
+        /// Stack:
+        /// 0: instance
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(1)]
+        LoadBaseInstanceProperty,
+
+        /// <summary>
+        /// Store last value from stack to object instance indexer.
+        /// Stack:
+        /// 0: instance
+        /// 1: value
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(-3)]
+        StoreIndexer,
+        /// <summary>
+        /// Store last value from stack to object instance indexer without searching overriding member. 
+        /// Stack:
+        /// 0: instance
+        /// 1: value
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(-3)]
+        StoreBaseIndexer,
+        /// <summary>
+        /// Load value from object instance indexer to stack.
+        /// Stack:
+        /// 0: instance
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(-2)]
+        LoadIndexer,
+        /// <summary>
+        /// Load value from object instance indexer to stack without searching overriding member. 
+        /// Stack:
+        /// 0: instance
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(-2)]
+        LoadBaseIndexer,
+
         /// <summary>
         /// Load current object instance to stack
         /// </summary>
@@ -165,6 +236,59 @@
         [ArgsCount(1)]
         [RequestsStackValues(-2)]
         AwaitCallBaseInstance,
+        /// <summary>
+        /// Call generic function or static generic method.
+        /// Stack:
+        /// 0: args...
+        /// </summary>
+        [ArgsCount(-2)]
+        [RequestsStackValues(-1)]
+        GenericCall,
+        /// <summary>
+        /// Call and await generic function or static generic method.
+        /// Stack:
+        /// 0: args...
+        /// </summary>
+        [ArgsCount(-2)]
+        [RequestsStackValues(-1)]
+        AwaitGenericCall,
+        /// <summary>
+        /// Call generic method from instance of object that must be placed in bottom of stack. 
+        /// Stack:
+        /// 0: instance,
+        /// 1: args...
+        /// </summary>
+        [ArgsCount(-2)]
+        [RequestsStackValues(-2)]
+        GenericCallInstance,
+        /// <summary>
+        /// Call generic method from instance of object that must be placed in bottom of stack without searching overriding member. 
+        /// Stack:
+        /// 0: instance,
+        /// 1: args...
+        /// </summary>
+        [ArgsCount(-2)]
+        [RequestsStackValues(-2)]
+        GenericCallBaseInstance,
+        /// <summary>
+        /// Call and await generic method from instance of object that must be placed in bottom of stack. 
+        /// Stack:
+        /// 0: instance,
+        /// 1: args...
+        /// </summary>
+        [ArgsCount(-2)]
+        [RequestsStackValues(-2)]
+        AwaitGenericCallInstance,
+        /// <summary>
+        /// Call and await generic method from instance of object that must be placed in bottom of stack without searching overriding member. 
+        /// Stack:
+        /// 0: instance,
+        /// 1: args...
+        /// </summary>
+        [ArgsCount(-2)]
+        [RequestsStackValues(-2)]
+        AwaitGenericCallBaseInstance,
+
         /// <summary>
         /// Jump to instruction
         /// </summary>

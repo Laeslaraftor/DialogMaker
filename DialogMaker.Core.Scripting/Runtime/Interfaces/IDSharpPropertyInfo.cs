@@ -7,6 +7,8 @@ namespace DialogMaker.Core.Scripting.Runtime
         public IDSharpType PropertyType { get; }
         public IDSharpMethodInfo? Getter { get; }
         public IDSharpMethodInfo? Setter { get; }
+        public DSharpAccessModifier? GetterAccess { get; }
+        public DSharpAccessModifier? SetterAccess { get; }
         public bool CanRead { get; }
         public bool CanWrite { get; }
         /// <summary>

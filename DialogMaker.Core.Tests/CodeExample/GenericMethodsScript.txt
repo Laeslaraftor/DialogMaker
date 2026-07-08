@@ -5,31 +5,49 @@
 	public sealed struct Decimal {}
 	public sealed struct Single {}
 	public sealed struct Double {}
+	public sealed struct Boolean {}
 	public sealed class String {}
 	public sealed class Object {}
 	public sealed struct Void {}
-}
-
-public class Ura
-{
-	public abstract string Name { get; }
-}
-public class HudoiUra : Ura
-{
-	public override string Name => "Hudoi";
-}
-
-public class MegaClass<T> where T : Ura
-{	
-	public string GetTypeName(T instance)
+	public class Exception {}
+	
+	namespace Collections
 	{
-		return instance.Name;
+		namespace Generic
+		{
+			public interface IList<T>
+			{
+			}
+		}
+	}
+}
+
+public class MegaClass
+{	
+	public string Name { get; }
+
+	public TCast Cast<TCast, TItem>()
+		where TCast : IList<TItem>
+	{
+		return null;
+	}
+	public static T CreateInstance<T>()
+		where T : MegaClass, new()
+	{
+		return new();
 	}
 }
 
 void GetHudoeName()
 {
-	MegaClass<HudoiUra> mega = new();
-	HudoiUra hudoi = new();
-	var name = mega.GetTypeName(hudoi);
+	var instance = MegaClass.CreateInstance<MegaClass>();
+	
+	if (instance == null)
+	{
+		throw new Exception();
+	}
+	else 
+	{
+		GetHudoeName();
+	}
 }

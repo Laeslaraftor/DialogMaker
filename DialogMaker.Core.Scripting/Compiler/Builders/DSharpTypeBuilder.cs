@@ -231,7 +231,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         private readonly List<DSharpTypeBuilder> _genericTypes = [];
         private readonly List<DSharpTypeBuilder> _childrenTypes = [];
         internal IReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo>? _templatedMembers;
-        internal IReadOnlyDictionary<IDSharpType, IDSharpType>? _replacedTypes;
+        internal ReadOnlyDictionary<IDSharpType, IDSharpType>? _replacedTypes;
 
         #region Управление
 
@@ -243,6 +243,17 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
 
             return CreateMember(DSharpMetadataTokenType.Method, _methods, fabric);
+        }
+        internal DSharpTypeBuilder CreateType(string name, bool isGeneric, bool addToChilds = false)
+        {
+            var type = Assembly.CreateType(name, isGeneric, this);
+
+            if (addToChilds)
+            {
+                _childrenTypes.Add(type);
+            }
+
+            return type;
         }
         internal override void Update()
         {
@@ -325,7 +336,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
         public DSharpTypeBuilder CreateGenericType(string name)
         {
-            var type = Assembly.CreateType(name, true, this);
+            var type = CreateType(name, true);
             _genericTypes.Add(type);
 
             return type;
@@ -403,7 +414,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         }
         public DSharpTypeBuilder CreateChildType(string name)
         {
-            var type = Assembly.CreateType(name, false, this);
+            var type = CreateType(name, false);
             _childrenTypes.Add(type);
 
             return type;
@@ -521,7 +532,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             return _templatedMembers;
         }
-        public IReadOnlyDictionary<IDSharpType, IDSharpType> GetReplacedTypes()
+        public ReadOnlyDictionary<IDSharpType, IDSharpType> GetReplacedTypes()
         {
             if (_replacedTypes != null)
             {
@@ -540,7 +551,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 replacedTypes.Add(genericTypes[i], (IDSharpType)Assembly.GetType(GenericParameters[i]));
             }
 
-            _replacedTypes = new ReadOnlyDictionary<IDSharpType, IDSharpType>(replacedTypes);
+            _replacedTypes = new(replacedTypes);
 
             return _replacedTypes;
         }

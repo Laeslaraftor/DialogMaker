@@ -341,7 +341,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
                 else
                 {
-                    if (stream.Check(DSharpTokenType.Identifier) && IsDefinitionEnded(1))
+                    if (stream.Check(DSharpTokenType.Identifier) && 
+                        (IsDefinitionEnded(1) || TypeInfoNode.IsGenericParameters(stream, 1, out var endOfGenerics) && 
+                                                 IsDefinitionEnded(endOfGenerics)))
                     {
                         memberInfo.Identifier = IdentifierExpressionNode.Parse(stream);
                         break;
