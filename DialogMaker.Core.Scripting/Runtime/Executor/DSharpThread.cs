@@ -1,13 +1,37 @@
 ﻿namespace DialogMaker.Core.Scripting.Runtime.Executor
 {
-    public class DSharpThread(DSharpExecutor executor, int stackSize) : Disposable
+    /// <summary>
+    /// D# thread
+    /// </summary>
+    /// <param name="executor">D# virtual machine</param>
+    /// <param name="stackCapacity">Stack capacity in items</param>
+    public class DSharpThread(DSharpVm executor, int stackCapacity) : Disposable
     {
-        public DSharpExecutor Executor { get; } = executor;
-        public DSharpStack Stack { get; } = new(executor, stackSize);
+        /// <summary>
+        /// D# virtual machine
+        /// </summary>
+        public DSharpVm Executor { get; } = executor;
+        /// <summary>
+        /// Current thread stack
+        /// </summary>
+        public DSharpStack Stack { get; } = new(stackCapacity);
+
+        #region Controls
+
+        public void Start(IDSharpMethodInfo entry)
+        {
+        }
+
+        #endregion
+
+        #region Constants
 
         /// <summary>
-        /// Default size of stack for thread (1 MB)
+        /// Default size of stack for thread in frames.
+        /// 1KB per frame
         /// </summary>
-        public const int DefaultStackSize = 1024 * 1024;
+        public const int DefaultStackCapacity = 1024;
+
+        #endregion
     }
 }

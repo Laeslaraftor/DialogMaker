@@ -2,6 +2,7 @@
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
+using DialogMaker.Core.Scripting.Runtime.Executor;
 using System.Text;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
@@ -10,7 +11,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
     /// Class that designed for building bytecode for methods and functions
     /// </summary>
     /// <param name="method">Method or function that contains this bytecode</param>
-    public partial class DSharpBytecodeBuilder(DSharpMethodBuilder method)
+    public partial class DSharpBytecodeBuilder(DSharpMethodBuilder method) : IDSharpMethodBytecode
     {
         /// <summary>
         /// Method or function that contains this bytecode
@@ -24,6 +25,17 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// List of all instructions
         /// </summary>
         public List<Instruction> Instructions => _instructions;
+        public int Size
+        {
+            get
+            {
+                using MemoryStream memory = new();
+                Write(memory);
+                return (int)memory.Length;
+            }
+        }
+
+        int IDSharpMethodBytecode.InstructionsCount => Instructions.Count;
 
         private readonly DSharpCompilerContext _context = new()
         {
@@ -69,6 +81,25 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             var overrideMethod = Method.OverrideMethod;
             List<Instruction>? extraInstructions = null;
 
+
+            void Write(IDSharpParameterInfo parameter)
+            {
+                stream.WriteByte((byte)parameter.Mode);
+                parameter.Type.MetadataToken.Write(stream);
+            }
+
+            var variablesCountBytes = BitConverter.GetBytes(Method.Parameters.Count + LocalVariables.Count);
+            stream.Write(variablesCountBytes);
+
+            foreach (var parameter in Method.Parameters)
+            {
+                Write(parameter);
+            }
+            foreach (var variable in LocalVariables)
+            {
+                Write(variable);
+            }
+
             if (Method.MethodType == DSharpMethodType.Finalizer && overrideMethod != null)
             {
                 var defaultInstructions = _instructions;
@@ -112,10 +143,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
         }
 
-        /// <summary>
-        /// Copy bytecode from current builder to specified one
-        /// </summary>
-        /// <param name="builder">Builder for copying bytecode</param>
         public void CopyTo(DSharpBytecodeBuilder builder)
         {
             var otherInstructions = builder.Instructions;
@@ -125,6 +152,32 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             {
                 var newInstruction = instruction.Copy(builder);
                 otherInstructions.Add(newInstruction);
+            }
+        }
+        public void CopyTo(UnmanagedArray<byte> byteArray)
+        {
+            using MemoryStream memory = new();
+            Write(memory);
+
+            memory.Position = 0;
+            Span<byte> buffer = stackalloc byte[1024];
+            int index = 0;
+
+            while (index < byteArray.Length)
+            {
+                int bytesRead = memory.Read(buffer);
+
+                if (bytesRead == 0)
+                {
+                    break;
+                }
+
+                for (int i = 0; i < bytesRead; i++)
+                {
+                    byteArray[index + i] = buffer[i];
+                }
+
+                index += bytesRead;
             }
         }
         /// <summary>

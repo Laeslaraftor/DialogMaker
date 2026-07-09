@@ -20,13 +20,9 @@ namespace DialogMaker.Core.Scripting.Runtime
         public bool IsAbstract { get; }
         public bool IsSealed { get; }
         public bool IsExtern { get; }
+        public IDSharpMethodBytecode? Bytecode { get; }
 
         public IDSharpParameterInfo[] GetParameters();
         public IDSharpType[] GetGenericParameters();
-        /// <summary>
-        /// Copy bytecode of current method to specified bytecode builder
-        /// </summary>
-        /// <param name="builder">Bytecode builder for copying bytecode</param>
-        public void CopyBytecodeTo(DSharpBytecodeBuilder builder);
     }
 }

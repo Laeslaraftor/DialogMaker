@@ -259,6 +259,53 @@ namespace DialogMaker.Core.Scripting.Runtime
             return false;
         }
         /// <summary>
+        /// Try get value type by it's index in <see cref="AllValueTypes"/>
+        /// </summary>
+        /// <param name="index">Value type index</param>
+        /// <param name="result">Information about type</param>
+        /// <returns>Is type information found</returns>
+        public static bool TryGetValueTypeByIndex(int index, [NotNullWhen(true)] out DSharpBuildInTypeInfo result)
+        {
+            int i = 0;
+
+            foreach (var info in AllValueTypes.Values)
+            {
+                if (i == index)
+                {
+                    result = info;
+                    return true;
+                }
+            }
+
+            result = default;
+            return false;
+        }
+        /// <summary>
+        /// Try get value type index from <see cref="AllValueTypes"/>
+        /// </summary>
+        /// <param name="type">Type to search index</param>
+        /// <param name="result">Type index</param>
+        /// <returns>Is index found</returns>
+        public static bool TryGetValueTypeIndex(IDSharpType type, out int result)
+        {
+            result = 0;
+            var fullName = type.FullName;
+
+            foreach (var info in AllValueTypes.Values)
+            {
+                if (info.FullName == fullName)
+                {
+                    return true;
+                }
+
+                result++;
+            }
+
+            result = -1;
+            return false;
+        }
+
+        /// <summary>
         /// Check type is point-floating
         /// </summary>
         /// <param name="type">Type to check</param>

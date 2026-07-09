@@ -8,6 +8,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             public DSharpBytecodeOperation Operation { get; } = operation;
             public DSharpBytecodeBuilder BytecodeBuilder { get; } = builder;
+            public virtual int SizeInBytes => sizeof(DSharpBytecodeOperation);
 
             #region Управление
 
@@ -51,6 +52,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             : Instruction(builder, operation)
         {
             public int Index { get; set; } = index;
+            public override int SizeInBytes => base.SizeInBytes + sizeof(int);
 
             #region Управление
 
@@ -88,6 +90,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             public int Offset { get; set; } = offset;
             public int Count { get; set; } = count;
+            public override int SizeInBytes => base.SizeInBytes + sizeof(int) * 2;
 
             #region Управление
 
@@ -124,6 +127,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             : Instruction(builder, operation)
         {
             public IDSharpParameterInfo Parameter { get; set; } = parameter;
+            public override int SizeInBytes => base.SizeInBytes + sizeof(int);
 
             #region Управление
 
@@ -165,6 +169,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
 
             public IDSharpMemberInfo MemberInfo { get; set; } = memberInfo;
+            public unsafe override int SizeInBytes => base.SizeInBytes + sizeof(DSharpMetadataToken);
 
             #region Управление
 
@@ -201,6 +206,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             : Instruction(builder, operation)
         {
             public DSharpMethodCallingInfo CallingInfo { get; set; } = callingInfo;
+            public unsafe override int SizeInBytes => base.SizeInBytes + (sizeof(DSharpMetadataToken) * (CallingInfo.GenericParameters.Count + 1));
 
             #region Управление
 
@@ -249,6 +255,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             : TypeInstruction(builder, operation, memberInfo)
         {
             public int Size { get; set; } = size;
+            public override int SizeInBytes => base.SizeInBytes + sizeof(int);
 
             #region Управление
 
@@ -285,6 +292,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             : Instruction(builder, operation)
         {
             public DSharpLiteralValue Value { get; set; } = value;
+            public override int SizeInBytes
+            {
+                get
+                {
+                    int size = base.SizeInBytes + 1;
+
+                    if (DSharpBuildInTypes.TryGetTypeInfo(Value.Type, out var info))
+                    {
+                        size += info.Size;
+                    }
+
+                    return size;
+                }
+            }
 
             #region Управление
 
@@ -330,6 +351,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             : LiteralInstruction(builder, operation, value)
         {
             public int Index { get; set; } = index;
+            public override int SizeInBytes => base.SizeInBytes + sizeof(int);
 
             #region Управление
 
@@ -366,6 +388,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             : Instruction(builder, operation)
         {
             public Instruction? ReferencedInstruction { get; set; }
+            public override int SizeInBytes => base.SizeInBytes + sizeof(int);
 
             #region Управление
 

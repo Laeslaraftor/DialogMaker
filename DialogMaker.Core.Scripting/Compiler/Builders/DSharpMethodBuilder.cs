@@ -301,6 +301,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         }
         internal IDSharpMethodInfo? OriginalMethod { get; set; }
         internal Func<DSharpTypeToken>? ReturnTypeResolver { get; set; }
+        public IDSharpMethodBytecode? Bytecode
+        {
+            get
+            {
+                if (IsAbstract || IsExtern)
+                {
+                    return null;
+                }
+
+                return GetBytecodeBuilder();
+            }
+        }
 
         IDSharpType? IDSharpMethodInfo.ReturnType
         {
@@ -314,6 +326,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return (IDSharpType)Assembly.GetType(ReturnType);
             }
         }
+
 
         private readonly List<DSharpTypeBuilder> _genericParameters = [];
         private DSharpBytecodeBuilder? _bytecodeBuilder;
@@ -368,7 +381,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             {
                 _bytecodeBuilder = new(this);
 
-                // ЗДЕСЬ НАДО ПРОПИСАТЬ КОПИРОВАНИЕ КОДА С ЗАМЕНОЙ ТИПОВ!!!
                 if (DeclaringType?.GenericTemplate != null)
                 {
                     var templatedMembers = DeclaringType.GetTemplatedMembers();
@@ -382,7 +394,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                         throw new InvalidOperationException($"Template for method \"{this}\" must be a method, got \"{methodTemplateMember}\"");
                     }
 
-                    methodTemplate.CopyBytecodeTo(_bytecodeBuilder);
+                    methodTemplate.Bytecode?.CopyTo(_bytecodeBuilder);
                     _bytecodeBuilder.ReplaceMembers(templatedMembers);
                 }
             }
@@ -399,15 +411,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// </summary>
         /// <returns><inheritdoc/></returns>
         public IDSharpType[] GetGenericParameters() => [.. GenericParameters.Select(t => (IDSharpType)Assembly.GetType(t))];
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="builder"><inheritdoc/></param>
-        public void CopyBytecodeTo(DSharpBytecodeBuilder builder)
-        {
-            var code = GetBytecodeBuilder();
-            code.CopyTo(builder);
-        }
 
         /// <summary>
         /// <inheritdoc/>

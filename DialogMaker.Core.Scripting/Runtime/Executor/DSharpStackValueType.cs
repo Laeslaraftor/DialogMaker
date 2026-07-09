@@ -19,6 +19,8 @@
         Float,
         Char,
         Bool,
+        Nint,
+        Nuint,
         Structure,
         Reference
     }

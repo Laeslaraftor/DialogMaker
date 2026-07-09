@@ -3,7 +3,7 @@
     /// <summary>
     /// Parameter mode
     /// </summary>
-    public enum DSharpMethodParameterMode
+    public enum DSharpMethodParameterMode : byte
     {
         /// <summary>
         /// Default parameter

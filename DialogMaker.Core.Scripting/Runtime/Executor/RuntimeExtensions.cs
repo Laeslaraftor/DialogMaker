@@ -1,6 +1,6 @@
 ﻿namespace DialogMaker.Core.Scripting.Runtime.Executor
 {
-    public static class ExecutorExtensions
+    public static class RuntimeExtensions
     {
         extension(DSharpStackValueType valueType)
         {
