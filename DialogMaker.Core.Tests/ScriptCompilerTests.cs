@@ -16,6 +16,7 @@ namespace DialogMaker.Core.Tests
         public const string OperatorsScript = "OperatorsTest";
         public const string GenericMethodsScript = "GenericMethodsScript";
         public const string InterfacesScript = "InterfacesScript";
+        public const string StandardLibraryFolder = @"F:\Projects\DialogMaker\DialogMaker.Core.Scripting\StandardLibrary";
 
         [Test]
         [TestCase(SimpleScript)]
@@ -29,6 +30,13 @@ namespace DialogMaker.Core.Tests
             var assembly = CompileScript(fileName);
             PrintAssembly(assembly);
         }
+        [Test]
+        public static void TestCompilingStandardLibrary()
+        {
+            var assembly = CompileStandardLibrary();
+            PrintAssembly(assembly);
+        }
+
         [Test]
         public static void TestMathSimplifying()
         {
@@ -111,6 +119,52 @@ namespace DialogMaker.Core.Tests
             DSharpCompiler compiler = new(assembly);
 
             compiler.CompileTrees(parsedScript);
+
+            return assembly;
+        }
+        public static DSharpAssemblyBuilder CompileStandardLibrary()
+        {
+            List<DSharpScript> scripts = [];
+            DSharpAssemblyBuilder assembly = new("StandardLibrary", []);
+
+            void ReadFiles(string folder)
+            {
+                foreach (var filePath in Directory.GetFiles(folder))
+                {
+                    if (!filePath.EndsWith(".cs"))
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        var script = File.ReadAllText(filePath);
+                        DSharpLexer lexer = new(script);
+
+                        lexer.Tokenize();
+
+                        AstParser parser = new(lexer);
+                        string fileName = filePath.Replace('\\', '/').Split('/')[^1][..^3];
+                        var parsedScript = parser.Parse(fileName);
+                        parsedScript.FilePath = filePath;
+
+                        scripts.Add(parsedScript);
+                    }
+                    catch (Exception error)
+                    {
+                        throw new InvalidOperationException($"Unable to parse \"{filePath}\"", error);
+                    }
+                }
+                foreach (var innerFolder in Directory.GetDirectories(folder))
+                {
+                    ReadFiles(innerFolder);
+                }
+            }
+
+            ReadFiles(StandardLibraryFolder);
+
+            DSharpCompiler compiler = new(assembly);
+            compiler.CompileTrees(scripts);
 
             return assembly;
         }

@@ -217,6 +217,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
         }
         public DSharpGenericTypeAttributes GenericAttributes { get; set; }
+        internal Action? SetupHandler { get; set; }
 
         IDSharpMethodInfo? IDSharpType.Finalizer => Finalizer;
 
@@ -333,6 +334,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             _baseTypes.Add(type);
         }
         public bool RemoveBaseType(IDSharpType type) => _baseTypes.Remove(type);
+        public void ClearBaseTypes() => _baseTypes.Clear();
 
         public DSharpTypeBuilder CreateGenericType(string name)
         {

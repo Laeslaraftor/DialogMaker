@@ -58,6 +58,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             Scope.Namespaces.Clear();
+            _types.Clear();
             _createdGlobalVariables.Clear();
             _createdTypes.Clear();
             _createdFields.Clear();
@@ -73,6 +74,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             _propertyFields.Clear();
             _propertiesWithCustomAccessors.Clear();
             _currentNamespace = null;
+            _typesToSetupBases = null;
         }
         /// <summary>
         /// Parse script and create types that declared in it
@@ -94,6 +96,11 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             ResolveCreatedTypes();
         }
+        /// <summary>
+        /// Validate all types that created by script.
+        /// It checks interfaces and abstract classes implementations
+        /// </summary>
+        public partial void ValidateTypes();
         /// <summary>
         /// Compile code inside script methods
         /// </summary>
@@ -136,10 +143,43 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
         }
 
+        public override string ToString()
+        {
+            return Script?.ToString() ?? base.ToString();
+        }
+
         #endregion
 
         #region Scopes
-        
+
+        /// <summary>
+        /// Get scope for member based on current script with specified parent
+        /// </summary>
+        /// <param name="member">Member to creating scope</param>
+        /// <param name="parent">Parent of new scope</param>
+        /// <returns>Member scope</returns>
+        public DSharpCompilerScope GetScope(IDSharpMemberInfo member, DSharpCompilerScope? parent)
+        {
+            if (parent == null)
+            {
+                return GetScope(member);
+            }
+            if (member is DSharpMethodBuilder method)
+            {
+                return new DSharpCompilerMethodScope(method, parent);
+            }
+            else if (member is IDSharpType typeMember)
+            {
+                return new DSharpCompilerTypeScope(Assembly, typeMember, parent);
+            }
+            else if (member.DeclaringType != null)
+            {
+                return new DSharpCompilerTypeScope(Assembly, member.DeclaringType, parent);
+            }
+
+            return Scope;
+        }
+
         /// <summary>
         /// Get scope for member based on current script
         /// </summary>

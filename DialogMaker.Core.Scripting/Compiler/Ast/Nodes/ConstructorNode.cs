@@ -12,6 +12,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Access modifier of this constructor
         /// </summary>
         public DSharpAccessModifier Access { get; set; } = DSharpAccessModifier.Private;
+        /// <summary>
+        /// Constructor type
+        /// </summary>
+        public DSharpConstructorType Type { get; set; } = DSharpConstructorType.Default;
+        public List<ExpressionNode> ExtraInvokeParameters { get; set;  } = [];
 
         #region Статика
 
@@ -37,6 +42,27 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             };
 
             ParseParameters(stream, constructor.Parameters);
+
+            if (stream.Check(DSharpTokenType.Colon))
+            {
+                stream.Eat(DSharpTokenType.Colon);
+
+                if (stream.Check(DSharpTokenType.This))
+                {
+                    constructor.Type = DSharpConstructorType.ThisInvocation;
+                }
+                else if (stream.Check(DSharpTokenType.Base))
+                {
+                    constructor.Type = DSharpConstructorType.BaseInvocation;
+                }
+                else
+                {
+                    stream.ThrowUnexpectedTokenException(DSharpTokenType.This, DSharpTokenType.Base);
+                }
+
+                stream.Eat(stream.Current!.Type);
+                CallExpressionNode.ParseArguments(stream, constructor.ExtraInvokeParameters);
+            }
 
             if (stream.Check(DSharpTokenType.LeftBrace))
             {

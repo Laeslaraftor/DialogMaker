@@ -3,12 +3,22 @@ using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
-using System.Reflection.Emit;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
     public partial class DSharpScriptCompiler
     {
+        internal event EventHandler<TypeSetupRequestEventArgs>? TypeToSetupRequested;
+
+        public ReferenceReadOnlyList<DSharpTypeBuilder> Types
+        {
+            get
+            {
+                field ??= new(_types);
+                return field;
+            }
+        }
+
         private readonly Dictionary<DSharpTypeBuilder, ObjectDeclarationNode> _createdTypes = [];
         private readonly Dictionary<DSharpFieldBuilder, FieldNode> _createdFields = [];
         private readonly Dictionary<DSharpFieldBuilder, ExpressionNode> _createdGlobalVariablesRawValueExpressions = [];
@@ -21,6 +31,8 @@ namespace DialogMaker.Core.Scripting.Compiler
         private readonly Dictionary<DSharpMethodBuilder, ConstructorNode> _createdConstructors = [];
         private readonly Dictionary<DSharpTypeBuilder, ObjectDeclarationNode> _enumTypes = [];
         private readonly Dictionary<DSharpFieldBuilder, LiteralExpressionNode> _enumValues = [];
+        private readonly List<DSharpTypeBuilder> _types = [];
+        private Dictionary<IDSharpType, ObjectDeclarationNode>? _typesToSetupBases;
         private string? _currentNamespace = null;
 
         #region Statements
@@ -36,9 +48,23 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             void AddNamespace(string @namespace)
             {
-                if (!Scope.Namespaces.Contains(@namespace))
+                var parts = @namespace.Split('.');
+                string currentNamespace = string.Empty;
+                var namespaces = Scope.Namespaces;
+
+                foreach (var part in parts)
                 {
-                    Scope.Namespaces.Add(@namespace);
+                    if (!string.IsNullOrEmpty(currentNamespace))
+                    {
+                        currentNamespace += ".";
+                    }
+
+                    currentNamespace += part;
+
+                    if (!namespaces.Contains(currentNamespace))
+                    {
+                        namespaces.Add(currentNamespace);
+                    }
                 }
             }
 
@@ -97,6 +123,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             else if (statement is NamespaceStatementNode namespaceStatement)
             {
                 _currentNamespace = namespaceStatement.GetName();
+                AddNamespace(_currentNamespace);
             }
             else if (statement is InvokableStatementNode invokableStatement)
             {
@@ -184,7 +211,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                 CreateConstructor(type, constructor);
             }
 
+            type.SetupHandler = () =>
+            {
+                TypeToSetupRequested?.Invoke(type, new(type));
+            };
+
             _createdTypes.Add(type, declaration);
+            _types.Add(type);
         }
         private void CreateFieldOrProperty(DSharpTypeBuilder? declareType, FieldNode fieldNode)
         {
@@ -526,7 +559,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     if (baseTypes.Length != 0)
                     {
-                        foreach (var baseType in type.GetBaseTypes())
+                        foreach (var baseType in baseTypes)
                         {
                             if (baseType.ObjectType == DSharpObjectType.Interface)
                             {
@@ -541,16 +574,19 @@ namespace DialogMaker.Core.Scripting.Compiler
                             }
                         }
                     }
-                    else
-                    {
-                        member = FindBaseMember(selector, Assembly.ObjectType, extraPredicate);
-                    }
+                }
+
+                if (member == null && type != Assembly.ObjectType)
+                {
+                    member = FindBaseMember(selector, Assembly.ObjectType, extraPredicate);
                 }
 
                 return member;
             }
             void ResolveParameters(List<VariableNode> variables, IList<DSharpMethodBuilderParameter> parameters, DSharpCompilerContext context)
             {
+                parameters.Clear();
+
                 foreach (var parameter in variables)
                 {
                     if (parameter.Type == null)
@@ -642,6 +678,9 @@ namespace DialogMaker.Core.Scripting.Compiler
                     genericType.AddBaseType(typeToken);
                 }
             }
+
+            _typesToSetupBases ??= new(_createdTypes.Select(p => new KeyValuePair<IDSharpType, ObjectDeclarationNode>(p.Key, p.Value)));
+            var typesToSetupBases = _typesToSetupBases;
 
             foreach (var enumValue in _enumValues.Keys)
             {
@@ -736,8 +775,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 enumType.AddBaseType(Assembly.EnumType);
             }
 
-            Dictionary<IDSharpType, ObjectDeclarationNode> typesToSetupBases = new(_createdTypes.Select(p => new KeyValuePair<IDSharpType, ObjectDeclarationNode>(p.Key, p.Value)));
-
             bool TryGetBaseTypeToSetup(TypeInfoNode typeInfo, out KeyValuePair<IDSharpType, ObjectDeclarationNode> result)
             {
                 result = default;
@@ -761,27 +798,55 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 typesToSetupBases.Remove(type);
+                typeBuilder.SetupHandler = null;
 
                 foreach (var baseTypeInfo in declaration.BaseTypes)
                 {
+                    bool setupCompleted = false;
+
                     if (TryGetBaseTypeToSetup(baseTypeInfo, out var baseTypePair))
                     {
                         SetupBaseTypes(baseTypePair.Key, baseTypePair.Value);
+                        setupCompleted = true;
+                    }
+
+                    if (!setupCompleted)
+                    {
+                        var genericParameters = baseTypeInfo.GenericParameters;
+
+                        if (genericParameters.Count > 0)
+                        {
+                            baseTypeInfo.GenericParameters = [];
+                        }
+
+                        var setupTypeToken = ResolveType(typeBuilder, baseTypeInfo);
+                        var baseType = Assembly.GetType(setupTypeToken);
+
+                        if (baseType is DSharpTypeBuilder baseTypeBuilder &&
+                            !_createdTypes.ContainsKey(baseTypeBuilder))
+                        {
+                            TypeToSetupRequested?.Invoke(this, new(baseTypeBuilder));
+                        }
+
+                        baseTypeInfo.GenericParameters = genericParameters;
                     }
 
                     var typeToken = ResolveType(typeBuilder, baseTypeInfo);
-                    typeBuilder.AddBaseType(typeToken);
+
+                    try
+                    {
+                        typeBuilder.AddBaseType(typeToken);
+                    }
+                    catch
+                    {
+                        typesToSetupBases.Add(type, declaration);
+                        throw;
+                    }
                 }
                 foreach (var genericDescription in declaration.GenericDescriptions)
                 {
                     SetupGenericDescription(typeBuilder, n => typeBuilder.GenericTypes.FirstOrDefault(t => t.Name == n), genericDescription);
                 }
-            }
-
-            while (typesToSetupBases.Count > 0)
-            {
-                var firstPair = typesToSetupBases.First();
-                SetupBaseTypes(firstPair.Key, firstPair.Value);
             }
 
             foreach (var info in _createdMethods)
@@ -792,10 +857,20 @@ namespace DialogMaker.Core.Scripting.Compiler
                     continue;
                 }
 
+                foreach (var genericParameter in info.Key.GenericParameters)
+                {
+                    genericParameter.ClearBaseTypes();
+                }
                 foreach (var genericDescription in info.Value.GenericDescriptions)
                 {
                     SetupGenericDescription(info.Key, n => info.Key.GenericParameters.FirstOrDefault(t => t.Name == n), genericDescription);
                 }
+            }
+
+            while (typesToSetupBases.Count > 0)
+            {
+                var firstPair = typesToSetupBases.First();
+                SetupBaseTypes(firstPair.Key, firstPair.Value);
             }
 
             foreach (var info in _createdProperties)
@@ -839,7 +914,9 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 info.Key.OverrideMethod = overrideMethod;
             }
-
+        }
+        public partial void ValidateTypes()
+        {
             foreach (var info in _createdTypes)
             {
                 if (info.Key.ObjectType == DSharpObjectType.Interface)

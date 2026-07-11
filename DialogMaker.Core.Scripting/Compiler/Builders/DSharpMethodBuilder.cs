@@ -164,7 +164,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                         {
                             throw new ArgumentException($"Unable to override method that not virtual or abstract \"{value}\" by \"{this}\"", nameof(value));
                         }
-                        if (value.ReturnType != (IDSharpType?)Assembly.GetTypeOrDefault(ReturnType))
+                        if (value.ReturnType != Assembly.GetTypeOrDefault(ReturnType))
                         {
                             throw new ArgumentException($"Unable to override method \"{value}\" by \"{this}\" because it's has different return types");
                         }

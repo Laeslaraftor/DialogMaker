@@ -1,5 +1,4 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
-using System.Text;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast
 {
@@ -13,6 +12,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
         /// </summary>
         public string Name { get; } = name;
         /// <summary>
+        /// Path to source file
+        /// </summary>
+        public string? FilePath { get; set; }
+        /// <summary>
         /// List of statements that contains in script file
         /// </summary>
         public List<StatementNode> Statements { get; set; } = [];
@@ -25,17 +28,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
         /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
-            StringBuilder builder = new();
-            builder.AppendLine($"{nameof(DSharpScript)} at {base.ToString()}");
-            builder.AppendLine($"Statements count: {Statements.Count}");
-            builder.AppendLine();
-
-            foreach (var statement in Statements)
+            if (FilePath == null)
             {
-                builder.AppendLine(statement.ToString());
+                return Name;
             }
 
-            return builder.ToString();
+            return $"{Name}: {FilePath}";
         }
 
         #endregion

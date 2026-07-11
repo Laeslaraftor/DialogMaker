@@ -263,8 +263,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                 }
             }
-
-            private IEnumerable<IDSharpMemberInfo> GetAllLocalMembers(Predicate<IDSharpMemberInfo>? predicate = null, bool constructors = true, bool indexers = true)
+            public IEnumerable<IDSharpMemberInfo> GetAllLocalMembers(Predicate<IDSharpMemberInfo>? predicate = null, bool constructors = true, bool indexers = true)
             {
                 bool IsValid(IDSharpMemberInfo member)
                 {
@@ -297,6 +296,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                 }
                 foreach (var member in type.GetMethods())
+                {
+                    if (IsValid(member))
+                    {
+                        yield return member;
+                    }
+                }
+                foreach (var member in type.GetChildrenTypes())
                 {
                     if (IsValid(member))
                     {
@@ -371,7 +377,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                         }
                     }
 
-                    return assembly.GetType(literalExpression.Type);
+                    try
+                    {
+                        return assembly.GetType(literalExpression.Type);
+                    }
+                    catch (Exception error)
+                    {
+                        throw new InvalidOperationException($"Unable to get get of literal expression: {expression}", error);
+                    }
                 }
                 else if (expression is NameOfExpressionNode)
                 {
@@ -726,8 +739,11 @@ namespace DialogMaker.Core.Scripting.Compiler
                         expressionValues[operation] = value;
                     }
                 }
-                void HandleExpression(ExpressionNode left, ExpressionNode right, DSharpBinaryOperator @operator, ref DSharpMethodCompileSettings settings)
+                void HandleExpression(DSharpBinaryExpressionSide leftSide, DSharpBinaryExpressionSide rightSide, DSharpBinaryOperator @operator, ref DSharpMethodCompileSettings settings)
                 {
+                    var left = leftSide.Value;
+                    var right = rightSide.Value;
+
                     if (expressionFailed ||
                         left is not LiteralExpressionNode leftLiteral ||
                         right is not LiteralExpressionNode rightLiteral)
@@ -910,7 +926,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     rightExpression = GetTargetExpression(rightBinaryExpression, b => b.Left);
                 }
 
-                handler(leftExpression, rightExpression, expression.Operator, ref settings);
+                handler(new(leftExpression, expression.Left), new(rightExpression, expression.Right), expression.Operator, ref settings);
             }
         }
         extension(IdentifierExpressionNode identifierExpression)

@@ -196,6 +196,12 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// <returns>Is type can be null</returns>
             public bool CanBeNull()
             {
+                if (type.IsGeneric && type.GenericAttributes.HasFlag(DSharpGenericTypeAttributes.NotNull) ||
+                                      type.GenericAttributes.HasFlag(DSharpGenericTypeAttributes.Struct))
+                {
+                    return false;
+                }
+
                 return type.ObjectType == DSharpObjectType.Class ||
                        type.ObjectType == DSharpObjectType.Interface;
             }
@@ -240,6 +246,40 @@ namespace DialogMaker.Core.Scripting.Runtime
                 {
                     castOperator = null;
                     return destination.CanBeNull() ? DSharpCastAvailability.Implicit : DSharpCastAvailability.No;
+                }
+                if (type == destination)
+                {
+                    castOperator = null;
+                    return DSharpCastAvailability.Implicit;
+                }
+                if (destination.IsGeneric)
+                {
+                    castOperator = null;
+
+                    if (type.IsGeneric)
+                    {
+                        if (type.GenericAttributes != destination.GenericAttributes)
+                        {
+                            return DSharpCastAvailability.No;
+                        }
+                    }
+                    else
+                    {
+                        if (destination.GenericAttributes.HasFlag(DSharpGenericTypeAttributes.EmptyConstructor) &&
+                            type.GetConstructors(m => m.Access == DSharpAccessModifier.Public &&
+                                                      m.GetParameters().Length == 0).Length == 0)
+                        {
+                            return DSharpCastAvailability.No;
+                        }
+                        if (destination.GenericAttributes.HasFlag(DSharpGenericTypeAttributes.Struct) &&
+                            type.ObjectType != DSharpObjectType.Struct &&
+                            type.ObjectType != DSharpObjectType.Enum)
+                        {
+                            return DSharpCastAvailability.No;
+                        }
+                    }
+
+                    return DSharpCastAvailability.Implicit;
                 }
                 if (type == destination ||
                     destination == type.Assembly.ObjectType)

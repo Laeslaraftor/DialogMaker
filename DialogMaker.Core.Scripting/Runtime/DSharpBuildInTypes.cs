@@ -102,6 +102,10 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         public static readonly DSharpBuildInTypeInfo Void = new("System.Void", 0, DSharpTokenType.Void);
         /// <summary>
+        /// Empty structure that represents nul value
+        /// </summary>
+        public static readonly DSharpBuildInTypeInfo Null = new("System.Null", 0, DSharpTokenType.Null);
+        /// <summary>
         /// Object type which root of all objects
         /// </summary>
         public static readonly DSharpBuildInTypeInfo Object = new("System.Object", -1, DSharpTokenType.Object);

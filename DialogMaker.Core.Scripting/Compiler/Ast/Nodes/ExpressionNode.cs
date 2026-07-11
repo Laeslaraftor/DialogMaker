@@ -81,54 +81,64 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
              */
 
-            if (stream.Check(DSharpTokenType.Dot))
+            return ParseMemberAccess(stream, root);
+        }
+        /// <summary>
+        /// Parse member access if possible
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="target">Target access expression</param>
+        /// <returns>Member access or target expression</returns>
+        public static ExpressionNode ParseMemberAccess(AstParserStream stream, ExpressionNode target)
+        {
+            if (!stream.Check(DSharpTokenType.Dot))
             {
-                MemberAccessExpressionNode memberAccess;
-
-                do
-                {
-                    var accessOperation = stream.Eat(DSharpTokenType.Dot);
-
-                    memberAccess = new(accessOperation)
-                    {
-                        Target = root,
-                        Member = ParseExpression(stream)
-                    };
-
-                    root = memberAccess;
-                }
-                while (stream.Check(DSharpTokenType.Dot));
-
-                if (memberAccess.Member is AssignmentExpressionNode assignment)
-                {
-                    memberAccess.Member = assignment.Left;
-                    assignment.Left = memberAccess;
-
-                    return assignment;
-                }
-
-                var rootBinary = memberAccess.Member as BinaryExpressionNode;
-                var currentBinary = rootBinary;
-
-                while (currentBinary != null)
-                {
-                    if (currentBinary.Left is BinaryExpressionNode nextBinary)
-                    {
-                        currentBinary = nextBinary;
-                    }
-                    else
-                    {
-                        memberAccess.Member = currentBinary.Left;
-                        currentBinary.Left = memberAccess;
-
-                        return rootBinary!;
-                    }
-                }
-
-                return memberAccess;
+                return target;
             }
 
-            return root;
+            MemberAccessExpressionNode memberAccess;
+
+            do
+            {
+                var accessOperation = stream.Eat(DSharpTokenType.Dot);
+
+                memberAccess = new(accessOperation)
+                {
+                    Target = target,
+                    Member = ParseExpression(stream)
+                };
+
+                target = memberAccess;
+            }
+            while (stream.Check(DSharpTokenType.Dot));
+
+            if (memberAccess.Member is AssignmentExpressionNode assignment)
+            {
+                memberAccess.Member = assignment.Left;
+                assignment.Left = memberAccess;
+
+                return assignment;
+            }
+
+            var rootBinary = memberAccess.Member as BinaryExpressionNode;
+            var currentBinary = rootBinary;
+
+            while (currentBinary != null)
+            {
+                if (currentBinary.Left is BinaryExpressionNode nextBinary)
+                {
+                    currentBinary = nextBinary;
+                }
+                else
+                {
+                    memberAccess.Member = currentBinary.Left;
+                    currentBinary.Left = memberAccess;
+
+                    return rootBinary!;
+                }
+            }
+
+            return memberAccess;
         }
         /// <summary>
         /// Parse member access or raw type name with possibility of method calling, array access, type checking
@@ -172,7 +182,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
             }
 
-            return expression;
+            return ParseMemberAccess(stream, expression);
         }
         /// <summary>
         /// Parse literal value or array

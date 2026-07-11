@@ -49,9 +49,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     memberName = memberIdentifier.GetName(simplifyGenerics);
                 }
             }
+            else if (Member is MemberAccessExpressionNode memberAccess)
+            {
+                memberName = memberAccess.GetName(simplifyGenerics, withoutGenerics);
+            }
             else
             {
-                throw new InvalidOperationException("Member must contains identifier");
+                throw new InvalidOperationException($"Member must contains identifier: {this}");
             }
             if (Target is MemberAccessExpressionNode targetAccess)
             {

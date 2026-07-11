@@ -37,18 +37,22 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     Scope = null;
                 }
-                else if (currentMember is DSharpMethodBuilder method)
+                else
                 {
-                    Scope = context.Compiler.GetScope(method);
+                    Scope = context.Compiler.GetScope(currentMember, context.Scope);
                 }
-                else if (currentMember is IDSharpType typeMember)
-                {
-                    Scope = context.Compiler.GetScope(typeMember);
-                }
-                else if (currentMember.DeclaringType != null)
-                {
-                    Scope = context.Compiler.GetScope(currentMember.DeclaringType);
-                }
+                //else if (currentMember is DSharpMethodBuilder method)
+                //{
+                //    Scope = context.Compiler.GetScope(method);
+                //}
+                //else if (currentMember is IDSharpType typeMember)
+                //{
+                //    Scope = context.Compiler.GetScope(typeMember);
+                //}
+                //else if (currentMember.DeclaringType != null)
+                //{
+                //    Scope = context.Compiler.GetScope(currentMember.DeclaringType);
+                //}
             }
             else
             {
@@ -78,65 +82,122 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 return true;
             }
-            if (CurrentMember != null)
+
+            var assembly = Assembly;
+
+            // true - contains, false - not contains, null - contains with no access
+            bool? ContainsInType(IDSharpType type, bool includeDeclaringType, bool allowProtected)
             {
-                IDSharpType? memberType = CurrentMember as IDSharpType ?? CurrentMember.DeclaringType;
-                IDSharpType? rootType = memberType;
-
-                while (rootType != null)
+                if (type.GetAllLocalMembers().Contains(member))
                 {
-                    if (member.DeclaringType == rootType)
-                    {
-                        return true;
-                    }
-
-                    rootType = rootType.DeclaringType;
+                    return true;
                 }
 
-                bool CheckInBaseTypes(DSharpAssemblyBuilder assembly, IDSharpType type)
+                bool? ContainsInBaseType(IDSharpType type)
                 {
-                    foreach (var baseMember in type.GetAllMembers(m => m.Access == DSharpAccessModifier.Public ||
-                                                                       m.Access == DSharpAccessModifier.Protected ||
-                                                                       m.Access == DSharpAccessModifier.Internal && m.Assembly == assembly))
-                    {
-                        if (baseMember == member)
-                        {
-                            return true;
-                        }
-                    }
-
                     foreach (var baseType in type.GetBaseTypes())
                     {
-                        if (CheckInBaseTypes(assembly, baseType))
+                        var contains = ContainsInType(baseType, false, false);
+
+                        if (contains == null)
+                        {
+                            return null;
+                        }
+                        if (contains == false)
+                        {
+                            continue;
+                        }
+
+                        if (IsPublic(member, false))
                         {
                             return true;
                         }
+
+                        return null;
                     }
 
                     return false;
                 }
 
-                if (Assembly != null &&
-                    memberType != null &&
-                    CheckInBaseTypes(Assembly, memberType))
+                var containsInBaseType = ContainsInBaseType(type);
+
+                if (containsInBaseType != false || !includeDeclaringType)
+                {
+                    return containsInBaseType;
+                }
+
+                var currentType = type;
+
+                while (currentType != null)
+                {
+                    var isContains = ContainsInType(type, false, allowProtected);
+
+                    if (isContains != false)
+                    {
+                        return isContains;
+                    }
+
+                    currentType = currentType.DeclaringType;
+                }
+
+                return false;
+            }
+            bool IsPublic(IDSharpMemberInfo type, bool allowPrivate, bool allowProtected = true)
+            {
+                if (type.Access == DSharpAccessModifier.Internal &&
+                    type.Assembly != assembly)
+                {
+                    return false;
+                }
+                if (allowPrivate)
                 {
                     return true;
                 }
+
+                return type.Access == DSharpAccessModifier.Public ||
+                       type.Access == DSharpAccessModifier.Protected && allowProtected;
             }
 
             var currentType = CurrentMember as IDSharpType ?? CurrentMember?.DeclaringType;
 
-            while (currentType != null)
+            if (currentType != null)
             {
-                if (currentType.Access != DSharpAccessModifier.Public)
+                var isContains = ContainsInType(currentType, true, true);
+
+                if (isContains == true)
+                {
+                    return true;
+                }
+                else if (isContains == null)
+                {
+                    return false;
+                }
+            }
+
+            var memberDeclaringType = member as IDSharpType ?? member.DeclaringType;
+
+            while (memberDeclaringType != null)
+            {
+                if (memberDeclaringType == currentType)
+                {
+                    return true;
+                }
+
+                var contains = ContainsInType(memberDeclaringType, false, false);
+
+                if (contains == true)
+                {
+                    return true;
+                }
+                else if (contains == null)
                 {
                     return false;
                 }
 
-                currentType = currentType.DeclaringType;
+                memberDeclaringType = memberDeclaringType.DeclaringType;
             }
 
-            return member.Access == DSharpAccessModifier.Public;
+            return IsPublic(member, false);
         }
         [DoesNotReturn]
         public readonly void ThrowCanNotAccessException(IDSharpMemberInfo member)
@@ -390,7 +451,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 DSharpCompilerContext context = new(this, member);
-
                 return context.TryResolveMember(memberAccess.Member, out result);
             }
 

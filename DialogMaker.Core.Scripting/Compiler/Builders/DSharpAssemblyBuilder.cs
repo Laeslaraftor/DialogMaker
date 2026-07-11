@@ -214,6 +214,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
+        public DSharpTypeToken NullToken
+        {
+            get
+            {
+                field ??= GetTypeToken(DSharpBuildInTypes.Null);
+                return field;
+            }
+        }
         public IDSharpType StringType
         {
             get
@@ -371,6 +379,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             get
             {
                 field ??= (IDSharpType)GetType(TypeToken);
+                return field;
+            }
+        }
+        public IDSharpType NullType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(NullToken);
                 return field;
             }
         }
@@ -578,6 +594,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             {
                 assemblyBuilder = genericTypeAssemblyBuilder;
             }
+            if (genericType is DSharpTypeBuilder genericTypeBuilder &&
+                genericTypeBuilder.SetupHandler != null)
+            {
+                genericTypeBuilder.SetupHandler();
+                genericTypeBuilder.SetupHandler = null;
+            }
 
             var newType = assemblyBuilder.CreateType(genericType.Name, parent);
             newType.Access = genericType.Access;
@@ -755,8 +777,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 newMethod.IsAbstract = method.IsAbstract;
                 newMethod.IsVirtual = method.IsVirtual;
                 newMethod.IsExtern = method.IsExtern;
-                newMethod.OverrideMethod = method.OverrideMethod;
                 newMethod.OriginalMethod = method;
+
+                if (method.ReturnType != null)
+                {
+                    var newReturnType = ReplaceGenericParameters(method.ReturnType, replacedTypes);
+                    newMethod.ReturnType = GetTypeToken(newReturnType);
+                }
+
+                newMethod.OverrideMethod = method.OverrideMethod;
 
                 if (newMethod.MethodType != DSharpMethodType.Getter &&
                     newMethod.MethodType != DSharpMethodType.Setter)
@@ -1137,7 +1166,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             return literalType switch
             {
-                DSharpLiteralType.Null => throw new ArgumentException("Can not get type for null literal value", nameof(literalType)),
+                DSharpLiteralType.Null => NullType,
                 DSharpLiteralType.String => StringType,
                 DSharpLiteralType.Char => CharType,
                 DSharpLiteralType.Bool => BoolType,

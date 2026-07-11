@@ -32,11 +32,13 @@ namespace DialogMaker.Core.Scripting.Compiler
             settings.LocalVariables ??= [];
             settings.AlwaysReturnMethods ??= [];
             settings.BannedExpressions ??= [];
-            DSharpCompilerContext context = new(Context, method)
+            DSharpCompilerContext context = new(Context)
             {
+                CurrentMember = method,
                 TypeResolver = code.ExpressionTypeResolver,
                 MemberResolver = code.ExpressionMemberResolver,
             };
+            context.Scope = GetScope(method);
 
             CompileStatement(method, body, 0, code, ref settings, context);
 
@@ -153,28 +155,44 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 settings.LastOperationIsReturnsValue = false;
-                var expressionMember = CompileExpression(method, expressionStatement.Expression, ref settings, null, context);
+                IDSharpMemberInfo? expressionMember;
 
-                if (depth == 0 && parentStatement?.Token.Type == DSharpTokenType.Lambda)
+                try
                 {
-                    if (settings.LastOperationIsReturnsValue)
+                    expressionMember = CompileExpression(method, expressionStatement.Expression, ref settings, null, context);
+                }
+                catch (Exception error)
+                {
+                    throw new InvalidOperationException($"Failed to compile: {expressionStatement.Expression}", error);
+                }
+                
+                if (depth == 0)
+                {
+                    if (expressionStatement.Expression is ThrowExpressionNode)
                     {
                         settings.AddReturnMethod(method);
-                        return;
                     }
-
-                    try
+                    if (parentStatement?.Token.Type == DSharpTokenType.Lambda)
                     {
-                        var expressionType = expressionStatement.Expression.GetExpressionType(Assembly, context);
-
-                        if (expressionType != null &&
-                            (expressionType is IDSharpType || expressionType.TryGetReturnType(out _)))
+                        if (settings.LastOperationIsReturnsValue)
                         {
                             settings.AddReturnMethod(method);
+                            return;
                         }
-                    }
-                    catch
-                    {
+
+                        try
+                        {
+                            var expressionType = expressionStatement.Expression.GetExpressionType(Assembly, context);
+
+                            if (expressionType != null &&
+                                (expressionType is IDSharpType || expressionType.TryGetReturnType(out _)))
+                            {
+                                settings.AddReturnMethod(method);
+                            }
+                        }
+                        catch
+                        {
+                        }
                     }
                 }
             }
@@ -665,7 +683,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                      expression is ThrowExpressionNode ||
                      expression is NameOfExpressionNode ||
                      expression is TypeOfExpressionNode ||
-                     expression is SizeOfExpressionNode)
+                     expression is SizeOfExpressionNode ||
+                     expression is ThisExpressionNode)
             {
                 return CompileValueExpression(method, expression, ref settings, parentExpression, context);
             }
@@ -908,17 +927,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             else if (expression is BinaryExpressionNode binaryExpression)
             {
-                var settingsValue = settings;
-
-                void Handle(ExpressionNode left, ExpressionNode right, DSharpBinaryOperator @operator, ref DSharpMethodCompileSettings settings)
-                {
-                    CompileBinaryExpression(method, code, @operator, left, right, ref settings, binaryExpression, context);
-                }
-
-                binaryExpression.CompileExpression(Handle, ref settings);
-
-                settings.LastOperationIsReturnsValue = true;
-
+                CompileBinaryExpression(method, code, binaryExpression, ref settings, parentExpression, context);
                 return null;
             }
             else if (expression is NewInstanceExpressionNode newExpression)
@@ -974,9 +983,17 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     var parameters = context.GetArgumentTypes(newExpression.Parameters);
                     DSharpCompilerContext typeContext = new(context, type);
-                    var constructor = typeContext.FindConstructor(parameters)
-                        ?? throw new ArgumentException($"Unable to find constructor with parameters {newExpression.Parameters.Count} at {type}:{Environment.NewLine} {expression}", nameof(expression));
-                    code.New(constructor);
+
+                    try
+                    {
+                        var constructor = typeContext.FindConstructor(parameters)
+                            ?? throw new ArgumentException($"Unable to find constructor with parameters {newExpression.Parameters.Count} at {type}:{Environment.NewLine} {expression}", nameof(expression));
+                        code.New(constructor);
+                    }
+                    catch (Exception error)
+                    {
+                        throw new InvalidOperationException($"Unable to find constructor at \"{type}\": {expression}", error);
+                    }
                 }
 
                 if (newExpression.Parameters.Count == 1)
@@ -1328,6 +1345,66 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// </summary>
         /// <param name="method">Method that contains expressions</param>
         /// <param name="code">Bytecode builder for writing code</param>
+        /// <param name="binaryExpression">Binary expression not compile</param>
+        /// <param name="settings">Method compiling settings</param>
+        /// <param name="parentExpression">Parent expression of specified binary expression</param>
+        /// <param name="context">Compiling context</param>
+        /// <returns>Type that returns by binary expression</returns>
+        /// <exception cref="InvalidOperationException">Unable to compile binary operation. Unable to get type of left expression</exception>
+        /// <exception cref="InvalidOperationException">Unable to compile binary operation. Unable to get type of right expression</exception>
+        /// <exception cref="InvalidOperationException">Unable to perform operation</exception>
+        private IDSharpType CompileBinaryExpression(DSharpMethodBuilder method, DSharpBytecodeBuilder code, BinaryExpressionNode binaryExpression, ref DSharpMethodCompileSettings settings, ExpressionNode? parentExpression = null, DSharpCompilerContext context = default)
+        {
+            var settingsValue = settings;
+
+            Dictionary<ExpressionNode, IDSharpType> expressionTypes = [];
+            IDSharpType? lastType = null;
+
+            void Handle(DSharpBinaryExpressionSide left, DSharpBinaryExpressionSide right, DSharpBinaryOperator @operator, ref DSharpMethodCompileSettings settings)
+            {
+                IDSharpType type;
+
+                if (expressionTypes.TryGetValue(left.Value, out var leftType) &&
+                    expressionTypes.TryGetValue(right.Value, out var rightType))
+                {
+                    type = CompileBinaryExpression(method, code, @operator, leftType, rightType, ref settings, binaryExpression, context);
+                }
+                else
+                {
+                    type = CompileBinaryExpression(method, code, @operator, left.Value, right.Value, ref settings, binaryExpression, context);
+                }
+
+                expressionTypes.TryAdd(left.Value, type);
+                expressionTypes.TryAdd(right.Value, type);
+
+                if (left.Parent != null)
+                {
+                    expressionTypes.TryAdd(left.Parent, type);
+                }
+                if (right.Parent != null)
+                {
+                    expressionTypes.TryAdd(right.Value, type);
+                }
+
+                lastType = type;
+            }
+
+            binaryExpression.CompileExpression(Handle, ref settings);
+
+            settings.LastOperationIsReturnsValue = true;
+
+            return lastType!;
+        }
+        /// <summary>
+        /// Compile binary expression. Firstly compiles left expression, then right expression turn.
+        /// After all adds binary operator - standard or custom.
+        /// This method automatically check expressions return type for logical operators.
+        /// If operator was logical OR (||) or logical AND (&&) it skips right expression.
+        /// Logical OR skip right expression if left value is <c>True</c>,
+        /// logical AND skip right expression if left value is <c>False</c>
+        /// </summary>
+        /// <param name="method">Method that contains expressions</param>
+        /// <param name="code">Bytecode builder for writing code</param>
         /// <param name="binaryOperator">Binary operator for compiling</param>
         /// <param name="left">Left expression of operation</param>
         /// <param name="right">Right expression of operation</param>
@@ -1360,10 +1437,6 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 throw new InvalidOperationException($"Unable to compile binary operation. Unable to get type of right expression: {right}");
             }
-            if (!leftType.CanPerformBinaryOperation(rightType, binaryOperator, out var @operator))
-            {
-                throw new InvalidOperationException($"Unable to perform {binaryOperator} operation with \"{leftType}\" and \"{rightType}\": {left}");
-            }
 
             void CompileExpression(ExpressionNode expression, ref DSharpMethodCompileSettings settings)
             {
@@ -1384,29 +1457,60 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             CompileExpression(right, ref settings);
+
             IDSharpType resultType;
 
-            if (@operator == null)
+            try
             {
-                code.BinaryOperation(binaryOperator);
-                code.PopPreviousTwo();
-                resultType = leftType;
+                resultType = CompileBinaryExpression(method, code, binaryOperator, leftType, rightType, ref settings, parentExpression, context);
             }
-            else
+            catch (Exception error)
             {
-                code.CallAuto(@operator.Method);
-                code.PopPreviousTwo();
-                resultType = @operator.ReturnType;
-
-                if (binaryOperator.IsLogical())
-                {
-                    CastTypes(method, @operator.ReturnType, Assembly.BoolType, code, parentExpression, context);
-                }
+                throw new InvalidOperationException($"Unable to compile {binaryOperator} binary operation. Left: {left}. Right: {right}", error);
             }
 
             skipInstruction?.ReferencedInstruction = code.Empty();
 
             return resultType;
+        }
+        private IDSharpType CompileBinaryExpression(DSharpMethodBuilder method, DSharpBytecodeBuilder code, DSharpBinaryOperator binaryOperator, IDSharpType leftType, IDSharpType rightType, ref DSharpMethodCompileSettings settings, ExpressionNode? parentExpression = null, DSharpCompilerContext context = default)
+        {
+            if (!leftType.CanPerformBinaryOperation(rightType, binaryOperator, out var @operator))
+            {
+                throw new InvalidOperationException($"Unable to perform {binaryOperator} operation with \"{leftType}\" and \"{rightType}\"");
+            }
+
+            IDSharpType GetResultType(IDSharpType operatorOutputType)
+            {
+                if (binaryOperator.IsLogical() &&
+                    operatorOutputType != Assembly.BoolType)
+                {
+                    CastTypes(method, operatorOutputType, Assembly.BoolType, code, parentExpression, context);
+                    return Assembly.BoolType;
+                }
+
+                return operatorOutputType;
+            }
+
+            if (@operator == null)
+            {
+                code.BinaryOperation(binaryOperator);
+                code.PopPreviousTwo();
+
+                if (binaryOperator.IsLogical())
+                {
+                    return Assembly.BoolType;
+                }
+
+                return leftType;
+            }
+            else
+            {
+                code.CallAuto(@operator.Method);
+                code.PopPreviousTwo();
+            }
+
+            return GetResultType(@operator.ReturnType);
         }
         private IDSharpMemberInfo? CompileExpressionValueWithRequestedType(DSharpMethodBuilder method, IDSharpType requestedType, DSharpBytecodeBuilder code, ExpressionNode expression, ref DSharpMethodCompileSettings settings, ExpressionNode? parentExpression = null, DSharpCompilerContext context = default)
         {
@@ -1567,7 +1671,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                     lastAccessedAsLocalMember = false;
                 }
 
-                context.CurrentMember = currentType;
+                context = new(context, currentType);
+                //context.CurrentMember = currentType;
                 previousTarget = currentMemberAccess.Target;
 
                 if (currentMemberAccess.Member is not MemberAccessExpressionNode nextMemberAccess)
@@ -1597,7 +1702,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                 !lastAccessedAsLocalMember &&
                 currentMember is IDSharpType &&
                 previousTarget is not ThisExpressionNode &&
-                previousTarget is not BaseExpressionNode)
+                previousTarget is not BaseExpressionNode &&
+                previousTarget is not ArrayAccessExpressionNode)
             {
                 throw new InvalidOperationException($"Unable to access to non static member \"{result}\" without object instance: {currentMemberAccess.Member}");
             }

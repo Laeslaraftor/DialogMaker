@@ -557,7 +557,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 stream.Eat(DSharpTokenType.Colon);
 
-                while (!stream.Check(DSharpTokenType.LeftBrace))
+                while (!stream.Check(DSharpTokenType.LeftBrace) &&
+                       !stream.Check(DSharpTokenType.Where))
                 {
                     var type = TypeInfoNode.Parse(stream, false, false);
                     node.BaseTypes.Add(type);

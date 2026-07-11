@@ -18,6 +18,8 @@ namespace DialogMaker.Core.Scripting.Runtime
 
         public bool IsExtern => throw new NotImplementedException();
 
+        public IDSharpMethodBytecode? Bytecode => throw new NotImplementedException();
+
         public void CopyBytecodeTo(DSharpBytecodeBuilder builder)
         {
             throw new NotImplementedException();

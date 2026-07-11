@@ -10,6 +10,10 @@
         /// </summary>
         Default,
         /// <summary>
+        /// Method extension parameter
+        /// </summary>
+        This,
+        /// <summary>
         /// Reference parameter. 
         /// It's directly refences to property, field, variable or other parameter
         /// </summary>
