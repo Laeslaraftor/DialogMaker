@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime;
+using Newtonsoft.Json.Linq;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
 {
@@ -347,6 +348,43 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             #endregion
         }
+        public class SizeInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation, IDSharpType type)
+            : Instruction(builder, operation)
+        {
+            public IDSharpType Type { get; } = type;
+            public override int SizeInBytes => base.SizeInBytes + sizeof(int);
+
+            #region Управление
+
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <param name="builder"><inheritdoc/></param>
+            /// <returns><inheritdoc/></returns>
+            public override Instruction Copy(DSharpBytecodeBuilder builder)
+            {
+                return new SizeInstruction(builder, Operation, Type);
+            }
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <returns><inheritdoc/></returns>
+            public override object[] GetArguments()
+            {
+                return [Type.Size];
+            }
+
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <returns><inheritdoc/></returns>
+            public override string ToString()
+            {
+                return $"{Operation} {Type.Size}";
+            }
+
+            #endregion
+        }
         public class IndexLiteralInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation, int index, DSharpLiteralValue value)
             : LiteralInstruction(builder, operation, value)
         {
@@ -436,6 +474,59 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             #endregion
         }
+        public class TypedReferenceInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation, IDSharpType type)
+            : ReferenceInstruction(builder, operation)
+        {
+            public IDSharpType Type { get; } = type;
+            public unsafe override int SizeInBytes => base.SizeInBytes + sizeof(DSharpMetadataToken);
+
+            #region Управление
+
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <param name="builder"><inheritdoc/></param>
+            /// <returns><inheritdoc/></returns>
+            public override Instruction Copy(DSharpBytecodeBuilder builder)
+            {
+                return new TypedReferenceInstruction(builder, Operation, Type)
+                {
+                    ReferencedInstruction = ReferencedInstruction
+                };
+            }
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <returns><inheritdoc/></returns>
+            public override object[] GetArguments()
+            {
+                if (ReferencedInstruction == null)
+                {
+                    return [Type];
+                }
+
+                return [Type, ReferencedInstruction];
+            }
+
+            /// <summary>
+            /// <inheritdoc/>
+            /// </summary>
+            /// <returns><inheritdoc/></returns>
+            public override string ToString()
+            {
+                if (ReferencedInstruction == null)
+                {
+                    return $"{Operation} [{Type}]";
+                }
+
+                int index = BytecodeBuilder.Instructions.IndexOf(ReferencedInstruction);
+
+                return $"{Operation} [{Type}, {index}: {ReferencedInstruction}]";
+            }
+
+            #endregion
+        }
+
         public class CommentInstruction(DSharpBytecodeBuilder builder, string? text = null) : Instruction(builder, DSharpBytecodeOperation.Empty)
         {
             public string? Text { get; set; } = text;

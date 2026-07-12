@@ -299,6 +299,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             return CreateInstruction<LiteralInstruction>(this, DSharpBytecodeOperation.Push, value);
         }
         /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.Push"/>
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public SizeInstruction PushSize(IDSharpType type)
+        {
+            return CreateInstruction<SizeInstruction>(this, DSharpBytecodeOperation.Push, type);
+        }
+
+        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.Pop"/>
         /// </summary>
         /// <returns></returns>
@@ -604,7 +614,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                     return LoadBaseInstanceProperty(property);
                 }
 
-                return LoadBaseInstanceProperty(property);
+                return LoadInstanceProperty(property);
             }
             else if (propertyOrField is IDSharpFieldInfo field)
             {
@@ -680,6 +690,30 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         public Instruction LoadInstance()
         {
             return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.LoadInstance);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.LoadTypeInformation"/>
+        /// </summary>
+        /// <returns></returns>
+        public TypeInstruction LoadTypeInformation(IDSharpType type)
+        {
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadTypeInformation, type);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.LoadTypeSize"/>
+        /// </summary>
+        /// <returns></returns>
+        public TypeInstruction LoadTypeSize(IDSharpType type)
+        {
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadTypeSize, type);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.LoadCurrentInstructionIndex"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction LoadCurrentInstructionIndex()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.LoadCurrentInstructionIndex);
         }
 
         /// <summary>
@@ -936,6 +970,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         }
 
         /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.JumpIndexed"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction JumpIndexed()
+        {
+            return CreateInstruction<ReferenceInstruction>(this, DSharpBytecodeOperation.JumpIndexed);
+        }
+        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.Jump"/>
         /// </summary>
         /// <param name="instruction">Instruction to jumping</param>
@@ -1021,6 +1063,76 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
 
             return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Empty);
+        }
+
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.StartTrying"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction StartTrying()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.StartTrying);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.StopTrying"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction StopTrying()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.StopTrying);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.RegisterCatch"/>
+        /// </summary>
+        /// <returns></returns>
+        public ReferenceInstruction RegisterCatch(Instruction? reference = null)
+        {
+            var result = CreateInstruction<ReferenceInstruction>(this, DSharpBytecodeOperation.RegisterCatch);
+
+            if (reference != null)
+            {
+                result.ReferencedInstruction = reference;
+            }
+
+            return result;
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.RegisterTypedCatch"/>
+        /// </summary>
+        /// <returns></returns>
+        public TypedReferenceInstruction RegisterTypedCatch(IDSharpType type, Instruction? reference = null)
+        {
+            var result = CreateInstruction<TypedReferenceInstruction>(this, DSharpBytecodeOperation.RegisterTypedCatch, type);
+
+            if (reference != null)
+            {
+                result.ReferencedInstruction = reference;
+            }
+
+            return result;
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.RegisterFinally"/>
+        /// </summary>
+        /// <returns></returns>
+        public ReferenceInstruction RegisterFinally(Instruction? reference = null)
+        {
+            var result = CreateInstruction<ReferenceInstruction>(this, DSharpBytecodeOperation.RegisterFinally);
+
+            if (reference != null)
+            {
+                result.ReferencedInstruction = reference;
+            }
+
+            return result;
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.Finally"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction Finally()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Finally);
         }
 
         #endregion

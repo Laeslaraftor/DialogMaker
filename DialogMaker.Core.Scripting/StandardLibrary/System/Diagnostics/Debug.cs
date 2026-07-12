@@ -1,5 +1,9 @@
 namespace System.Diagnostics;
 
-public class Debug
+public static class Debug
 {
+    public static void WriteLine(object? obj)
+    {
+        throw new NotImplementedException();
+    }
 }

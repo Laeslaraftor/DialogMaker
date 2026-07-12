@@ -2,7 +2,7 @@ namespace System.Diagnostics;
 
 public class StackTrace
 {
-    private StackFrame(StackFrame[] frames)
+    private StackTrace(StackFrame[] frames)
     {
         _frames = frames;
     }

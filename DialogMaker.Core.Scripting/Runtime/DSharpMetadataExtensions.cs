@@ -480,6 +480,21 @@ namespace DialogMaker.Core.Scripting.Runtime
 
                 return true;
             }
+
+            /// <summary>
+            /// Check is type value type
+            /// </summary>
+            /// <returns>Is value type</returns>
+            public bool IsValueType()
+            {
+                if (type.IsGeneric)
+                {
+                    return type.GenericAttributes.HasFlag(DSharpGenericTypeAttributes.Struct);
+                }
+
+                return type.ObjectType != DSharpObjectType.Class &&
+                       type.ObjectType != DSharpObjectType.Interface;
+            }
         }
         extension(IDSharpAssembly assembly)
         {

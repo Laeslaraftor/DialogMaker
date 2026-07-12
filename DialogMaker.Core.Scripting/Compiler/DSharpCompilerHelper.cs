@@ -170,6 +170,28 @@ namespace DialogMaker.Core.Scripting.Compiler
         extension(IDSharpType type)
         {
             /// <summary>
+            /// Get all abstract members of type that must be implemented
+            /// </summary>
+            /// <returns>Members to implement</returns>
+            public IEnumerable<IDSharpMemberInfo> GetAbstractMembersToImplement()
+            {
+                if (type.IsAbstract)
+                {
+                    foreach (var member in type.GetDeclarations())
+                    {
+                        yield return member;
+                    }
+                }
+
+                foreach (var baseType in type.GetBaseTypes().Where(t => t.ObjectType != DSharpObjectType.Interface))
+                {
+                    foreach (var baseMember in baseType.GetAbstractMembersToImplement())
+                    {
+                        yield return baseMember;
+                    }
+                }
+            }
+            /// <summary>
             /// Get all members of interfaces that must be implemented
             /// </summary>
             /// <returns>Members to implement</returns>
@@ -180,28 +202,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                     yield break;
                 }
 
-                foreach (var indexer in type.GetIndexers())
+                foreach (var member in type.GetDeclarations())
                 {
-                    if (indexer.IsDeclaration)
-                    {
-                        yield return indexer;
-                    }
+                    yield return member;
                 }
-                foreach (var property in type.GetProperties())
-                {
-                    if (property.IsDeclaration)
-                    {
-                        yield return property;
-                    }
-                }
-                foreach (var method in type.GetMethods())
-                {
-                    if (method.IsDeclaration)
-                    {
-                        yield return method;
-                    }
-                }
-
                 foreach (var baseType in type.GetBaseTypes().Where(t => t.ObjectType == DSharpObjectType.Interface))
                 {
                     foreach (var baseMember in baseType.GetInterfaceMembersToImplement())
@@ -318,6 +322,45 @@ namespace DialogMaker.Core.Scripting.Compiler
                         {
                             yield return member;
                         }
+                    }
+                }
+            }
+            /// <summary>
+            /// Get all declared members without implementation in type
+            /// </summary>
+            /// <param name="predicate">Member predicate</param>
+            /// <returns>All declared members without implementation</returns>
+            public IEnumerable<IDSharpMemberInfo> GetDeclarations(Predicate<IDSharpMemberInfo>? predicate = null)
+            {
+                bool IsValid(IDSharpMemberInfo member)
+                {
+                    if (!member.IsDeclaration)
+                    {
+                        return false;
+                    }
+
+                    return predicate == null || predicate(member);
+                }
+
+                foreach (var indexer in type.GetIndexers())
+                {
+                    if (IsValid(indexer))
+                    {
+                        yield return indexer;
+                    }
+                }
+                foreach (var property in type.GetProperties())
+                {
+                    if (IsValid(property))
+                    {
+                        yield return property;
+                    }
+                }
+                foreach (var method in type.GetMethods())
+                {
+                    if (IsValid(method))
+                    {
+                        yield return method;
                     }
                 }
             }

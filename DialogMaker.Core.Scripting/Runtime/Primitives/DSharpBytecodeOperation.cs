@@ -183,6 +183,24 @@
         [ArgsCount(0)]
         [RequestsStackValues(0)]
         LoadInstance,
+        /// <summary>
+        /// Load specified type information pointer to stack
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(0)]
+        LoadTypeInformation,
+        /// <summary>
+        /// Load specified type size to stack
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(0)]
+        LoadTypeSize,
+        /// <summary>
+        /// Load index of current instruction
+        /// </summary>
+        [ArgsCount(0)]
+        [RequestsStackValues(0)]
+        LoadCurrentInstructionIndex,
 
         /// <summary>
         /// Call function or static method.
@@ -290,6 +308,12 @@
         AwaitGenericCallBaseInstance,
 
         /// <summary>
+        /// Jump to instruction on index that stores in stack last value
+        /// </summary>
+        [ArgsCount(0)]
+        [RequestsStackValues(1)]
+        JumpIndexed,
+        /// <summary>
         /// Jump to instruction
         /// </summary>
         [ArgsCount(1)]
@@ -332,6 +356,48 @@
         [ArgsCount(0)]
         [RequestsStackValues(0)]
         EndScope,
+
+        /// <summary>
+        /// Start try operation scope
+        /// </summary>
+        [ArgsCount(0)]
+        [RequestsStackValues(0)]
+        StartTrying,
+        /// <summary>
+        /// End try operation scope and remove all registered to it catch and finally operations
+        /// </summary>
+        [ArgsCount(0)]
+        [RequestsStackValues(0)]
+        StopTrying,
+        /// <summary>
+        /// Register catch block that handles all exceptions.
+        /// This requires index of instruction that begin catch block
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(0)]
+        RegisterCatch,
+        /// <summary>
+        /// Register catch block that handles all exceptions that inherited or equals to specified type.
+        /// This requires index of instruction that begin catch block and type of exception
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        RegisterTypedCatch,
+        /// <summary>
+        /// Register finally block that executes after try and catch block.
+        /// This requires index of instruction that begin catch block.
+        /// End of finally block should contains return - any finally block can contains only 1 return statement at end
+        /// for returning from finally block back
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(0)]
+        RegisterFinally,
+        /// <summary>
+        /// Call current finally block
+        /// </summary>
+        [ArgsCount(0)]
+        [RequestsStackValues(0)]
+        Finally,
 
         /// <summary>
         /// Casts last value in stack to specified type

@@ -1,4 +1,4 @@
-﻿namespace DialogMaker.Core.Scripting.Compiler.Ast
+﻿namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
     /// Type of constructor

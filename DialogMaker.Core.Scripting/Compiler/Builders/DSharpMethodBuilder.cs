@@ -346,7 +346,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 throw new InvalidOperationException($"Unable to create generic parameter \"{name}\" for method without declaring type: {this}");
             }
 
-            var type = DeclaringType.CreateType(name, true, true);
+            var type = DeclaringType.CreateType(name, true, false);
             _genericParameters.Add(type);
 
             return type;

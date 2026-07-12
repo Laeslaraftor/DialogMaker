@@ -358,11 +358,26 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// </summary>
         [Keyword("override")]
         Override,
+        /// <summary>
+        /// Try keyword
+        /// </summary>
+        [Keyword("try")]
+        Try,
+        /// <summary>
+        /// Catch keyword
+        /// </summary>
+        [Keyword("catch")]
+        Catch,
+        /// <summary>
+        /// Finally keyword
+        /// </summary>
+        [Keyword("finally")]
+        Finally,
 
         /// <summary>
         /// Assign operator (=)
         /// </summary>
-        Assign,            // =
+        Assign,
         /// <summary>
         /// Plus operator (+)
         /// </summary>

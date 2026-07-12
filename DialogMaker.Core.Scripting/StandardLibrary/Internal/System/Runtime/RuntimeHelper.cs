@@ -2,7 +2,7 @@ namespace Internal.System.Runtime;
 
 using System;
 
-public static class RuntimeHelper
+internal static class RuntimeHelper
 {
     public static Type CreateType(nint token)
     {

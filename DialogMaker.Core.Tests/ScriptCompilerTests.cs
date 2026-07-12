@@ -16,6 +16,7 @@ namespace DialogMaker.Core.Tests
         public const string OperatorsScript = "OperatorsTest";
         public const string GenericMethodsScript = "GenericMethodsScript";
         public const string InterfacesScript = "InterfacesScript";
+        public const string TryCatchFinallyScript = "TryCatchFinallyScript";
         public const string StandardLibraryFolder = @"F:\Projects\DialogMaker\DialogMaker.Core.Scripting\StandardLibrary";
 
         [Test]
@@ -25,6 +26,7 @@ namespace DialogMaker.Core.Tests
         [TestCase(OperatorsScript)]
         [TestCase(GenericMethodsScript)]
         [TestCase(InterfacesScript)]
+        [TestCase(TryCatchFinallyScript)]
         public static void TestSimpleScriptCompiling(string fileName)
         {
             var assembly = CompileScript(fileName);

@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+using DialogMaker.Core.Scripting.Runtime;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {

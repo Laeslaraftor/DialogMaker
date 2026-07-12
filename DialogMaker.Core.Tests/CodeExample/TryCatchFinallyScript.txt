@@ -1,0 +1,35 @@
+﻿namespace System
+{
+	public struct Byte {}
+	public struct Int32 {}
+	public struct Decimal {}
+	public struct Single {}
+	public struct Double {}
+	public class String {}
+	public struct Void {}
+	public class Object {}
+	public class Exception
+	{
+		public string Message { get; }
+	}	
+	
+	public class Console
+	{
+		public static void WriteLine(string text) 
+		{
+		}
+	}
+}
+
+string CatchException()
+{
+	try
+	{
+		throw new Exception();
+	}
+	catch (Exception error)
+	{
+		return "";
+	}
+}
+	

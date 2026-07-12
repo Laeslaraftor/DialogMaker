@@ -2,7 +2,6 @@ namespace System;
 
 public class Enum
 {
-    /*
     public static T[] GetValues<T>() where T : Enum
     {
         return Array<T>.Empty;
@@ -19,5 +18,4 @@ public class Enum
     {
         return (T)ToObject(typeof(T), value);
     }
-    */
 }

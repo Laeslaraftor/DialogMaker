@@ -222,6 +222,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
+        public DSharpTypeToken NullableToken
+        {
+            get
+            {
+                field ??= GetTypeToken(DSharpBuildInTypes.Nullable);
+                return field;
+            }
+        }
+        public DSharpTypeToken RuntimeHelperToken
+        {
+            get
+            {
+                field ??= GetTypeToken(RuntimeHelperType.Type);
+                return field;
+            }
+        }
         public IDSharpType StringType
         {
             get
@@ -390,6 +406,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
+        public IDSharpType NullableType
+        {
+            get
+            {
+                field ??= (IDSharpType)GetType(NullableToken);
+                return field;
+            }
+        }
         public DSharpArrayType ArrayBaseType
         {
             get
@@ -403,6 +427,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             get
             {
                 field ??= DSharpIEnumeratorType.Create(this);
+                return field;
+            }
+        }
+        public DSharpRuntimeHelperType RuntimeHelperType
+        {
+            get
+            {
+                field ??= DSharpRuntimeHelperType.Create(this);
                 return field;
             }
         }
@@ -722,7 +754,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             {
                 var newFinalizer = newType.CreateFinalizer();
                 ProcessMethod(newFinalizer, genericType.Finalizer);
-            } 
+            }
 
             void SetupOperator(DSharpOperatorBuilder newOperator, IDSharpOperatorInfo @operator)
             {
@@ -863,7 +895,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             if (baseTypeGenericParameters.Length > 0)
             {
                 newTypes = baseTypeGenericParameters;
-                
+
                 if (!ReplaceTypes(baseTypeGenericParameters))
                 {
                     return genericType;
@@ -888,6 +920,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         public IDSharpType CreateArray(IDSharpType elementType)
         {
             return FillGeneric(ArrayBaseType.Type, elementType);
+        }
+        public IDSharpType CreateNullable(IDSharpType type)
+        {
+            if (type.IsValueType())
+            {
+                return FillGeneric(NullableType, type);
+            }
+
+            return type;
         }
 
         private T CreateMember<T>(DSharpMetadataTokenType tokenType, IList<T> members, Func<DSharpTypeToken, T> fabric)

@@ -163,9 +163,10 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 throw new ArgumentException($"Object can not be abstract and static: {declaration}", nameof(declaration));
             }
-            if (parent == null && declaration.Access != DSharpAccessModifier.Public)
+            if (parent == null && declaration.Access != DSharpAccessModifier.Public &&
+                                  declaration.Access != DSharpAccessModifier.Internal)
             {
-                throw new ArgumentException($"Objects in namespace only can be public: {declaration}", nameof(declaration));
+                throw new ArgumentException($"Objects in namespace only can be public or internal: {declaration}", nameof(declaration));
             }
 
             var type = Assembly.CreateType(declaration.Identifier.Name, parent);
@@ -462,7 +463,11 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             if (declareType == null)
             {
-                throw new ArgumentException($"Unable to create constructor when type that should be constructed not provided", nameof(declareType));
+                throw new ArgumentException($"Unable to create constructor when type that should be constructed not provided: {constructorNode}", nameof(declareType));
+            }
+            if (constructorNode.Name != declareType.Name)
+            {
+                throw new ArgumentException($"Constructor should have same name to constructing type: {constructorNode}", nameof(constructorNode));
             }
 
             var constructor = declareType.CreateConstructor();
@@ -922,8 +927,12 @@ namespace DialogMaker.Core.Scripting.Compiler
                 if (info.Key.ObjectType == DSharpObjectType.Interface)
                 {
                     ValidateInterface(info.Key);
+                    continue;
                 }
-                else if (info.Key.BaseTypes.Count > 0)
+
+                ValidateVirtualization(info.Key);
+
+                if (info.Key.BaseTypes.Count > 0)
                 {
                     foreach (var baseType in info.Key.BaseTypes)
                     {

@@ -30,6 +30,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             CurrentLoopStartInstruction = context.CurrentLoopStartInstruction;
             CurrentLoopEndInstruction = context.CurrentLoopEndInstruction;
             NowInCatchBlock = context.NowInCatchBlock;
+            NowInFinallyBlock = context.NowInFinallyBlock;
 
             if (context.Compiler != null && context.CurrentMember != currentMember)
             {
@@ -41,18 +42,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     Scope = context.Compiler.GetScope(currentMember, context.Scope);
                 }
-                //else if (currentMember is DSharpMethodBuilder method)
-                //{
-                //    Scope = context.Compiler.GetScope(method);
-                //}
-                //else if (currentMember is IDSharpType typeMember)
-                //{
-                //    Scope = context.Compiler.GetScope(typeMember);
-                //}
-                //else if (currentMember.DeclaringType != null)
-                //{
-                //    Scope = context.Compiler.GetScope(currentMember.DeclaringType);
-                //}
             }
             else
             {
@@ -71,6 +60,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         public DSharpBytecodeBuilder.Instruction? CurrentLoopStartInstruction { get; set; }
         public DSharpBytecodeBuilder.Instruction? CurrentLoopEndInstruction { get; set; }
         public bool NowInCatchBlock { get; set; }
+        public bool NowInFinallyBlock { get; set; }
         public DSharpCompilerScope? Scope { get; set; }
 
         #region Доступ
@@ -475,7 +465,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             if (typeExpression is IdentifierExpressionNode identifier)
             {
-                if (TryResolveType(identifier.Name, identifier.GenericParameters, 0, false, out result))
+                if (TryResolveType(identifier.Name, identifier.GenericParameters, 0, [], false, out result))
                 {
                     name = identifier.GetName(false);
                     return true;
@@ -505,7 +495,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 while (true);
 
-                if (endPointIdentifier != null && TryResolveType(memberAccessName, endPointIdentifier.GenericParameters, 0, false, out result))
+                if (endPointIdentifier != null && TryResolveType(memberAccessName, endPointIdentifier.GenericParameters, 0, [], false, out result))
                 {
                     name = memberAccessFull;
                     return true;
@@ -566,7 +556,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             catch (Exception error)
             {
-                if (Assembly != null && TryResolveType(identifier.Name, identifier.GenericParameters, 0, true, out var result))
+                if (Assembly != null && TryResolveType(identifier.Name, identifier.GenericParameters, 0, [], true, out var result))
                 {
                     return Assembly.GetType(result);
                 }
@@ -1164,9 +1154,10 @@ namespace DialogMaker.Core.Scripting.Compiler
         }
         private readonly bool TryResolveType(TypeInfoNode typeInfo, bool simplifyGenerics, [NotNullWhen(true)] out DSharpTypeToken? result)
         {
-            return TryResolveType(typeInfo.GetSimpleFullName(), typeInfo.GenericParameters, typeInfo.ArrayDimensions, simplifyGenerics, out result);
+            bool[] nullables = [.. typeInfo.ArrayNullability, typeInfo.IsNullable];
+            return TryResolveType(typeInfo.GetSimpleFullName(), typeInfo.GenericParameters, typeInfo.ArrayDimensions, nullables, simplifyGenerics, out result);
         }
-        private readonly bool TryResolveType(string typeName, List<TypeInfoNode> generics, int arrayDimension, bool simplifyGenerics, [NotNullWhen(true)] out DSharpTypeToken? result)
+        private readonly bool TryResolveType(string typeName, List<TypeInfoNode> generics, int arrayDimension, bool[] nullables, bool simplifyGenerics, [NotNullWhen(true)] out DSharpTypeToken? result)
         {
             result = null;
             List<DSharpTypeToken> genericParameters = [];
@@ -1218,7 +1209,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 return false;
             }
-            if (Scope.TryResolveType(typeName, arrayDimension, out var resultType, genericParametersTypes))
+            if (Scope.TryResolveType(typeName, arrayDimension, nullables, out var resultType, genericParametersTypes))
             {
                 result = Assembly.GetTypeToken(resultType);
                 return true;

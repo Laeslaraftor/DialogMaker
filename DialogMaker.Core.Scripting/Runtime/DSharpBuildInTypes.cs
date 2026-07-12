@@ -35,6 +35,10 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// Standard enumerator interface
             /// </summary>
             public static readonly DSharpBuildInTypeInfo IEnumerator = new("System.Collections.IEnumerator");
+            /// <summary>
+            /// Class with static helper methods for
+            /// </summary>
+            public static readonly DSharpBuildInTypeInfo RuntimeHelper = new("Internal.System.Runtime.RuntimeHelper");
         }
 
         /// <summary>
@@ -102,9 +106,13 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         public static readonly DSharpBuildInTypeInfo Void = new("System.Void", 0, DSharpTokenType.Void);
         /// <summary>
-        /// Empty structure that represents nul value
+        /// Empty structure that represents null value
         /// </summary>
         public static readonly DSharpBuildInTypeInfo Null = new("System.Null", 0, DSharpTokenType.Null);
+        /// <summary>
+        /// Structure that represents nullable value
+        /// </summary>
+        public static readonly DSharpBuildInTypeInfo Nullable = new("System.Nullable`1");
         /// <summary>
         /// Object type which root of all objects
         /// </summary>

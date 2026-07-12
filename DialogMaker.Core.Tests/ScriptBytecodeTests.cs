@@ -30,6 +30,7 @@ namespace DialogMaker.Core.Tests
         [TestCase(ScriptCompilerTests.OperatorsScript, "customBinaryOperatorWithAssignment")]
         [TestCase(ScriptCompilerTests.GenericMethodsScript, "GetHudoeName")]
         [TestCase(ScriptCompilerTests.GenericMethodsScript, "MegaClass.CreateInstance")]
+        [TestCase(ScriptCompilerTests.TryCatchFinallyScript, "CatchException")]
         public static void PrintSimpleFunctionBytecode(string scriptName, string functionName)
         {
             var assembly = ScriptCompilerTests.CompileScript(scriptName);

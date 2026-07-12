@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Compiler;
-using DialogMaker.Core.Scripting.Compiler.Ast;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
@@ -40,6 +39,12 @@ namespace DialogMaker.Core.Scripting.Compiler
             };
             context.Scope = GetScope(method);
 
+            if (method.MethodType == DSharpMethodType.Constructor &&
+                _createdConstructors.TryGetValue(method, out var node))
+            {
+                CompileConstructor(method, node, code, context);
+            }
+
             CompileStatement(method, body, 0, code, ref settings, context);
 
             bool alwaysReturns = settings.AlwaysReturn(method);
@@ -56,6 +61,40 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 code.Return();
             }
+        }
+
+        private void CompileConstructor(DSharpMethodBuilder method, ConstructorNode node, DSharpBytecodeBuilder code, DSharpCompilerContext context = default)
+        {
+            if (node.Type == DSharpConstructorType.Default)
+            {
+                return;
+            }
+            if (node.Type == DSharpConstructorType.BaseInvocation)
+            {
+                var baseType = (method.DeclaringType?.BaseTypes.FirstOrDefault(t => t.ObjectType == DSharpObjectType.Class))
+                    ?? throw new InvalidOperationException($"Unable to invoke constructor in base class because current type not inherit any types: {node}");
+                context = new(context, baseType);
+            }
+
+            var constructor = context.FindConstructor(node.ExtraInvokeParameters);
+
+            if (constructor == null)
+            {
+                return;
+            }
+
+            code.LoadInstance();
+
+            if (node.Type == DSharpConstructorType.BaseInvocation)
+            {
+                code.CallBaseInstance(constructor);
+            }
+            else
+            {
+                code.CallInstance(constructor);
+            }
+
+            code.Pop();
         }
 
         #endregion
@@ -165,7 +204,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     throw new InvalidOperationException($"Failed to compile: {expressionStatement.Expression}", error);
                 }
-                
+
                 if (depth == 0)
                 {
                     if (expressionStatement.Expression is ThrowExpressionNode)
@@ -442,6 +481,11 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             else if (statement is ReturnStatementNode returnStatement)
             {
+                if (context.NowInFinallyBlock)
+                {
+                    throw new InvalidOperationException($"Returning is unavailable in finally block: {statement}");
+                }
+
                 IDSharpType? methodReturnType = null;
 
                 if (method.ReturnType != null)
@@ -511,6 +555,171 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 code.Return();
+            }
+            else if (statement is TryStatementNode tryStatement)
+            {
+                if (tryStatement.TryBlock == null)
+                {
+                    throw new InvalidOperationException($"Try block should contains body: {statement}");
+                }
+                if (tryStatement.CatchBlocks.Count == 0)
+                {
+                    throw new InvalidOperationException($"Try block should have at least 1 catch block: {statement}");
+                }
+                if (tryStatement.TryBlock.Statements.Count == 0)
+                {
+                    return;
+                }
+
+                Dictionary<TryStatementNode.CatchBlock, DSharpBytecodeBuilder.ReferenceInstruction> catchBlockRegisterInstructions = [];
+                DSharpBytecodeBuilder.ReferenceInstruction? finallyRegisterInstruction = null;
+                DSharpBytecodeBuilder.Instruction endInstruction = code.StopTrying();
+                HashSet<IDSharpType> catchingExceptions = [];
+                bool emptyCatchBlockAlreadyCreated = false;
+
+                code.Instructions.Remove(endInstruction);
+
+                DSharpBytecodeBuilder.Instruction CompileBlock(ref DSharpMethodCompileSettings settings, BlockStatementNode block, DSharpCompilerContext context, Action? extra = null, bool endJump = true, int depthOffset = 1)
+                {
+                    int startIndex = code.Instructions.Count;
+                    DSharpBytecodeBuilder.Instruction start = code.StartScope();
+
+                    extra?.Invoke();
+                    CompileStatement(method, block, depth + depthOffset, code, ref settings, context);
+
+                    code.EndScope();
+
+                    if (endJump)
+                    {
+                        if (finallyRegisterInstruction != null)
+                        {
+                            code.Finally();
+                        }
+
+                        code.Jump(endInstruction);
+                    }
+
+                    return start;
+                }
+
+                code.StartTrying();
+
+                foreach (var catchBlock in tryStatement.CatchBlocks)
+                {
+                    if (catchBlock.Statements == null)
+                    {
+                        throw new InvalidOperationException($"Catch block should contains body: {catchBlock}");
+                    }
+
+                    DSharpBytecodeBuilder.ReferenceInstruction instruction;
+
+                    if (catchBlock.ExceptionType == null)
+                    {
+                        if (emptyCatchBlockAlreadyCreated)
+                        {
+                            throw new InvalidOperationException($"Try/catch/finally can not contains multiple catch blocks without specified exception");
+                        }
+
+                        instruction = code.RegisterCatch();
+                        emptyCatchBlockAlreadyCreated = true;
+                    }
+                    else
+                    {
+                        IDSharpType exceptionType;
+
+                        try
+                        {
+                            var typeToken = context.ResolveType(catchBlock.ExceptionType);
+                            exceptionType = (IDSharpType)Assembly.GetType(typeToken);
+                        }
+                        catch (Exception error)
+                        {
+                            throw new InvalidOperationException($"Unable to resolve exception type: {catchBlock.ExceptionType}", error);
+                        }
+
+                        if (!exceptionType.IsAssignableTo(Assembly.ExceptionType))
+                        {
+                            throw new InvalidOperationException($"\"{exceptionType}\" is not inherit exception type: {catchBlock}");
+                        }
+
+                        if (!catchingExceptions.Add(exceptionType))
+                        {
+                            throw new InvalidOperationException($"Exception \"{exceptionType}\" already handling: {catchBlock}");
+                        }
+
+                        instruction = code.RegisterTypedCatch(exceptionType);
+                    }
+
+                    catchBlockRegisterInstructions.Add(catchBlock, instruction);
+                }
+
+                if (tryStatement.FinallyBlock != null)
+                {
+                    finallyRegisterInstruction = code.RegisterFinally();
+                }
+
+                CompileBlock(ref settings, tryStatement.TryBlock, context);
+
+                int catchBlockIndex = 0;
+
+                foreach (var catchInfo in catchBlockRegisterInstructions)
+                {
+                    Action? extra = null;
+                    var catchContext = context;
+                    catchContext.NowInCatchBlock = true;
+                    IDSharpType? exceptionType = null;
+
+                    if (catchInfo.Key.ExceptionVariableIdentifier != null &&
+                        catchInfo.Value is DSharpBytecodeBuilder.TypedReferenceInstruction typedReference)
+                    {
+                        catchContext.Scope = new DSharpCompilerMethodScope(method, catchContext.Scope);
+                        exceptionType = typedReference.Type;
+                        var variableName = catchInfo.Key.ExceptionVariableIdentifier.Name;
+                        IDSharpParameterInfo exceptionVariable;
+
+                        try
+                        {
+                            exceptionVariable = catchContext.Scope.CreateVariable(variableName, typedReference.Type);
+                        }
+                        catch (Exception error)
+                        {
+                            throw new InvalidOperationException($"Unable to create variable \"{variableName}\" for catch block: {catchInfo.Key}", error);
+                        }
+
+                        extra = () =>
+                        {
+                            code.StoreLocal(exceptionVariable);
+                        };
+                    }
+
+                    int depthOffset = 1;
+
+                    if (depth == 0 &&
+                        (catchInfo.Key.ExceptionType == null ||
+                        catchInfo.Key.ExceptionType != null && exceptionType == Assembly.ExceptionType))
+                    {
+                        depthOffset = 0;
+                    }
+
+                    catchInfo.Value.ReferencedInstruction = CompileBlock(ref settings,
+                                                                         catchInfo.Key.Statements!,
+                                                                         catchContext,
+                                                                         extra,
+                                                                         finallyRegisterInstruction != null || catchBlockIndex + 1 < catchBlockRegisterInstructions.Count,
+                                                                         depthOffset);
+
+                    catchBlockIndex++;
+                }
+
+                if (finallyRegisterInstruction != null && tryStatement.FinallyBlock != null)
+                {
+                    var finallyContext = context;
+                    finallyContext.NowInFinallyBlock = true;
+                    finallyRegisterInstruction.ReferencedInstruction = CompileBlock(ref settings, tryStatement.FinallyBlock, finallyContext, null, false);
+                    code.Return();
+                }
+
+                code.Instructions.Add(endInstruction);
             }
             else
             {
@@ -1259,6 +1468,60 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 var value = nameofExpression.GetValue(method, context);
                 code.Push(value);
+                return null;
+            }
+            else if (expression is TypeOfExpressionNode typeOfExpression)
+            {
+                if (typeOfExpression.Value == null)
+                {
+                    throw new InvalidOperationException($"Unable to compile typeof expression because type not specified: {expression}");
+                }
+                IDSharpType type;
+
+                try
+                {
+                    var typeToken = context.ResolveType(typeOfExpression.Value);
+                    type = (IDSharpType)Assembly.GetType(typeToken);
+                }
+                catch (Exception error)
+                {
+                    throw new InvalidOperationException($"Unable to compile typeof expression: {expression}", error);
+                }
+
+                code.LoadTypeInformation(type);
+                code.Call(Assembly.RuntimeHelperType.CreateTypeMethod);
+                code.PopOffset(1);
+
+                return null;
+            }
+            else if (expression is SizeOfExpressionNode sizeOfExpression)
+            {
+                if (sizeOfExpression.Value == null)
+                {
+                    throw new InvalidOperationException($"Unable to compile sizeof expression because type not specified: {expression}");
+                }
+
+                IDSharpType type;
+
+                try
+                {
+                    var typeToken = context.ResolveType(sizeOfExpression.Value);
+                    type = (IDSharpType)Assembly.GetType(typeToken);
+                }
+                catch (Exception error)
+                {
+                    throw new InvalidOperationException($"Unable to compile sizeof expression: {expression}", error);
+                }
+
+                if (type.Size == -1)
+                {
+                    code.LoadTypeSize(type);
+                }
+                else
+                {
+                    code.PushSize(type);
+                }
+
                 return null;
             }
 

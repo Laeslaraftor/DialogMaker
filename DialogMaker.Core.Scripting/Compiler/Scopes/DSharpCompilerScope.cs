@@ -30,23 +30,24 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// <exception cref="ArgumentException">Specified type can not replace generic type</exception>
         public bool TryResolveType(string name, [NotNullWhen(true)] out IDSharpType? result, params IList<IDSharpType>? genericTypes)
         {
-            return TryResolveType(name, 0, out result, genericTypes);
+            return TryResolveType(name, 0, [], out result, genericTypes);
         }
         /// <summary>
         /// Try to resolve type in current and parent scope
         /// </summary>
         /// <param name="name">Name of type</param>
-        /// <param name="arrayDimension">Array dimensions amount</param>
+        /// <param name="arrayDimensions">Array dimensions amount</param>
+        /// <param name="nullable">Is type should be nullable. It ignores if type was not value</param>
         /// <param name="result">Resolved type</param>
         /// <param name="genericTypes">List of types for searching generic types</param>
         /// <returns>Is type resolved</returns>
         /// <exception cref="ArgumentException">Specified type can not replace generic type</exception>
-        public bool TryResolveType(string name, int arrayDimensions, [NotNullWhen(true)] out IDSharpType? result, params IList<IDSharpType>? genericTypes)
+        public bool TryResolveType(string name, int arrayDimensions, bool[] nullables, [NotNullWhen(true)] out IDSharpType? result, params IList<IDSharpType>? genericTypes)
         {
             if (Assembly.TryGetStandardType(name, out var standardTypeToken))
             {
                 result = (IDSharpType)Assembly.GetType(standardTypeToken);
-                result = CreateArray(result);
+                result = ProcessFlags(result);
                 return true;
             }
 
@@ -118,19 +119,38 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
 
                 return null;
             }
-            IDSharpType CreateArray(IDSharpType type)
+            IDSharpType ProcessFlags(IDSharpType type)
             {
-                if (0 >= arrayDimensions)
+                if (arrayDimensions > 0)
                 {
+                    int dimension = 0;
+
+                    bool IsNullable()
+                    {
+                        if (dimension >= nullables.Length)
+                        {
+                            return false;
+                        }
+
+                        return nullables[dimension];
+                    }
+
+                    while (dimension < arrayDimensions)
+                    {
+                        if (IsNullable())
+                        {
+                            type = Assembly.CreateNullable(type);
+                        }
+
+                        type = Assembly.CreateArray(type);
+                        dimension++;
+                    }
+
                     return type;
                 }
-
-                int dimension = 0;
-
-                while (dimension < arrayDimensions)
+                if (nullables.Length > 0 && nullables[0])
                 {
-                    type = Assembly.CreateArray(type);
-                    dimension++;
+                    return Assembly.CreateNullable(type);
                 }
 
                 return type;
@@ -143,13 +163,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
 
             if (result != null)
             {
-                result = CreateArray(result);
+                result = ProcessFlags(result);
                 return true;
             }
             else if (foundAssignableTemplate != null)
             {
                 result = Assembly.FillGeneric(foundAssignableTemplate, genericTypes!);
-                result = CreateArray(result);
+                result = ProcessFlags(result);
                 return true;
             }
 
