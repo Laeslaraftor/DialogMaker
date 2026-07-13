@@ -14,6 +14,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         where T : unmanaged
     {
         /// <summary>
+        /// Create unmanaged array
+        /// </summary>
+        /// <param name="items">Unmanaged array</param>
+        /// <param name="length">Length of array</param>
+        public UnmanagedArray(nint items, int length)
+            : this((T*)items, length)
+        {
+        }
+
+        /// <summary>
         /// Length of array
         /// </summary>
         public int Length => _length;
@@ -64,6 +74,32 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
 
             return &_items[index];
+        }
+        /// <summary>
+        /// Get pointer to first item
+        /// </summary>
+        /// <returns>Pointer to first item</returns>
+        public T* AsPointer() => _items;
+        /// <summary>
+        /// Get unmanaged stream from current array
+        /// </summary>
+        /// <returns>Unmanaged stream</returns>
+        public UnmanagedStream ToStream() => ToStream(0, _length);
+        /// <summary>
+        /// Get unmanaged stream from current array
+        /// </summary>
+        /// <param name="startIndex">Stream start offset</param>
+        /// <param name="length">Stream length</param>
+        /// <returns>Unmanaged stream</returns>
+        public UnmanagedStream ToStream(int startIndex, int length)
+        {
+            if (startIndex + length > _length)
+            {
+                throw new IndexOutOfRangeException();
+            }
+
+            var size = sizeof(T);
+            return new((nint)_items + startIndex * size, length * size);
         }
 
         /// <summary>

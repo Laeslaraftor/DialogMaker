@@ -265,12 +265,22 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 field.RawValue = rawValue;
             }
+            if (fieldNode.Initializer != null)
+            {
+                CreateInitializerIfNotExists(declareType, field.IsStatic);
+            }
 
             _createdFields.Add(field, fieldNode);
         }
         private void CreateProperty(DSharpTypeBuilder? declareType, FieldNode fieldNode)
         {
             var property = CreateProperty(declareType, fieldNode, (t, n) => t.CreateProperty(n));
+
+            if (fieldNode.Initializer != null)
+            {
+                CreateInitializerIfNotExists(property.DeclaringType, property.IsStatic);
+            }
+
             _createdProperties.Add(property, fieldNode);
         }
         private void CreateMethod(DSharpTypeBuilder? declareType, MethodNode methodNode)
@@ -294,7 +304,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new ArgumentException($"Static method can not be virtual, abstract, sealed and overriden: {methodNode}", nameof(methodNode));
                 }
             }
-            if ((!methodNode.IsExtern && declareType?.ObjectType != DSharpObjectType.Interface) && methodNode.Body == null)
+            if ((!methodNode.IsExtern && methodNode.Mode != DSharpObjectMemberMode.Abstract && declareType?.ObjectType != DSharpObjectType.Interface) && methodNode.Body == null)
             {
                 throw new ArgumentException($"Method must have a body: {methodNode}", nameof(methodNode));
             }
@@ -470,7 +480,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 throw new ArgumentException($"Constructor should have same name to constructing type: {constructorNode}", nameof(constructorNode));
             }
 
-            var constructor = declareType.CreateConstructor();
+            var constructor = declareType.CreateConstructor(constructorNode.IsStatic);
             constructor.Access = constructorNode.Access;
             _createdConstructors.Add(constructor, constructorNode);
         }
@@ -541,6 +551,16 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             return property;
+        }
+        private void CreateInitializerIfNotExists(DSharpTypeBuilder type, bool isStatic)
+        {
+            if (isStatic && type.StaticInitializer != null ||
+                !isStatic && type.Initializer != null)
+            {
+                return;
+            }
+
+            type.CreateInitializer(isStatic);
         }
 
         #endregion

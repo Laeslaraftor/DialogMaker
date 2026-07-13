@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
-using DialogMaker.Core.Scripting.Compiler.Lexer;
+﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 

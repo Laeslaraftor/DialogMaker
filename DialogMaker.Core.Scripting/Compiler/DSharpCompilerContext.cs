@@ -711,7 +711,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             var type = (CurrentMember as IDSharpType ?? CurrentMember.DeclaringType)
                 ?? throw new InvalidOperationException($"Unable to find constructor using member: {CurrentMember}");
-            var constructors = type.GetConstructors();
+            var constructors = type.GetConstructors().Where(m => !m.IsStatic).ToArray();
 
             if (constructors.Length == 0)
             {
@@ -1216,79 +1216,6 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             return false;
-        }
-        private readonly DSharpTypeToken? InternalTryResolveType(string? @namespace, string typeName, List<DSharpTypeToken>? genericTypes)
-        {
-            var fullName = typeName;
-
-            if (@namespace != null)
-            {
-                fullName = $"{@namespace}.{fullName}";
-            }
-            if (Assembly != null &&
-                (Assembly.TryGetStandardType(typeName, out DSharpTypeToken? token) ||
-                Assembly.TryGetTypeToken(@namespace, typeName, genericTypes, out token)))
-            {
-                return token;
-            }
-            if (Assembly != null && CurrentMember != null)
-            {
-                if (CurrentMember is IDSharpType typeCurrentMember &&
-                    typeCurrentMember.FullName == fullName)
-                {
-                    return Assembly.GetTypeToken(typeCurrentMember);
-                }
-
-                IDSharpType? rootType;
-
-                if (CurrentMember is IDSharpType memberAsType)
-                {
-                    rootType = memberAsType;
-                }
-                else
-                {
-                    rootType = CurrentMember.DeclaringType;
-                }
-
-                while (rootType != null)
-                {
-                    if (rootType.FullName == fullName)
-                    {
-                        return Assembly.GetTypeToken(rootType);
-                    }
-                    foreach (var genericType in rootType.GetGenericTypes())
-                    {
-                        if (genericType.Name == typeName)
-                        {
-                            return Assembly.GetTypeToken(genericType);
-                        }
-                    }
-
-                    rootType = rootType.DeclaringType;
-                }
-            }
-            if (@namespace == null || Assembly == null)
-            {
-                return null;
-            }
-
-            return null;
-        }
-        private readonly IDSharpType CreateArray(DSharpTypeToken typeToken, int arrayDimension)
-        {
-            if (Assembly == null)
-            {
-                throw new InvalidOperationException($"Unable to create array because assembly builder not provided");
-            }
-
-            var type = (IDSharpType)Assembly.GetType(typeToken);
-
-            for (int i = 0; i < arrayDimension; i++)
-            {
-                type = Assembly.CreateArray(type);
-            }
-
-            return type;
         }
 
         #endregion

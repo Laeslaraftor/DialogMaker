@@ -17,7 +17,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Constructor type
         /// </summary>
         public DSharpConstructorType Type { get; set; } = DSharpConstructorType.Default;
+        /// <summary>
+        /// Parameters if extra invocation (this, base)
+        /// </summary>
         public List<ExpressionNode> ExtraInvokeParameters { get; set;  } = [];
+        /// <summary>
+        /// Is constructor static
+        /// </summary>
+        public bool IsStatic { get; set; }
 
         #region Статика
 
@@ -39,7 +46,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 Identifier = memberInfo.Identifier,
                 Attributes = memberInfo.Attributes,
-                Access = memberInfo.AccessModifier
+                Access = memberInfo.AccessModifier,
+                IsStatic = memberInfo.IsStatic
             };
 
             ParseParameters(stream, constructor.Parameters);

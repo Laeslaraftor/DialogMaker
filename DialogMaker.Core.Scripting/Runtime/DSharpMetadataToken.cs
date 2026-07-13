@@ -5,12 +5,22 @@ namespace DialogMaker.Core.Scripting.Runtime
     /// <summary>
     /// Metadata token of D# type
     /// </summary>
-    /// <param name="type">Metadata token type</param>
-    /// <param name="index">Metadata token index</param>
+    /// <param name="value">Metadata token value</param>
     /// <param name="assemblyIndex">Assembly index in references table. 0 means that type stores in current assembly</param>
     [StructLayout(LayoutKind.Sequential)]
-    public readonly struct DSharpMetadataToken(DSharpMetadataTokenType type, int index, int assemblyIndex) : IEquatable<DSharpMetadataToken>
+    public readonly struct DSharpMetadataToken(int value, int assemblyIndex) : IEquatable<DSharpMetadataToken>
     {
+        /// <summary>
+        /// Create new metadata token based on other
+        /// </summary>
+        /// <param name="type">Metadata token type</param>
+        /// <param name="index">Metadata token index</param>
+        /// <param name="assemblyIndex">Assembly index in references table. 0 means that type stores in current assembly</param>
+        public DSharpMetadataToken(DSharpMetadataTokenType type, int index, int assemblyIndex)
+            : this((int)type | index, assemblyIndex)
+        {
+
+        }
         /// <summary>
         /// Create new metadata token based on other
         /// </summary>
@@ -38,10 +48,10 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         public DSharpMetadataTokenType Type => (DSharpMetadataTokenType)(_value & 0xFF000000);
 
-        private readonly int _value = (int)type | index;
+        private readonly int _value = value;
         private readonly int _assemblyIndex = assemblyIndex;
 
-        #region Управление
+        #region Controls
 
         /// <summary>
         /// Write metadata token to stream
@@ -49,11 +59,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <param name="stream">Stream for writing current token</param>
         public void Write(Stream stream)
         {
-            var valueBytes = BitConverter.GetBytes(_value);
-            var assemblyIndexBytes = BitConverter.GetBytes(_assemblyIndex);
-
-            stream.Write(valueBytes);
-            stream.Write(assemblyIndexBytes);
+            stream.Write(this);
         }
 
         /// <summary>
@@ -91,7 +97,7 @@ namespace DialogMaker.Core.Scripting.Runtime
 
         #endregion
 
-        #region Операторы
+        #region Operators
 
         /// <summary>
         /// <inheritdoc/>
@@ -107,6 +113,20 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <param name="r"><inheritdoc/></param>
         /// <returns><inheritdoc/></returns>
         public static bool operator !=(DSharpMetadataToken l, DSharpMetadataToken r) => !l.Equals(r);
+
+        #endregion
+
+        #region Static
+
+        /// <summary>
+        /// Read metadata token from stream
+        /// </summary>
+        /// <param name="stream">Stream that contains metadata token</param>
+        /// <returns>Metadata token from stream</returns>
+        public static DSharpMetadataToken Read(Stream stream)
+        {
+            return stream.Read<DSharpMetadataToken>();
+        }
 
         #endregion
     }

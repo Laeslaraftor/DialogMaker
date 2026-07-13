@@ -13,6 +13,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// </summary>
         public DSharpMetadataToken MetadataToken;
         /// <summary>
+        /// Is field static
+        /// </summary>
+        public bool IsStatic;
+        /// <summary>
+        /// Type that declares current field
+        /// </summary>
+        public DSharpRuntimeTypeInfo* DeclaringType;
+        /// <summary>
         /// Type of value that contains in field
         /// </summary>
         public DSharpRuntimeTypeInfo* FieldType;
@@ -31,7 +39,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         public byte[] Read(DSharpObject* instance)
         {
             byte[] buffer = new byte[FieldType->ItemSize];
-            byte* pointer = (byte*)instance + Offset;
+            byte* pointer = GetDataPointer(instance);
 
             for (int i = 0; i < buffer.Length; i++)
             {
@@ -48,7 +56,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         public void Read(DSharpObject* instance, UnmanagedArray<byte> buffer)
         {
             int size = FieldType->ItemSize;
-            byte* pointer = (byte*)instance + Offset;
+            byte* pointer = GetDataPointer(instance);
 
             for (int i = 0; i < Math.Min(size, buffer.Length); i++)
             {
@@ -62,7 +70,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <param name="stack">Stack for pushing value</param>
         public void Read(DSharpObject* instance, DSharpStack stack)
         {
-            byte* pointer = (byte*)instance + Offset;
+            byte* pointer = GetDataPointer(instance);
 
             if (!FieldType->IsValueType)
             {
@@ -167,7 +175,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         public void Write(DSharpObject* instance, byte[] data)
         {
             var size = FieldType->Size;
-            byte* pointer = (byte*)instance + Offset;
+            byte* pointer = GetDataPointer(instance);
 
             for (int i = 0; i < Math.Min(size, data.Length); i++)
             {
@@ -182,7 +190,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         public void Write(DSharpObject* instance, UnmanagedArray<byte> buffer)
         {
             int size = FieldType->ItemSize;
-            byte* pointer = (byte*)instance + Offset;
+            byte* pointer = GetDataPointer(instance);
 
             for (int i = 0; i < Math.Min(size, buffer.Length); i++)
             {
@@ -197,7 +205,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         public void Write(DSharpObject* instance, DSharpStack stack)
         {
             int size = FieldType->ItemSize;
-            byte* pointer = (byte*)instance + Offset;
+            byte* pointer = GetDataPointer(instance);
             DSharpStack.FrameInfo? frame = null;
 
             if (stack.Count != 0)
@@ -219,6 +227,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             {
                 pointer[i] = frame.Value[i];
             }
+        }
+
+        private byte* GetDataPointer(DSharpObject* instance)
+        {
+            byte* data;
+
+            if (IsStatic)
+            {
+                data = DeclaringType->StaticFieldsData.AsPointer();
+            }
+            else
+            {
+                data = (byte*)instance;
+            }
+
+            return data + Offset;
         }
 
         #endregion

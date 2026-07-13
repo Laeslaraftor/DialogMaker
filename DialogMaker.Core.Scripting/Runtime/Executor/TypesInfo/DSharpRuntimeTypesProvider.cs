@@ -41,12 +41,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
             return (DSharpRuntimeTypeInfo*)runtimeType;
         }
-
-        private DSharpRuntimeTypeInfo* CreateTypeInfo(DSharpMetadataToken metadataToken)
+        /// <summary>
+        /// Get runtime information about specified type
+        /// </summary>
+        /// <param name="metadataToken">Metadata token of type for getting runtime information</param>
+        /// <returns>Runtime information about specified type</returns>
+        /// <exception cref="ObjectDisposedException"></exception>
+        public DSharpRuntimeTypeInfo* GetRuntimeInfo(DSharpMetadataToken metadataToken)
         {
             var type = (IDSharpType)Assembly.GetType(metadataToken);
-            return CreateTypeInfo(type);
+            return GetRuntimeInfo(type);
         }
+
         private DSharpRuntimeTypeInfo* CreateTypeInfo(IDSharpType type)
         {
             var constructors = type.GetConstructors();
@@ -119,7 +125,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 AddMembers(type);
             }
 
+            int staticSize = type.GetSize(false, false);
             int infoSize = sizeof(DSharpRuntimeTypeInfo) +
+                           staticSize +
                            runtimeGenericParameters.Length * sizeof(nint) +
                            memberInfoSize.Values.Sum() +
                            type.Name.Length * sizeof(char) +
@@ -131,7 +139,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
             info->MetadataToken = type.MetadataToken;
             info->ObjectType = type.ObjectType;
-            info->Size = type.Size;
+            info->Size = type.GetSize(true, false);
             info->IsGeneric = type.IsGeneric;
             info->Name = builder.AllocateString(type.Name);
             info->Namespace = builder.AllocateString(type.Namespace);
@@ -140,6 +148,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             info->Methods = builder.AllocateArray<DSharpRuntimeMethodInfo>(methods.Count);
             info->Properties = builder.AllocateArray<DSharpRuntimePropertyInfo>(properties.Count);
             info->Fields = builder.AllocateArray<DSharpRuntimeFieldInfo>(fields.Count);
+            info->StaticFieldsData = builder.AllocateArray<byte>(staticSize);
 
             if (DSharpBuildInTypes.TryGetValueTypeIndex(type, out var valueTypeIndex))
             {
@@ -163,7 +172,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 CreatePropertyInfo(info, properties[i], info->Properties.GetItemReference(i), builder);
             }
 
-            int fieldOffset = 0;
+            int fieldOffset = sizeof(DSharpObject);
+            int staticFieldOffset = 0;
 
             for (int i = 0; i < fields.Count; i++)
             {
@@ -171,8 +181,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 CreateFieldInfo(info, fields[i], field, builder);
 
                 int fieldSize = field->FieldType->ItemSize;
-                field->Offset = fieldOffset;
-                fieldOffset += fieldSize;
+                
+                if (field->IsStatic)
+                {
+                    field->Offset = staticFieldOffset;
+                    staticFieldOffset += fieldSize;
+                }
+                else
+                {
+                    field->Offset = fieldOffset;
+                    fieldOffset += fieldSize;
+                }
             }
             for (int i = 0; i < properties.Count; i++)
             {
@@ -205,6 +224,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         private void CreateMethodInfo(DSharpRuntimeTypeInfo* type, IDSharpMethodInfo method, DSharpRuntimeMethodInfo* info, MemoryBuilder builder)
         {
             info->MetadataToken = method.MetadataToken;
+            info->IsStatic = method.IsStatic;
+            info->IsExtern = method.IsExtern;
+            info->DeclaringType = type;
             info->MethodType = method.MethodType;
             info->ReturnType = method.ReturnType == null ? null : GetRuntimeInfo(method.ReturnType);
 
@@ -228,6 +250,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         private void CreatePropertyInfo(DSharpRuntimeTypeInfo* type, IDSharpPropertyInfo property, DSharpRuntimePropertyInfo* info, MemoryBuilder builder)
         {
             info->MetadataToken = property.MetadataToken;
+            info->IsStatic = property.IsStatic;
+            info->DeclaringType = type;
             info->PropertyType = GetRuntimeInfo(property.PropertyType);
             
             if (property.Getter != null && type->TryGetMethod(property.Getter.MetadataToken, out var getter))
@@ -242,6 +266,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         private void CreateFieldInfo(DSharpRuntimeTypeInfo* type, IDSharpFieldInfo field, DSharpRuntimeFieldInfo* info, MemoryBuilder builder)
         {
             info->MetadataToken = field.MetadataToken;
+            info->IsStatic = field.IsStatic;
+            info->DeclaringType = type;
             info->FieldType = GetRuntimeInfo(field.FieldType);
         }
 

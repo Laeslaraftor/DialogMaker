@@ -36,6 +36,12 @@ namespace DialogMaker.Core.Scripting.Runtime
 
         public DSharpGenericTypeAttributes GenericAttributes => throw new NotImplementedException();
 
+        public IDSharpMethodInfo? Initializer => throw new NotImplementedException();
+
+        public IDSharpMethodInfo? StaticInitializer => throw new NotImplementedException();
+
+        public IDSharpMethodInfo? StaticConstructor => throw new NotImplementedException();
+
         #region Управление
 
         public IDSharpMethodInfo[] GetMethods() => [.. Methods];

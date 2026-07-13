@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
+using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 {
@@ -16,6 +17,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// Type of method
         /// </summary>
         public DSharpMethodType MethodType;
+        /// <summary>
+        /// Is method static
+        /// </summary>
+        public bool IsStatic;
+        /// <summary>
+        /// Is method external
+        /// </summary>
+        public bool IsExtern;
+        /// <summary>
+        /// Type that declares current method
+        /// </summary>
+        public DSharpRuntimeTypeInfo* DeclaringType;
         /// <summary>
         /// Type that returns by method.
         /// This can be null
@@ -42,7 +55,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <summary>
         /// Pointer to parsed bytecode that ready to execute
         /// </summary>
-        public nint ParsedBytecode;
+        public DSharpRuntimeBytecode* ParsedBytecode;
 
         /// <summary>
         /// Get size that requires for structure with information about specified method

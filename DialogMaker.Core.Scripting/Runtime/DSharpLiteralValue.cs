@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Numerics;
 using System.Reflection;
@@ -228,6 +229,23 @@ namespace DialogMaker.Core.Scripting.Runtime
         public readonly char AsChar() => _charValue ?? throw new InvalidCastException("Literal value is not a char");
 
         /// <summary>
+        /// Write literal value to stream
+        /// </summary>
+        /// <param name="stream">Stream to writing value</param>
+        public readonly void Write(Stream stream)
+        {
+            stream.WriteByte((byte)Type);
+            
+            if (Parsers.TryGetValue(Type, out var parser))
+            {
+                parser.Write(stream, this);
+                return;
+            }
+
+            throw new InvalidOperationException($"Unable to write literal value \"{this}\" with unknown type: {Type}");
+        }
+
+        /// <summary>
         /// <inheritdoc/>
         /// </summary>
         /// <returns><inheritdoc/></returns>
@@ -384,6 +402,41 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// Null literal value
         /// </summary>
         public static readonly DSharpLiteralValue Null = new();
+        /// <summary>
+        /// Parsers for all available literal values
+        /// </summary>
+        public static ReadOnlyDictionary<DSharpLiteralType, DSharpLiteralValueParser> Parsers
+        {
+            get
+            {
+                if (field == null)
+                {
+                    Dictionary<DSharpLiteralType, DSharpLiteralValueParser> parsers = new()
+                    {
+                        { DSharpLiteralType.Null, new(s => Null, (s, v) => { }) },
+                        { DSharpLiteralType.Bool, new(s => s.Read<bool>(), (s, v) => s.Write(v.AsBool())) },
+                        { DSharpLiteralType.Char, new(s => s.Read<char>(), (s, v) => s.Write(v.AsChar())) },
+                        { DSharpLiteralType.String, new(s => s.ReadString(), (s, v) => s.WriteString(v.AsString())) },
+                        { DSharpLiteralType.Byte, new(s => (byte)s.ReadByte(), (s, v) => s.WriteByte(v.AsNumber<byte>())) },
+                        { DSharpLiteralType.SByte, new(s => s.Read<sbyte>(), (s, v) => s.Write(v.AsNumber<sbyte>())) },
+                        { DSharpLiteralType.Short, new(s => s.Read<short>(), (s, v) => s.Write(v.AsNumber<short>())) },
+                        { DSharpLiteralType.UShort, new(s => s.Read<ushort>(), (s, v) => s.Write(v.AsNumber<ushort>())) },
+                        { DSharpLiteralType.Int, new(s => s.Read<int>(), (s, v) => s.Write(v.AsNumber<int>())) },
+                        { DSharpLiteralType.UInt, new(s => s.Read<uint>(), (s, v) => s.Write(v.AsNumber<uint>())) },
+                        { DSharpLiteralType.Long, new(s => s.Read<long>(), (s, v) => s.Write(v.AsNumber<long>())) },
+                        { DSharpLiteralType.ULong, new(s => s.Read<ulong>(), (s, v) => s.Write(v.AsNumber<ulong>())) },
+                        { DSharpLiteralType.NInt, new(s => s.Read<nint>(), (s, v) => s.Write(v.AsNumber<nint>())) },
+                        { DSharpLiteralType.NUInt, new(s => s.Read<nuint>(), (s, v) => s.Write(v.AsNumber<nuint>())) },
+                        { DSharpLiteralType.Float, new(s => s.Read<float>(), (s, v) => s.Write(v.AsNumber<float>())) },
+                        { DSharpLiteralType.Double, new(s => s.Read<double>(), (s, v) => s.Write(v.AsNumber<double>())) },
+                        { DSharpLiteralType.Decimal, new(s => s.Read<decimal>(), (s, v) => s.Write(v.AsNumber<decimal>())) }
+                    };
+                    field = new(parsers);
+                }
+
+                return field;
+            }
+        }
 
         private static readonly Assembly _standardAssembly = typeof(int).Assembly;
         private static readonly DSharpLiteralType[] _floatingPointTypes =
@@ -644,6 +697,29 @@ namespace DialogMaker.Core.Scripting.Runtime
             }
 
             return ParseDecimalAuto(numberLiteral);
+        }
+        /// <summary>
+        /// Read literal value from stream
+        /// </summary>
+        /// <param name="stream">Stream to read literal value</param>
+        /// <returns>Literal value from stream</returns>
+        public static DSharpLiteralValue Read(Stream stream)
+        {
+            var typeValue = stream.ReadByte();
+
+            if (typeValue == -1)
+            {
+                throw new InvalidOperationException($"Unable to read literal type");
+            }
+
+            var type = (DSharpLiteralType)Enum.ToObject(typeof(DSharpLiteralType), typeValue);
+
+            if (Parsers.TryGetValue(type, out var parser))
+            {
+                return parser.Read(stream);
+            }
+
+            throw new InvalidOperationException($"Unknown literal type: {type}");
         }
 
         private static DSharpLiteralValue ParseUnsignedLong(string value)

@@ -26,6 +26,10 @@
         /// </summary>
         Finalizer,
         /// <summary>
+        /// Initializer
+        /// </summary>
+        Initializer,
+        /// <summary>
         /// Method that used as operator
         /// </summary>
         Operator

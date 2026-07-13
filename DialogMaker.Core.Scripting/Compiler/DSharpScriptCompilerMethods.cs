@@ -15,7 +15,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             if (invokableNode.Body == null)
             {
-                if (method.IsExtern || method.DeclaringType?.ObjectType == DSharpObjectType.Interface)
+                if (method.IsExtern || method.IsAbstract || method.DeclaringType?.ObjectType == DSharpObjectType.Interface)
                 {
                     return;
                 }
@@ -95,6 +95,94 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             code.Pop();
+        }
+
+        /// <summary>
+        /// Compile fields initializer. 
+        /// It creates initializer method that sets values to fields with initializers.
+        /// If no one field or property contains initializer it skip type
+        /// </summary>
+        /// <param name="type">Type to create initializer</param>
+        private void CompileFieldsInitializer(DSharpTypeBuilder type)
+        {
+            Dictionary<DSharpMemberInfoBuilder, ExpressionNode> initializers = [];
+            Dictionary<DSharpMemberInfoBuilder, ExpressionNode> staticInitializers = [];
+
+            void AddMember(DSharpMemberInfoBuilder member, ExpressionNode initializer)
+            {
+                if (member.IsStatic)
+                {
+                    staticInitializers.Add(member, initializer);
+                    return;
+                }
+
+                initializers.Add(member, initializer);
+            }
+
+            foreach (var field in type.Fields)
+            {
+                if (_createdFields.TryGetValue(field, out var node) && 
+                    node.Initializer != null)
+                {
+                    AddMember(field, node.Initializer);
+                }
+            }
+            foreach (var property in type.Properties)
+            {
+                if (_createdProperties.TryGetValue(property, out var node) && 
+                    node.Initializer != null)
+                {
+                    if (property.Setter == null)
+                    {
+                        if (!_propertyFields.TryGetValue(property, out var valueField))
+                        {
+                            throw new InvalidOperationException($"Unable to initialize \"{property}\" property without setter and custom getter: {node}");
+                        }
+
+                        AddMember(valueField, node.Initializer);
+                        continue;
+                    }
+
+                    AddMember(property, node.Initializer);
+                }
+            }
+
+            void CreateInitializers(Dictionary<DSharpMemberInfoBuilder, ExpressionNode> initializers, bool isStatic)
+            {
+                DSharpMethodBuilder? initializer = (isStatic ? type.StaticInitializer : type.Initializer) 
+                    ?? throw new InvalidOperationException($"Unable to compile fields initializer because it not exists in \"{type}\"");
+                var code = initializer.GetBytecodeBuilder();
+                DSharpMethodCompileSettings settings = new()
+                {
+                    LocalVariables = [],
+                    AlwaysReturnMethods = [],
+                    BannedExpressions = []
+                };
+                DSharpCompilerContext context = new(Context, type)
+                {
+                    TypeResolver = code.ExpressionTypeResolver,
+                    MemberResolver = code.ExpressionMemberResolver,
+                };
+                context = new(context, initializer);
+
+                code.LoadInstance();
+
+                foreach (var info in initializers)
+                {
+                    CompileValueExpression(initializer, info.Value, ref settings, null, context);
+                    code.StorePropertyOrField(info.Key);
+                    code.Pop();
+                }
+            }
+
+            if (initializers.Count != 0)
+            {
+                CreateInitializers(initializers, false);
+            }
+            if (staticInitializers.Count != 0)
+            {
+                CreateInitializers(staticInitializers, true);
+            }
         }
 
         #endregion
@@ -1513,7 +1601,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new InvalidOperationException($"Unable to compile sizeof expression: {expression}", error);
                 }
 
-                if (type.Size == -1)
+                if (type.GetSize(true, true) == -1)
                 {
                     code.LoadTypeSize(type);
                 }

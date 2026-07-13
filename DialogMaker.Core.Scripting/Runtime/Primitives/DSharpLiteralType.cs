@@ -1,11 +1,11 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
 
-namespace DialogMaker.Core.Scripting.Compiler.Ast
+namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
     /// Literal type
     /// </summary>
-    public enum DSharpLiteralType
+    public enum DSharpLiteralType : byte
     {
         /// <summary>
         /// Null value

@@ -182,9 +182,13 @@ namespace DialogMaker.Core.Tests
         private static void PrintAssembly(DSharpAssemblyBuilder assembly)
         {
             Console.WriteLine("Types:");
+            int i = 0;
 
-            foreach (var type in assembly.Types)
+            while (i < assembly.Types.Count)
             {
+                var type = assembly.Types[i];
+                i++;
+
                 if (type.IsGeneric)
                 {
                     continue;
@@ -273,6 +277,97 @@ namespace DialogMaker.Core.Tests
                     }
                 }
             }
+
+            //foreach (var type in assembly.Types)
+            //{
+            //    if (type.IsGeneric)
+            //    {
+            //        continue;
+            //    }
+
+            //    Console.Write(type.ObjectType.ToString().ToLower() + " ");
+            //    Console.Write(type.FullName);
+
+            //    if (type.BaseTypes.Count > 0)
+            //    {
+            //        Console.Write(" : ");
+            //        bool isFirst = true;
+
+            //        foreach (var baseType in type.BaseTypes)
+            //        {
+            //            if (!isFirst)
+            //            {
+            //                Console.Write(", ");
+            //            }
+
+            //            Console.Write(baseType.FullName);
+            //            isFirst = false;
+            //        }
+            //    }
+
+            //    Console.WriteLine();
+
+            //    if (type.Properties.Count > 0)
+            //    {
+            //        Console.WriteLine("    Properties:");
+
+            //        foreach (var property in type.Properties)
+            //        {
+            //            PrintProperty(property);
+            //        }
+            //    }
+            //    if (type.Indexers.Count > 0)
+            //    {
+            //        Console.WriteLine("    Indexers:");
+
+            //        foreach (var indexer in type.Indexers)
+            //        {
+            //            PrintProperty(indexer, indexer.Parameters);
+            //        }
+            //    }
+
+            //    List<IDSharpOperatorInfo> operators = [.. type.GetCastOperators().Union(type.GetOperators())];
+
+            //    if (operators.Count > 0)
+            //    {
+            //        Console.WriteLine("    Operators:");
+
+            //        foreach (var @operator in operators)
+            //        {
+            //            Console.WriteLine($"        {@operator}");
+            //        }
+            //    }
+            //    if (type.Fields.Count > 0)
+            //    {
+            //        Console.WriteLine("    Fields:");
+
+            //        foreach (var field in type.Fields)
+            //        {
+            //            Console.Write("        ");
+            //            PrintField(field);
+            //        }
+            //    }
+            //    if (type.Methods.Count > 0)
+            //    {
+            //        Console.WriteLine("    Methods:");
+
+            //        foreach (var method in type.Methods)
+            //        {
+            //            Console.Write("        ");
+            //            PrintMethod(method);
+            //        }
+            //    }
+            //    if (type.Constructors.Count > 0)
+            //    {
+            //        Console.WriteLine("    Constructors:");
+
+            //        foreach (var method in type.Constructors)
+            //        {
+            //            Console.Write("        ");
+            //            PrintMethod(method);
+            //        }
+            //    }
+            //}
 
             void PrintType(DSharpTypeToken? token)
             {

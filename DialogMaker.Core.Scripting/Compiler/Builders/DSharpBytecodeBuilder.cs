@@ -3,6 +3,7 @@ using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
 using DialogMaker.Core.Scripting.Runtime.Executor;
+using System.Data.Common;
 using System.Text;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
@@ -81,23 +82,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             var overrideMethod = Method.OverrideMethod;
             List<Instruction>? extraInstructions = null;
 
-
-            void Write(IDSharpParameterInfo parameter)
-            {
-                stream.WriteByte((byte)parameter.Mode);
-                parameter.Type.MetadataToken.Write(stream);
-            }
-
-            var variablesCountBytes = BitConverter.GetBytes(Method.Parameters.Count + LocalVariables.Count);
-            stream.Write(variablesCountBytes);
+            stream.Write(Method.Parameters.Count + LocalVariables.Count);
 
             foreach (var parameter in Method.Parameters)
             {
-                Write(parameter);
+                DSharpParameterInfo.Write(stream, parameter);
             }
             foreach (var variable in LocalVariables)
             {
-                Write(variable);
+                DSharpParameterInfo.Write(stream, variable);
             }
 
             if (Method.MethodType == DSharpMethodType.Finalizer && overrideMethod != null)
@@ -115,8 +108,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             try
             {
                 int instructionsCount = Instructions.Count(i => i is not CommentInstruction) + extraInstructions?.Count ?? 0;
-                var count = BitConverter.GetBytes(instructionsCount);
-                stream.Write(count);
+                stream.Write(instructionsCount);
 
                 if (extraInstructions != null)
                 {

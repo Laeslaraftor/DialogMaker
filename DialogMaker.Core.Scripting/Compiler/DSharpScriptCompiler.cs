@@ -106,6 +106,14 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// </summary>
         public void CompileCode()
         {
+            foreach (var type in _types)
+            {
+                if (type.StaticInitializer != null ||
+                    type.Initializer != null)
+                {
+                    CompileFieldsInitializer(type);
+                }
+            }
             foreach (var info in _createdProperties)
             {
                 CompileProperty(info.Key, info.Value);

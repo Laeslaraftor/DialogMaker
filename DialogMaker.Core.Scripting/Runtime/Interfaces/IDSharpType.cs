@@ -39,13 +39,25 @@
         /// </summary>
         public IDSharpMethodInfo? Finalizer { get; }
         /// <summary>
+        /// Instance fields initializer. 
+        /// This method calls before any constructors and it purposed for 
+        /// setting values to fields
+        /// </summary>
+        public IDSharpMethodInfo? Initializer { get; }
+        /// <summary>
+        /// Static fields initializer. 
+        /// This method calls when type loaded it purposed for 
+        /// setting values to fields
+        /// </summary>
+        public IDSharpMethodInfo? StaticInitializer { get; }
+        /// <summary>
+        /// Static constructor. It calls when type loaded
+        /// </summary>
+        public IDSharpMethodInfo? StaticConstructor { get; }
+        /// <summary>
         /// Type that used as template to create current type
         /// </summary>
         public IDSharpType? GenericTemplate { get; }
-        /// <summary>
-        /// Size of type in bytes
-        /// </summary>
-        public int Size { get; }
         /// <summary>
         /// Extra generic type attributes 
         /// </summary>

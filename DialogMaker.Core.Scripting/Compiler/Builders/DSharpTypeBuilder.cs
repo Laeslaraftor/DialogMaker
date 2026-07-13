@@ -159,6 +159,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <inheritdoc cref="IDSharpType.Finalizer"/>
         /// </summary>
         public DSharpMethodBuilder? Finalizer { get; private set; }
+        /// <summary>
+        /// <inheritdoc cref="IDSharpType.Initializer"/>
+        /// </summary>
+        public DSharpMethodBuilder? Initializer { get; private set; }
+        /// <summary>
+        /// <inheritdoc cref="IDSharpType.StaticInitializer"/>
+        /// </summary>
+        public DSharpMethodBuilder? StaticInitializer { get; private set; }
+        /// <summary>
+        /// <inheritdoc cref="IDSharpType.StaticConstructor"/>
+        /// </summary>
+        public DSharpMethodBuilder? StaticConstructor { get; private set; }
         public IDSharpType? GenericTemplate
         {
             get;
@@ -176,50 +188,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <inheritdoc/>
         /// </summary>
         public override bool IsDeclaration => false;
-        public int Size
-        {
-            get
-            {
-                if (ObjectType == DSharpObjectType.Struct && 
-                    DSharpBuildInTypes.TryGetTypeInfo(FullName, out var info))
-                {
-                    return info.Size;
-                }
-
-                int resultSize = 0;
-
-                foreach (var baseType in _baseTypes.Where(t => t.ObjectType != DSharpObjectType.Interface))
-                {
-                    var size = baseType.Size;
-
-                    if (size == -1)
-                    {
-                        return -1;
-                    }
-
-                    resultSize += size;
-                }
-                foreach (var fieldInfo in _fields)
-                {
-                    var fieldType = Assembly.GetTypeOrDefault(fieldInfo.FieldType) as IDSharpType 
-                        ?? throw new InvalidOperationException($"Unable to get type of field: \"{fieldInfo}\"");
-                    var size = fieldType.Size;
-
-                    if (size == -1)
-                    {
-                        return -1;
-                    }
-
-                    resultSize += size;
-                }
-
-                return resultSize;
-            }
-        }
         public DSharpGenericTypeAttributes GenericAttributes { get; set; }
         internal Action? SetupHandler { get; set; }
 
         IDSharpMethodInfo? IDSharpType.Finalizer => Finalizer;
+        IDSharpMethodInfo? IDSharpType.Initializer => Initializer;
+        IDSharpMethodInfo? IDSharpType.StaticInitializer => StaticInitializer;
+        IDSharpMethodInfo? IDSharpType.StaticConstructor => StaticConstructor;
 
         private readonly List<IDSharpType> _baseTypes = [];
         private readonly List<DSharpMethodBuilder> _constructors = [];
@@ -319,8 +294,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             {
                 throw new ArgumentException($"Type \"{this}\" already inherits \"{type}\"", nameof(type));
             }
-            if (IsGeneric && 
-                GenericAttributes.HasFlag(DSharpGenericTypeAttributes.Struct) && 
+            if (IsGeneric &&
+                GenericAttributes.HasFlag(DSharpGenericTypeAttributes.Struct) &&
                 type.ObjectType == DSharpObjectType.Class)
             {
                 throw new ArgumentException($"Generic type \"{this}\" marked as struct and can not implement \"{type}\"", nameof(type));
@@ -343,18 +318,25 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             return type;
         }
-        public DSharpMethodBuilder CreateConstructor()
+        public DSharpMethodBuilder CreateConstructor(bool isStatic = false)
         {
-            if (ObjectType == DSharpObjectType.Interface)
-            {
-                throw new InvalidOperationException($"Can not create constructor for interface \"{this}\"");
-            }
             if (IsGeneric)
             {
                 throw new InvalidOperationException("Generic types can not contains constructors");
             }
+            if (isStatic && StaticConstructor != null)
+            {
+                throw new InvalidOperationException($"Type \"{this}\" already contains static constructor");
+            }
+            if (ObjectType == DSharpObjectType.Interface)
+            {
+                throw new InvalidOperationException($"Can not create constructor for interface \"{this}\"");
+            }
 
-            return CreateMember(DSharpMetadataTokenType.Method, _constructors, t => DSharpMethodBuilder.CreateConstructor(this, t));
+            var constructor = CreateMember(DSharpMetadataTokenType.Method, _constructors, t => DSharpMethodBuilder.CreateConstructor(this, t));
+            constructor.IsStatic = isStatic;
+
+            return constructor;
         }
         public DSharpMethodBuilder CreateFinalizer()
         {
@@ -375,6 +357,38 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             Finalizer = finalizer;
 
             return finalizer;
+        }
+        public DSharpMethodBuilder CreateInitializer(bool isStatic)
+        {
+            if (!isStatic && ObjectType == DSharpObjectType.Interface)
+            {
+                throw new InvalidOperationException($"Can not create initializer for interface \"{this}\"");
+            }
+            if (IsGeneric)
+            {
+                throw new InvalidOperationException("Generic types can not contains initializers");
+            }
+
+            var initializer = isStatic ? StaticInitializer : Initializer;
+
+            if (initializer != null)
+            {
+                throw new InvalidOperationException($"Can not create multiple initializers for \"{this}\"");
+            }
+
+            initializer = CreateMember(DSharpMetadataTokenType.Method, _methods, t => DSharpMethodBuilder.CreateInitializer(this, t));
+            initializer.IsStatic = isStatic;
+
+            if (isStatic)
+            {
+                StaticInitializer = initializer;
+            }
+            else
+            {
+                Initializer = initializer;
+            }
+
+            return initializer;
         }
         public DSharpMethodBuilder CreateMethod(string name)
         {
@@ -443,7 +457,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             return false;
         }
-        public bool RemoveConstructor(DSharpMethodBuilder constructor) => RemoveMember(_constructors, constructor);
+        public bool RemoveConstructor(DSharpMethodBuilder constructor)
+        {
+            if (constructor == StaticConstructor)
+            {
+                StaticConstructor = null;
+            }
+
+            return RemoveMember(_constructors, constructor);
+        }
         public bool RemoveMethod(DSharpMethodBuilder method) => RemoveMember(_methods, method);
         public bool RemoveFinalizer()
         {
@@ -456,6 +478,29 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             Finalizer = null;
 
             return _methods.Remove(finalizer);
+        }
+        public bool RemoveInitializer(bool isStatic)
+        {
+            if (!isStatic && Initializer == null ||
+                isStatic && StaticInitializer == null)
+            {
+                return false;
+            }
+
+            DSharpMethodBuilder initializer;
+
+            if (isStatic)
+            {
+                initializer = StaticInitializer!;
+                StaticInitializer = null;
+            }
+            else
+            {
+                initializer = Initializer!;
+                Initializer = null;
+            }
+
+            return _methods.Remove(initializer);
         }
         public bool RemoveProperty(DSharpPropertyBuilder property) => RemoveMember(_properties, property);
         public bool RemoveIndexer(DSharpIndexerBuilder indexer) => RemoveMember(_indexers, indexer);
@@ -629,7 +674,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             var operatorsList = _castOperators;
 
-            if (type != DSharpOperatorType.Implicit && 
+            if (type != DSharpOperatorType.Implicit &&
                 type != DSharpOperatorType.Explicit)
             {
                 operatorsList = _operators;
@@ -735,6 +780,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// Name for all finalizer methods
         /// </summary>
         public const string FinalizerName = "Finalize";
+        /// <summary>
+        /// Name for initializer methods
+        /// </summary>
+        public const string InitializerName = "init";
+        /// <summary>
+        /// Name for static initializer methods
+        /// </summary>
+        public const string StaticInitializerName = "init_static";
         /// <summary>
         /// Name for all indexers
         /// </summary>

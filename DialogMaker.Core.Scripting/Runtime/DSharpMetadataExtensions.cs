@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
@@ -494,6 +495,64 @@ namespace DialogMaker.Core.Scripting.Runtime
 
                 return type.ObjectType != DSharpObjectType.Class &&
                        type.ObjectType != DSharpObjectType.Interface;
+            }
+
+            /// <summary>
+            /// Get size of object. It sums sizes of fields type
+            /// </summary>
+            /// <param name="instance">Calculate size for object instance, otherwise it will be size of static members</param>
+            /// <param name="failOnDynamicSize">Fail when at least one member type have size that depends on execution platform</param>
+            /// <returns>Size of object</returns>
+            public int GetSize(bool instance, bool failOnDynamicSize)
+            {
+                if (type.ObjectType == DSharpObjectType.Struct &&
+                    DSharpBuildInTypes.AllValueTypes.TryGetValue(type.FullName, out var info))
+                {
+                    if (failOnDynamicSize && (info == DSharpBuildInTypes.NativeInt ||
+                                             info == DSharpBuildInTypes.NativeUnsignedInt))
+                    {
+                        return -1;
+                    }
+
+                    return info.Size;
+                }
+
+                int resultSize = 0;
+
+                foreach (var baseType in type.GetBaseTypes().Where(t => t.ObjectType != DSharpObjectType.Interface))
+                {
+                    var size = baseType.GetSize(true, failOnDynamicSize);
+
+                    if (size == -1)
+                    {
+                        return -1;
+                    }
+
+                    resultSize += size;
+                }
+                foreach (var fieldInfo in type.GetFields().Where(f => f.IsStatic != instance))
+                {
+                    var fieldType = fieldInfo.FieldType;
+                    int size;
+
+                    if (fieldType.IsValueType())
+                    {
+                        size = fieldType.GetSize(true, failOnDynamicSize);
+
+                        if (size == -1)
+                        {
+                            return -1;
+                        }
+                    }
+                    else
+                    {
+                        size = DSharpBuildInTypes.NativeInt.Size;
+                    }
+
+                    resultSize += size;
+                }
+
+                return resultSize;
             }
         }
         extension(IDSharpAssembly assembly)

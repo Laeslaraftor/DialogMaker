@@ -13,6 +13,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// </summary>
         public DSharpMetadataToken MetadataToken;
         /// <summary>
+        /// Is property static
+        /// </summary>
+        public bool IsStatic;
+        /// <summary>
+        /// Type that declares current property
+        /// </summary>
+        public DSharpRuntimeTypeInfo* DeclaringType;
+        /// <summary>
         /// Type of value that contains in property
         /// </summary>
         public DSharpRuntimeTypeInfo* PropertyType;

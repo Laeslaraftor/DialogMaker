@@ -3,7 +3,7 @@
     /// <summary>
     /// D# bytecode operation code
     /// </summary>
-    public enum DSharpBytecodeOperation : short
+    public enum DSharpBytecodeOperation : byte
     {
         /// <summary>
         /// Push value to stack

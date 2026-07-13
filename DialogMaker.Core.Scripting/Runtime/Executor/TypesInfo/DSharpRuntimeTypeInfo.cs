@@ -80,6 +80,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// Array of fields includes inherited
         /// </summary>
         public UnmanagedArray<DSharpRuntimeFieldInfo> Fields;
+        /// <summary>
+        /// Reserved space for static fields values
+        /// </summary>
+        public UnmanagedArray<byte> StaticFieldsData;
 
         #region Controls
 

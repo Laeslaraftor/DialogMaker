@@ -5,7 +5,7 @@
     /// </summary>
     /// <param name="pointer">Start pointer to memory block</param>
     /// <param name="length">Length of memory block</param>
-    public struct UnmanagedStream(nint pointer, int length)
+    public unsafe struct UnmanagedStream(nint pointer, int length)
     {
         /// <summary>
         /// Start pointer to memory block
@@ -20,23 +20,56 @@
         /// </summary>
         public int Position { get; set; }
 
+        #region Controls
+
         /// <summary>
         /// Read current value and increase position by type size
         /// </summary>
         /// <typeparam name="T">Read type</typeparam>
         /// <returns>Value that was read</returns>
         /// <exception cref="IndexOutOfRangeException"></exception>
-        public unsafe T Read<T>() where T : unmanaged
+        public T Read<T>() where T : unmanaged
         {
-            if (Position + 1 >= Length)
+            int size = sizeof(T);
+
+            if (Position + size >= Length)
             {
                 throw new IndexOutOfRangeException();
             }
 
             T* items = (T*)(Pointer + Position);
-            Position += sizeof(T);
+            Position += size;
 
             return *items;
         }
+        /// <summary>
+        /// Read unmanaged array and increase position by array size
+        /// </summary>
+        /// <typeparam name="T">Array item type</typeparam>
+        /// <param name="length">Array length</param>
+        /// <returns>Unmanaged array that read</returns>
+        /// <exception cref="IndexOutOfRangeException"></exception>
+        public UnmanagedArray<T> ReadArray<T>(int length)
+            where T : unmanaged
+        {
+            if (length == 0)
+            {
+                return new(Pointer, 0);
+            }
+
+            int size = sizeof(T) * length;
+
+            if (Position + size >= Length)
+            {
+                throw new IndexOutOfRangeException();
+            }
+
+            T* items = (T*)(Pointer + Position);
+            Position += size;
+
+            return new(items, length);
+        }
+
+        #endregion
     }
 }

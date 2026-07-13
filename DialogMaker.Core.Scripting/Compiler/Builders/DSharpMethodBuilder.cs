@@ -53,6 +53,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 {
                     return DSharpTypeBuilder.FinalizerName;
                 }
+                else if (MethodType == DSharpMethodType.Initializer)
+                {
+                    return DSharpTypeBuilder.InitializerName;
+                }
                 if (LinkedType != null)
                 {
                     return DSharpTypeBuilder.ConstructorName;
@@ -441,6 +445,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         public static DSharpMethodBuilder CreateFinalizer(DSharpTypeBuilder type, DSharpTypeToken metadataToken)
         {
             return new(DSharpMethodType.Finalizer, DSharpTypeBuilder.FinalizerName, type, metadataToken);
+        }
+        /// <summary>
+        /// Create initialize method
+        /// </summary>
+        /// <param name="type">Type for initializing</param>
+        /// <param name="metadataToken">Token for new method</param>
+        /// <returns>Initialize method</returns>
+        public static DSharpMethodBuilder CreateInitializer(DSharpTypeBuilder type, DSharpTypeToken metadataToken)
+        {
+            return new(DSharpMethodType.Initializer, DSharpTypeBuilder.InitializerName, type, metadataToken);
         }
         /// <summary>
         /// Create getter method
