@@ -22,6 +22,7 @@
         Nint,
         Nuint,
         Structure,
-        Reference
+        Reference,
+        MethodCallingInfo
     }
 }

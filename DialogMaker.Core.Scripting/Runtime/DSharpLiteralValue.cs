@@ -232,7 +232,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// Write literal value to stream
         /// </summary>
         /// <param name="stream">Stream to writing value</param>
-        public readonly void Write(Stream stream)
+        public readonly void Write(DSharpStream stream)
         {
             stream.WriteByte((byte)Type);
             
@@ -703,7 +703,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         /// <param name="stream">Stream to read literal value</param>
         /// <returns>Literal value from stream</returns>
-        public static DSharpLiteralValue Read(Stream stream)
+        public static DSharpLiteralValue Read(DSharpStream stream)
         {
             var typeValue = stream.ReadByte();
 

@@ -313,7 +313,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// </summary>
         /// <param name="index">Popped item offset</param>
         /// <returns></returns>
-        public IndexInstruction PopOffset(int index)
+        public IndexInstruction PopOffset(uint index)
         {
             return CreateInstruction<IndexInstruction>(this, DSharpBytecodeOperation.PopOffset, index);
         }
@@ -322,7 +322,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// </summary>
         /// <param name="count">Repeat count</param>
         /// <returns></returns>
-        public IndexInstruction PopRepeat(int count)
+        public IndexInstruction PopRepeat(uint count)
         {
             return CreateInstruction<IndexInstruction>(this, DSharpBytecodeOperation.PopRepeat, count);
         }
@@ -343,16 +343,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         public OffsetCountInstruction PopOffsetRepeat(int offset, int count)
         {
             return CreateInstruction<OffsetCountInstruction>(this, DSharpBytecodeOperation.PopOffsetRepeat, offset, count);
-        }
-        /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.StackReplace"/>
-        /// </summary>
-        /// <param name="index">Index for replacing value</param>
-        /// <param name="value">New value</param>
-        /// <returns></returns>
-        public IndexLiteralInstruction StackReplace(int index, DSharpLiteralValue value)
-        {
-            return CreateInstruction<IndexLiteralInstruction>(this, DSharpBytecodeOperation.StackReplace, index, value);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.New"/>

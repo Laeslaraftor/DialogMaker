@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
+using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 {
@@ -6,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
     /// Runtime types provides. It builds and stores runtime information about D# types
     /// </summary>
     /// <param name="assembly">Assembly that contains providing types information</param>
-    public unsafe class DSharpRuntimeTypesProvider(IDSharpAssembly assembly) : Disposable
+    public unsafe class DSharpRuntimeInformationProvider(IDSharpAssembly assembly) : Disposable
     {
         /// <summary>
         /// Assembly that contains providing types information
@@ -30,7 +31,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         {
             if (IsDisposed)
             {
-                throw new ObjectDisposedException(nameof(DSharpRuntimeTypesProvider));
+                throw new ObjectDisposedException(nameof(DSharpRuntimeInformationProvider));
             }
 
             if (!_types.TryGetValue(type.MetadataToken, out var runtimeType))
@@ -51,6 +52,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         {
             var type = (IDSharpType)Assembly.GetType(metadataToken);
             return GetRuntimeInfo(type);
+        }
+        public DSharpRuntimeBytecode* GetRuntimeBytecode(DSharpRuntimeMethodInfo* methodInfo)
+        {
+            if (methodInfo->ParsedBytecode != null)
+            {
+                return methodInfo->ParsedBytecode;
+            }
+            if (methodInfo->IsExtern)
+            {
+                throw new InvalidOperationException("Unable to get bytecode for extern method");
+            }
+
+            methodInfo->ParsedBytecode = DSharpRuntimeBytecode.Parse(this, methodInfo->Bytecode);
+
+            return methodInfo->ParsedBytecode;
         }
 
         private DSharpRuntimeTypeInfo* CreateTypeInfo(IDSharpType type)
@@ -161,15 +177,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
             for (int i = 0; i < constructors.Length; i++)
             {
-                CreateMethodInfo(info, constructors[i], info->Constructors.GetItemReference(i), builder);
+                CreateMethodInfo(info, constructors[i], info->Constructors.GetItemReference(i), ref builder);
             }
             for (int i = 0; i < methods.Count; i++)
             {
-                CreateMethodInfo(info, methods[i], info->Methods.GetItemReference(i), builder);
+                CreateMethodInfo(info, methods[i], info->Methods.GetItemReference(i), ref builder);
             }
             for (int i = 0; i < properties.Count; i++)
             {
-                CreatePropertyInfo(info, properties[i], info->Properties.GetItemReference(i), builder);
+                CreatePropertyInfo(info, properties[i], info->Properties.GetItemReference(i), ref builder);
             }
 
             int fieldOffset = sizeof(DSharpObject);
@@ -178,7 +194,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             for (int i = 0; i < fields.Count; i++)
             {
                 var field = info->Fields.GetItemReference(i);
-                CreateFieldInfo(info, fields[i], field, builder);
+                CreateFieldInfo(info, fields[i], field, ref builder);
 
                 int fieldSize = field->FieldType->ItemSize;
                 
@@ -220,15 +236,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
             return info;
         }
-
-        private void CreateMethodInfo(DSharpRuntimeTypeInfo* type, IDSharpMethodInfo method, DSharpRuntimeMethodInfo* info, MemoryBuilder builder)
+        private void CreateMethodInfo(DSharpRuntimeTypeInfo* type, IDSharpMethodInfo method, DSharpRuntimeMethodInfo* info, ref MemoryBuilder builder)
         {
             info->MetadataToken = method.MetadataToken;
+            info->IsAbstract = method.IsAbstract;
+            info->IsVirtual = method.IsVirtual;
             info->IsStatic = method.IsStatic;
             info->IsExtern = method.IsExtern;
             info->DeclaringType = type;
             info->MethodType = method.MethodType;
             info->ReturnType = method.ReturnType == null ? null : GetRuntimeInfo(method.ReturnType);
+            info->ParsedBytecode = null;
 
             var parameters = method.GetParameters();
             var genericParameters = method.GetGenericParameters();
@@ -247,9 +265,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             info->Bytecode = builder.AllocateArray<byte>(bytecode.Size);
             bytecode.CopyTo(info->Bytecode);
         }
-        private void CreatePropertyInfo(DSharpRuntimeTypeInfo* type, IDSharpPropertyInfo property, DSharpRuntimePropertyInfo* info, MemoryBuilder builder)
+        private void CreatePropertyInfo(DSharpRuntimeTypeInfo* type, IDSharpPropertyInfo property, DSharpRuntimePropertyInfo* info, ref MemoryBuilder builder)
         {
             info->MetadataToken = property.MetadataToken;
+            info->IsAbstract = property.IsAbstract;
+            info->IsVirtual = property.IsVirtual;
             info->IsStatic = property.IsStatic;
             info->DeclaringType = type;
             info->PropertyType = GetRuntimeInfo(property.PropertyType);
@@ -263,7 +283,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 info->Setter = setter;
             }
         }
-        private void CreateFieldInfo(DSharpRuntimeTypeInfo* type, IDSharpFieldInfo field, DSharpRuntimeFieldInfo* info, MemoryBuilder builder)
+        private void CreateFieldInfo(DSharpRuntimeTypeInfo* type, IDSharpFieldInfo field, DSharpRuntimeFieldInfo* info, ref MemoryBuilder builder)
         {
             info->MetadataToken = field.MetadataToken;
             info->IsStatic = field.IsStatic;
@@ -281,6 +301,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
             foreach (var type in _types.Values)
             {
+                var typeInfo = (DSharpRuntimeTypeInfo*)type;
+
+                for (int i = 0; i < typeInfo->Methods.Length; i++)
+                {
+                    var method = typeInfo->Methods[i];
+
+                    if (method.ParsedBytecode != null)
+                    {
+                        Marshal.FreeHGlobal((nint)method.ParsedBytecode);
+                    }
+                }
+
                 Marshal.FreeHGlobal(type);
             }
 

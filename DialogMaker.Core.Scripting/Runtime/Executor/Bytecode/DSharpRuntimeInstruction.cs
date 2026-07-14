@@ -18,9 +18,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// </summary>
         public UnmanagedArray<nint> Arguments;
         /// <summary>
-        /// Pointer to executor method that implements <see cref="DSharpInstructionExecutor.Execute(DSharpRuntimeInstruction, DSharpExecutionContext)"/>
+        /// Pointer to executor method that implements <see cref="DSharpInstructionExecutor.Execute(DSharpRuntimeInstruction, ref DSharpExecutionContext)"/>
         /// </summary>
-        public delegate*<DSharpRuntimeInstruction, DSharpExecutionContext, void> Executor;
+        public delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, bool> Executor;
 
         #region Controls
 
@@ -29,14 +29,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// </summary>
         /// <param name="context">Execution context</param>
         /// <exception cref="InvalidOperationException">Executor not specified</exception>
-        public readonly void Execute(DSharpExecutionContext context)
+        /// <returns>Is successfully executed</returns>
+        public readonly bool Execute(ref DSharpExecutionContext context)
         {
             if (Executor == null)
             {
                 throw new InvalidOperationException("Executor not specified");
             }
 
-            Executor(this, context);
+            return Executor(this, ref context);
         }
 
         #endregion
@@ -49,17 +50,56 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="typesProvider">Types provider for getting runtime type information</param>
         /// <param name="stream">Bytecode stream</param>
         /// <returns>Arguments count of current instruction</returns>
-        public static int GetArgumentsCount(DSharpRuntimeTypesProvider typesProvider, ref UnmanagedStream stream)
+        public static int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream)
+        {
+            MemoryBuilder memoryBuilder = new(0, 0);
+            return Create(typesProvider, ref memoryBuilder, ref stream).Arguments.Length;
+        }
+        /// <summary>
+        /// Create base runtime information about instruction.
+        /// </summary>
+        /// <param name="typesProvider"></param>
+        /// <param name="stream"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public static DSharpRuntimeInstruction Create(DSharpRuntimeInformationProvider typesProvider, ref MemoryBuilder memoryBuilder, ref UnmanagedStream stream)
         {
             var operation = stream.Read<DSharpBytecodeOperation>();
             var argsCountAttribute = operation.GetEnumAttribute<ArgsCountAttribute>();
+            int argumentsCount;
 
+            if (!DSharpInstructionExecutor.TryGetExecutor(operation, out var executor))
+            {
+                throw new InvalidOperationException($"Unable to get executor for instruction: \"{operation}\"");
+            }
             if (argsCountAttribute == null || argsCountAttribute.Count == 0)
             {
-                return sizeof(DSharpBytecodeOperation);
+                argumentsCount = 0;
+            }
+            else
+            {
+                int startArgumentsPosition = stream.Position;
+                argumentsCount = executor.GetArgumentsCount(typesProvider, ref stream);
+                stream.Position = startArgumentsPosition;
             }
 
-            return -1;
+            DSharpRuntimeInstruction instruction = new()
+            {
+                Operation = operation,
+                Executor = executor.GetExecutorPointer()
+            };
+
+            if (argumentsCount != 0 && memoryBuilder.Pointer != 0)
+            {
+                instruction.Arguments = memoryBuilder.AllocateArray<nint>(argumentsCount);
+                executor.ReadArguments(typesProvider, ref stream, instruction.Arguments);
+            }
+            else
+            {
+                instruction.Arguments = new(0, argumentsCount);
+            }
+
+            return instruction;
         }
 
         #endregion

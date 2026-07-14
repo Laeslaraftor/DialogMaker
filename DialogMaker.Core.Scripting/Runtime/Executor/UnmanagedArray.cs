@@ -81,6 +81,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <returns>Pointer to first item</returns>
         public T* AsPointer() => _items;
         /// <summary>
+        /// Get casted item on specified index
+        /// </summary>
+        /// <typeparam name="TCast">New item type</typeparam>
+        /// <param name="index">Item index</param>
+        /// <returns>Casted type on specified index</returns>
+        public TCast Cast<TCast>(int index) where TCast : unmanaged
+        {
+            return *(TCast*)GetItemReference(index);
+        }
+        /// <summary>
         /// Get unmanaged stream from current array
         /// </summary>
         /// <returns>Unmanaged stream</returns>

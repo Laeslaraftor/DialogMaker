@@ -5,14 +5,23 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     /// <summary>
     /// D# virtual machine
     /// </summary>
-    /// <param name="assembly">Assembly to executing</param>
+    /// <param name="runtimeInformationProvider">Runtime information provider</param>
     /// <param name="stackCapacity">Stack capacity in items</param>
-    public class DSharpVm(DSharpRuntimeTypesProvider runtimeTypesProvider, int stackCapacity) : Disposable
+    public class DSharpVm(DSharpRuntimeInformationProvider runtimeInformationProvider, int stackCapacity) : Disposable
     {
+        /// <summary>
+        /// Create new instance of D# virtual machine
+        /// </summary>
+        /// <param name="assembly">Assembly to executing</param>
+        /// <param name="stackCapacity">Stack capacity in items</param>
         public DSharpVm(IDSharpAssembly assembly, int stackCapacity)
-            : this(new DSharpRuntimeTypesProvider(assembly), stackCapacity)
+            : this(new DSharpRuntimeInformationProvider(assembly), stackCapacity)
         {
         }
+        /// <summary>
+        /// Create new instance of D# virtual machine
+        /// </summary>
+        /// <param name="assembly">Assembly to executing</param>
         public DSharpVm(IDSharpAssembly assembly)
             : this(assembly, DSharpThread.DefaultStackCapacity)
         {
@@ -25,11 +34,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <summary>
         /// D# runtime types provider
         /// </summary>
-        public DSharpRuntimeTypesProvider RuntimeTypesProvider { get; } = runtimeTypesProvider;
+        public DSharpRuntimeInformationProvider RuntimeTypesProvider { get; } = runtimeInformationProvider;
         /// <summary>
         /// Stack capacity in items
         /// </summary>
         public int StackCapacity { get; } = stackCapacity;
+        /// <summary>
+        /// External methods provider for injecting custom api
+        /// </summary>
+        public IDSharpExternalMethodsProvider? ExternalMethodsProvider { get; set; }
 
         private readonly DSharpObjectsContainer _objectContainer = new();
     }

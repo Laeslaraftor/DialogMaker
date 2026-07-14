@@ -1,8 +1,34 @@
-﻿namespace DialogMaker.Core.Scripting
+﻿using DialogMaker.Core.Scripting.Runtime;
+
+namespace DialogMaker.Core.Scripting
 {
     internal unsafe static class UnmanagedExtensions
     {
         extension(Stream stream)
+        {
+            public void Write<T>(T value) where T : unmanaged
+            {
+                DSharpStream dStream = stream;
+                dStream.Write(value);
+            }
+            public void WriteString(string value)
+            {
+                DSharpStream dStream = stream;
+                dStream.WriteString(value);
+            }
+
+            public T Read<T>() where T : unmanaged
+            {
+                DSharpStream dStream = stream;
+                return dStream.Read<T>();
+            }
+            public string ReadString()
+            {
+                DSharpStream dStream = stream;
+                return dStream.ReadString();
+            }
+        }
+        extension(DSharpStream stream)
         {
             public void Write<T>(T value) where T : unmanaged
             {

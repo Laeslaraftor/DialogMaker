@@ -1,6 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {

@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Drawing;
+using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
 {
@@ -55,7 +56,177 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         public void Push(float value) => AllocateValue(DSharpStackValueType.Float, value);
         public void Push(nint value) => AllocateValue(DSharpStackValueType.Nint, value);
         public void Push(nuint value) => AllocateValue(DSharpStackValueType.Nuint, value);
+        public void Push(void* value) => Push((nint)value);
+        public bool Push(DSharpStackValueType type, decimal value)
+        {
+            if (type == DSharpStackValueType.Byte)
+            {
+                value = Math.Clamp(value, byte.MinValue, byte.MaxValue);
+                Push(decimal.ToByte(value));
+            }
+            else if (type == DSharpStackValueType.SByte)
+            {
+                value = Math.Clamp(value, sbyte.MinValue, sbyte.MaxValue);
+                Push(decimal.ToSByte(value));
+            }
+            else if (type == DSharpStackValueType.Char)
+            {
+                value = Math.Clamp(value, char.MinValue, char.MaxValue);
+                Push((char)decimal.ToInt16(value));
+            }
+            else if (type == DSharpStackValueType.Short)
+            {
+                value = Math.Clamp(value, short.MinValue, short.MaxValue);
+                Push(decimal.ToInt16(value));
+            }
+            else if (type == DSharpStackValueType.UShort)
+            {
+                value = Math.Clamp(value, ushort.MinValue, ushort.MaxValue);
+                Push(decimal.ToUInt16(value));
+            }
+            else if (type == DSharpStackValueType.Int)
+            {
+                value = Math.Clamp(value, int.MinValue, int.MaxValue);
+                Push(decimal.ToInt32(value));
+            }
+            else if (type == DSharpStackValueType.UInt)
+            {
+                value = Math.Clamp(value, uint.MinValue, uint.MaxValue);
+                Push(decimal.ToUInt32(value));
+            }
+            else if (type == DSharpStackValueType.Long)
+            {
+                value = Math.Clamp(value, long.MinValue, long.MaxValue);
+                Push(decimal.ToInt64(value));
+            }
+            else if (type == DSharpStackValueType.ULong)
+            {
+                value = Math.Clamp(value, ulong.MinValue, ulong.MaxValue);
+                Push(decimal.ToUInt64(value));
+            }
+            else if (type == DSharpStackValueType.Nint)
+            {
+                if (sizeof(nint) == sizeof(long))
+                {
+                    value = Math.Clamp(value, long.MinValue, long.MaxValue);
+                    Push((nint)decimal.ToInt64(value));
+                }
+                else
+                {
+                    value = Math.Clamp(value, int.MinValue, int.MaxValue);
+                    Push((nint)decimal.ToInt32(value));
+                }
+            }
+            else if (type == DSharpStackValueType.Nuint)
+            {
+                if (sizeof(nuint) == sizeof(long))
+                {
+                    value = Math.Clamp(value, ulong.MinValue, ulong.MaxValue);
+                    Push((nuint)decimal.ToUInt64(value));
+                }
+                else
+                {
+                    value = Math.Clamp(value, uint.MinValue, uint.MaxValue);
+                    Push((nuint)decimal.ToUInt32(value));
+                }
+            }
+            else if (type == DSharpStackValueType.Float)
+            {
+                Push(decimal.ToSingle(value));
+            }
+            else if (type == DSharpStackValueType.Double)
+            {
+                Push(decimal.ToDouble(value));
+            }
+            else if (type == DSharpStackValueType.Decimal)
+            {
+                Push(value);
+            }
+            else
+            {
+                return false;
+            }
+
+            return true;
+        }
+        public void Push(DSharpLiteralType type, nint valuePointer)
+        {
+            if (type == DSharpLiteralType.Null)
+            {
+                Push();
+            }
+            else if (type == DSharpLiteralType.Bool)
+            {
+                Push(*(bool*)valuePointer);
+            }
+            else if (type == DSharpLiteralType.Char)
+            {
+                Push(*(char*)valuePointer);
+            }
+            else if (type == DSharpLiteralType.Byte)
+            {
+                Push(*(byte*)valuePointer);
+            }
+            else if (type == DSharpLiteralType.SByte)
+            {
+                Push(*(sbyte*)valuePointer);
+            }
+            else if (type == DSharpLiteralType.Short)
+            {
+                Push(*(short*)valuePointer);
+            }
+            else if (type == DSharpLiteralType.UShort)
+            {
+                Push(*(ushort*)valuePointer);
+            }
+            else if (type == DSharpLiteralType.Int)
+            {
+                Push(*(int*)valuePointer);
+            }
+            else if (type == DSharpLiteralType.UInt)
+            {
+                Push(*(uint*)valuePointer);
+            }
+            else if (type == DSharpLiteralType.Long)
+            {
+                Push(*(long*)valuePointer);
+            }
+            else if (type == DSharpLiteralType.ULong)
+            {
+                Push(*(ulong*)valuePointer);
+            }
+            else if (type == DSharpLiteralType.NInt)
+            {
+                Push(*(nint*)valuePointer);
+            }
+            else if (type == DSharpLiteralType.NUInt)
+            {
+                Push(*(nuint*)valuePointer);
+            }
+            else if (type == DSharpLiteralType.Double)
+            {
+                Push(*(double*)valuePointer);
+            }
+            else if (type == DSharpLiteralType.Float)
+            {
+                Push(*(float*)valuePointer);
+            }
+            else if (type == DSharpLiteralType.Decimal)
+            {
+                Push(*(decimal*)valuePointer);
+            }
+            else
+            {
+                throw new ArgumentException($"Unsupported literal type: {type}");
+            }
+        }
         public void PushReference(nint value) => AllocateValue(DSharpStackValueType.Reference, value);
+        public void PushReference(DSharpObject* value) => PushReference((nint)value);
+        public DSharpMethodExecutor* PushMethodCalling()
+        {
+            var frame = AllocateSized(DSharpStackValueType.MethodCallingInfo, sizeof(DSharpMethodExecutor));
+            return (DSharpMethodExecutor*)frame->StackPointer;
+        }
         public FrameInfo PushStructure(int size) => *AllocateSized(DSharpStackValueType.Structure, size);
         public void Pop(uint offset = 0)
         {
@@ -165,6 +336,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         [StructLayout(LayoutKind.Sequential)]
         public struct FrameInfo
         {
+            public readonly bool IsNumber => ValueType != DSharpStackValueType.Null &&
+                                             ValueType != DSharpStackValueType.Structure &&
+                                             ValueType != DSharpStackValueType.Reference &&
+                                             ValueType != DSharpStackValueType.Bool &&
+                                             ValueType != DSharpStackValueType.MethodCallingInfo;
+
             public DSharpStackValueType ValueType;
             public int Size;
             public nint StackPointer;
@@ -185,6 +362,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 T* items = (T*)StackPointer;
                 items[index] = value;
             }
+            public readonly void Write<T>(T value) where T : unmanaged
+            {
+                Write(0, value);
+            }
             public readonly T Read<T>(int index) where T : unmanaged
             {
                 if (0 > index || index >= Size)
@@ -194,6 +375,71 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
                 T* items = (T*)StackPointer;
                 return items[index];
+            }
+            public readonly T Read<T>() where T : unmanaged
+            {
+                return Read<T>(0);
+            }
+            public readonly decimal? ReadAsDecimal()
+            {
+                return ValueType switch
+                {
+                    DSharpStackValueType.Byte => Read<byte>(),
+                    DSharpStackValueType.SByte => Read<sbyte>(),
+                    DSharpStackValueType.Char => Read<char>(),
+                    DSharpStackValueType.Short => Read<short>(),
+                    DSharpStackValueType.UShort => Read<ushort>(),
+                    DSharpStackValueType.Int => Read<int>(),
+                    DSharpStackValueType.UInt => Read<uint>(),
+                    DSharpStackValueType.Long => Read<long>(),
+                    DSharpStackValueType.ULong => Read<ulong>(),
+                    DSharpStackValueType.Nint => Read<nint>(),
+                    DSharpStackValueType.Nuint => Read<nuint>(),
+                    DSharpStackValueType.Float => (decimal)Read<float>(),
+                    DSharpStackValueType.Double => (decimal)Read<double>(),
+                    DSharpStackValueType.Decimal => Read<decimal>(),
+                    _ => null
+                };
+            }
+
+            public readonly override string ToString()
+            {
+                return $"{ValueType}:{Size}";
+            }
+
+            public static bool ValueEquals(FrameInfo left, FrameInfo right)
+            {
+                if (left.ValueType == right.ValueType)
+                {
+                    if (left.ValueType == DSharpStackValueType.Null)
+                    {
+                        return true;
+                    }
+
+                    return StackValueEquals(left, right);
+                }
+                if (left.Size == right.Size)
+                {
+                    return StackValueEquals(left, right);
+                }
+                else if (left.IsNumber && right.IsNumber)
+                {
+                    return left.ReadAsDecimal().GetValueOrDefault() == right.ReadAsDecimal().GetValueOrDefault();
+                }
+
+                return false;
+            }
+            private static bool StackValueEquals(FrameInfo left, FrameInfo right)
+            {
+                for (int i = 0; i < left.Size; i++)
+                {
+                    if (left[i] != right[i])
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             }
         }
 

@@ -18,6 +18,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// </summary>
         public DSharpMethodType MethodType;
         /// <summary>
+        /// Is method abstract
+        /// </summary>
+        public bool IsAbstract;
+        /// <summary>
+        /// Is method virtual
+        /// </summary>
+        public bool IsVirtual;
+        /// <summary>
         /// Is method static
         /// </summary>
         public bool IsStatic;
@@ -57,6 +65,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// </summary>
         public DSharpRuntimeBytecode* ParsedBytecode;
 
+        #region Static
+
         /// <summary>
         /// Get size that requires for structure with information about specified method
         /// </summary>
@@ -73,5 +83,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                    parameters.Length * sizeof(nint) +
                    genericParameters.Length * sizeof(nint);
         }
+
+        #endregion
     }
 }

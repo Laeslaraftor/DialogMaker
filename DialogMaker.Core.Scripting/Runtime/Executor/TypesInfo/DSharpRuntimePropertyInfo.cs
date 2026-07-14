@@ -13,6 +13,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// </summary>
         public DSharpMetadataToken MetadataToken;
         /// <summary>
+        /// Is property abstract
+        /// </summary>
+        public bool IsAbstract;
+        /// <summary>
+        /// Is property virtual
+        /// </summary>
+        public bool IsVirtual;
+        /// <summary>
         /// Is property static
         /// </summary>
         public bool IsStatic;
