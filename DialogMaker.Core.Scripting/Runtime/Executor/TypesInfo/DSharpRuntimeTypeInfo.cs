@@ -61,9 +61,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// </summary>
         public UnmanagedArray<char> Namespace;
         /// <summary>
-        /// Array of constructors
+        /// Array of generic parameters
         /// </summary>
-        public UnmanagedArray<nint> GenericParameters;
+        public UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>> GenericParameters;
+        /// <summary>
+        /// Types that inherited or implemented by current type
+        /// </summary>
+        public UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>> BaseTypes;
         /// <summary>
         /// Array of constructors
         /// </summary>
@@ -86,6 +90,26 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         public UnmanagedArray<byte> StaticFieldsData;
 
         #region Controls
+
+        /// <summary>
+        /// Check is current type inherit from specified type
+        /// </summary>
+        /// <param name="type">Base type</param>
+        /// <returns>Is current type inherit from specified type</returns>
+        public readonly unsafe bool IsInheritFrom(DSharpRuntimeTypeInfo* type)
+        {
+            for (int i = 0; i < BaseTypes.Length; i++)
+            {
+                DSharpRuntimeTypeInfo* baseType = BaseTypes[i];
+
+                if (baseType == type || baseType->IsInheritFrom(type))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// Try to get constructor by metadata token

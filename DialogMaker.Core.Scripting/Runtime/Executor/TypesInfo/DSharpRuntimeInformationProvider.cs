@@ -79,15 +79,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             List<IDSharpPropertyInfo> properties = [];
             List<IDSharpMethodInfo> methods = [];
             Dictionary<IDSharpMemberInfo, int> memberInfoSize = [];
-            nint[] runtimeGenericParameters;
+            Pointer<DSharpRuntimeTypeInfo>[] runtimeGenericParameters;
+            Pointer<DSharpRuntimeTypeInfo>[] runtimeBaseTypes = CreateTypes(type.GetBaseTypes());
 
-            nint[] CreateTypes(IDSharpType[] types)
+            Pointer<DSharpRuntimeTypeInfo>[] CreateTypes(IDSharpType[] types)
             {
-                var result = new nint[types.Length];
+                if (types.Length == 0)
+                {
+                    return [];
+                }
+
+                var result = new Pointer<DSharpRuntimeTypeInfo>[types.Length];
 
                 for (int i = 0; i < types.Length; i++)
                 {
-                    result[i] = (nint)GetRuntimeInfo(types[i]);
+                    result[i] = GetRuntimeInfo(types[i]);
                 }
 
                 return result;
@@ -144,7 +150,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             int staticSize = type.GetSize(false, false);
             int infoSize = sizeof(DSharpRuntimeTypeInfo) +
                            staticSize +
-                           runtimeGenericParameters.Length * sizeof(nint) +
+                           runtimeGenericParameters.Length * sizeof(Pointer<DSharpRuntimeTypeInfo>) +
+                           runtimeBaseTypes.Length * sizeof(Pointer<DSharpRuntimeTypeInfo>) +
                            memberInfoSize.Values.Sum() +
                            type.Name.Length * sizeof(char) +
                            type.Namespace?.Length ?? 0;
@@ -160,6 +167,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             info->Name = builder.AllocateString(type.Name);
             info->Namespace = builder.AllocateString(type.Namespace);
             info->GenericParameters = builder.AllocateArray(runtimeGenericParameters);
+            info->BaseTypes = builder.AllocateArray(runtimeBaseTypes);
             info->Constructors = builder.AllocateArray<DSharpRuntimeMethodInfo>(constructors.Length);
             info->Methods = builder.AllocateArray<DSharpRuntimeMethodInfo>(methods.Count);
             info->Properties = builder.AllocateArray<DSharpRuntimePropertyInfo>(properties.Count);
@@ -251,8 +259,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             var parameters = method.GetParameters();
             var genericParameters = method.GetGenericParameters();
 
-            info->ParametersType = builder.AllocateArray(parameters, p => (nint)GetRuntimeInfo(p.Type));
-            info->GenericTypes = builder.AllocateArray(genericParameters, t => (nint)GetRuntimeInfo(t));
+            info->ParametersType = DSharpRuntimeParameterInfo.Create(this, parameters, ref builder);
+            info->GenericTypes = builder.AllocateArray(genericParameters, t => (Pointer<DSharpRuntimeTypeInfo>)GetRuntimeInfo(t));
 
             var bytecode = method.Bytecode;
 

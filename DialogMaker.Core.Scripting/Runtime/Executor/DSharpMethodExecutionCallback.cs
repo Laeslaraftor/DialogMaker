@@ -23,6 +23,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// </summary>
         public DSharpObject* ObjectInstance;
         /// <summary>
+        /// Generic parameter for next calling method
+        /// </summary>
+        public UnmanagedArray<DSharpRuntimeTypeInfo> CallingGenericParameters;
+        /// <summary>
         /// Index on that starts arguments for executing next method.
         /// It contains -1 if no arguments provided
         /// </summary>

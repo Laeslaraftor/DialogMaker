@@ -45,11 +45,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <summary>
         /// Array of parameters type
         /// </summary>
-        public UnmanagedArray<nint> ParametersType;
+        public UnmanagedArray<DSharpRuntimeParameterInfo> ParametersType;
         /// <summary>
         /// Array of generic types
         /// </summary>
-        public UnmanagedArray<nint> GenericTypes;
+        public UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>> GenericTypes;
         /// <summary>
         /// Method that was overriden by current method.
         /// It can be null
@@ -80,8 +80,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
             return sizeof(DSharpRuntimeMethodInfo) +
                    bytecodeSize +
-                   parameters.Length * sizeof(nint) +
-                   genericParameters.Length * sizeof(nint);
+                   parameters.Length * sizeof(DSharpRuntimeParameterInfo) +
+                   parameters.Sum(p => p.Name.Length) * sizeof(char) +
+                   genericParameters.Length * sizeof(Pointer<DSharpRuntimeTypeInfo>);
         }
 
         #endregion

@@ -10,13 +10,58 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     [StructLayout(LayoutKind.Sequential)]
     public unsafe struct DSharpMethodExecutor
     {
+        /// <summary>
+        /// Count of values in stack at start of current executor
+        /// include self
+        /// </summary>
+        public uint StartStackCount;
+        /// <summary>
+        /// Previous method executor
+        /// </summary>
         public DSharpMethodExecutor* PreviousExecutor;
+        /// <summary>
+        /// Current object instance
+        /// </summary>
         public DSharpObject* ObjectInstance;
+        /// <summary>
+        /// Current executing method
+        /// </summary>
         public DSharpRuntimeMethodInfo* MethodInfo;
+        /// <summary>
+        /// Current executing method bytecode
+        /// </summary>
         public DSharpRuntimeBytecode* Bytecode;
-        public UnmanagedArray<nint> LocalVariables;
+        /// <summary>
+        /// Method local variables
+        /// </summary>
+        public UnmanagedArray<DSharpExecutionLocalVariable> LocalVariables;
+        /// <summary>
+        /// Execution generic parameter
+        /// </summary>
+        public UnmanagedArray<DSharpRuntimeTypeInfo> GenericParameters;
+        /// <summary>
+        /// List of registered catch blocks
+        /// </summary>
+        public UnmanagedList<DSharpCatchBlock> CatchBlocks;
+        /// <summary>
+        /// Current executing instruction index
+        /// </summary>
         public uint InstructionIndex;
+        /// <summary>
+        /// Is unhandled exception exists
+        /// </summary>
+        public bool HaveUnhandledException;
+        /// <summary>
+        /// Exception that currently unhandled
+        /// </summary>
+        public DSharpObject* UnhandledException;
 
+        /// <summary>
+        /// Execute current method starts with specified instruction index
+        /// </summary>
+        /// <param name="objectsContainer">Object instances container</param>
+        /// <param name="thread">Current thread</param>
+        /// <returns>Method execution callback that contains result of method execution</returns>
         public DSharpMethodExecutionCallback Execute(DSharpObjectsContainer objectsContainer, DSharpThread thread)
         {
             int scopesCount = Math.Max(1, (int)Bytecode->ScopesCount);
@@ -41,6 +86,42 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             InstructionIndex = context.InstructionIndex;
 
             return default;
+        }
+        /// <summary>
+        /// Try find catch block for specified exception
+        /// </summary>
+        /// <param name="exception">Exception for searching catch block that can handle it</param>
+        /// <param name="result">Catch block that found</param>
+        /// <returns>Is catch block found</returns>
+        public readonly bool TryFindCatchBlockForException(DSharpObject* exception, out DSharpCatchBlock result)
+        {
+            for (int i = CatchBlocks.Count - 1; i >= 0; i--)
+            {
+                var catchBlock = CatchBlocks[i];
+
+                if (exception == null)
+                {
+                    if (catchBlock.ExceptionType == null)
+                    {
+                        result = catchBlock;
+                        return true;
+                    }
+
+                    continue;
+                }
+
+                var exceptionInstanceType = exception->Type;
+
+                if (exceptionInstanceType == catchBlock.ExceptionType ||
+                    exceptionInstanceType->IsInheritFrom(catchBlock.ExceptionType))
+                {
+                    result = catchBlock;
+                    return true;
+                }
+            }
+
+            result = default;
+            return false;
         }
     }
 }

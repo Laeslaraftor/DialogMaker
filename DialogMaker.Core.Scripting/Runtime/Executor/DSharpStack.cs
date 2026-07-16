@@ -1,4 +1,6 @@
-﻿using System.Drawing;
+﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
+using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Drawing;
 using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
@@ -222,10 +224,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         }
         public void PushReference(nint value) => AllocateValue(DSharpStackValueType.Reference, value);
         public void PushReference(DSharpObject* value) => PushReference((nint)value);
-        public DSharpMethodExecutor* PushMethodCalling()
+        public DSharpMethodExecutor* PushMethodExecutor(DSharpRuntimeMethodInfo* methodInfo)
         {
             var frame = AllocateSized(DSharpStackValueType.MethodCallingInfo, sizeof(DSharpMethodExecutor));
-            return (DSharpMethodExecutor*)frame->StackPointer;
+            var executor = (DSharpMethodExecutor*)frame->StackPointer;
+            executor->StartStackCount = Count;
+            executor->MethodInfo = methodInfo;
+
+            return executor;
         }
         public FrameInfo PushStructure(int size) => *AllocateSized(DSharpStackValueType.Structure, size);
         public void Pop(uint offset = 0)

@@ -18,13 +18,29 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// Current thread stack
         /// </summary>
         public DSharpStack Stack { get; } = new(stackCapacity);
+        /// <summary>
+        /// Is current thread executing
+        /// </summary>
+        public bool IsExecuting { get; private set; }
 
         private readonly DSharpObjectsContainer _objectsContainer = objectsContainer;
 
         #region Controls
 
+        /// <summary>
+        /// Start method executing
+        /// </summary>
+        /// <param name="instance">Object instance that contains method for executing</param>
+        /// <param name="methodInfo">Method for executing</param>
+        /// <exception cref="InvalidOperationException"></exception>
         public void Start(DSharpObject* instance, DSharpRuntimeMethodInfo* methodInfo)
         {
+            if (IsExecuting)
+            {
+                return;
+            }
+
+            IsExecuting = true;
             var typesProvider = Executor.RuntimeTypesProvider;
             var objectContainer = _objectsContainer;
             var stack = Stack;
@@ -48,32 +64,86 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
                 if (!continueExecuting)
                 {
-                    var newMethodExecutor = stack.PushMethodCalling();
+                    var newMethodExecutor = stack.PushMethodExecutor(methodInfo);
                     newMethodExecutor->ObjectInstance = instance;
-                    newMethodExecutor->MethodInfo = methodInfo;
                     newMethodExecutor->Bytecode = typesProvider.GetRuntimeBytecode(methodInfo);
                     newMethodExecutor->PreviousExecutor = methodExecutor;
                     methodExecutor = newMethodExecutor;
+
+                    // create local variables
                 }
                 else
                 {
                     continueExecuting = false;
+
+                    if (methodExecutor->HaveUnhandledException)
+                    {
+                        HandleException(methodExecutor->UnhandledException);
+                    }
                 }
 
                 var callback = methodExecutor->Execute(objectContainer, this);
 
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                void Unwind()
+                void Unwind(uint offset = 0)
                 {
+                    var startStackCount = methodExecutor->StartStackCount;
+                    var unhandledException = methodExecutor->UnhandledException;
+                    var haveUnhandledException = methodExecutor->HaveUnhandledException;
+
                     methodExecutor = methodExecutor->PreviousExecutor;
                     instance = methodExecutor->ObjectInstance;
                     methodInfo = methodExecutor->MethodInfo;
+
+                    if (methodExecutor != null)
+                    {
+                        methodExecutor->HaveUnhandledException = haveUnhandledException;
+                        methodExecutor->UnhandledException = unhandledException;
+                    }
+
                     continueExecuting = true;
+
+                    while (stack.Count + offset >= startStackCount)
+                    {
+                        stack.Pop(offset);
+                    }
+                }
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                void HandleException(DSharpObject* exception)
+                {
+                    if (methodExecutor->TryFindCatchBlockForException(exception, out var catchBlock))
+                    {
+                        if (exception != null)
+                        {
+                            var frame = stack.Peek();
+
+                            if (frame.ValueType != DSharpStackValueType.Reference ||
+                                frame.Read<nint>() != (nint)exception)
+                            {
+                                stack.PushReference(exception);
+                            }
+                        }
+
+                        methodExecutor->HaveUnhandledException = false;
+                        methodExecutor->InstructionIndex = catchBlock.InstructionIndex;
+                        continueExecuting = true;
+                    }
+                    else
+                    {
+                        Unwind();
+                    }
                 }
 
                 if (callback.Type == DSharpMethodExecutionCallbackType.ExecutionComplete)
                 {
-                    Unwind();
+                    uint offset = 0;
+
+                    if (methodInfo->ReturnType != null)
+                    {
+                        offset = 1;
+                    }
+
+                    Unwind(offset);
                 }
                 else if (callback.Type == DSharpMethodExecutionCallbackType.RequiredCallingNextMethod)
                 {
@@ -82,10 +152,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 }
                 else if (callback.Type == DSharpMethodExecutionCallbackType.UnhandledException)
                 {
-                    Unwind();
+                    HandleException(callback.UnhandledException);
                 }
             }
             while (methodExecutor != null);
+
+            IsExecuting = false;
         }
 
         #endregion
