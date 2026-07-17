@@ -11,10 +11,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     public unsafe struct DSharpMethodExecutor
     {
         /// <summary>
-        /// Count of values in stack at start of current executor
+        /// Stack scope that contains current method executor
         /// include self
         /// </summary>
-        public uint StartStackCount;
+        public DSharpStack.Scope Scope;
         /// <summary>
         /// Previous method executor
         /// </summary>
@@ -36,6 +36,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// </summary>
         public UnmanagedArray<DSharpExecutionLocalVariable> LocalVariables;
         /// <summary>
+        /// Method calling arguments
+        /// </summary>
+        public UnmanagedArray<DSharpExecutionLocalVariable> Arguments;
+        /// <summary>
         /// Execution generic parameter
         /// </summary>
         public UnmanagedArray<DSharpRuntimeTypeInfo> GenericParameters;
@@ -43,6 +47,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// List of registered catch blocks
         /// </summary>
         public UnmanagedList<DSharpCatchBlock> CatchBlocks;
+        /// <summary>
+        /// Scopes that created by bytecode
+        /// </summary>
+        public UnmanagedList<DSharpStack.Scope> LocalScopes;
         /// <summary>
         /// Current executing instruction index
         /// </summary>
@@ -70,13 +78,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             {
                 InstructionIndex = InstructionIndex
             };
+            DSharpMethodExecutionCallback? result = null;
 
             while (context.InstructionIndex < Bytecode->Instructions.Length)
             {
                 var instruction = Bytecode->Instructions[(int)context.InstructionIndex];
+                var callback = instruction.Execute(ref context);
 
-                if (!instruction.Execute(ref context))
+                if (callback.Type != DSharpMethodExecutionCallbackType.ExecutionComplete)
                 {
+                    result = callback;
                     break;
                 }
 
@@ -85,7 +96,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             InstructionIndex = context.InstructionIndex;
 
-            return default;
+            return result ?? DSharpMethodExecutionCallback.Complete();
         }
         /// <summary>
         /// Try find catch block for specified exception

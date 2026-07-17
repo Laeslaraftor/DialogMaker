@@ -98,9 +98,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// </summary>
         /// <param name="message">Exception message</param>
         [Obsolete("todo: remove InvalidOperationException and add throwing exception directly in virtual machine")]
-        public void ThrowExecutionException(string message)
+        public DSharpMethodExecutionCallback ThrowExecutionException(string message)
         {
             throw new InvalidOperationException(message);
+            return DSharpMethodExecutionCallback.Throw(null);
         }
 
         #endregion

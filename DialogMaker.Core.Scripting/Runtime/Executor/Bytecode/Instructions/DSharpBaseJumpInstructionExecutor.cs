@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -9,18 +10,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override unsafe bool Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
-            if (!Validate(instruction, context))
+            if (IsNotValid(instruction, context, out var error))
             {
-                return false;
+                return error;
             }
             if (CanJump(instruction, context))
             {
                 context.InstructionIndex = *(uint*)instruction.Arguments[0];
             }
 
-            return true;
+            return DSharpMethodExecutionCallback.Complete();
         }
 
         public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream)
@@ -46,14 +47,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// <param name="instruction">Current executing instructions</param>
         /// <param name="context">Current execution context</param>
         /// <returns>Is execution available</returns>
-        protected virtual bool Validate(DSharpRuntimeInstruction instruction, DSharpExecutionContext context)
+        protected virtual bool IsNotValid(DSharpRuntimeInstruction instruction, DSharpExecutionContext context, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
         {
-            if (!CheckArguments(instruction, context, 1))
-            {
-                return false;
-            }
-
-            return true;
+            return CheckArguments(instruction, context, 1, out errorCallback);
         }
 
         #endregion

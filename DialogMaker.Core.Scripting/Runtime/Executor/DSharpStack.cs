@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
-using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
 using System.Drawing;
 using System.Runtime.InteropServices;
 
@@ -224,65 +223,86 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         }
         public void PushReference(nint value) => AllocateValue(DSharpStackValueType.Reference, value);
         public void PushReference(DSharpObject* value) => PushReference((nint)value);
-        public DSharpMethodExecutor* PushMethodExecutor(DSharpRuntimeMethodInfo* methodInfo)
+        public DSharpMethodExecutor* PushMethodExecutor(DSharpRuntimeMethodInfo* methodInfo, int reservedSize = 0)
         {
-            var frame = AllocateSized(DSharpStackValueType.MethodCallingInfo, sizeof(DSharpMethodExecutor));
+            var scope = StartScope();
+            var frame = AllocateSized(DSharpStackValueType.MethodCallingInfo, sizeof(DSharpMethodExecutor) + reservedSize);
             var executor = (DSharpMethodExecutor*)frame->StackPointer;
-            executor->StartStackCount = Count;
+            executor->Scope = scope;
             executor->MethodInfo = methodInfo;
 
             return executor;
         }
         public FrameInfo PushStructure(int size) => *AllocateSized(DSharpStackValueType.Structure, size);
-        public void Pop(uint offset = 0)
+        public void Pop(uint offset = 0) => Pop(offset, 1);
+        public void Pop(uint offset, uint count)
         {
             if (IsDisposed)
             {
                 throw new ObjectDisposedException(nameof(DSharpStack), "Stack has been disposed");
             }
 
-            int index = (int)(_frameIndex - offset);
+            int index = (int)(_frameIndex - offset) + 1;
+            int startIndex = index - (int)count;
+            int framesRemains;
 
-            if (0 > index)
+            if (0 > startIndex)
             {
-                throw new IndexOutOfRangeException();
+                startIndex = 0;
+                framesRemains = (int)offset - 1;
+            }
+            else
+            {
+                framesRemains = _frameIndex - (index - startIndex);
             }
 
-            var frame = _frames[index];
-            var poppedStackSize = frame.Size;
+            int totalCount = (int)Count - index;
+            int removedStackSize = 0;
+            int destinationStackOffset = 0;
 
-            if (poppedStackSize > 0)
+            for (int i = 0; i < offset; i++)
             {
-                nint allocatedBlockEnd = (nint)_stack + _allocatedStackSize;
+                var destinationFrame = &_frames[startIndex + i];
+                var sourceFrame = &_frames[index + i];
+                var destinationStack = (byte*)destinationFrame->StackPointer + destinationStackOffset;
+                removedStackSize += destinationFrame->Size;
 
-                for (nint i = frame.StackPointer + poppedStackSize; i < allocatedBlockEnd; i++)
+                for (int d = 0; d < sourceFrame->Size; d++)
                 {
-                    *(byte*)(i - poppedStackSize) = *(byte*)i;
+                    destinationStack[d] = *(byte*)(sourceFrame->StackPointer + d);
                 }
 
-                _allocatedStackSize -= poppedStackSize;
+                destinationStackOffset += sourceFrame->Size - destinationFrame->Size;
+                sourceFrame->StackPointer = (nint)destinationStack;
+                *destinationFrame = *sourceFrame;
             }
 
-            for (int i = index + 1; i < _frameIndex + 1; i++)
-            {
-                var currentFrame = _frames[i];
-
-                if (currentFrame.StackPointer != IntPtr.Zero)
-                {
-                    currentFrame.StackPointer -= poppedStackSize;
-                }
-
-                _frames[i - 1] = currentFrame;
-            }
-
-            _frameIndex--;
+            _frameIndex = framesRemains;
+            _allocatedStackSize -= removedStackSize;
         }
-        public void Pop(uint offset, uint count)
+
+        public Scope StartScope()
         {
-            for (uint i = 0; i < count; i++)
+            uint stackCount = Count;
+            var frame = AllocateSized(DSharpStackValueType.Scope, sizeof(Scope));
+            var scope = (Scope*)frame->StackPointer;
+            scope->StackCount = stackCount;
+
+            return *scope;
+        }
+        public uint CloseScope(Scope scope, uint offset)
+        {
+            uint scopeStackCount = scope.StackCount - offset;
+
+            if (scopeStackCount >= Count)
             {
-                Pop(offset);
+                return 0;
             }
+
+            uint delta = Count - scopeStackCount;
+            Pop(offset, delta);
+
+            return delta;
         }
 
         private FrameInfo* AllocateValue<T>(DSharpStackValueType type, T value)
@@ -346,7 +366,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                                              ValueType != DSharpStackValueType.Structure &&
                                              ValueType != DSharpStackValueType.Reference &&
                                              ValueType != DSharpStackValueType.Bool &&
-                                             ValueType != DSharpStackValueType.MethodCallingInfo;
+                                             ValueType != DSharpStackValueType.MethodCallingInfo &&
+                                             ValueType != DSharpStackValueType.Scope;
 
             public DSharpStackValueType ValueType;
             public int Size;
@@ -447,6 +468,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
                 return true;
             }
+        }
+        [StructLayout(LayoutKind.Sequential)]
+        public struct Scope
+        {
+            public uint StackCount;
         }
 
         #endregion

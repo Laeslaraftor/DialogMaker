@@ -10,21 +10,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override unsafe bool Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
-            if (!CheckArguments(instruction, context, 2))
+            if (CheckArguments(instruction, context, 2, out var error))
             {
-                return false;
+                return error;
             }
 
             uint offset = *(uint*)instruction.Arguments[0];
             uint count = *(uint*)instruction.Arguments[1];
 
-            Pop(offset, count, context);
-            return true;
+            context.Stack.Pop(offset, count);
+
+            return DSharpMethodExecutionCallback.Complete();
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, bool> GetExecutorPointer()
+        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
@@ -49,16 +50,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpPopOffsetRepeatInstructionExecutor Instance = new();
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void Pop(uint offset, uint count, DSharpExecutionContext context)
-        {
-            for (int i = 0; i < count; i++)
-            {
-                context.Stack.Pop(offset);
-            }
-        }
-
-        private static bool InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

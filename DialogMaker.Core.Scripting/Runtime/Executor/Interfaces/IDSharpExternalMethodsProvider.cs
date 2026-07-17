@@ -10,6 +10,6 @@
         /// </summary>
         /// <param name="methodInfo">External method that requires external implementation</param>
         /// <returns>Delegate for executing external method. If method is unknown it returns null</returns>
-        public Delegate? GetMethod(IDSharpMethodInfo methodInfo);
+        public DSharpExternalMethod? GetMethod(IDSharpMethodInfo methodInfo);
     }
 }

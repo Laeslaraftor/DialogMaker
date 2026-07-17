@@ -20,7 +20,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <summary>
         /// Pointer to executor method that implements <see cref="DSharpInstructionExecutor.Execute(DSharpRuntimeInstruction, ref DSharpExecutionContext)"/>
         /// </summary>
-        public delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, bool> Executor;
+        public delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> Executor;
 
         #region Controls
 
@@ -29,8 +29,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// </summary>
         /// <param name="context">Execution context</param>
         /// <exception cref="InvalidOperationException">Executor not specified</exception>
-        /// <returns>Is successfully executed</returns>
-        public readonly bool Execute(ref DSharpExecutionContext context)
+        /// <returns>Instruction execution callback</returns>
+        public readonly DSharpMethodExecutionCallback Execute(ref DSharpExecutionContext context)
         {
             if (Executor == null)
             {

@@ -23,6 +23,7 @@
         Nuint,
         Structure,
         Reference,
-        MethodCallingInfo
+        MethodCallingInfo,
+        Scope
     }
 }

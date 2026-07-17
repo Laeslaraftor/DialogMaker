@@ -130,5 +130,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             _count = 0;
         }
+
+        /// <summary>
+        /// Convert unmanaged array to unmanaged list
+        /// </summary>
+        /// <param name="array">Array to converting</param>
+        public static implicit operator UnmanagedList<T>(UnmanagedArray<T> array) => new(array);
+        /// <summary>
+        /// Convert unmanaged list to unmanaged array
+        /// </summary>
+        /// <param name="list">List to converting</param>
+        public static implicit operator UnmanagedArray<T>(UnmanagedList<T> list) => list._array;
     }
 }

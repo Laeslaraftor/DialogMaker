@@ -9,19 +9,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override bool Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
-            if (!CheckStackValues(instruction, context, 1))
+            if (CheckStackValues(instruction, context, 1, out var error))
             {
-                return false;
+                return error;
             }
 
             var value = context.Stack.Peek();
 
             if (!value.IsNumber)
             {
-                context.ThrowExecutionException($"Jumping by index that placed in stack requires number value, got: {value.ValueType}");
-                return false;
+                return context.ThrowExecutionException($"Jumping by index that placed in stack requires number value, got: {value.ValueType}");
             }
 
             var decimalNumber = value.ReadAsDecimal().GetValueOrDefault();
@@ -42,10 +41,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             context.InstructionIndex = index;
 
-            return true;
+            return DSharpMethodExecutionCallback.Complete();
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, bool> GetExecutorPointer()
+        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
@@ -66,7 +65,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpJumpIndexedInstructionExecutor Instance = new();
 
-        private static bool InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

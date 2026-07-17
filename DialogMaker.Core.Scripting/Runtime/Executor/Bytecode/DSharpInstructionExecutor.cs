@@ -14,7 +14,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// Get pointer to executor method
         /// </summary>
         /// <returns>Pointer to executor method</returns>
-        public unsafe abstract delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, bool> GetExecutorPointer();
+        public unsafe abstract delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer();
 
         /// <summary>
         /// Execute instruction
@@ -22,7 +22,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="instruction">Executing instruction information</param>
         /// <param name="context">Execution context</param>
         /// <returns>Is successfully executed</returns>
-        public abstract bool Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context);
+        public abstract DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context);
         /// <summary>
         /// Get count of arguments
         /// </summary>
@@ -45,15 +45,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="context">Current execution context</param>
         /// <param name="requiredArgumentsCount">Requires amount of arguments</param>
         /// <returns>Is arguments count matched</returns>
-        protected bool CheckArguments(DSharpRuntimeInstruction instruction, DSharpExecutionContext context, int requiredArgumentsCount)
+        protected bool CheckArguments(DSharpRuntimeInstruction instruction, DSharpExecutionContext context, int requiredArgumentsCount, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
         {
             if (instruction.Arguments.Length != requiredArgumentsCount)
             {
-                context.ThrowExecutionException($"{instruction.Operation} instruction requires {requiredArgumentsCount} arguments, got: {instruction.Arguments.Length}");
-                return false;
+                errorCallback = context.ThrowExecutionException($"{instruction.Operation} instruction requires {requiredArgumentsCount} arguments, got: {instruction.Arguments.Length}");
+                return true;
             }
 
-            return true;
+            errorCallback = default;
+            return false;
         }
         /// <summary>
         /// Check current stack values count
@@ -62,15 +63,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="context">Current execution context</param>
         /// <param name="requiredValuesCount">Requires amount of values is stack</param>
         /// <returns>Is stack values enough</returns>
-        protected bool CheckStackValues(DSharpRuntimeInstruction instruction, DSharpExecutionContext context, int requiredValuesCount)
+        protected bool CheckStackValues(DSharpRuntimeInstruction instruction, DSharpExecutionContext context, int requiredValuesCount, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
         {
             if (context.Stack.Count < requiredValuesCount)
             {
-                context.ThrowExecutionException($"{instruction.Operation} instruction requires {requiredValuesCount} values in stack, now: {context.Stack.Count}");
-                return false;
+                errorCallback = context.ThrowExecutionException($"{instruction.Operation} instruction requires {requiredValuesCount} values in stack, now: {context.Stack.Count}");
+                return true;
             }
 
-            return true;
+            errorCallback = default;
+            return false;
         }
 
         #endregion

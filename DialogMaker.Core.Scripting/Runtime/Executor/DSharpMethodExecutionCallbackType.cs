@@ -10,6 +10,10 @@
         /// </summary>
         ExecutionComplete,
         /// <summary>
+        /// Method was retuned
+        /// </summary>
+        Returned,
+        /// <summary>
         /// An exception was thrown and not handled
         /// </summary>
         UnhandledException,

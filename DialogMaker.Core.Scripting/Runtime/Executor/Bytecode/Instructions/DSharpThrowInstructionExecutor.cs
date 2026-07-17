@@ -9,22 +9,35 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override bool Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
-            throw new NotImplementedException();
+            if (context.Stack.Count == 0)
+            {
+                return DSharpMethodExecutionCallback.Throw(null);
+            }
+
+            var lastValue = context.Stack.Peek();
+            DSharpObject* exceptionInstance = null;
+
+            if (lastValue.ValueType == DSharpStackValueType.Reference)
+            {
+                // todo: add type checking
+                exceptionInstance = (DSharpObject*)lastValue.StackPointer;
+            }
+
+            return DSharpMethodExecutionCallback.Throw(exceptionInstance);
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, bool> GetExecutorPointer()
+        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
         public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream)
         {
-            throw new NotImplementedException();
+            return -1;
         }
         public override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream, UnmanagedArray<nint> arguments)
         {
-            throw new NotImplementedException();
         }
 
         #endregion
@@ -36,7 +49,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpThrowInstructionExecutor Instance = new();
 
-        private static bool InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

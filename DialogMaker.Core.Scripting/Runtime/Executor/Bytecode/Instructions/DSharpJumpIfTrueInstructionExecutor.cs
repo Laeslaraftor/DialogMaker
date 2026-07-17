@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
     /// <summary>
@@ -7,7 +9,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, bool> GetExecutorPointer()
+        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
@@ -17,22 +19,26 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             var lastValue = context.Stack.Peek();
             return lastValue.Read<bool>();
         }
-        protected override bool Validate(DSharpRuntimeInstruction instruction, DSharpExecutionContext context)
+        protected override bool IsNotValid(DSharpRuntimeInstruction instruction, DSharpExecutionContext context, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
         {
-            if (base.Validate(instruction, context) && CheckStackValues(instruction, context, 1))
+            if (base.IsNotValid(instruction, context, out errorCallback))
+            {
+                return true;
+            }
+            if (!CheckStackValues(instruction, context, 1, out errorCallback))
             {
                 var lastValue = context.Stack.Peek();
 
                 if (lastValue.ValueType != DSharpStackValueType.Bool)
                 {
-                    context.ThrowExecutionException($"Unable to jump with condition: last stack value should be boolean, got {lastValue.ValueType}");
-                    return false;
+                    errorCallback = context.ThrowExecutionException($"Unable to jump with condition: last stack value should be boolean, got {lastValue.ValueType}");
+                    return true;
                 }
 
-                return true;
+                return false;
             }
 
-            return false;
+            return true;
         }
 
         #endregion
@@ -44,7 +50,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpJumpIfTrueInstructionExecutor Instance = new();
 
-        private static bool InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

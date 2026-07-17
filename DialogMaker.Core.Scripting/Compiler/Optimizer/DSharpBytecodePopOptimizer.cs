@@ -18,7 +18,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     builder.Instructions.RemoveAt(popRange.StartIndex);
                 }
 
-                IndexInstruction newInstruction = new(builder, DSharpBytecodeOperation.PopRepeat, popRange.Length);
+                IndexInstruction newInstruction = new(builder, DSharpBytecodeOperation.PopRepeat, (uint)popRange.Length);
                 builder.Instructions.Insert(popRange.StartIndex, newInstruction);
             }
 
@@ -42,7 +42,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     continue;
                 }
 
-                int index = indexInstruction.Index;
+                int index = (int)indexInstruction.Index;
 
                 for (int i = 0; i < popRange.Length; i++)
                 {

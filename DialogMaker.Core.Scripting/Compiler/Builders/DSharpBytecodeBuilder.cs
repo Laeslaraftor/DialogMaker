@@ -313,10 +313,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// </summary>
         /// <param name="index">Popped item offset</param>
         /// <returns></returns>
+        public IndexInstruction PopOffset(int index) => PopOffset((uint)index);
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.PopOffset"/>
+        /// </summary>
+        /// <param name="index">Popped item offset</param>
+        /// <returns></returns>
         public IndexInstruction PopOffset(uint index)
         {
             return CreateInstruction<IndexInstruction>(this, DSharpBytecodeOperation.PopOffset, index);
         }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.PopRepeat"/>
+        /// </summary>
+        /// <param name="count">Repeat count</param>
+        /// <returns></returns>
+        public IndexInstruction PopRepeat(int count) => PopRepeat((uint)count);
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.PopRepeat"/>
         /// </summary>
