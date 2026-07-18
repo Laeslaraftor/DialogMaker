@@ -28,14 +28,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         {
             return &InstanceExecute;
         }
-        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream)
+        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
-            stream.Read<DSharpMetadataToken>();
+            stream->Read<DSharpMetadataToken>();
             return 1;
         }
-        public override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream, UnmanagedArray<nint> arguments)
+        public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
         {
-            arguments[0] = stream.ReadSafePointer<DSharpMetadataToken>();
+            arguments[0] = stream->ReadSafePointer<DSharpMetadataToken>();
         }
 
         #endregion

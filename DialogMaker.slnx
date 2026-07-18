@@ -5,5 +5,6 @@
   <Project Path="DialogMaker.Core.Scripting/DialogMaker.Core.Scripting.csproj" Id="d590355c-3e06-421d-9c65-61ac58f49337" />
   <Project Path="DialogMaker.Core.Tests/DialogMaker.Core.Tests.csproj" Id="eb76e1d1-05f4-4e13-b305-04f87eaf944f" />
   <Project Path="DialogMaker.Core/DialogMaker.Core.csproj" />
+  <Project Path="DialogMaker.ScriptingExample/DialogMaker.ScriptingExample.csproj" Id="38813ee2-5e01-4a19-891e-ccc0068516ad" />
   <Project Path="DialogMaker/DialogMaker.csproj" />
 </Solution>

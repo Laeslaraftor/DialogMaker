@@ -1,10 +1,11 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
-using System.Drawing;
+using System.Collections;
+using System.Collections.ObjectModel;
 using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
 {
-    public unsafe class DSharpStack(int stackCapacity) : Disposable
+    public unsafe class DSharpStack(int stackCapacity) : Disposable, IEnumerable<DSharpStack.FrameInfo>
     {
         public DSharpStack() : this(DSharpThread.DefaultStackCapacity)
         {
@@ -234,6 +235,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             return executor;
         }
         public FrameInfo PushStructure(int size) => *AllocateSized(DSharpStackValueType.Structure, size);
+        public FrameInfo Push(DSharpStackValueType type, int size) => *AllocateSized(type, size);
+
         public void Pop(uint offset = 0) => Pop(offset, 1);
         public void Pop(uint offset, uint count)
         {
@@ -346,6 +349,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
         #endregion
 
+        #region Enumerable
+
+        public IEnumerator<FrameInfo> GetEnumerator()
+        {
+            for (int i = 0; i < Count; i++)
+            {
+                yield return Peek((uint)i);
+            }
+        }
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
+
+        #endregion
+
         #region Disposing
 
         protected override void Dispose(bool isDisposing)
@@ -353,6 +372,35 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             base.Dispose(isDisposing);
             Marshal.FreeHGlobal((nint)_frames);
             Marshal.FreeHGlobal((nint)_stack);
+        }
+
+        #endregion
+
+        #region Static
+
+        public static ReadOnlyDictionary<DSharpStackValueType, DSharpBuildInTypeInfo> BuildInValueTypes
+        {
+            get
+            {
+                if (field == null)
+                {
+                    Dictionary<DSharpStackValueType, DSharpBuildInTypeInfo> types = [];
+
+                    foreach (var value in Enum.GetValues(typeof(DSharpStackValueType)).Cast<DSharpStackValueType>())
+                    {
+                        var literalTypeAttribute = value.GetEnumAttribute<LiteralTypeAttribute>();
+
+                        if (literalTypeAttribute != null &&
+                            DSharpBuildInTypes.TryGetTypeInfo(literalTypeAttribute.LiteralType, out var info))
+                        {
+                            types.Add(value, info);
+                        }
+                    }
+                    field = new(types);
+                }
+
+                return field;
+            }
         }
 
         #endregion
@@ -367,6 +415,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                                              ValueType != DSharpStackValueType.Reference &&
                                              ValueType != DSharpStackValueType.Bool &&
                                              ValueType != DSharpStackValueType.MethodCallingInfo &&
+                                             ValueType != DSharpStackValueType.MethodParametersBuffer &&
                                              ValueType != DSharpStackValueType.Scope;
 
             public DSharpStackValueType ValueType;
@@ -379,6 +428,31 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 set => Write(index, value);
             }
 
+            public readonly void SetNullValue()
+            {
+                byte* values = (byte*)StackPointer;
+
+                for (int i = 0; i < Size; i++)
+                {
+                    values[i] = 0;
+                }
+            }
+            public readonly void Write(FrameInfo frameWithValue)
+            {
+                if (frameWithValue.ValueType == DSharpStackValueType.Null)
+                {
+                    SetNullValue();
+                    return;
+                }
+
+                byte* source = (byte*)frameWithValue.StackPointer;
+                byte* destination = (byte*)StackPointer;
+
+                for (int i = 0; i < Math.Min(Size, frameWithValue.Size); i++)
+                {
+                    destination[i] = source[i];
+                }
+            }
             public readonly void Write<T>(int index, T value) where T : unmanaged
             {
                 if (0 > index || index >= Size)
@@ -425,6 +499,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                     DSharpStackValueType.Float => (decimal)Read<float>(),
                     DSharpStackValueType.Double => (decimal)Read<double>(),
                     DSharpStackValueType.Decimal => Read<decimal>(),
+                    DSharpStackValueType.Structure => StructureToDecimal((byte*)StackPointer, Size),
                     _ => null
                 };
             }
@@ -467,6 +542,33 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 }
 
                 return true;
+            }
+            private static decimal StructureToDecimal(byte* data, int size)
+            {
+                Span<byte> buffer = new(data, size);
+
+                if (size == sizeof(byte))
+                {
+                    return *data;
+                }
+                else if (size == sizeof(short))
+                {
+                    return BitConverter.ToInt16(buffer);
+                }
+                else if (size == sizeof(int))
+                {
+                    return BitConverter.ToInt32(buffer);
+                }
+                else if (size == sizeof(long))
+                {
+                    return BitConverter.ToInt64(buffer);
+                }
+                else if (size == sizeof(decimal))
+                {
+                    return *(decimal*)data;
+                }
+
+                return 0;
             }
         }
         [StructLayout(LayoutKind.Sequential)]

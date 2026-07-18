@@ -35,10 +35,7 @@ namespace DialogMaker.Core.Scripting
                 var bytes = (byte*)&value;
                 var size = sizeof(T);
 
-                for (int i = 0; i < size; i++)
-                {
-                    stream.WriteByte(bytes[i]);
-                }
+                stream.Write(new(bytes, size));
             }
             public void WriteString(string value)
             {

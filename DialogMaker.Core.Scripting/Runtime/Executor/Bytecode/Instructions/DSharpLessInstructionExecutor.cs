@@ -1,30 +1,20 @@
-using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
-
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.Less"/> operation
     /// </summary>
-    public class DSharpLessInstructionExecutor : DSharpInstructionExecutor
+    public class DSharpLessInstructionExecutor : DSharpNumbersComparisonInstructionExecutor
     {
         #region Controls
-
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
-        {
-            throw new NotImplementedException();
-        }
 
         public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream)
+
+        protected override bool Compare(decimal left, decimal right)
         {
-            throw new NotImplementedException();
-        }
-        public override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream, UnmanagedArray<nint> arguments)
-        {
-            throw new NotImplementedException();
+            return left < right;
         }
 
         #endregion

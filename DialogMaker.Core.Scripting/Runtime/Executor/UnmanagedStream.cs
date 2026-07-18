@@ -32,7 +32,7 @@
         {
             int size = sizeof(T);
 
-            if (Position + size >= Length)
+            if (Position + size > Length)
             {
                 throw new IndexOutOfRangeException();
             }

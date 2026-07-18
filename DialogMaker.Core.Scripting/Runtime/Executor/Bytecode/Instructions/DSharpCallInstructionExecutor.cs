@@ -1,30 +1,40 @@
-using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
-
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.Call"/> operation
     /// </summary>
-    public class DSharpCallInstructionExecutor : DSharpInstructionExecutor
+    public class DSharpCallInstructionExecutor : DSharpMetadataTokenInstructionExecutor
     {
         #region Controls
-
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
-        {
-            throw new NotImplementedException();
-        }
 
         public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream)
+
+        protected unsafe override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
         {
-            throw new NotImplementedException();
-        }
-        public override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream, UnmanagedArray<nint> arguments)
-        {
-            throw new NotImplementedException();
+            var method = context.TypesProvider.GetStaticMethod(metadataToken);
+            var parametersCount = method->ParametersType.Length;
+
+            if (CheckStackValues(instruction, context, parametersCount, out var error))
+            {
+                return error;
+            }
+
+            var argsFrame = context.Stack.Push(DSharpStackValueType.MethodParametersBuffer, sizeof(DSharpExecutionLocalVariable) * parametersCount);
+            UnmanagedArray<DSharpExecutionLocalVariable> arguments = new(argsFrame.StackPointer, parametersCount);
+
+            for (int i = 0; i < parametersCount; i++)
+            {
+                arguments[i] = new()
+                {
+                    ParameterInfo = method->ParametersType.GetItemReference(i),
+                    Buffer = context.Stack.Peek((uint)(parametersCount - i))
+                };
+            }
+
+            return DSharpMethodExecutionCallback.Call(null, method, arguments);
         }
 
         #endregion

@@ -5,26 +5,31 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.LoadField"/> operation
     /// </summary>
-    public class DSharpLoadFieldInstructionExecutor : DSharpInstructionExecutor
+    public class DSharpLoadFieldInstructionExecutor : DSharpMetadataTokenInstructionExecutor
     {
         #region Controls
-
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
-        {
-            throw new NotImplementedException();
-        }
 
         public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream)
+
+        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
         {
-            throw new NotImplementedException();
-        }
-        public override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream, UnmanagedArray<nint> arguments)
-        {
-            throw new NotImplementedException();
+            DSharpRuntimeFieldInfo* fieldInfo;
+
+            try
+            {
+                fieldInfo = context.TypesProvider.GetStaticField(metadataToken);
+            }
+            catch (Exception error2)
+            {
+                return context.ThrowExecutionException(error2);
+            }
+
+            fieldInfo->Read(null, context.Stack);
+
+            return DSharpMethodExecutionCallback.Complete();
         }
 
         #endregion

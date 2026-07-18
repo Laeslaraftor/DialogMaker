@@ -96,6 +96,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <returns>Is item removed</returns>
         public bool Remove(T item)
         {
+            int index = IndexOf(item);
+
+            if (index == -1)
+            {
+                return false;
+            }
+
+            return RemoveAt(index);
+        }
+        /// <summary>
+        /// Remove item from list at specified index
+        /// </summary>
+        /// <param name="index">Item index to remove</param>
+        /// <returns>Is item removed</returns>
+        public bool RemoveAt(int index)
+        {
             bool isFound = false;
 
             for (int i = 0; i < _count; i++)
@@ -105,7 +121,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                     _array[i - 1] = _array[i];
                     continue;
                 }
-                if (_array[i].Equals(item))
+                if (i == index)
                 {
                     isFound = true;
                 }

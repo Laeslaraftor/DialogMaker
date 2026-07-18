@@ -29,12 +29,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <param name="typesProvider">Runtime types provider for finding parameter type by metadata token</param>
         /// <param name="stream">Unmanaged stream for reading parameter information</param>
         /// <returns>Runtime parameter information from stream</returns>
-        public static DSharpRuntimeParameterInfo Read(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream)
+        public static DSharpRuntimeParameterInfo Read(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
-            var nameLength = stream.Read<int>();
-            var name = stream.ReadArray<char>(nameLength);
-            var typeToken = stream.Read<DSharpMetadataToken>();
-            var mode = stream.Read<DSharpMethodParameterMode>();
+            var nameLength = stream->Read<int>();
+            var name = stream->ReadArray<char>(nameLength);
+            var typeToken = stream->Read<DSharpMetadataToken>();
+            var mode = stream->Read<DSharpMethodParameterMode>();
 
             return new()
             {

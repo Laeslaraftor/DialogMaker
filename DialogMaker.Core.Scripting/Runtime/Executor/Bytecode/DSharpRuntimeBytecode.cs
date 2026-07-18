@@ -40,19 +40,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
             int variablesCount = stream.Read<int>();
             Span<DSharpRuntimeParameterInfo> variables = stackalloc DSharpRuntimeParameterInfo[variablesCount];
             int parametersCount = 0;
-            int instructionsCount = 0;
+            var streamPointer = &stream;
 
             for (int i = 0; i < variablesCount; i++)
             {
-                variables[i] = DSharpRuntimeParameterInfo.Read(typesProvider, ref stream);
+                variables[i] = DSharpRuntimeParameterInfo.Read(typesProvider, streamPointer);
             }
 
+            int instructionsCount = stream.Read<int>();
             int instructionsStartPosition = stream.Position;
 
             while (stream.Position < stream.Length)
             {
-                parametersCount += DSharpRuntimeInstruction.GetArgumentsCount(typesProvider, ref stream);
-                instructionsCount++;
+                parametersCount += DSharpRuntimeInstruction.GetArgumentsCount(typesProvider, streamPointer);
             }
 
             int runtimeBytecodeSize = sizeof(DSharpRuntimeBytecode) +
@@ -77,7 +77,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
 
             for (int i = 0; i < instructionsCount; i++)
             {
-                var instruction = DSharpRuntimeInstruction.Create(typesProvider, ref builder, ref stream);
+                var instruction = DSharpRuntimeInstruction.Create(typesProvider, ref builder, streamPointer);
                 runtimeBytecode->Instructions[i] = instruction;
 
                 if (instruction.Operation == DSharpBytecodeOperation.StartTrying)

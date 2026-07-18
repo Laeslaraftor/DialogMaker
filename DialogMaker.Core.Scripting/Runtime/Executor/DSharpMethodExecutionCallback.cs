@@ -36,6 +36,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// </summary>
         public DSharpObject* UnhandledException;
 
+        #region Operators
+
+        public static implicit operator bool(DSharpMethodExecutionCallback callback) => callback.Type == DSharpMethodExecutionCallbackType.ExecutionComplete;
+
+        #endregion
+
+        #region Static
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DSharpMethodExecutionCallback Complete() => new()
         {
@@ -66,5 +74,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             CallingGenericParameters = genericParameters,
             CallingArguments = arguments
         };
+
+        #endregion
     }
 }

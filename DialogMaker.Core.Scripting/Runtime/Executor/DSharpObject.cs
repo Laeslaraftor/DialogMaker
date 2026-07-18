@@ -51,5 +51,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 destinationData[i] = sourceData[i];
             }
         }
+        /// <summary>
+        /// Convert D# string instance to C# string
+        /// </summary>
+        /// <param name="stringInstance">D# string instance</param>
+        /// <returns>C# string</returns>
+        public static string ToString(DSharpObject* stringInstance)
+        {
+            char* chars = (char*)stringInstance + sizeof(DSharpObject);
+            return new(chars, 0, stringInstance->Length);
+        }
     }
 }

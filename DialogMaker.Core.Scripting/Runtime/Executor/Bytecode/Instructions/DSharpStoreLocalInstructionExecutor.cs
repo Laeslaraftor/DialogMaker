@@ -9,22 +9,42 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
-            throw new NotImplementedException();
+            if (CheckArguments(instruction, context, 1, out var error) ||
+                CheckStackValues(instruction, context, 1, out error))
+            {
+                return error;
+            }
+
+            uint variableIndex = *(uint*)instruction.Arguments[0];
+            var variables = context.LocalVariables;
+
+            if (variableIndex >= variables->Length)
+            {
+                return context.ThrowExecutionException($"Invalid local variable index \"{variableIndex}\" when available variables \"{variables->Length}\"");
+            }
+
+            var variable = variables->GetItemReference((int)variableIndex);
+            var stackValue = context.Stack.Peek();
+
+            variable->Buffer.Write(stackValue);
+
+            return DSharpMethodExecutionCallback.Complete();
         }
 
         public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream)
+        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
-            throw new NotImplementedException();
+            stream->Read<uint>();
+            return 1;
         }
-        public override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream, UnmanagedArray<nint> arguments)
+        public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
         {
-            throw new NotImplementedException();
+            arguments[0] = stream->ReadSafePointer<uint>();
         }
 
         #endregion

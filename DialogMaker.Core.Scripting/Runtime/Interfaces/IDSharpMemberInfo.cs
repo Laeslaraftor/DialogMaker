@@ -22,7 +22,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <summary>
         /// Type that declares current member
         /// </summary>
-        public IDSharpType? DeclaringType { get; }
+        public IDSharpType DeclaringType { get; }
         /// <summary>
         /// Access modifier of current member
         /// </summary>

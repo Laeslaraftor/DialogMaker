@@ -50,10 +50,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="typesProvider">Types provider for getting runtime type information</param>
         /// <param name="stream">Bytecode stream</param>
         /// <returns>Arguments count of current instruction</returns>
-        public static int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream)
+        public static int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
             MemoryBuilder memoryBuilder = new(0, 0);
-            return Create(typesProvider, ref memoryBuilder, ref stream).Arguments.Length;
+            return Create(typesProvider, ref memoryBuilder, stream).Arguments.Length;
         }
         /// <summary>
         /// Create base runtime information about instruction.
@@ -62,9 +62,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="stream"></param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public static DSharpRuntimeInstruction Create(DSharpRuntimeInformationProvider typesProvider, ref MemoryBuilder memoryBuilder, ref UnmanagedStream stream)
+        public static DSharpRuntimeInstruction Create(DSharpRuntimeInformationProvider typesProvider, ref MemoryBuilder memoryBuilder, UnmanagedStream* stream)
         {
-            var operation = stream.Read<DSharpBytecodeOperation>();
+            var operation = stream->Read<DSharpBytecodeOperation>();
             var argsCountAttribute = operation.GetEnumAttribute<ArgsCountAttribute>();
             int argumentsCount;
 
@@ -78,9 +78,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
             }
             else
             {
-                int startArgumentsPosition = stream.Position;
-                argumentsCount = executor.GetArgumentsCount(typesProvider, ref stream);
-                stream.Position = startArgumentsPosition;
+                int startArgumentsPosition = stream->Position;
+                argumentsCount = executor.GetArgumentsCount(typesProvider, stream);
+                
+                if (memoryBuilder.Pointer != 0)
+                {
+                    stream->Position = startArgumentsPosition;
+                }
             }
 
             DSharpRuntimeInstruction instruction = new()
@@ -92,7 +96,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
             if (argumentsCount != 0 && memoryBuilder.Pointer != 0)
             {
                 instruction.Arguments = memoryBuilder.AllocateArray<nint>(argumentsCount);
-                executor.ReadArguments(typesProvider, ref stream, instruction.Arguments);
+                executor.ReadArguments(typesProvider, stream, instruction.Arguments);
             }
             else
             {

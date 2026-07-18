@@ -4,6 +4,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 {
     public class DSharpMethodBuilderParameter(DSharpAssemblyBuilder assembly) : IDSharpParameterInfo
     {
+        public DSharpMethodBuilderParameter(DSharpMethodBuilderParameter other)
+            : this(other.Assembly)
+        {
+            Name = other.Name;
+            Type = other.Type;
+            Mode = other.Mode;
+            TypeGetter = other.TypeGetter;
+        }
+
         public DSharpAssemblyBuilder Assembly { get; } = assembly;
         public string? Name { get; set; }
         public DSharpTypeToken? Type

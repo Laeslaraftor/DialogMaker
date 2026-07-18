@@ -8,7 +8,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             : Instruction(builder, operation)
         {
             public IDSharpParameterInfo Parameter { get; set; } = parameter;
-            public override int SizeInBytes => base.SizeInBytes + sizeof(int);
+            public override int SizeInBytes => base.SizeInBytes + sizeof(uint);
 
             #region Управление
 
@@ -32,13 +32,32 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                     }
                 }
 
-                var indexBytes = BitConverter.GetBytes(index);
-                stream.Write(indexBytes);
+                stream.Write((uint)index);
             }
 
             public override Instruction Copy(DSharpBytecodeBuilder builder)
             {
-                return new ParameterInstruction(builder, Operation, Parameter);
+                int index = BytecodeBuilder.Method.Parameters.IndexOf(Parameter);
+                IDSharpParameterInfo parameter = Parameter; 
+
+                if (index != -1)
+                {
+                    if (builder.Method.Parameters.Count > index)
+                    {
+                        parameter = builder.Method.Parameters[index];
+                    }
+                }
+                else
+                {
+                    index = BytecodeBuilder.LocalVariables.IndexOf(Parameter);
+
+                    if (builder.LocalVariables.Count > index)
+                    {
+                        parameter = builder.LocalVariables[index];
+                    }
+                }
+
+                return new ParameterInstruction(builder, Operation, parameter);
             }
             public override object[] GetArguments()
             {

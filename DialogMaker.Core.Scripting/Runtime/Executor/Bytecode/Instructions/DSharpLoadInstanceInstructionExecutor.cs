@@ -13,13 +13,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         {
             if (context.CurrentMethod->IsStatic)
             {
-                context.ThrowExecutionException("Unable to load current instance from static method");
-                return false;
+                return context.ThrowExecutionException("Unable to load current instance from static method");
             }
             if (context.ObjectInstance == null)
             {
-                context.ThrowExecutionException("Unable to load current instance when it not provided");
-                return false;
+                return context.ThrowExecutionException("Unable to load current instance when it not provided");
             }
             if (context.ObjectInstance->Type->IsValueType)
             {
@@ -31,18 +29,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 context.Stack.PushReference(context.ObjectInstance);
             }
 
-            return true;
+            return DSharpMethodExecutionCallback.Complete();
         }
 
         public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream)
+        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
             return 0;
         }
-        public override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream, UnmanagedArray<nint> arguments)
+        public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
         {
         }
 

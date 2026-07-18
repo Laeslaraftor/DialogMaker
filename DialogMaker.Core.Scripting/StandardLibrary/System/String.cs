@@ -6,34 +6,26 @@ public sealed class String : IEnumerable<char>
 {
     public String()
     {
-        _chars = Array<char>.Empty;
     }
     public String(char[] chars) : this(chars, true)
     {
     }
     private String(char[] chars, bool makeCopy)
     {
-        if (makeCopy)
-        {
-            _chars = new char[chars.Length];
-            Array<char>.Copy(chars, _chars);
-        }
-        else
-        {
-            _chars = chars;
-        }
     }
 
-    public int Length => _chars.Length;
-
-    private readonly char[] _chars;
+    public int Length => GetLength();
+    public char this[int index] => GetValue(index);
 
     public override string ToString() => this;
 
     public IEnumerator<char> GetEnumerator()
     {
-        return _chars.GetEnumerator();
+        return new Enumerator(this);
     }
+
+    private extern int GetLength();
+    private extern char GetValue(int index);
 
     public static string operator +(string l, string r)
     {
@@ -56,4 +48,35 @@ public sealed class String : IEnumerable<char>
     public static readonly string Empty = "";
 
     public static bool IsNullOrEmpty(string str) => str == null || str == Empty;
+
+    private class Enumerator : IEnumerator<char>
+    {
+        public Enumerator(string str)
+        {
+            _str = str;
+        }
+
+        public char Current { get; private set; }
+
+        private readonly string _str;
+        private int _currentIndex = -1;
+
+        public bool MoveNext()
+        {
+            if (_currentIndex + 1 >= _str.Length)
+            {
+                return false;
+            }
+
+            _currentIndex++;
+            Current = _str[_currentIndex];
+
+            return true;
+        }
+        public void Reset()
+        {
+            Current = '\0';
+            _currentIndex = -1;
+        }
+    }
 }

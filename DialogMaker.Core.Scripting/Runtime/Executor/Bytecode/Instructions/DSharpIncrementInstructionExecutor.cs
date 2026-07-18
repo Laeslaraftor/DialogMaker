@@ -9,22 +9,57 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public unsafe override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
-            throw new NotImplementedException();
+            if (CheckStackValues(instruction, context, 1, out var error))
+            {
+                return error;
+            }
+
+            var lastValue = context.Stack.Peek();
+            var decimalValue = lastValue.ReadAsDecimal();
+
+            if (decimalValue == null)
+            {
+                return context.ThrowExecutionException($"Increment operation requires number at last value in stack, got: \"{lastValue.ValueType}\"");
+            }
+
+            decimal number = decimalValue.Value + 1;
+
+            if (lastValue.Size == sizeof(byte))
+            {
+                lastValue.Write((byte)Math.Clamp(number, byte.MinValue, byte.MaxValue));
+            }
+            else if (lastValue.Size == sizeof(short))
+            {
+                lastValue.Write((short)Math.Clamp(number, short.MinValue, short.MaxValue));
+            }
+            else if (lastValue.Size == sizeof(int))
+            {
+                lastValue.Write((int)Math.Clamp(number, int.MinValue, int.MaxValue));
+            }
+            else if (lastValue.Size == sizeof(long))
+            {
+                lastValue.Write((long)Math.Clamp(number, long.MinValue, long.MaxValue));
+            }
+            else if (lastValue.Size == sizeof(decimal))
+            {
+                lastValue.Write(number);
+            }
+
+            return DSharpMethodExecutionCallback.Complete();
         }
 
         public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream)
+        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
-            throw new NotImplementedException();
+            return 0;
         }
-        public override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream, UnmanagedArray<nint> arguments)
+        public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
         {
-            throw new NotImplementedException();
         }
 
         #endregion

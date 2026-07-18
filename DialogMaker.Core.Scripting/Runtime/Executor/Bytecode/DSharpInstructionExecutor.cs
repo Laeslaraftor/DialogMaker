@@ -29,14 +29,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="typesProvider">Runtime types provider for finding parameter type by metadata token</param>
         /// <param name="stream">Unmanaged stream for reading parameter information</param>
         /// <returns>Count of arguments</returns>
-        public abstract int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream);
+        public unsafe abstract int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream);
         /// <summary>
         /// Read arguments from stream and write it to arguments array
         /// </summary>
         /// <param name="typesProvider">Runtime types provider for finding parameter type by metadata token</param>
         /// <param name="stream">Unmanaged stream for reading parameter information</param>
         /// <param name="arguments">Array for writing arguments</param>
-        public abstract void ReadArguments(DSharpRuntimeInformationProvider typesProvider, ref UnmanagedStream stream, UnmanagedArray<nint> arguments);
+        public unsafe abstract void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments);
 
         /// <summary>
         /// Check provided arguments count
@@ -75,11 +75,60 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
             return false;
         }
 
+        /// <summary>
+        /// Try to get object instance from stack.
+        /// It can be reference to object or structure
+        /// </summary>
+        /// <param name="context">Current execution context</param>
+        /// <param name="handler">Object handler</param>
+        /// <returns>Result of operation</returns>
+        protected unsafe DSharpMethodExecutionCallback TryGetInstanceFromStack(ref DSharpExecutionContext context, HandleObject handler)
+        {
+            var stackValue = context.Stack.Peek();
+            DSharpObject* instance;
+            int instanceBufferSize;
+
+            if (stackValue.ValueType == DSharpStackValueType.Reference)
+            {
+                instance = (DSharpObject*)stackValue.Read<nint>();
+                goto HandleObject;
+            }
+            else if (context.ObjectsContainer.TryGetSizeForStructureFromStack(context.Stack, out var size))
+            {
+                instanceBufferSize = size;
+                goto CreateStructure;
+            }
+            else
+            {
+                return context.ThrowExecutionException("No instance provided");
+            }
+
+        CreateStructure:
+            byte* structureBuffer = stackalloc byte[instanceBufferSize];
+            UnmanagedArray<byte> buffer = new(structureBuffer, instanceBufferSize);
+            instance = context.ObjectsContainer.CreateStructureFromStack(context.Stack, buffer);
+            goto HandleObject;
+
+        HandleObject:
+            return handler(ref context, instance);
+        }
+
+        #endregion
+
+        #region Delegates
+
+        /// <summary>
+        /// Object handler
+        /// </summary>
+        /// <param name="context">Current execution context</param>
+        /// <param name="obj">Pointer to object instance</param>
+        protected unsafe delegate DSharpMethodExecutionCallback HandleObject(ref DSharpExecutionContext context, DSharpObject* obj);
+
         #endregion
 
         #region Static
 
-        private static Dictionary<DSharpBytecodeOperation, DSharpInstructionExecutor>? _executors = [];
+        private static Dictionary<DSharpBytecodeOperation, DSharpInstructionExecutor>? _executors;
 
         /// <summary>
         /// Try get executor implementation for D# operation

@@ -6,14 +6,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
     /// Runtime information about type
     /// </summary>
     [StructLayout(LayoutKind.Sequential)]
-    public struct DSharpRuntimeTypeInfo
+    public unsafe struct DSharpRuntimeTypeInfo
     {
         /// <summary>
         /// Size of item as field value.
         /// Reference types (classes and interfaces) have size same to <c>nint</c>,
         /// value types return size from <see cref="Size"/>
         /// </summary>
-        public unsafe readonly int ItemSize
+        public readonly int ItemSize
         {
             get
             {
@@ -96,7 +96,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// </summary>
         /// <param name="type">Base type</param>
         /// <returns>Is current type inherit from specified type</returns>
-        public readonly unsafe bool IsInheritFrom(DSharpRuntimeTypeInfo* type)
+        public readonly bool IsInheritFrom(DSharpRuntimeTypeInfo* type)
         {
             for (int i = 0; i < BaseTypes.Length; i++)
             {
@@ -117,7 +117,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <param name="metadataToken">Constructor metadata token</param>
         /// <param name="result">Constructor with same metadata token</param>
         /// <returns>Is constructor found</returns>
-        public unsafe readonly bool TryGetConstructor(DSharpMetadataToken metadataToken, out DSharpRuntimeMethodInfo* result)
+        public readonly bool TryGetConstructor(DSharpMetadataToken metadataToken, out DSharpRuntimeMethodInfo* result)
         {
             return TryGetMember(Constructors, metadataToken, out result);
         }
@@ -127,7 +127,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <param name="metadataToken">Field metadata token</param>
         /// <param name="result">Field with same metadata token</param>
         /// <returns>Is field found</returns>
-        public unsafe readonly bool TryGetField(DSharpMetadataToken metadataToken, out DSharpRuntimeFieldInfo* result)
+        public readonly bool TryGetField(DSharpMetadataToken metadataToken, out DSharpRuntimeFieldInfo* result)
         {
             return TryGetMember(Fields, metadataToken, out result);
         }
@@ -137,7 +137,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <param name="metadataToken">Property metadata token</param>
         /// <param name="result">Property with same metadata token</param>
         /// <returns>Is property found</returns>
-        public unsafe readonly bool TryGetProperty(DSharpMetadataToken metadataToken, out DSharpRuntimePropertyInfo* result)
+        public readonly bool TryGetProperty(DSharpMetadataToken metadataToken, out DSharpRuntimePropertyInfo* result)
         {
             return TryGetMember(Properties, metadataToken, out result);
         }
@@ -147,7 +147,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <param name="metadataToken">Method metadata token</param>
         /// <param name="result">Method with same metadata token</param>
         /// <returns>Is method found</returns>
-        public unsafe readonly bool TryGetMethod(DSharpMetadataToken metadataToken, out DSharpRuntimeMethodInfo* result)
+        public readonly bool TryGetMethod(DSharpMetadataToken metadataToken, out DSharpRuntimeMethodInfo* result)
         {
             return TryGetMember(Methods, metadataToken, out result);
         }
@@ -156,7 +156,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         {
             if (Name.Length == 0)
             {
-                return base.ToString();
+                return string.Empty;
             }
 
             string name = new(Name);
@@ -169,7 +169,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             return name;
         }
 
-        private unsafe readonly bool TryGetMember<T>(UnmanagedArray<T> members, DSharpMetadataToken metadataToken, out T* result)
+        private readonly bool TryGetMember<T>(UnmanagedArray<T> members, DSharpMetadataToken metadataToken, out T* result)
             where T : unmanaged
         {
             for (int i = 0; i < members.Length; i++)

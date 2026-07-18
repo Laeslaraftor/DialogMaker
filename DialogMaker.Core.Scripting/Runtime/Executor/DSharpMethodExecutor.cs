@@ -70,31 +70,30 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <param name="objectsContainer">Object instances container</param>
         /// <param name="thread">Current thread</param>
         /// <returns>Method execution callback that contains result of method execution</returns>
-        public DSharpMethodExecutionCallback Execute(DSharpObjectsContainer objectsContainer, DSharpThread thread)
+        public static DSharpMethodExecutionCallback Execute(DSharpMethodExecutor* executor, DSharpObjectsContainer objectsContainer, DSharpThread thread)
         {
-            int scopesCount = Math.Max(1, (int)Bytecode->ScopesCount);
+            var bytecode = executor->Bytecode;
+            int scopesCount = Math.Max(1, (int)bytecode->ScopesCount);
             Span<DSharpExecutionScope> scopes = stackalloc DSharpExecutionScope[scopesCount];
-            DSharpExecutionContext context = new(objectsContainer, thread, ObjectInstance, MethodInfo)
-            {
-                InstructionIndex = InstructionIndex
-            };
+            DSharpExecutionContext context = new(objectsContainer, thread, executor->MethodInfo, executor);
             DSharpMethodExecutionCallback? result = null;
 
-            while (context.InstructionIndex < Bytecode->Instructions.Length)
+            while (context.InstructionIndex < bytecode->Instructions.Length)
             {
-                var instruction = Bytecode->Instructions[(int)context.InstructionIndex];
+                var instructionIndex = context.InstructionIndex;
+                var instruction = bytecode->Instructions[(int)instructionIndex];
                 var callback = instruction.Execute(ref context);
 
+                if (context.InstructionIndex == instructionIndex)
+                {
+                    context.InstructionIndex++;
+                }
                 if (callback.Type != DSharpMethodExecutionCallbackType.ExecutionComplete)
                 {
                     result = callback;
                     break;
                 }
-
-                context.InstructionIndex++;
             }
-
-            InstructionIndex = context.InstructionIndex;
 
             return result ?? DSharpMethodExecutionCallback.Complete();
         }

@@ -75,7 +75,6 @@
             stream.WriteString(name);
             parameter.Type.MetadataToken.Write(stream);
             stream.WriteByte((byte)parameter.Mode);
-            stream.Write(parameter.Mode);
         }
         /// <summary>
         /// Read parameter information from stream

@@ -47,9 +47,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// </summary>
         public UnmanagedArray<DSharpRuntimeParameterInfo> ParametersType;
         /// <summary>
-        /// Array of generic types
+        /// Array of generic types. 
+        /// This is array of pointers to runtime type information
         /// </summary>
-        public UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>> GenericTypes;
+        public UnmanagedArray<nint> GenericTypes;
         /// <summary>
         /// Method that was overriden by current method.
         /// It can be null

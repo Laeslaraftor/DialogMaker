@@ -95,17 +95,17 @@ namespace DialogMaker.Core.Scripting.Runtime
         {
             return new(stream.ReadByte, stream.Read, stream.WriteByte, stream.Write, () => stream.Position, p => stream.Position = p, () => stream.Length);
         }
-        public static implicit operator DSharpStream(UnmanagedStream stream)
+        public unsafe static implicit operator DSharpStream(UnmanagedStream* stream)
         {
             return new(() =>
             {
-                if (stream.Position < stream.Length)
+                if (stream->Position < stream->Length)
                 {
-                    return stream.Read<byte>();
+                    return stream->Read<byte>();
                 }
 
                 return -1;
-            }, stream.Read, v => stream.Write(v), b => stream.WriteBuffer(b), () => stream.Position, p => stream.Position = (int)p, () => stream.Length);
+            }, b => stream->Read(b), v => stream->Write(v), b => stream->WriteBuffer(b), () => stream->Position, p => stream->Position = (int)p, () => stream->Length);
         }
 
         #endregion

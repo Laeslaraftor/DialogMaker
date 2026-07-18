@@ -107,7 +107,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             try
             {
-                int instructionsCount = Instructions.Count(i => i is not CommentInstruction) + extraInstructions?.Count ?? 0;
+                int instructionsCount = Instructions.Count(i => i is not CommentInstruction) + (extraInstructions?.Count ?? 0);
                 stream.Write(instructionsCount);
 
                 if (extraInstructions != null)
@@ -137,6 +137,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
         public void CopyTo(DSharpBytecodeBuilder builder)
         {
+            builder.LocalVariables.Clear();
+
+            foreach (var localVariable in LocalVariables)
+            {
+                builder.LocalVariables.Add(new(localVariable));
+            }
+
             var otherInstructions = builder.Instructions;
             otherInstructions.Clear();
 
@@ -144,6 +151,19 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             {
                 var newInstruction = instruction.Copy(builder);
                 otherInstructions.Add(newInstruction);
+            }
+            for (int i = 0; i < Instructions.Count; i++)
+            {
+                var instruction = Instructions[i];
+                var otherInstruction = otherInstructions[i];
+
+                if (instruction is ReferenceInstruction reference &&
+                    otherInstruction is ReferenceInstruction otherReference &&
+                    reference.ReferencedInstruction != null)
+                {
+                    int index = Instructions.IndexOf(reference.ReferencedInstruction);
+                    otherReference.ReferencedInstruction = otherInstructions[index];
+                } 
             }
         }
         public void CopyTo(UnmanagedArray<byte> byteArray)
