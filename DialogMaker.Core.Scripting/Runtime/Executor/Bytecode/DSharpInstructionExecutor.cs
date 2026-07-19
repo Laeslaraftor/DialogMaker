@@ -90,10 +90,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
 
             if (stackValue.ValueType == DSharpStackValueType.Reference)
             {
-                instance = (DSharpObject*)stackValue.Read<nint>();
+                instance = (DSharpObject*)stackValue.ReadReference();
                 goto HandleObject;
             }
-            else if (context.ObjectsContainer.TryGetSizeForStructureFromStack(context.Stack, out var size))
+            else if (DSharpObjectsContainer.TryGetSizeForStructureFromStack(context.Stack, out var size))
             {
                 instanceBufferSize = size;
                 goto CreateStructure;
@@ -106,7 +106,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         CreateStructure:
             byte* structureBuffer = stackalloc byte[instanceBufferSize];
             UnmanagedArray<byte> buffer = new(structureBuffer, instanceBufferSize);
-            instance = context.ObjectsContainer.CreateStructureFromStack(context.Stack, buffer);
+            instance = DSharpObjectsContainer.CreateStructureFromStack(context.Stack, buffer);
             goto HandleObject;
 
         HandleObject:

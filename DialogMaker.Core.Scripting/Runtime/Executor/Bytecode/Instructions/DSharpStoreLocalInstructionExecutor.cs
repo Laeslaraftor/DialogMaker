@@ -28,6 +28,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             var variable = variables->GetItemReference((int)variableIndex);
             var stackValue = context.Stack.Peek();
 
+            variable->Buffer.ValueType = stackValue.ValueType;
+            variable->Buffer.IsNumber = stackValue.IsNumber;
             variable->Buffer.Write(stackValue);
 
             return DSharpMethodExecutionCallback.Complete();

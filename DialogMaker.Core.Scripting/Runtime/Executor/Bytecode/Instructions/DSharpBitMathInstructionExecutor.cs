@@ -14,7 +14,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             return (decimal)PerformMathOperation(leftBigInt, rightBigInt);
         }
-        protected override bool CanPerform(DSharpStackValueType left, DSharpStackValueType right)
+        protected override bool CanPerform(DSharpStack.FrameInfo left, DSharpStack.FrameInfo right, DSharpExecutionContext context)
         {
             return true;
         }

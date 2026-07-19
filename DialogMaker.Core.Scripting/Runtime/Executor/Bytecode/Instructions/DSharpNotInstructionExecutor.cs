@@ -9,7 +9,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
             if (CheckStackValues(instruction, context, 1, out var error))
             {
@@ -18,12 +18,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             var value = context.Stack.Peek();
 
-            if (value.ValueType != DSharpStackValueType.Bool)
+            if (value.ObjectType != context.TypesProvider.Boolean)
             {
                 return context.ThrowExecutionException($"Unable to invert value because it is not boolean: {value.ValueType}");
             }
 
-            value.Write(value.Read<bool>());
+            value.Write(!value.ReadAsBoolean());
 
             return DSharpMethodExecutionCallback.Complete();
         }

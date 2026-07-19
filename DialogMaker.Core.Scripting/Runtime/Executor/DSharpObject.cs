@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
@@ -31,6 +32,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// </summary>
         public uint ReferencesCount;
 
+        public override string ToString()
+        {
+            if (Type != null)
+            {
+                return Type->ToString();
+            }
+
+            return base.ToString() ?? string.Empty;
+        }
+
         /// <summary>
         /// Copy source object to destination
         /// </summary>
@@ -52,14 +63,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
         }
         /// <summary>
-        /// Convert D# string instance to C# string
+        /// Get pointer to D# object data
         /// </summary>
-        /// <param name="stringInstance">D# string instance</param>
-        /// <returns>C# string</returns>
-        public static string ToString(DSharpObject* stringInstance)
+        /// <param name="obj">D# object instance</param>
+        /// <returns>Pointer to D# object data</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte* GetData(DSharpObject* obj)
         {
-            char* chars = (char*)stringInstance + sizeof(DSharpObject);
-            return new(chars, 0, stringInstance->Length);
+            return (byte*)obj + sizeof(DSharpObject);
         }
     }
 }

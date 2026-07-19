@@ -19,9 +19,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         {
             return false;
         }
-        protected override bool CanPerform(DSharpStackValueType left, DSharpStackValueType right)
+        protected override unsafe bool CanPerform(DSharpStack.FrameInfo left, DSharpStack.FrameInfo right, DSharpExecutionContext context)
         {
-            return left != DSharpStackValueType.Bool && right != DSharpStackValueType.Bool;
+            return left.ObjectType != context.TypesProvider.Boolean && left.ObjectType != context.TypesProvider.Boolean;
         }
 
         #endregion

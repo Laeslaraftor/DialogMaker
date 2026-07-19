@@ -19,15 +19,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             {
                 return context.ThrowExecutionException("Unable to load current instance when it not provided");
             }
-            if (context.ObjectInstance->Type->IsValueType)
-            {
-                var frame = context.Stack.PushStructure(context.ObjectInstance->TotalSize);
-                DSharpObject.Copy(context.ObjectInstance, (DSharpObject*)frame.StackPointer);
-            }
-            else
-            {
-                context.Stack.PushReference(context.ObjectInstance);
-            }
+
+            context.Stack.PushReference(context.ObjectInstance);
 
             return DSharpMethodExecutionCallback.Complete();
         }

@@ -8,7 +8,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     /// </summary>
     /// <param name="executor">D# virtual machine</param>
     /// <param name="stackCapacity">Stack capacity in items</param>
-    public unsafe class DSharpThread(DSharpVm executor, DSharpObjectsContainer objectsContainer, IDSharpExternalMethodsProvider externalMethodsProvider, int stackCapacity) : Disposable
+    public unsafe class DSharpThread(DSharpVm executor, DSharpObjectsContainer objectsContainer, DSharpVmMemoryManager memoryManager, IDSharpExternalMethodsProvider externalMethodsProvider, int stackCapacity) : Disposable
     {
         /// <summary>
         /// D# virtual machine
@@ -17,12 +17,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <summary>
         /// Current thread stack
         /// </summary>
-        public DSharpStack Stack { get; } = new(stackCapacity);
+        public DSharpStack Stack { get; } = new(memoryManager, executor.RuntimeTypesProvider, stackCapacity);
         /// <summary>
         /// Is current thread executing
         /// </summary>
         public bool IsExecuting { get; private set; }
 
+        private readonly DSharpVmMemoryManager _memoryManager = memoryManager;
         private readonly DSharpObjectsContainer _objectsContainer = objectsContainer;
         private readonly IDSharpExternalMethodsProvider _externalMethodsProvider = externalMethodsProvider;
 
@@ -188,7 +189,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                             var frame = stack.Peek();
 
                             if (frame.ValueType != DSharpStackValueType.Reference ||
-                                frame.Read<nint>() != (nint)exception)
+                                frame.ReadReference() != (nint)exception)
                             {
                                 stack.PushReference(exception);
                             }

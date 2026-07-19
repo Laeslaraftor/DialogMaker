@@ -1,59 +1,32 @@
-﻿namespace DialogMaker.Core.Scripting.Runtime.Executor
+﻿using System.Runtime.CompilerServices;
+
+namespace DialogMaker.Core.Scripting.Runtime.Executor
 {
+    /// <summary>
+    /// Class with extensions for D# runtime
+    /// </summary>
     public static class RuntimeExtensions
     {
-        extension(DSharpStackValueType valueType)
+        extension(DSharpVmMemoryManager memoryManager)
         {
-            public bool TryGetBuildInSize(out int result)
+            /// <summary>
+            /// <inheritdoc cref="DSharpVmMemoryManager.Free(nint)"/>
+            /// </summary>
+            /// <param name="pointer">Pointer to memory that need to free</param>
+            /// <returns><inheritdoc cref="DSharpVmMemoryManager.Free(nint)"/></returns>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public unsafe bool Free(void* pointer) => memoryManager.Free((nint)pointer);
+            /// <summary>
+            /// Allocate memory for structure with extra size
+            /// </summary>
+            /// <typeparam name="T">Type of structure</typeparam>
+            /// <param name="type">Type of memory for allocation</param>
+            /// <param name="extraSize">Extra size that will be added to structure size</param>
+            /// <returns>Pointer to allocated memory</returns>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public unsafe T* Allocate<T>(DSharpMemoryBlockType type, int extraSize = 0) where T : unmanaged
             {
-                switch (valueType)
-                {
-                    case DSharpStackValueType.Byte:
-                        result = DSharpBuildInTypes.Byte.Size;
-                        return true;
-                    case DSharpStackValueType.SByte:
-                        result = DSharpBuildInTypes.SignedByte.Size;
-                        return true;
-                    case DSharpStackValueType.Short:
-                        result = DSharpBuildInTypes.Short.Size;
-                        return true;
-                    case DSharpStackValueType.UShort:
-                        result = DSharpBuildInTypes.UnsignedShort.Size;
-                        return true;
-                    case DSharpStackValueType.Int:
-                        result = DSharpBuildInTypes.Int.Size;
-                        return true;
-                    case DSharpStackValueType.UInt:
-                        result = DSharpBuildInTypes.UnsignedInt.Size;
-                        return true;
-                    case DSharpStackValueType.Long:
-                        result = DSharpBuildInTypes.Long.Size;
-                        return true;
-                    case DSharpStackValueType.ULong:
-                        result = DSharpBuildInTypes.UnsignedLong.Size;
-                        return true;
-                    case DSharpStackValueType.Decimal:
-                        result = DSharpBuildInTypes.Decimal.Size;
-                        return true;
-                    case DSharpStackValueType.Double:
-                        result = DSharpBuildInTypes.Double.Size;
-                        return true;
-                    case DSharpStackValueType.Float:
-                        result = DSharpBuildInTypes.Single.Size;
-                        return true;
-                    case DSharpStackValueType.Char:
-                        result = DSharpBuildInTypes.Char.Size;
-                        return true;
-                    case DSharpStackValueType.Bool:
-                        result = DSharpBuildInTypes.Boolean.Size;
-                        return true;
-                    case DSharpStackValueType.Reference:
-                        result = DSharpBuildInTypes.NativeInt.Size;
-                        return true;
-                }
-
-                result = 0;
-                return false;
+                return (T*)memoryManager.Allocate(type, sizeof(T) + extraSize);
             }
         }
     }

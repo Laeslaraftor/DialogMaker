@@ -25,27 +25,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
 
             decimal number = decimalValue.Value - 1;
+            var obj = (DSharpObject*)lastValue.StackPointer;
 
-            if (lastValue.Size == sizeof(byte))
-            {
-                lastValue.Write((byte)Math.Clamp(number, byte.MinValue, byte.MaxValue));
-            }
-            else if (lastValue.Size == sizeof(short))
-            {
-                lastValue.Write((short)Math.Clamp(number, short.MinValue, short.MaxValue));
-            }
-            else if (lastValue.Size == sizeof(int))
-            {
-                lastValue.Write((int)Math.Clamp(number, int.MinValue, int.MaxValue));
-            }
-            else if (lastValue.Size == sizeof(long))
-            {
-                lastValue.Write((long)Math.Clamp(number, long.MinValue, long.MaxValue));
-            }
-            else if (lastValue.Size == sizeof(decimal))
-            {
-                lastValue.Write(number);
-            }
+            context.ObjectsContainer.WriteNumber(obj, number);
 
             return DSharpMethodExecutionCallback.Complete();
         }

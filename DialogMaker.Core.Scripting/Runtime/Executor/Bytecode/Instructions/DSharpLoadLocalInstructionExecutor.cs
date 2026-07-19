@@ -28,7 +28,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             var variableBuffer = variable->Buffer;
             var frame = context.Stack.Push(variableBuffer.ValueType, variableBuffer.Size);
 
-            frame.Write(variableBuffer);
+            frame->IsNumber = variableBuffer.IsNumber;
+            frame->Write(variableBuffer);
 
             return DSharpMethodExecutionCallback.Complete();
         }

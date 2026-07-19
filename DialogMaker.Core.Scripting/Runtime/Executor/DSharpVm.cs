@@ -13,11 +13,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     {
         /// <param name="runtimeInformationProvider">Runtime information provider</param>
         /// <param name="stackCapacity">Stack capacity in items</param>
-        public DSharpVm(DSharpRuntimeInformationProvider runtimeInformationProvider, int stackCapacity)
+        /// <param name="memoryManager">Memory manager</param>
+        public DSharpVm(DSharpVmMemoryManager memoryManager, DSharpRuntimeInformationProvider runtimeInformationProvider, int stackCapacity)
         {
             RuntimeTypesProvider = runtimeInformationProvider;
             StackCapacity = stackCapacity;
-            _objectContainer = new(runtimeInformationProvider.Assembly, runtimeInformationProvider);
+            _memoryManager = memoryManager;
+            _objectContainer = new(runtimeInformationProvider.Assembly, memoryManager, runtimeInformationProvider);
             _multiExternalMethodsProviders = new();
             _multiExternalMethodsProviders.Providers.Add(StandardLibraryExternalMethodsProvider.Instance);
         }
@@ -26,9 +28,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// Create new instance of D# virtual machine
         /// </summary>
         /// <param name="assembly">Assembly to executing</param>
+        /// <param name="memoryManager">Memory manager</param>
         /// <param name="stackCapacity">Stack capacity in items</param>
-        public DSharpVm(IDSharpAssembly assembly, int stackCapacity)
-            : this(new DSharpRuntimeInformationProvider(assembly), stackCapacity)
+        public DSharpVm(IDSharpAssembly assembly, DSharpVmMemoryManager memoryManager, int stackCapacity)
+            : this(memoryManager, new DSharpRuntimeInformationProvider(assembly, memoryManager), stackCapacity)
         {
         }
         /// <summary>
@@ -36,7 +39,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// </summary>
         /// <param name="assembly">Assembly to executing</param>
         public DSharpVm(IDSharpAssembly assembly)
-            : this(assembly, DSharpThread.DefaultStackCapacity)
+            : this(assembly, new(), DSharpThread.DefaultStackCapacity)
         {
         }
 
@@ -71,12 +74,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
         private readonly DSharpObjectsContainer _objectContainer;
         private readonly DSharpMultiExternalMethodsProviders _multiExternalMethodsProviders;
+        private readonly DSharpVmMemoryManager _memoryManager = new();
 
         /// <summary>
         /// Create new D# thread
         /// </summary>
         /// <returns>D# thread</returns>
-        public DSharpThread CreateThread() => new(this, _objectContainer, _multiExternalMethodsProviders, StackCapacity);
+        public DSharpThread CreateThread() => new(this, _objectContainer, _memoryManager, _multiExternalMethodsProviders, StackCapacity);
 
         #region Events handlers
 

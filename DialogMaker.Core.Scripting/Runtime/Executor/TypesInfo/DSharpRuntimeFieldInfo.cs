@@ -78,93 +78,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 stack.PushReference(address);
                 return;
             }
-            if (FieldType->BuildInValueTypeIndex != -1 &&
-                DSharpBuildInTypes.TryGetValueTypeByIndex(FieldType->BuildInValueTypeIndex, out var typeInfo))
-            {
-                if (typeInfo == DSharpBuildInTypes.Int)
-                {
-                    stack.Push(*(int*)pointer);
-                    return;
-                }
-                else if (typeInfo == DSharpBuildInTypes.UnsignedInt)
-                {
-                    stack.Push(*(uint*)pointer);
-                    return;
-                }
-                else if (typeInfo == DSharpBuildInTypes.Boolean)
-                {
-                    stack.Push(*(bool*)pointer);
-                    return;
-                }
-                else if (typeInfo == DSharpBuildInTypes.Char)
-                {
-                    stack.Push(*(char*)pointer);
-                    return;
-                }
-                else if (typeInfo == DSharpBuildInTypes.Byte)
-                {
-                    stack.Push(*pointer);
-                    return;
-                }
-                else if (typeInfo == DSharpBuildInTypes.Double)
-                {
-                    stack.Push(*(double*)pointer);
-                    return;
-                }
-                else if (typeInfo == DSharpBuildInTypes.Single)
-                {
-                    stack.Push(*(float*)pointer);
-                    return;
-                }
-                else if (typeInfo == DSharpBuildInTypes.SignedByte)
-                {
-                    stack.Push(*(sbyte*)pointer);
-                    return;
-                }
-                else if (typeInfo == DSharpBuildInTypes.Short)
-                {
-                    stack.Push(*(short*)pointer);
-                    return;
-                }
-                else if (typeInfo == DSharpBuildInTypes.UnsignedShort)
-                {
-                    stack.Push(*(ushort*)pointer);
-                    return;
-                }
-                else if (typeInfo == DSharpBuildInTypes.Long)
-                {
-                    stack.Push(*(long*)pointer);
-                    return;
-                }
-                else if (typeInfo == DSharpBuildInTypes.UnsignedLong)
-                {
-                    stack.Push(*(ulong*)pointer);
-                    return;
-                }
-                else if (typeInfo == DSharpBuildInTypes.NativeInt)
-                {
-                    stack.Push(*(nint*)pointer);
-                    return;
-                }
-                else if (typeInfo == DSharpBuildInTypes.NativeUnsignedInt)
-                {
-                    stack.Push(*(nuint*)pointer);
-                    return;
-                }
-                else if (typeInfo == DSharpBuildInTypes.Decimal)
-                {
-                    stack.Push(*(decimal*)pointer);
-                    return;
-                }
-            }
 
-            int size = FieldType->Size;
-            var frame = stack.PushStructure(size);
-
-            for (int i = 0; i < size; i++)
-            {
-                frame[i] = pointer[i];
-            }
+            var size = FieldType->Size;
+            var frame = stack.PushStructure(FieldType, new(pointer, size));
         }
 
         /// <summary>

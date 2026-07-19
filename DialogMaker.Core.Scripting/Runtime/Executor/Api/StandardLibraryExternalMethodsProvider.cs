@@ -14,7 +14,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                 }
                 else if (methodInfo.Name == "GetValue")
                 {
-
+                    return GetStringValue;
+                }
+            }
+            if (methodInfo.DeclaringType.FullName == "System.Console")
+            {
+                if (methodInfo.Name == "WriteLine")
+                {
+                    return ConsoleWriteLine;
+                }
+                else if (methodInfo.Name == "Write")
+                {
+                    return ConsoleWrite;
                 }
             }
 
@@ -47,9 +58,43 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                 return '\0';
             }
 
-            var index = indexArg.Buffer.Read<int>();
+            var index = DSharpObjectConverter.ToInt32((DSharpObject*)indexArg.Buffer.StackPointer);
 
             return ((char*)(instance + sizeof(DSharpObject)))[index];
+        }
+
+        #endregion
+
+        #region Console
+
+        private static DSharpLiteralValue? ConsoleWrite(DSharpObject* instance,
+                                                           DSharpRuntimeMethodInfo* methodInfo,
+                                                           UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters,
+                                                           UnmanagedArray<DSharpExecutionLocalVariable> arguments)
+        {
+            if (arguments.Length == 1)
+            {
+                var textArg = arguments[0];
+                var stringInstance = *(DSharpObject**)textArg.Buffer.StackPointer;
+                char* chars = (char*)stringInstance + sizeof(DSharpObject);
+
+                for (int i = 0; i < stringInstance->Length; i++)
+                {
+                    Console.Write(chars[i]);
+                }
+            }
+
+            return null;
+        }
+        private static DSharpLiteralValue? ConsoleWriteLine(DSharpObject* instance,
+                                                            DSharpRuntimeMethodInfo* methodInfo,
+                                                            UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters,
+                                                            UnmanagedArray<DSharpExecutionLocalVariable> arguments)
+        {
+            ConsoleWrite(instance, methodInfo, genericParameters, arguments);
+            Console.WriteLine();
+
+            return null;
         }
 
         #endregion

@@ -1,21 +1,42 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
 {
-    public unsafe class DSharpStack(int stackCapacity) : Disposable, IEnumerable<DSharpStack.FrameInfo>
+    /// <summary>
+    /// D# stack implementation
+    /// </summary>
+    /// <param name="memoryManager">Memory manager for allocating memory for stack</param>
+    /// <param name="stackCapacity">Stack capacity in frames</param>
+    public unsafe class DSharpStack(DSharpVmMemoryManager memoryManager, DSharpRuntimeInformationProvider runtimeInformationProvider, int stackCapacity) 
+        : Disposable, IEnumerable<DSharpStack.FrameInfo>
     {
-        public DSharpStack() : this(DSharpThread.DefaultStackCapacity)
+        /// <summary>
+        /// Create new instance of D# stack
+        /// </summary>
+        /// <param name="memoryManager">Memory manager for allocating memory for stack</param>
+        public DSharpStack(DSharpVmMemoryManager memoryManager, DSharpRuntimeInformationProvider runtimeInformationProvider) 
+            : this(memoryManager, runtimeInformationProvider, DSharpThread.DefaultStackCapacity)
         {
         }
 
+        /// <summary>
+        /// Capacity in frames
+        /// </summary>
         public int Capacity { get; } = stackCapacity;
+        /// <summary>
+        /// Current amount of elements in stack
+        /// </summary>
         public uint Count => (uint)(_frameIndex + 1);
 
-        private readonly FrameInfo* _frames = (FrameInfo*)Marshal.AllocHGlobal(sizeof(FrameInfo) * stackCapacity);
-        private readonly byte* _stack = (byte*)Marshal.AllocHGlobal(stackCapacity * 1024);
+        private readonly DSharpRuntimeInformationProvider _runtimeInformationProvider = runtimeInformationProvider;
+        private readonly DSharpVmMemoryManager _memoryManager = memoryManager;
+        private readonly FrameInfo* _frames = (FrameInfo*)memoryManager.Allocate(DSharpMemoryBlockType.Stack, sizeof(FrameInfo) * stackCapacity);
+        private readonly byte* _stack = (byte*)memoryManager.Allocate(DSharpMemoryBlockType.Stack, stackCapacity * 1024);
         private int _frameIndex = -1;
         private int _allocatedStackSize;
 
@@ -43,70 +64,70 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         }
 
         public void Push() => AllocateSized(DSharpStackValueType.Null, 0);
-        public void Push(byte value) => AllocateValue(DSharpStackValueType.Byte, value);
-        public void Push(sbyte value) => AllocateValue(DSharpStackValueType.SByte, value);
-        public void Push(short value) => AllocateValue(DSharpStackValueType.Short, value);
-        public void Push(ushort value) => AllocateValue(DSharpStackValueType.UShort, value);
-        public void Push(int value) => AllocateValue(DSharpStackValueType.Int, value);
-        public void Push(uint value) => AllocateValue(DSharpStackValueType.UInt, value);
-        public void Push(long value) => AllocateValue(DSharpStackValueType.Long, value);
-        public void Push(ulong value) => AllocateValue(DSharpStackValueType.ULong, value);
-        public void Push(bool value) => AllocateValue(DSharpStackValueType.Bool, value);
-        public void Push(char value) => AllocateValue(DSharpStackValueType.Char, value);
-        public void Push(decimal value) => AllocateValue(DSharpStackValueType.Decimal, value);
-        public void Push(double value) => AllocateValue(DSharpStackValueType.Double, value);
-        public void Push(float value) => AllocateValue(DSharpStackValueType.Float, value);
-        public void Push(nint value) => AllocateValue(DSharpStackValueType.Nint, value);
-        public void Push(nuint value) => AllocateValue(DSharpStackValueType.Nuint, value);
+        public void Push(byte value) => PushNumber(_runtimeInformationProvider.Byte, value);
+        public void Push(sbyte value) => PushNumber(_runtimeInformationProvider.SByte, value);
+        public void Push(short value) => PushNumber(_runtimeInformationProvider.Int16, value);
+        public void Push(ushort value) => PushNumber(_runtimeInformationProvider.UInt16, value);
+        public void Push(int value) => PushNumber(_runtimeInformationProvider.Int32, value);
+        public void Push(uint value) => PushNumber(_runtimeInformationProvider.UInt32, value);
+        public void Push(long value) => PushNumber(_runtimeInformationProvider.Int64, value);
+        public void Push(ulong value) => PushNumber(_runtimeInformationProvider.UInt64, value);
+        public void Push(bool value) => PushNumber(_runtimeInformationProvider.Boolean, value);
+        public void Push(char value) => PushNumber(_runtimeInformationProvider.Char, value);
+        public void Push(decimal value) => PushNumber(_runtimeInformationProvider.Decimal, value);
+        public void Push(double value) => PushNumber(_runtimeInformationProvider.Double, value);
+        public void Push(float value) => PushNumber(_runtimeInformationProvider.Single, value);
+        public void Push(nint value) => PushNumber(_runtimeInformationProvider.IntPtr, value);
+        public void Push(nuint value) => PushNumber(_runtimeInformationProvider.UIntPtr, value);
         public void Push(void* value) => Push((nint)value);
-        public bool Push(DSharpStackValueType type, decimal value)
+        public bool Push(DSharpRuntimeTypeInfo* type, decimal value)
         {
-            if (type == DSharpStackValueType.Byte)
+            if (type == _runtimeInformationProvider.Byte)
             {
                 value = Math.Clamp(value, byte.MinValue, byte.MaxValue);
                 Push(decimal.ToByte(value));
             }
-            else if (type == DSharpStackValueType.SByte)
+            else if (type == _runtimeInformationProvider.SByte)
             {
                 value = Math.Clamp(value, sbyte.MinValue, sbyte.MaxValue);
                 Push(decimal.ToSByte(value));
             }
-            else if (type == DSharpStackValueType.Char)
+            else if (type == _runtimeInformationProvider.Char)
             {
                 value = Math.Clamp(value, char.MinValue, char.MaxValue);
                 Push((char)decimal.ToInt16(value));
             }
-            else if (type == DSharpStackValueType.Short)
+            else if (type == _runtimeInformationProvider.Int16)
             {
                 value = Math.Clamp(value, short.MinValue, short.MaxValue);
                 Push(decimal.ToInt16(value));
             }
-            else if (type == DSharpStackValueType.UShort)
+            else if (type == _runtimeInformationProvider.UInt16)
             {
                 value = Math.Clamp(value, ushort.MinValue, ushort.MaxValue);
                 Push(decimal.ToUInt16(value));
             }
-            else if (type == DSharpStackValueType.Int)
+            else if (type == _runtimeInformationProvider.Int32)
             {
                 value = Math.Clamp(value, int.MinValue, int.MaxValue);
                 Push(decimal.ToInt32(value));
             }
-            else if (type == DSharpStackValueType.UInt)
+            else if (type == _runtimeInformationProvider.UInt32)
             {
                 value = Math.Clamp(value, uint.MinValue, uint.MaxValue);
                 Push(decimal.ToUInt32(value));
             }
-            else if (type == DSharpStackValueType.Long)
+            else if (type == _runtimeInformationProvider.Int64)
             {
                 value = Math.Clamp(value, long.MinValue, long.MaxValue);
                 Push(decimal.ToInt64(value));
             }
-            else if (type == DSharpStackValueType.ULong)
+            else if (type == _runtimeInformationProvider.UInt64)
             {
                 value = Math.Clamp(value, ulong.MinValue, ulong.MaxValue);
                 Push(decimal.ToUInt64(value));
             }
-            else if (type == DSharpStackValueType.Nint)
+            else if (type == _runtimeInformationProvider.IntPtr)
             {
                 if (sizeof(nint) == sizeof(long))
                 {
@@ -119,7 +140,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                     Push((nint)decimal.ToInt32(value));
                 }
             }
-            else if (type == DSharpStackValueType.Nuint)
+            else if (type == _runtimeInformationProvider.UIntPtr)
             {
                 if (sizeof(nuint) == sizeof(long))
                 {
@@ -132,15 +153,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                     Push((nuint)decimal.ToUInt32(value));
                 }
             }
-            else if (type == DSharpStackValueType.Float)
+            else if (type == _runtimeInformationProvider.Single)
             {
                 Push(decimal.ToSingle(value));
             }
-            else if (type == DSharpStackValueType.Double)
+            else if (type == _runtimeInformationProvider.Double)
             {
                 Push(decimal.ToDouble(value));
             }
-            else if (type == DSharpStackValueType.Decimal)
+            else if (type == _runtimeInformationProvider.Decimal)
             {
                 Push(value);
             }
@@ -222,8 +243,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 throw new ArgumentException($"Unsupported literal type: {type}");
             }
         }
-        public void PushReference(nint value) => AllocateValue(DSharpStackValueType.Reference, value);
-        public void PushReference(DSharpObject* value) => PushReference((nint)value);
+        public void PushReference(nint value) => PushReference((DSharpObject*)value);
+        public void PushReference(DSharpObject* value)
+        {
+            if (value != null && value->Type->IsValueType)
+            {
+                var size = value->Type->Size + sizeof(DSharpObject);
+                var frame = AllocateSized(DSharpStackValueType.Structure, size);
+
+                Buffer.MemoryCopy(value, (void*)frame->StackPointer, size, size);
+
+                return;
+            }
+
+            AllocateValue(DSharpStackValueType.Reference, (nint)value);
+        }
         public DSharpMethodExecutor* PushMethodExecutor(DSharpRuntimeMethodInfo* methodInfo, int reservedSize = 0)
         {
             var scope = StartScope();
@@ -234,8 +268,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             return executor;
         }
-        public FrameInfo PushStructure(int size) => *AllocateSized(DSharpStackValueType.Structure, size);
-        public FrameInfo Push(DSharpStackValueType type, int size) => *AllocateSized(type, size);
+        public FrameInfo PushStructure(DSharpRuntimeTypeInfo* type) => CreateStructure(type, new(0, 0));
+        public FrameInfo PushStructure(DSharpRuntimeTypeInfo* type, UnmanagedArray<byte> dataBuffer) => CreateStructure(type, dataBuffer);
+        public FrameInfo* Push(DSharpStackValueType type, int size) => AllocateSized(type, size);
 
         public void Pop(uint offset = 0) => Pop(offset, 1);
         public void Pop(uint offset, uint count)
@@ -342,9 +377,28 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             var frame = &_frames[_frameIndex];
             frame->ValueType = type;
             frame->Size = size;
+            frame->IsNumber = false;
             frame->StackPointer = stackPointer;
 
             return frame;
+        }
+
+        private FrameInfo PushNumber<T>(DSharpRuntimeTypeInfo* type, T value) 
+            where T : unmanaged
+        {
+            UnmanagedArray<byte> dataBuffer = new((byte*)&value, sizeof(T));
+            return CreateStructure(type, dataBuffer);
+        }
+        private FrameInfo CreateStructure(DSharpRuntimeTypeInfo* type, UnmanagedArray<byte> dataBuffer)
+        {
+            int size = type->Size + sizeof(DSharpObject);
+            var frame = AllocateSized(DSharpStackValueType.Structure, size);
+            frame->IsNumber = type->BuildInValueTypeIndex != -1;
+            UnmanagedArray<byte> objectBuffer = new((byte*)frame->StackPointer, size);
+
+            DSharpObjectsContainer.CreateStructure(type, dataBuffer, objectBuffer);
+
+            return *frame;
         }
 
         #endregion
@@ -370,37 +424,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         protected override void Dispose(bool isDisposing)
         {
             base.Dispose(isDisposing);
-            Marshal.FreeHGlobal((nint)_frames);
-            Marshal.FreeHGlobal((nint)_stack);
-        }
 
-        #endregion
-
-        #region Static
-
-        public static ReadOnlyDictionary<DSharpStackValueType, DSharpBuildInTypeInfo> BuildInValueTypes
-        {
-            get
+            if (_memoryManager.IsDisposed)
             {
-                if (field == null)
-                {
-                    Dictionary<DSharpStackValueType, DSharpBuildInTypeInfo> types = [];
-
-                    foreach (var value in Enum.GetValues(typeof(DSharpStackValueType)).Cast<DSharpStackValueType>())
-                    {
-                        var literalTypeAttribute = value.GetEnumAttribute<LiteralTypeAttribute>();
-
-                        if (literalTypeAttribute != null &&
-                            DSharpBuildInTypes.TryGetTypeInfo(literalTypeAttribute.LiteralType, out var info))
-                        {
-                            types.Add(value, info);
-                        }
-                    }
-                    field = new(types);
-                }
-
-                return field;
+                return;
             }
+
+            _memoryManager.Free(_frames);
+            _memoryManager.Free(_stack);
         }
 
         #endregion
@@ -410,16 +441,32 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         [StructLayout(LayoutKind.Sequential)]
         public struct FrameInfo
         {
-            public readonly bool IsNumber => ValueType != DSharpStackValueType.Null &&
-                                             ValueType != DSharpStackValueType.Structure &&
-                                             ValueType != DSharpStackValueType.Reference &&
-                                             ValueType != DSharpStackValueType.Bool &&
-                                             ValueType != DSharpStackValueType.MethodCallingInfo &&
-                                             ValueType != DSharpStackValueType.MethodParametersBuffer &&
-                                             ValueType != DSharpStackValueType.Scope;
+            public readonly DSharpRuntimeTypeInfo* ObjectType
+            {
+                get
+                {
+                    DSharpObject* obj;
+
+                    if (ValueType == DSharpStackValueType.Structure)
+                    {
+                        obj = (DSharpObject*)StackPointer;
+                    }
+                    else if (ValueType == DSharpStackValueType.Reference)
+                    {
+                        obj = *(DSharpObject**)StackPointer;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+
+                    return obj->Type;
+                }
+            }
 
             public DSharpStackValueType ValueType;
             public int Size;
+            public bool IsNumber;
             public nint StackPointer;
 
             public readonly byte this[int index]
@@ -483,30 +530,53 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
             public readonly decimal? ReadAsDecimal()
             {
-                return ValueType switch
+                if (ValueType != DSharpStackValueType.Structure)
                 {
-                    DSharpStackValueType.Byte => Read<byte>(),
-                    DSharpStackValueType.SByte => Read<sbyte>(),
-                    DSharpStackValueType.Char => Read<char>(),
-                    DSharpStackValueType.Short => Read<short>(),
-                    DSharpStackValueType.UShort => Read<ushort>(),
-                    DSharpStackValueType.Int => Read<int>(),
-                    DSharpStackValueType.UInt => Read<uint>(),
-                    DSharpStackValueType.Long => Read<long>(),
-                    DSharpStackValueType.ULong => Read<ulong>(),
-                    DSharpStackValueType.Nint => Read<nint>(),
-                    DSharpStackValueType.Nuint => Read<nuint>(),
-                    DSharpStackValueType.Float => (decimal)Read<float>(),
-                    DSharpStackValueType.Double => (decimal)Read<double>(),
-                    DSharpStackValueType.Decimal => Read<decimal>(),
-                    DSharpStackValueType.Structure => StructureToDecimal((byte*)StackPointer, Size),
-                    _ => null
-                };
+                    return null;
+                }
+
+                var obj = (DSharpObject*)StackPointer;
+
+                if (obj->Type->Converter == null)
+                {
+                    return null;
+                }
+
+                return DSharpObjectConverter.ToObject<decimal>(obj);
+            }
+            public readonly bool ReadAsBoolean()
+            {
+                if (ValueType != DSharpStackValueType.Structure)
+                {
+                    return false;
+                }
+
+                var obj = (DSharpObject*)StackPointer;
+
+                return DSharpObjectConverter.ToBoolean(obj);
+            }
+            public readonly nint ReadReference()
+            {
+                if (ValueType != DSharpStackValueType.Reference)
+                {
+                    return 0;
+                }
+
+                return *(nint*)StackPointer;
             }
 
             public readonly override string ToString()
             {
-                return $"{ValueType}:{Size}";
+                var result = $"{ValueType}:{Size}";
+                var objectType = ObjectType;
+
+                if (objectType != null && objectType->BuildInValueTypeIndex != -1 &&
+                    DSharpBuildInTypes.TryGetValueTypeByIndex(objectType->BuildInValueTypeIndex, out var typeInfo))
+                {
+                    result += $" ({typeInfo})";
+                }
+
+                return result;
             }
 
             public static bool ValueEquals(FrameInfo left, FrameInfo right)
@@ -542,33 +612,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 }
 
                 return true;
-            }
-            private static decimal StructureToDecimal(byte* data, int size)
-            {
-                Span<byte> buffer = new(data, size);
-
-                if (size == sizeof(byte))
-                {
-                    return *data;
-                }
-                else if (size == sizeof(short))
-                {
-                    return BitConverter.ToInt16(buffer);
-                }
-                else if (size == sizeof(int))
-                {
-                    return BitConverter.ToInt32(buffer);
-                }
-                else if (size == sizeof(long))
-                {
-                    return BitConverter.ToInt64(buffer);
-                }
-                else if (size == sizeof(decimal))
-                {
-                    return *(decimal*)data;
-                }
-
-                return 0;
             }
         }
         [StructLayout(LayoutKind.Sequential)]

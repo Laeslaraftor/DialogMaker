@@ -1,5 +1,4 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
-using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 {
@@ -7,18 +6,224 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
     /// Runtime types provides. It builds and stores runtime information about D# types
     /// </summary>
     /// <param name="assembly">Assembly that contains providing types information</param>
-    public unsafe class DSharpRuntimeInformationProvider(IDSharpAssembly assembly) : Disposable
+    /// <param name="memoryManager">Memory manager for allocating memory for runtime information</param>
+    public unsafe class DSharpRuntimeInformationProvider(IDSharpAssembly assembly, DSharpVmMemoryManager memoryManager) : Disposable
     {
         /// <summary>
         /// Assembly that contains providing types information
         /// </summary>
         public IDSharpAssembly Assembly { get; } = assembly;
+        public DSharpRuntimeTypeInfo* Object
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = GetRuntimeInfo(DSharpBuildInTypes.Object);
+                }
+
+                return field;
+            }
+        }
+        public DSharpRuntimeTypeInfo* String
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = GetRuntimeInfo(DSharpBuildInTypes.String);
+                }
+
+                return field;
+            }
+        }
+        public DSharpRuntimeTypeInfo* Byte
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = GetRuntimeInfo(DSharpBuildInTypes.Byte);
+                }
+
+                return field;
+            }
+        }
+        public DSharpRuntimeTypeInfo* SByte
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = GetRuntimeInfo(DSharpBuildInTypes.SignedByte);
+                }
+
+                return field;
+            }
+        }
+        public DSharpRuntimeTypeInfo* Int16
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = GetRuntimeInfo(DSharpBuildInTypes.Short);
+                }
+
+                return field;
+            }
+        }
+        public DSharpRuntimeTypeInfo* UInt16
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = GetRuntimeInfo(DSharpBuildInTypes.UnsignedShort);
+                }
+
+                return field;
+            }
+        }
+        public DSharpRuntimeTypeInfo* Int32
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = GetRuntimeInfo(DSharpBuildInTypes.Int);
+                }
+
+                return field;
+            }
+        }
+        public DSharpRuntimeTypeInfo* UInt32
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = GetRuntimeInfo(DSharpBuildInTypes.UnsignedInt);
+                }
+
+                return field;
+            }
+        }
+        public DSharpRuntimeTypeInfo* Int64
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = GetRuntimeInfo(DSharpBuildInTypes.Long);
+                }
+
+                return field;
+            }
+        }
+        public DSharpRuntimeTypeInfo* UInt64
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = GetRuntimeInfo(DSharpBuildInTypes.UnsignedLong);
+                }
+
+                return field;
+            }
+        }
+        public DSharpRuntimeTypeInfo* Single
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = GetRuntimeInfo(DSharpBuildInTypes.Single);
+                }
+
+                return field;
+            }
+        }
+        public DSharpRuntimeTypeInfo* Double
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = GetRuntimeInfo(DSharpBuildInTypes.Double);
+                }
+
+                return field;
+            }
+        }
+        public DSharpRuntimeTypeInfo* Decimal
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = GetRuntimeInfo(DSharpBuildInTypes.Decimal);
+                }
+
+                return field;
+            }
+        }
+        public DSharpRuntimeTypeInfo* IntPtr
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = GetRuntimeInfo(DSharpBuildInTypes.NativeInt);
+                }
+
+                return field;
+            }
+        }
+        public DSharpRuntimeTypeInfo* UIntPtr
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = GetRuntimeInfo(DSharpBuildInTypes.NativeUnsignedInt);
+                }
+
+                return field;
+            }
+        }
+        public DSharpRuntimeTypeInfo* Char
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = GetRuntimeInfo(DSharpBuildInTypes.Char);
+                }
+
+                return field;
+            }
+        }
+        public DSharpRuntimeTypeInfo* Boolean
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = GetRuntimeInfo(DSharpBuildInTypes.Boolean);
+                }
+
+                return field;
+            }
+        }
 
         // DSharpRuntimeTypeInfo**
         private readonly Dictionary<DSharpMetadataToken, nint> _types = [];
         private readonly Dictionary<DSharpMetadataToken, nint> _staticMethods = [];
         private readonly Dictionary<DSharpMetadataToken, nint> _staticProperties = [];
         private readonly Dictionary<DSharpMetadataToken, nint> _staticFields = [];
+        private readonly DSharpVmMemoryManager _memoryManager = memoryManager;
 
         #region Controls
 
@@ -36,7 +241,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             }
             if (!_types.TryGetValue(type.MetadataToken, out var typeReference))
             {
-                typeReference = Marshal.AllocHGlobal(sizeof(nint));
+                typeReference = _memoryManager.Allocate(DSharpMemoryBlockType.TypeInformation, sizeof(nint));
                 _types.Add(type.MetadataToken, typeReference);
 
                 *(DSharpRuntimeTypeInfo**)typeReference = CreateTypeInfo(type, (DSharpRuntimeTypeInfo**)typeReference);
@@ -55,6 +260,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             var type = (IDSharpType)Assembly.GetType(metadataToken);
             return GetRuntimeInfo(type);
         }
+        /// <summary>
+        /// Get runtime information about specified type
+        /// </summary>
+        /// <param name="buildInTypeInfo">Information about build-in type</param>
+        /// <returns>Runtime information about specified type</returns>
+        /// <exception cref="ObjectDisposedException"></exception>
+        public DSharpRuntimeTypeInfo* GetRuntimeInfo(DSharpBuildInTypeInfo buildInTypeInfo)
+        {
+            var type = Assembly.GetType(buildInTypeInfo);
+            return GetRuntimeInfo(type);
+        }
         public DSharpRuntimeBytecode* GetRuntimeBytecode(DSharpRuntimeMethodInfo* methodInfo)
         {
             if (methodInfo->ParsedBytecode != null)
@@ -66,7 +282,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 throw new InvalidOperationException("Unable to get bytecode for extern method");
             }
 
-            methodInfo->ParsedBytecode = DSharpRuntimeBytecode.Parse(this, methodInfo->Bytecode);
+            methodInfo->ParsedBytecode = DSharpRuntimeBytecode.Parse(_memoryManager, this, methodInfo->Bytecode);
 
             return methodInfo->ParsedBytecode;
         }
@@ -82,7 +298,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             }
 
             var typeInfo = GetRuntimeInfo(methodInfo.DeclaringType);
-            
+
             if (typeInfo->TryGetMethod(metadataToken, out var runtimeMethod))
             {
                 return runtimeMethod;
@@ -102,7 +318,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             }
 
             var typeInfo = GetRuntimeInfo(propertyInfo.DeclaringType);
-            
+
             if (typeInfo->TryGetProperty(metadataToken, out var runtimeProperty))
             {
                 return runtimeProperty;
@@ -122,7 +338,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             }
 
             var typeInfo = GetRuntimeInfo(fieldInfo.DeclaringType);
-            
+
             if (typeInfo->TryGetField(metadataToken, out var runtimeField))
             {
                 return runtimeField;
@@ -214,16 +430,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             ParseType(type);
 
             int staticSize = type.GetSize(false, false);
-            int infoSize = sizeof(DSharpRuntimeTypeInfo) +
-                           staticSize +
+            int infoSize = staticSize +
                            generics.Length * sizeof(Pointer<DSharpRuntimeTypeInfo>) +
                            baseTypes.Length * sizeof(Pointer<DSharpRuntimeTypeInfo>) +
                            memberInfoSize.Values.Sum() +
                            type.Name.Length * sizeof(char) +
                            ((type.Namespace?.Length ?? 0) * sizeof(char));
 
-            var info = (DSharpRuntimeTypeInfo*)Marshal.AllocHGlobal(infoSize);
+            var info = _memoryManager.Allocate<DSharpRuntimeTypeInfo>(DSharpMemoryBlockType.TypeInformation, infoSize);
             *reference = info;
+            infoSize += sizeof(DSharpRuntimeTypeInfo);
             MemoryBuilder builder = new((nint)info, infoSize);
             builder.Allocate(sizeof(DSharpRuntimeTypeInfo));
 
@@ -253,6 +469,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             {
                 info->BuildInValueTypeIndex = -1;
             }
+            if (DSharpBuildInTypes.TryGetInfo(type, out var buildInTypeInfo))
+            {
+                info->Converter = buildInTypeInfo.Converter;
+            }
 
             for (int i = 0; i < constructors.Length; i++)
             {
@@ -276,7 +496,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 CreateFieldInfo(info, fields[i], field, ref builder);
 
                 int fieldSize = field->FieldType->ItemSize;
-                
+
                 if (field->IsStatic)
                 {
                     field->Offset = staticFieldOffset;
@@ -292,7 +512,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             {
                 var property = properties[i];
 
-                if (property.OverrideProperty == null || 
+                if (property.OverrideProperty == null ||
                     !info->TryGetProperty(property.MetadataToken, out var overridenProperty))
                 {
                     continue;
@@ -304,7 +524,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             {
                 var method = methods[i];
 
-                if (method.OverrideMethod == null || 
+                if (method.OverrideMethod == null ||
                     !info->TryGetMethod(method.MetadataToken, out var overridenMethod))
                 {
                     continue;
@@ -344,7 +564,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 info->Bytecode = builder.AllocateArray<byte>(bytecode.Size);
                 bytecode.CopyTo(info->Bytecode);
             }
-            
+
             if (method.IsStatic)
             {
                 _staticMethods.Add(method.MetadataToken, (nint)info);
@@ -358,7 +578,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             info->IsStatic = property.IsStatic;
             info->DeclaringType = type;
             info->PropertyType = GetRuntimeInfo(property.PropertyType);
-            
+
             if (property.Getter != null && type->TryGetMethod(property.Getter.MetadataToken, out var getter))
             {
                 info->Getter = getter;
@@ -394,21 +614,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         {
             base.Dispose(isDisposing);
 
-            foreach (var type in _types.Values)
+            if (!_memoryManager.IsDisposed)
             {
-                var typeInfo = (DSharpRuntimeTypeInfo*)type;
-
-                for (int i = 0; i < typeInfo->Methods.Length; i++)
+                foreach (var typeReference in _types.Values)
                 {
-                    var method = typeInfo->Methods[i];
+                    var typeInfo = *(DSharpRuntimeTypeInfo**)typeReference;
 
-                    if (method.ParsedBytecode != null)
+                    for (int i = 0; i < typeInfo->Methods.Length; i++)
                     {
-                        Marshal.FreeHGlobal((nint)method.ParsedBytecode);
-                    }
-                }
+                        var method = typeInfo->Methods[i];
 
-                Marshal.FreeHGlobal(type);
+                        if (method.ParsedBytecode != null)
+                        {
+                            _memoryManager.Free(method.ParsedBytecode);
+                        }
+                    }
+
+                    _memoryManager.Free(typeInfo);
+                    _memoryManager.Free(typeReference);
+                }
             }
 
             _types.Clear();

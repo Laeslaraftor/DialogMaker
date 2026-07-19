@@ -155,22 +155,5 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         }
 
         #endregion
-
-        #region Static
-
-        /// <summary>
-        /// Create array in unmanaged memory
-        /// </summary>
-        /// <param name="length">Length of array</param>
-        /// <returns>Unmanaged array</returns>
-        public static UnmanagedArray<T> Create(int length)
-        {
-            int size = sizeof(T) * length;
-            T* items = (T*)Marshal.AllocHGlobal(size);
-
-            return new(items, size);
-        }
-
-        #endregion
     }
 }

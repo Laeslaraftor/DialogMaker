@@ -31,10 +31,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <summary>
         /// Parse runtime bytecode from raw data
         /// </summary>
+        /// <param name="memoryManager">Memory manager for allocating memory for bytecode</param>
         /// <param name="typesProvider">Types provider for getting runtime type information</param>
         /// <param name="bytecode">Raw bytecode data</param>
         /// <returns>Runtime bytecode</returns>
-        public static DSharpRuntimeBytecode* Parse(DSharpRuntimeInformationProvider typesProvider, UnmanagedArray<byte> bytecode)
+        public static DSharpRuntimeBytecode* Parse(DSharpVmMemoryManager memoryManager, DSharpRuntimeInformationProvider typesProvider, UnmanagedArray<byte> bytecode)
         {
             UnmanagedStream stream = bytecode.ToStream();
             int variablesCount = stream.Read<int>();
@@ -55,11 +56,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
                 parametersCount += DSharpRuntimeInstruction.GetArgumentsCount(typesProvider, streamPointer);
             }
 
-            int runtimeBytecodeSize = sizeof(DSharpRuntimeBytecode) +
-                                      variablesCount * sizeof(DSharpRuntimeParameterInfo) +
+            int runtimeBytecodeSize = variablesCount * sizeof(DSharpRuntimeParameterInfo) +
                                       parametersCount * sizeof(nint) +
                                       instructionsCount * sizeof(DSharpRuntimeInstruction);
-            var runtimeBytecode = (DSharpRuntimeBytecode*)Marshal.AllocHGlobal(runtimeBytecodeSize);
+            var runtimeBytecode = memoryManager.Allocate<DSharpRuntimeBytecode>(DSharpMemoryBlockType.Bytecode, runtimeBytecodeSize);
+            runtimeBytecodeSize += sizeof(DSharpRuntimeBytecode);
             MemoryBuilder builder = new((nint)runtimeBytecode, runtimeBytecodeSize);
             builder.Allocate(sizeof(DSharpRuntimeBytecode));
 

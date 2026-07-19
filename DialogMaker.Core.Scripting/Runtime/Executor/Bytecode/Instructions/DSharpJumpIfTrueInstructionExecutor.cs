@@ -17,9 +17,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         protected override bool CanJump(DSharpRuntimeInstruction instruction, DSharpExecutionContext context)
         {
             var lastValue = context.Stack.Peek();
-            return lastValue.Read<bool>();
+            return lastValue.ReadAsBoolean();
         }
-        protected override bool IsNotValid(DSharpRuntimeInstruction instruction, DSharpExecutionContext context, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
+        protected override unsafe bool IsNotValid(DSharpRuntimeInstruction instruction, DSharpExecutionContext context, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
         {
             if (base.IsNotValid(instruction, context, out errorCallback))
             {
@@ -29,7 +29,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             {
                 var lastValue = context.Stack.Peek();
 
-                if (lastValue.ValueType != DSharpStackValueType.Bool)
+                if (lastValue.ObjectType != context.TypesProvider.Boolean)
                 {
                     errorCallback = context.ThrowExecutionException($"Unable to jump with condition: last stack value should be boolean, got {lastValue.ValueType}");
                     return true;

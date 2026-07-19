@@ -22,7 +22,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 return error;
             }
 
-            var argsFrame = context.Stack.Push(DSharpStackValueType.MethodParametersBuffer, sizeof(DSharpExecutionLocalVariable) * parametersCount);
+            var argsFrame = *context.Stack.Push(DSharpStackValueType.MethodParametersBuffer, sizeof(DSharpExecutionLocalVariable) * parametersCount);
             UnmanagedArray<DSharpExecutionLocalVariable> arguments = new(argsFrame.StackPointer, parametersCount);
 
             for (int i = 0; i < parametersCount; i++)

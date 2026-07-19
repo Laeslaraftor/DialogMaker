@@ -8,10 +8,10 @@ namespace DialogMaker.ScriptingExample
     {
         public DSharpExternalMethod? GetMethod(IDSharpMethodInfo methodInfo)
         {
-            if (methodInfo.Name == "WriteLine" && methodInfo.DeclaringType.Name == "Console")
-            {
-                return ConsoleWriteLine;
-            }
+            //if (methodInfo.Name == "WriteLine" && methodInfo.DeclaringType.Name == "Console")
+            //{
+            //    return ConsoleWriteLine;
+            //}
 
             throw new NotImplementedException();
         }
@@ -25,7 +25,7 @@ namespace DialogMaker.ScriptingExample
             {
                 var textArg = arguments[0];
                 var stringInstance = *(DSharpObject**)textArg.Buffer.StackPointer;
-                string text = DSharpObject.ToString(stringInstance);
+                string text = DSharpObjectConverter.ToString(stringInstance);
 
                 Console.WriteLine(text);
             }

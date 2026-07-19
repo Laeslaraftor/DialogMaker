@@ -31,11 +31,11 @@ namespace DialogMaker.Core.Scripting.Runtime
         {
             if (parameterInfo->Type->IsValueType)
             {
-                stack.PushStructure(parameterInfo->Type->Size);
+                stack.PushStructure(parameterInfo->Type);
             }
             else
             {
-                stack.Push(IntPtr.Zero);
+                stack.PushReference(IntPtr.Zero);
             }
 
             return new()
