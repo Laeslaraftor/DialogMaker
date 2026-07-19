@@ -449,11 +449,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             info->IsGeneric = type.IsGeneric;
             info->Name = builder.AllocateString(type.Name);
             info->Namespace = builder.AllocateString(type.Namespace);
-            info->Constructors = builder.AllocateArray<DSharpRuntimeMethodInfo>(constructors.Length);
-            info->Methods = builder.AllocateArray<DSharpRuntimeMethodInfo>(methods.Count);
-            info->Properties = builder.AllocateArray<DSharpRuntimePropertyInfo>(properties.Count);
-            info->Fields = builder.AllocateArray<DSharpRuntimeFieldInfo>(fields.Count);
+            info->Constructors = builder.AllocateArray<Pointer<DSharpRuntimeMethodInfo>>(constructors.Length);
+            info->Methods = builder.AllocateArray<Pointer<DSharpRuntimeMethodInfo>>(methods.Count);
+            info->Properties = builder.AllocateArray<Pointer<DSharpRuntimePropertyInfo>>(properties.Count);
+            info->Fields = builder.AllocateArray<Pointer<DSharpRuntimeFieldInfo>>(fields.Count);
             info->StaticFieldsData = builder.AllocateArray<byte>(staticSize);
+            info->IsStaticInitializerCalled = false;
 
             runtimeGenericParameters = CreateTypes(generics);
             runtimeBaseTypes = CreateTypes(baseTypes);
@@ -565,6 +566,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 bytecode.CopyTo(info->Bytecode);
             }
 
+            if (method.MethodType == DSharpMethodType.Initializer)
+            {
+                if (method.IsStatic)
+                {
+                    type->StaticInitializer = info;
+                }
+                else
+                {
+                    type->Initializer = info;
+                }
+            }
+            else if (method.MethodType == DSharpMethodType.Finalizer)
+            {
+                type->Finalizer = info;
+            }
             if (method.IsStatic)
             {
                 _staticMethods.Add(method.MetadataToken, (nint)info);

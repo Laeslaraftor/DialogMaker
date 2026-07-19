@@ -76,7 +76,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
             {
                 var textArg = arguments[0];
                 var stringInstance = *(DSharpObject**)textArg.Buffer.StackPointer;
-                char* chars = (char*)stringInstance + sizeof(DSharpObject);
+                char* chars = (char*)DSharpObject.GetData(stringInstance);
 
                 for (int i = 0; i < stringInstance->Length; i++)
                 {

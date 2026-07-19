@@ -1,5 +1,4 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor;
-using Newtonsoft.Json.Linq;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
@@ -16,7 +15,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         public static string ToString(DSharpObject* obj)
         {
             CheckType(obj, DSharpBuildInTypes.String);
-            char* chars = (char*)obj + sizeof(DSharpObject);
+            char* chars = (char*)DSharpObject.GetData(obj);
 
             return new(chars, 0, obj->Length);
         }

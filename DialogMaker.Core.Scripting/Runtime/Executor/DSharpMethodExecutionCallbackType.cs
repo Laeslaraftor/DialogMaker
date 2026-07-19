@@ -20,6 +20,11 @@
         /// <summary>
         /// Method requested a call to another method and is awaiting the resumption of its own execution upon the latter's completion.
         /// </summary>
-        RequiredCallingNextMethod
+        RequiredCallingNextMethod,
+        /// <summary>
+        /// Method requested object initialization. 
+        /// It provide new instance of object and constructor (not always)
+        /// </summary>
+        InitializeObject,
     }
 }

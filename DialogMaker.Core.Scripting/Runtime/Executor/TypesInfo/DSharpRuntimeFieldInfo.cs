@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 {
@@ -32,21 +33,35 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         #region Controls
 
         /// <summary>
+        /// Is field null at specified object
+        /// </summary>
+        /// <param name="instance">D# object instance to check field</param>
+        /// <returns>Is field null</returns>
+        public bool IsNull(DSharpObject* instance)
+        {
+            var data = GetDataPointer(instance);
+
+            if (FieldType->IsValueType)
+            {
+                return RuntimeExtensions.IsEmpty(data, FieldType->ItemSize);
+            }
+
+            return *(nint*)data == 0;
+        }
+
+        /// <summary>
         /// Read field value to managed byte array
         /// </summary>
         /// <param name="instance">Object instance</param>
         /// <returns>Field value as byte array</returns>
-        public byte[] Read(DSharpObject* instance)
+        public DSharpObject* Read(DSharpObject* instance)
         {
-            byte[] buffer = new byte[FieldType->ItemSize];
-            byte* pointer = GetDataPointer(instance);
-
-            for (int i = 0; i < buffer.Length; i++)
+            if (IsNull(instance))
             {
-                buffer[i] = pointer[i];
+                return null;
             }
 
-            return buffer;
+            return GetValuePointer(instance);
         }
         /// <summary>
         /// Read field value to unmanaged byte array
@@ -55,13 +70,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <param name="buffer">Unmanaged array to write field value</param>
         public void Read(DSharpObject* instance, UnmanagedArray<byte> buffer)
         {
-            int size = FieldType->ItemSize;
-            byte* pointer = GetDataPointer(instance);
-
-            for (int i = 0; i < Math.Min(size, buffer.Length); i++)
+            if (IsNull(instance))
             {
-                buffer[i] = pointer[i];
+                buffer.Fill(0);
+                return;
             }
+
+            var value = GetValuePointer(instance);
+            DSharpObject.Copy(value, buffer);
         }
         /// <summary>
         /// Read field value and push it to stack
@@ -70,17 +86,29 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <param name="stack">Stack for pushing value</param>
         public void Read(DSharpObject* instance, DSharpStack stack)
         {
-            byte* pointer = GetDataPointer(instance);
+            var value = GetValuePointer(instance);
+            bool isNull = IsNull(instance);
 
-            if (!FieldType->IsValueType)
+            if (FieldType->IsValueType)
             {
-                nint address = *(nint*)pointer;
-                stack.PushReference(address);
+                if (isNull)
+                {
+                    stack.PushStructure(FieldType, new(0, 0));
+                }
+                else
+                {
+                    stack.PushStructure(value, false);
+                }
+
+                return;
+            }
+            if (isNull)
+            {
+                stack.PushNull();
                 return;
             }
 
-            var size = FieldType->Size;
-            var frame = stack.PushStructure(FieldType, new(pointer, size));
+            stack.PushReference(value);
         }
 
         /// <summary>
@@ -88,14 +116,48 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// </summary>
         /// <param name="instance">Object instance</param>
         /// <param name="data">Data for writing to field</param>
-        public void Write(DSharpObject* instance, byte[] data)
+        public void Write(DSharpObjectsContainer objectsContainer, DSharpObject* instance, DSharpObject* value)
         {
-            var size = FieldType->Size;
             byte* pointer = GetDataPointer(instance);
+            bool valueIsNull = DSharpObject.IsNullOrEmpty(value);
+            bool isReferenceTypeField = !FieldType->IsValueType;
 
-            for (int i = 0; i < Math.Min(size, data.Length); i++)
+            if (isReferenceTypeField)
             {
-                pointer[i] = data[i];
+                var currentValue = Read(instance);
+
+                if (currentValue != null)
+                {
+                    currentValue->ReferencesCount--;
+                }
+            }
+            if (valueIsNull)
+            {
+                if (isReferenceTypeField)
+                {
+                    *(nint*)pointer = 0;
+                }
+                else
+                {
+                    RuntimeExtensions.FillZero(pointer, FieldType->ItemSize);
+                }
+            }
+            else
+            {
+                if (isReferenceTypeField)
+                {
+                    if (value->Placement == DSharpObjectPlacement.Buffer)
+                    {
+                        value = objectsContainer.Box(value);
+                    }
+
+                    *(nint*)pointer = (nint)value;
+                    value->ReferencesCount++;
+                }
+                else
+                {
+                    DSharpObject.Copy(value, (DSharpObject*)pointer);
+                }
             }
         }
         /// <summary>
@@ -103,45 +165,41 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// </summary>
         /// <param name="instance">Object instance</param>
         /// <param name="data">Data for writing to field</param>
-        public void Write(DSharpObject* instance, UnmanagedArray<byte> buffer)
+        public void Write(DSharpObjectsContainer objectsContainer, DSharpObject* instance, UnmanagedArray<byte> buffer)
         {
-            int size = FieldType->ItemSize;
-            byte* pointer = GetDataPointer(instance);
-
-            for (int i = 0; i < Math.Min(size, buffer.Length); i++)
+            if (buffer.Length == 0)
             {
-                pointer[i] = buffer[i];
+                Write(objectsContainer, instance, DSharpObject.Null);
+                return;
             }
+
+            DSharpObject* obj = (DSharpObject*)buffer.GetItemReference(0);
+            Write(objectsContainer, instance, obj);
         }
         /// <summary>
         /// Write current stack value to field
         /// </summary>
         /// <param name="instance">Object instance</param>
         /// <param name="stack">Stack for writing it's current value to field</param>
-        public void Write(DSharpObject* instance, DSharpStack stack)
+        public void Write(DSharpObjectsContainer objectsContainer, DSharpObject* instance, DSharpStack stack)
         {
-            int size = FieldType->ItemSize;
-            byte* pointer = GetDataPointer(instance);
-            DSharpStack.FrameInfo? frame = null;
+            var frame = stack.Peek(0);
 
-            if (stack.Count != 0)
+            if (frame.ValueType == DSharpStackValueType.Structure)
             {
-                frame = stack.Peek();
+                Write(objectsContainer, instance, (DSharpObject*)frame.StackPointer);
             }
-
-            if (frame == null || frame.Value.Size == 0)
+            else if (frame.ValueType == DSharpStackValueType.Reference)
             {
-                for (int i = 0; i < size; i++)
-                {
-                    pointer[i] = 0;
-                }
-
-                return;
+                Write(objectsContainer, instance, (DSharpObject*)frame.ReadReference());
             }
-
-            for (int i = 0; i < Math.Min(size, frame.Value.Size); i++)
+            else if (frame.ValueType == DSharpStackValueType.Null)
             {
-                pointer[i] = frame.Value[i];
+                Write(objectsContainer, instance, DSharpObject.Null);
+            }
+            else
+            {
+                throw new InvalidOperationException($"Unable to write value to field from stack with type \"{frame.ValueType}\"");
             }
         }
 
@@ -159,6 +217,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             }
 
             return data + Offset;
+        }
+        private DSharpObject* GetValuePointer(DSharpObject* instance)
+        {
+            byte* data = GetDataPointer(instance);
+
+            if (FieldType->IsValueType)
+            {
+                return (DSharpObject*)data;
+            }
+
+            return *(DSharpObject**)data;
         }
 
         #endregion

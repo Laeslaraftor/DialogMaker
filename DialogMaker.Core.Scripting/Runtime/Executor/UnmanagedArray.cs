@@ -91,6 +91,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             return *(TCast*)GetItemReference(index);
         }
         /// <summary>
+        /// Fill array with specified value
+        /// </summary>
+        /// <param name="value">Value for filling array</param>
+        public void Fill(T value)
+        {
+            if (0 > _length)
+            {
+                return;
+            }
+
+            for (int i = 0; i < _length; i++)
+            {
+                _items[i] = value;
+            }
+        }
+        /// <summary>
         /// Get unmanaged stream from current array
         /// </summary>
         /// <returns>Unmanaged stream</returns>

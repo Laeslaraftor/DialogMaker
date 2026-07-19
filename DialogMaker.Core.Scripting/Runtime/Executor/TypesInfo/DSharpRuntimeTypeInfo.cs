@@ -75,19 +75,37 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <summary>
         /// Array of constructors
         /// </summary>
-        public UnmanagedArray<DSharpRuntimeMethodInfo> Constructors;
+        public UnmanagedArray<Pointer<DSharpRuntimeMethodInfo>> Constructors;
         /// <summary>
         /// Array of all methods includes inherited
         /// </summary>
-        public UnmanagedArray<DSharpRuntimeMethodInfo> Methods;
+        public UnmanagedArray<Pointer<DSharpRuntimeMethodInfo>> Methods;
         /// <summary>
         /// Array of properties includes inherited
         /// </summary>
-        public UnmanagedArray<DSharpRuntimePropertyInfo> Properties;
+        public UnmanagedArray<Pointer<DSharpRuntimePropertyInfo>> Properties;
         /// <summary>
         /// Array of fields includes inherited
         /// </summary>
-        public UnmanagedArray<DSharpRuntimeFieldInfo> Fields;
+        public UnmanagedArray<Pointer<DSharpRuntimeFieldInfo>> Fields;
+        /// <summary>
+        /// Method that calls when object instance is clearing before it will be deleted by GC
+        /// </summary>
+        public DSharpRuntimeMethodInfo* Finalizer;
+        /// <summary>
+        /// Method that calls when object instance created before any constructors.
+        /// It sets fields values
+        /// </summary>
+        public DSharpRuntimeMethodInfo* Initializer;
+        /// <summary>
+        /// Method that calls when any static accessed first time.
+        /// It sets static fields values
+        /// </summary>
+        public DSharpRuntimeMethodInfo* StaticInitializer;
+        /// <summary>
+        /// Is static initializer already called
+        /// </summary>
+        public bool IsStaticInitializerCalled;
         /// <summary>
         /// Reserved space for static fields values
         /// </summary>
@@ -173,12 +191,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             return name;
         }
 
-        private readonly bool TryGetMember<T>(UnmanagedArray<T> members, DSharpMetadataToken metadataToken, out T* result)
+        private readonly bool TryGetMember<T>(UnmanagedArray<Pointer<T>> members, DSharpMetadataToken metadataToken, out T* result)
             where T : unmanaged
         {
             for (int i = 0; i < members.Length; i++)
             {
-                var member = members.GetItemReference(i);
+                T* member = members[i];
 
                 if (*(DSharpMetadataToken*)member == metadataToken)
                 {

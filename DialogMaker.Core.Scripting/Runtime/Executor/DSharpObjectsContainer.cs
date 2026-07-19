@@ -76,12 +76,33 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             var runtimeStringType = _runtimeInformationProvider.GetRuntimeInfo(stringType);
             var obj = Create(runtimeStringType, runtimeStringType->Size + sizeof(char) * str.Length);
             obj->Length = str.Length;
-            char* chars = (char*)obj + sizeof(DSharpObject);
+            char* chars = (char*)DSharpObject.GetData(obj);
 
             for (int i = 0; i < str.Length; i++)
             {
                 chars[i] = str[i];
             }
+
+            return obj;
+        }
+
+        /// <summary>
+        /// Box structure into heap
+        /// </summary>
+        /// <param name="structure">Structure that need to boxed</param>
+        /// <returns>Pointer to boxed structure</returns>
+        public DSharpObject* Box(DSharpObject* structure)
+        {
+            if (structure->Placement == DSharpObjectPlacement.Heap)
+            {
+                return structure;
+            }
+
+            var obj = _memoryManager.Allocate<DSharpObject>(DSharpMemoryBlockType.Object, structure->Size);
+
+            DSharpObject.Copy(structure, obj);
+
+            obj->Placement = DSharpObjectPlacement.Heap;
 
             return obj;
         }
@@ -198,6 +219,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
 
             var obj = _memoryManager.Allocate<DSharpObject>(DSharpMemoryBlockType.Object, size);
+            obj->Placement = DSharpObjectPlacement.Heap;
             obj->Type = type;
             obj->Size = size;
             obj->Length = 0;
@@ -246,17 +268,27 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
 
             DSharpObject* obj = (DSharpObject*)buffer.GetItemReference(0);
+            obj->Placement = DSharpObjectPlacement.Buffer;
             obj->Type = type;
             obj->Length = 0;
             obj->Size = type->Size;
 
             int sizeForData = buffer.Length - sizeof(DSharpObject);
-            byte* objectDataBuffer = buffer.GetItemReference(sizeof(DSharpObject));
+            byte* objectDataBuffer = DSharpObject.GetData(obj);
 
-            for (int i = 0; i < Math.Min(sizeForData, data.Length); i++)
+            if (0 > sizeForData)
             {
-                objectDataBuffer[i] = data[i];
+                return obj;
             }
+            if (data.Length == 0 && sizeForData > 0)
+            {
+                RuntimeExtensions.FillZero(objectDataBuffer, sizeForData);
+                return obj;
+            }
+
+            var dataBuffer = data.GetItemReference(0);
+
+            Buffer.MemoryCopy(dataBuffer, objectDataBuffer, sizeForData, data.Length);
 
             return obj;
         }

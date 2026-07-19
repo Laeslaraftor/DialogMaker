@@ -10,7 +10,7 @@ namespace DialogMaker.Core.Tests
         {
             DSharpStack stack = new();
 
-            stack.Push();
+            stack.PushNull();
             stack.Push(1.22d);
             stack.Push(10);
 

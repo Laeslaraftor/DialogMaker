@@ -1,6 +1,7 @@
 ﻿#if NETCOREAPP3_0_OR_GREATER
 using System.Numerics;
 #endif
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
@@ -46,7 +47,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <returns>Address to allocated memory</returns>
         /// <exception cref="ObjectDisposedException">Unable to allocate memory at disposed memory manager</exception>
         /// <exception cref="ArgumentException">Size for allocation should be greater then 0</exception>
-        public nint Allocate(DSharpMemoryBlockType type, int size)
+        public unsafe nint Allocate(DSharpMemoryBlockType type, int size)
         {
             if (IsDisposed)
             {
@@ -81,6 +82,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
                 _usedBlocks.Add(address, new(type, size, roundedSize));
                 UsedMemory += size;
+            }
+
+            if (type == DSharpMemoryBlockType.TypeInformation ||
+                type == DSharpMemoryBlockType.Object)
+            {
+                RuntimeExtensions.FillZero((void*)address, roundedSize);
             }
 
             return address;

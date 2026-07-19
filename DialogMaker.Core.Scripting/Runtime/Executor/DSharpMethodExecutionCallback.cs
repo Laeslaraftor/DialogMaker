@@ -74,6 +74,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             CallingGenericParameters = genericParameters,
             CallingArguments = arguments
         };
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpMethodExecutionCallback InitializeObject(DSharpObject* objectInstance, DSharpRuntimeMethodInfo* constructor, UnmanagedArray<DSharpExecutionLocalVariable> arguments) => new()
+        {
+            Type = DSharpMethodExecutionCallbackType.InitializeObject,
+            NextMethod = constructor,
+            ObjectInstance = objectInstance,
+            CallingArguments = arguments
+        };
+
 
         #endregion
     }

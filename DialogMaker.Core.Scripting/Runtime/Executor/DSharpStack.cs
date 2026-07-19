@@ -12,14 +12,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     /// </summary>
     /// <param name="memoryManager">Memory manager for allocating memory for stack</param>
     /// <param name="stackCapacity">Stack capacity in frames</param>
-    public unsafe class DSharpStack(DSharpVmMemoryManager memoryManager, DSharpRuntimeInformationProvider runtimeInformationProvider, int stackCapacity) 
+    public unsafe class DSharpStack(DSharpVmMemoryManager memoryManager, DSharpRuntimeInformationProvider runtimeInformationProvider, int stackCapacity)
         : Disposable, IEnumerable<DSharpStack.FrameInfo>
     {
         /// <summary>
         /// Create new instance of D# stack
         /// </summary>
         /// <param name="memoryManager">Memory manager for allocating memory for stack</param>
-        public DSharpStack(DSharpVmMemoryManager memoryManager, DSharpRuntimeInformationProvider runtimeInformationProvider) 
+        public DSharpStack(DSharpVmMemoryManager memoryManager, DSharpRuntimeInformationProvider runtimeInformationProvider)
             : this(memoryManager, runtimeInformationProvider, DSharpThread.DefaultStackCapacity)
         {
         }
@@ -63,7 +63,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             return _frames[index];
         }
 
-        public void Push() => AllocateSized(DSharpStackValueType.Null, 0);
+        public FrameInfo PushNull() => *AllocateSized(DSharpStackValueType.Null, 0);
         public void Push(byte value) => PushNumber(_runtimeInformationProvider.Byte, value);
         public void Push(sbyte value) => PushNumber(_runtimeInformationProvider.SByte, value);
         public void Push(short value) => PushNumber(_runtimeInformationProvider.Int16, value);
@@ -176,7 +176,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         {
             if (type == DSharpLiteralType.Null)
             {
-                Push();
+                PushNull();
             }
             else if (type == DSharpLiteralType.Bool)
             {
@@ -244,19 +244,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
         }
         public void PushReference(nint value) => PushReference((DSharpObject*)value);
-        public void PushReference(DSharpObject* value)
+        public FrameInfo PushReference(DSharpObject* value)
         {
-            if (value != null && value->Type->IsValueType)
+            if (value != null && !value->IsReferenceObject)
             {
-                var size = value->Type->Size + sizeof(DSharpObject);
-                var frame = AllocateSized(DSharpStackValueType.Structure, size);
-
-                Buffer.MemoryCopy(value, (void*)frame->StackPointer, size, size);
-
-                return;
+                return PushStructure(value, true);
             }
 
-            AllocateValue(DSharpStackValueType.Reference, (nint)value);
+            return *AllocateValue(DSharpStackValueType.Reference, (nint)value);
         }
         public DSharpMethodExecutor* PushMethodExecutor(DSharpRuntimeMethodInfo* methodInfo, int reservedSize = 0)
         {
@@ -270,6 +265,23 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         }
         public FrameInfo PushStructure(DSharpRuntimeTypeInfo* type) => CreateStructure(type, new(0, 0));
         public FrameInfo PushStructure(DSharpRuntimeTypeInfo* type, UnmanagedArray<byte> dataBuffer) => CreateStructure(type, dataBuffer);
+        public FrameInfo PushStructure(DSharpObject* structure, bool unbox)
+        {
+            if (structure->IsReferenceObject && !unbox)
+            {
+                return PushReference(structure);
+            }
+
+            var size = structure->TotalSize;
+            var frame = AllocateSized(DSharpStackValueType.Structure, size);
+            var obj = (DSharpObject*)frame->StackPointer;
+
+            DSharpObject.Copy(structure, obj);
+
+            obj->Placement = DSharpObjectPlacement.Buffer;
+
+            return *frame;
+        }
         public FrameInfo* Push(DSharpStackValueType type, int size) => AllocateSized(type, size);
 
         public void Pop(uint offset = 0) => Pop(offset, 1);
@@ -383,7 +395,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             return frame;
         }
 
-        private FrameInfo PushNumber<T>(DSharpRuntimeTypeInfo* type, T value) 
+        private FrameInfo PushNumber<T>(DSharpRuntimeTypeInfo* type, T value)
             where T : unmanaged
         {
             UnmanagedArray<byte> dataBuffer = new((byte*)&value, sizeof(T));

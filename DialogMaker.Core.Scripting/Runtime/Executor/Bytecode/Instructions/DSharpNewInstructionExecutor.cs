@@ -1,30 +1,49 @@
-using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
-
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.New"/> operation
     /// </summary>
-    public class DSharpNewInstructionExecutor : DSharpInstructionExecutor
+    public class DSharpNewInstructionExecutor : DSharpMetadataTokenInstructionExecutor
     {
         #region Controls
-
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
-        {
-            throw new NotImplementedException();
-        }
 
         public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
+
+        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
         {
-            throw new NotImplementedException();
-        }
-        public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
-        {
-            throw new NotImplementedException();
+            IDSharpMemberInfo member;
+
+            try
+            {
+                member = context.TypesProvider.Assembly.GetType(metadataToken);
+            }
+            catch (Exception error)
+            {
+                return context.ThrowExecutionException(error);
+            }
+
+            IDSharpType typeToInstantiate;
+            IDSharpMethodInfo? constructor = null;
+
+            if (member is IDSharpType typeMember)
+            {
+                typeToInstantiate = typeMember;
+            }
+            else if (member is IDSharpMethodInfo methodMember)
+            {
+                typeToInstantiate = methodMember.DeclaringType;
+                constructor = methodMember;
+            }
+
+            if (constructor != null)
+            {
+
+            }
+
+            return DSharpMethodExecutionCallback.Complete();
         }
 
         #endregion
