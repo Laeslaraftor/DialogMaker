@@ -1,4 +1,5 @@
 ﻿using System.Runtime.InteropServices;
+using System.Xml.Linq;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 {
@@ -12,6 +13,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// Property metadata token
         /// </summary>
         public DSharpMetadataToken MetadataToken;
+        /// <summary>
+        /// Property name
+        /// </summary>
+        public UnmanagedArray<char> Name;
         /// <summary>
         /// Is property abstract
         /// </summary>
@@ -47,5 +52,37 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// It can be null
         /// </summary>
         public DSharpRuntimePropertyInfo* Overrides;
+        /// <summary>
+        /// Interfaces declarations that implemented by current property
+        /// </summary>
+        public UnmanagedArray<Pointer<DSharpRuntimePropertyInfo>> ImplementedProperties;
+
+        public readonly override string ToString()
+        {
+            if (Name.Length == 0)
+            {
+                return "Nameless field";
+            }
+
+            return new((ReadOnlySpan<char>)Name);
+        }
+
+        #region Static
+
+        /// <summary>
+        /// Get size that requires for structure with information about specified property
+        /// </summary>
+        /// <param name="property">Property to calculate size</param>
+        /// <returns>Size of structure with information about specified property</returns>
+        public static int GetSize(IDSharpPropertyInfo property)
+        {
+            var implementations = property.GetImplementedProperties();
+
+            return sizeof(DSharpRuntimePropertyInfo) +
+                   property.Name.Length * sizeof(char) +
+                   implementations.Length * sizeof(Pointer<DSharpRuntimePropertyInfo>);
+        }
+
+        #endregion
     }
 }

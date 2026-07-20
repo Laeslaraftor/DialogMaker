@@ -303,6 +303,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return _bytecodeBuilder != null;
             }
         }
+        public ReferenceReadOnlyList<IDSharpMethodInfo> ImplementedMethods
+        {
+            get
+            {
+                field ??= new(_implementedMethods);
+                return field;
+            }
+        }
         internal IDSharpMethodInfo? OriginalMethod { get; set; }
         internal Func<DSharpTypeToken>? ReturnTypeResolver { get; set; }
         public IDSharpMethodBytecode? Bytecode
@@ -333,15 +341,33 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
 
         private readonly List<DSharpTypeBuilder> _genericParameters = [];
+        private readonly List<IDSharpMethodInfo> _implementedMethods = [];
         private DSharpBytecodeBuilder? _bytecodeBuilder;
 
-        #region Управление
+        #region Controls
 
         internal override void Update()
         {
             base.Update();
             _ = ReturnType;
         }
+
+        public void AddImplementedMethod(IDSharpMethodInfo method)
+        {
+            if (method.DeclaringType.ObjectType != DSharpObjectType.Interface)
+            {
+                throw new ArgumentException($"Method should be declared in interface: {method}", nameof(method));
+            }
+            if (method == this)
+            {
+                throw new ArgumentException($"Method can not implement itself", nameof(method));
+            }
+            if (!_implementedMethods.Contains(method))
+            {
+                _implementedMethods.Add(method);
+            }
+        }
+        public bool RemoveImplementedMethod(IDSharpMethodInfo method) => _implementedMethods.Remove(method);
 
         public DSharpTypeBuilder CreateGenericParameter(string name)
         {
@@ -405,26 +431,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             return _bytecodeBuilder;
         }
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public IDSharpParameterInfo[] GetParameters() => [.. Parameters];
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public IDSharpType[] GetGenericParameters() => [.. GenericParameters.Select(t => (IDSharpType)Assembly.GetType(t))];
+        public IDSharpMethodInfo[] GetImplementedMethods() => [.. _implementedMethods];
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override string ToString() => this.ToString(null);
 
         #endregion
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Create constructor method

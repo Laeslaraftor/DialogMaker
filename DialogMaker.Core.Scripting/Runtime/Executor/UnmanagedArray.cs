@@ -24,6 +24,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         }
 
         /// <summary>
+        /// Is items null pointer or length less or equals then 0;
+        /// </summary>
+        public bool IsNull => _items == null || _length <= 0;
+        /// <summary>
         /// Length of array
         /// </summary>
         public int Length => _length;
@@ -153,6 +157,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         public bool Contains(T item) => IndexOf(item) != -1;
 
         public static implicit operator ReadOnlySpan<T>(UnmanagedArray<T> array) => new(array._items, array._length);
+        public static implicit operator T*(UnmanagedArray<T> array) => array._items;
 
         #endregion
 

@@ -1,3 +1,5 @@
+using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
     /// <summary>
@@ -12,35 +14,56 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return &InstanceExecute;
         }
 
-        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
+        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
         {
-            IDSharpMemberInfo member;
+            DSharpMetadataToken* member;
 
             try
             {
-                member = context.TypesProvider.Assembly.GetType(metadataToken);
+                member = context.TypesProvider.GetMember(metadataToken);
             }
             catch (Exception error)
             {
                 return context.ThrowExecutionException(error);
             }
 
-            IDSharpType typeToInstantiate;
-            IDSharpMethodInfo? constructor = null;
+            DSharpRuntimeTypeInfo* typeToInstantiate;
+            DSharpRuntimeMethodInfo* constructor = null;
 
-            if (member is IDSharpType typeMember)
+            if (member->Type == DSharpMetadataTokenType.TypeDefinition)
             {
-                typeToInstantiate = typeMember;
+                typeToInstantiate = (DSharpRuntimeTypeInfo*)member;
             }
-            else if (member is IDSharpMethodInfo methodMember)
+            else if (member->Type == DSharpMetadataTokenType.Method)
             {
-                typeToInstantiate = methodMember.DeclaringType;
-                constructor = methodMember;
+                constructor = (DSharpRuntimeMethodInfo*)member;
+                typeToInstantiate = constructor->DeclaringType;
+            }
+            else
+            {
+                return context.ThrowExecutionException($"Got unexpected member for creating new instance: {member->Type}");
+            }
+
+            DSharpObject* newInstance;
+
+            if (typeToInstantiate->IsValueType)
+            {
+                var frame = context.Stack.PushStructure(typeToInstantiate);
+                newInstance = (DSharpObject*)frame.StackPointer;
+            }
+            else
+            {
+                newInstance = context.ObjectsContainer.Create(typeToInstantiate);
+                context.Stack.PushReference(newInstance);
             }
 
             if (constructor != null)
             {
-
+                return DSharpMethodExecutionCallback.InitializeObject(newInstance, constructor, default);
+            }
+            if (typeToInstantiate->Initializer != null)
+            {
+                return DSharpMethodExecutionCallback.Call(newInstance, typeToInstantiate->Initializer, new(0, 0));
             }
 
             return DSharpMethodExecutionCallback.Complete();

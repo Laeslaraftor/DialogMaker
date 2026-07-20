@@ -63,6 +63,10 @@
         /// </summary>
         public DSharpGenericTypeAttributes GenericAttributes { get; }
 
+        /// <summary>
+        /// Get array of types that inherited by current type
+        /// </summary>
+        /// <returns>Array of types that inherited by current type</returns>
         public IDSharpType[] GetBaseTypes();
         /// <summary>
         /// List of types that must fill generic types. 

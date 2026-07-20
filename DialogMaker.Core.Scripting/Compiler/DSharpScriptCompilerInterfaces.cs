@@ -117,6 +117,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                     if (member.SameSignatureTo(declaration))
                     {
                         implementedDeclarations.Add(declaration);
+
+                        if (member is DSharpPropertyBuilder propertyBuilder && declaration is IDSharpPropertyInfo propertyDeclaration)
+                        {
+                            propertyBuilder.AddImplementedProperty(propertyDeclaration);
+                        }
+                        else if (member is DSharpMethodBuilder methodBuilder && declaration is IDSharpMethodInfo methodDeclaration)
+                        {
+                            methodBuilder.AddImplementedMethod(methodDeclaration);
+                        }
                     }
                 }
 

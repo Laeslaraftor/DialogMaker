@@ -64,7 +64,7 @@
         /// Allocate string
         /// </summary>
         /// <param name="str">String to allocation</param>
-        /// <returns>Allocated stirng</returns>
+        /// <returns>Allocated string</returns>
         public UnmanagedArray<char> AllocateString(string? str)
         {
             if (string.IsNullOrEmpty(str))
@@ -128,6 +128,20 @@
             }
 
             return result;
+        }
+        /// <summary>
+        /// Allocate dictionary with specified capacity
+        /// </summary>
+        /// <typeparam name="TKey">Key type</typeparam>
+        /// <typeparam name="TValue">Value type</typeparam>
+        /// <param name="capacity">Dictionary capacity for allocation</param>
+        /// <returns>Allocated unmanaged dictionary</returns>
+        public UnmanagedDictionary<TKey, TValue> AllocateDictionary<TKey, TValue>(int capacity)
+            where TKey : unmanaged
+            where TValue : unmanaged
+        {
+            var buffer = AllocateArray<UnmanagedPair<TKey, TValue>>(capacity);
+            return new(buffer);
         }
     }
 }

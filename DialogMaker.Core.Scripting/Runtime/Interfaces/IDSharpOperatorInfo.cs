@@ -3,7 +3,7 @@
 namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
-    /// Interface of operator
+    /// Interface of D# operator
     /// </summary>
     public interface IDSharpOperatorInfo : IDSharpMemberInfo
     {

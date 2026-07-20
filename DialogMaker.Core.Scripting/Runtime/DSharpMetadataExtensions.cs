@@ -1,10 +1,50 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+using DialogMaker.Core.Scripting.Runtime.Executor;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
     public static class DSharpMetadataExtensions
     {
+        extension(IDSharpType[] types)
+        {
+            /// <summary>
+            /// Check is current types can assign to destination types.
+            /// Arrays should be same size
+            /// </summary>
+            /// <param name="destination">Destination types</param>
+            /// <returns>Is current types can assign to destination types</returns>
+            public bool IsAssignableTo(IDSharpType[] destination)
+            {
+                if (types.Length != destination.Length)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < destination.Length; i++)
+                {
+                    if (!types[i].IsAssignableTo(destination[i]))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        }
+        extension(IEnumerable<IDSharpType> types)
+        {
+            /// <summary>
+            /// Check is current types can assign to destination types.
+            /// Types amount should me same
+            /// </summary>
+            /// <param name="destination">Destination types</param>
+            /// <returns>Is current types can assign to destination types</returns>
+            public bool IsAssignableTo(IEnumerable<IDSharpType> destination)
+            {
+                return types.ToArray().IsAssignableTo([.. destination]);
+            }
+        }
         extension(IDSharpType type)
         {
             public IDSharpFieldInfo[] GetFields() => type.GetFields(f => true);
@@ -502,56 +542,87 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// <param name="instance">Calculate size for object instance, otherwise it will be size of static members</param>
             /// <param name="failOnDynamicSize">Fail when at least one member type have size that depends on execution platform</param>
             /// <returns>Size of object</returns>
-            public int GetSize(bool instance, bool failOnDynamicSize)
+            public unsafe int GetSize(bool instance, bool failOnDynamicSize)
             {
-                if (type.ObjectType == DSharpObjectType.Struct &&
-                    DSharpBuildInTypes.AllValueTypes.TryGetValue(type.FullName, out var info))
+                int size = 0;
+
+                bool AddSize(IDSharpType type)
                 {
-                    if (failOnDynamicSize && (info == DSharpBuildInTypes.NativeInt ||
-                                             info == DSharpBuildInTypes.NativeUnsignedInt))
+                    var typeFullName = type.FullName;
+
+                    if (!type.IsValueType())
                     {
-                        return -1;
-                    }
-
-                    return info.Size;
-                }
-
-                int resultSize = 0;
-
-                foreach (var baseType in type.GetBaseTypes().Where(t => t.ObjectType != DSharpObjectType.Interface))
-                {
-                    var size = baseType.GetSize(true, failOnDynamicSize);
-
-                    if (size == -1)
-                    {
-                        return -1;
-                    }
-
-                    resultSize += size;
-                }
-                foreach (var fieldInfo in type.GetFields().Where(f => f.IsStatic != instance))
-                {
-                    var fieldType = fieldInfo.FieldType;
-                    int size;
-
-                    if (fieldType.IsValueType())
-                    {
-                        size = fieldType.GetSize(true, failOnDynamicSize);
-
-                        if (size == -1)
+                        if (failOnDynamicSize)
                         {
-                            return -1;
+                            return false;
+                        }
+
+                        size += sizeof(nint);
+                    }
+                    if (DSharpBuildInTypes.TryGetInfo(type, out var info))
+                    {
+                        if (failOnDynamicSize && (typeFullName == DSharpBuildInTypes.NativeInt ||
+                                                  typeFullName == DSharpBuildInTypes.NativeUnsignedInt))
+                        {
+                            return false;
+                        }
+
+                        size += sizeof(DSharpObject) + info.Size;
+                        return true;
+                    }
+
+                    size += type.GetSize(true, failOnDynamicSize);
+                    return true;
+                }
+
+                foreach (var field in type.GetAllFields(instance))
+                {
+                    AddSize(field.FieldType);
+                }
+
+                return size;
+            }
+            /// <summary>
+            /// Get all interfaces that implements by current type
+            /// </summary>
+            /// <returns>All interfaces that implements by current type</returns>
+            public IEnumerable<IDSharpType> GetInterfaces()
+            {
+                foreach (var baseType in type.GetBaseTypes().Where(t => t.ObjectType == DSharpObjectType.Interface))
+                {
+                    yield return baseType;
+
+                    foreach (var interfaceBaseType in baseType.GetInterfaces())
+                    {
+                        yield return interfaceBaseType;
+                    }
+                }
+            }
+            /// <summary>
+            /// Get all non static fields in current type
+            /// </summary>
+            /// <param name="instance">Is instance methods (non static)</param>
+            /// <returns>All non static fields in current type</returns>
+            public IEnumerable<IDSharpFieldInfo> GetAllFields(bool instance)
+            {
+                if (instance)
+                {
+                    foreach (var baseType in type.GetBaseTypes().Where(t => t.ObjectType == DSharpObjectType.Class))
+                    {
+                        foreach (var field in baseType.GetAllFields(true))
+                        {
+                            yield return field;
                         }
                     }
-                    else
-                    {
-                        size = DSharpBuildInTypes.NativeInt.Size;
-                    }
-
-                    resultSize += size;
                 }
 
-                return resultSize;
+                foreach (var field in type.GetFields())
+                {
+                    if (field.IsStatic != instance)
+                    {
+                        yield return field;
+                    }
+                }
             }
         }
         extension(IDSharpAssembly assembly)

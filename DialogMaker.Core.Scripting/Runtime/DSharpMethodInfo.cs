@@ -30,6 +30,11 @@ namespace DialogMaker.Core.Scripting.Runtime
             throw new NotImplementedException();
         }
 
+        public IDSharpMethodInfo[] GetImplementedMethods()
+        {
+            throw new NotImplementedException();
+        }
+
         public IDSharpParameterInfo[] GetParameters()
         {
             throw new NotImplementedException();

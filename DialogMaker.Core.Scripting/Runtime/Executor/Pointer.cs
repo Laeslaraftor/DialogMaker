@@ -10,7 +10,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     [StructLayout(LayoutKind.Sequential)]
     public unsafe readonly struct Pointer<T>(T* value) where T : unmanaged
     {
+        /// <summary>
+        /// Create typed pointer
+        /// </summary>
+        /// <param name="pointer">Pointer to object</param>
+        public Pointer(void* pointer) : this((T*)pointer)
+        {
+        }
+
         private readonly T* _value = value;
+
+        /// <summary>
+        /// Get pointer
+        /// </summary>
+        /// <returns>Pointer</returns>
+        public T* AsPointer() => _value;
 
         /// <summary>
         /// Convert typed pointer to unsafe pointer
@@ -22,5 +36,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// </summary>
         /// <param name="pointer">Unsafe pointer to convert</param>
         public static implicit operator Pointer<T>(T* pointer) => new(pointer);
+        /// <summary>
+        /// Convert unsafe pointer to typed pointer
+        /// </summary>
+        /// <param name="pointer">Unsafe pointer to convert</param>
+        public static implicit operator Pointer<T>(void* pointer) => new(pointer);
     }
 }

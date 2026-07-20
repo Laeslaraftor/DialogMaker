@@ -14,6 +14,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// </summary>
         public DSharpMetadataToken MetadataToken;
         /// <summary>
+        /// Method name
+        /// </summary>
+        public UnmanagedArray<char> Name;
+        /// <summary>
         /// Type of method
         /// </summary>
         public DSharpMethodType MethodType;
@@ -57,6 +61,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// </summary>
         public DSharpRuntimeMethodInfo* Overrides;
         /// <summary>
+        /// Interfaces declarations that implemented by current method
+        /// </summary>
+        public UnmanagedArray<Pointer<DSharpRuntimeMethodInfo>> ImplementedMethods;
+        /// <summary>
         /// Method bytecode array. 
         /// It can be empty if method is extern or abstract
         /// </summary>
@@ -65,6 +73,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// Pointer to parsed bytecode that ready to execute
         /// </summary>
         public DSharpRuntimeBytecode* ParsedBytecode;
+
+        public readonly override string ToString()
+        {
+            if (Name.Length == 0)
+            {
+                return "Nameless field";
+            }
+
+            return new((ReadOnlySpan<char>)Name);
+        }
 
         #region Static
 
@@ -77,13 +95,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         {
             var parameters = method.GetParameters();
             var genericParameters = method.GetGenericParameters();
+            var implementations = method.GetImplementedMethods();
             var bytecodeSize = method.Bytecode?.Size ?? 0;
 
             return sizeof(DSharpRuntimeMethodInfo) +
+                   method.Name.Length * sizeof(char) +
                    bytecodeSize +
                    parameters.Length * sizeof(DSharpRuntimeParameterInfo) +
                    parameters.Sum(p => p.Name.Length) * sizeof(char) +
-                   genericParameters.Length * sizeof(Pointer<DSharpRuntimeTypeInfo>);
+                   genericParameters.Length * sizeof(Pointer<DSharpRuntimeTypeInfo>) +
+                   implementations.Length * sizeof(Pointer<DSharpRuntimeMethodInfo>);
         }
 
         #endregion

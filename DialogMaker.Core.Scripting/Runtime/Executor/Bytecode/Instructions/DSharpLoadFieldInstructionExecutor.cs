@@ -20,7 +20,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             try
             {
-                fieldInfo = context.TypesProvider.GetStaticField(metadataToken);
+                fieldInfo = context.TypesProvider.GetField(metadataToken);
             }
             catch (Exception error2)
             {

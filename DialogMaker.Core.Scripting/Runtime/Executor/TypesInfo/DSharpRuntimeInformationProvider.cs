@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
+using System.Reflection;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 {
@@ -219,10 +220,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         }
 
         // DSharpRuntimeTypeInfo**
-        private readonly Dictionary<DSharpMetadataToken, nint> _types = [];
-        private readonly Dictionary<DSharpMetadataToken, nint> _staticMethods = [];
-        private readonly Dictionary<DSharpMetadataToken, nint> _staticProperties = [];
-        private readonly Dictionary<DSharpMetadataToken, nint> _staticFields = [];
+        private readonly Dictionary<DSharpMetadataToken, Pointer<Pointer<DSharpRuntimeTypeInfo>>> _types = [];
+        private readonly Dictionary<DSharpMetadataToken, Pointer<DSharpRuntimeMethodInfo>> _methods = [];
+        private readonly Dictionary<DSharpMetadataToken, Pointer<DSharpRuntimePropertyInfo>> _properties = [];
+        private readonly Dictionary<DSharpMetadataToken, Pointer<DSharpRuntimeFieldInfo>> _fields = [];
         private readonly DSharpVmMemoryManager _memoryManager = memoryManager;
 
         #region Controls
@@ -241,13 +242,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             }
             if (!_types.TryGetValue(type.MetadataToken, out var typeReference))
             {
-                typeReference = _memoryManager.Allocate(DSharpMemoryBlockType.TypeInformation, sizeof(nint));
+                var pointer = (DSharpRuntimeTypeInfo**)_memoryManager.Allocate(DSharpMemoryBlockType.TypeInformation, sizeof(nint));
+                typeReference = pointer;
                 _types.Add(type.MetadataToken, typeReference);
 
-                *(DSharpRuntimeTypeInfo**)typeReference = CreateTypeInfo(type, (DSharpRuntimeTypeInfo**)typeReference);
+                *pointer = CreateTypeInfo(type, pointer);
             }
 
-            return *(DSharpRuntimeTypeInfo**)typeReference;
+            return *typeReference.AsPointer();
         }
         /// <summary>
         /// Get runtime information about specified type
@@ -271,6 +273,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             var type = Assembly.GetType(buildInTypeInfo);
             return GetRuntimeInfo(type);
         }
+        /// <summary>
+        /// Get runtime bytecode for specified method
+        /// </summary>
+        /// <param name="methodInfo">Method for finding and parsing bytecode</param>
+        /// <returns>Runtime bytecode</returns>
+        /// <exception cref="InvalidOperationException">Unable to get bytecode for extern method</exception>
         public DSharpRuntimeBytecode* GetRuntimeBytecode(DSharpRuntimeMethodInfo* methodInfo)
         {
             if (methodInfo->ParsedBytecode != null)
@@ -286,98 +294,86 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
             return methodInfo->ParsedBytecode;
         }
-        public DSharpRuntimeMethodInfo* GetStaticMethod(DSharpMetadataToken metadataToken)
+        public DSharpRuntimeMethodInfo* GetMethod(DSharpMetadataToken metadataToken)
         {
-            if (_staticMethods.TryGetValue(metadataToken, out var address))
-            {
-                return (DSharpRuntimeMethodInfo*)address;
-            }
-            if (Assembly.GetType(metadataToken) is not IDSharpMethodInfo methodInfo)
-            {
-                throw new InvalidOperationException($"Unable to find method for token: {metadataToken}");
-            }
-
-            var typeInfo = GetRuntimeInfo(methodInfo.DeclaringType);
-
-            if (typeInfo->TryGetMethod(metadataToken, out var runtimeMethod))
-            {
-                return runtimeMethod;
-            }
-
-            throw new InvalidOperationException($"Unable to get runtime information about method \"{methodInfo}\"");
+            return GetMember(metadataToken, _methods, t => t.AsPointer()->Methods);
         }
-        public DSharpRuntimePropertyInfo* GetStaticProperty(DSharpMetadataToken metadataToken)
+        public DSharpRuntimePropertyInfo* GetProperty(DSharpMetadataToken metadataToken)
         {
-            if (_staticProperties.TryGetValue(metadataToken, out var address))
-            {
-                return (DSharpRuntimePropertyInfo*)address;
-            }
-            if (Assembly.GetType(metadataToken) is not IDSharpPropertyInfo propertyInfo)
-            {
-                throw new InvalidOperationException($"Unable to find property for token: {metadataToken}");
-            }
-
-            var typeInfo = GetRuntimeInfo(propertyInfo.DeclaringType);
-
-            if (typeInfo->TryGetProperty(metadataToken, out var runtimeProperty))
-            {
-                return runtimeProperty;
-            }
-
-            throw new InvalidOperationException($"Unable to get runtime information about property \"{propertyInfo}\"");
+            return GetMember(metadataToken, _properties, t => t.AsPointer()->Properties);
         }
-        public DSharpRuntimeFieldInfo* GetStaticField(DSharpMetadataToken metadataToken)
+        public DSharpRuntimeFieldInfo* GetField(DSharpMetadataToken metadataToken)
         {
-            if (_staticProperties.TryGetValue(metadataToken, out var address))
+            return GetMember(metadataToken, _fields, t => t.AsPointer()->Fields);
+        }
+        public DSharpMetadataToken* GetMember(DSharpMetadataToken metadataToken)
+        {
+            if (metadataToken.Type == DSharpMetadataTokenType.TypeDefinition)
             {
-                return (DSharpRuntimeFieldInfo*)address;
+                return (DSharpMetadataToken*)GetRuntimeInfo(metadataToken);
             }
-            if (Assembly.GetType(metadataToken) is not IDSharpFieldInfo fieldInfo)
+            else if (metadataToken.Type == DSharpMetadataTokenType.Method)
             {
-                throw new InvalidOperationException($"Unable to find field for token: {metadataToken}");
+                return (DSharpMetadataToken*)GetMethod(metadataToken);
+            }
+            else if (metadataToken.Type == DSharpMetadataTokenType.Property)
+            {
+                return (DSharpMetadataToken*)GetProperty(metadataToken);
+            }
+            else if (metadataToken.Type == DSharpMetadataTokenType.Field)
+            {
+                return (DSharpMetadataToken*)GetField(metadataToken);
             }
 
-            var typeInfo = GetRuntimeInfo(fieldInfo.DeclaringType);
-
-            if (typeInfo->TryGetField(metadataToken, out var runtimeField))
-            {
-                return runtimeField;
-            }
-
-            throw new InvalidOperationException($"Unable to get runtime information about field \"{fieldInfo}\"");
+            throw new ArgumentException($"Invalid metadata token: {metadataToken}");
         }
 
+        private T* GetMember<T>(DSharpMetadataToken metadataToken, Dictionary<DSharpMetadataToken, Pointer<T>> members, Func<Pointer<DSharpRuntimeTypeInfo>, UnmanagedArray<T>> membersSelector)
+            where T : unmanaged
+        {
+            if (members.TryGetValue(metadataToken, out var memberPointer))
+            {
+                return memberPointer;
+            }
+
+            var member = Assembly.GetType(metadataToken);
+
+            if (member is IDSharpType typeMember)
+            {
+                throw new ArgumentException($"Specified metadata token return invalid member: \"{member}\"");
+            }
+
+            var typeInfo = GetRuntimeInfo(member.DeclaringType);
+            var unmanagedMembers = membersSelector(typeInfo);
+
+            for (int i = 0; i < unmanagedMembers.Length; i++)
+            {
+                var tokenPointer = (DSharpMetadataToken*)unmanagedMembers.GetItemReference(i);
+
+                if (*tokenPointer == metadataToken)
+                {
+                    return (T*)tokenPointer;
+                }
+            }
+
+            throw new InvalidOperationException($"Unable to find \"{member}\" in \"{member.DeclaringType}\"");
+        }
         private DSharpRuntimeTypeInfo* CreateTypeInfo(IDSharpType type, DSharpRuntimeTypeInfo** reference)
         {
             var constructors = type.GetConstructors();
             var genericParameters = type.GetGenericParameters();
             var genericTypes = type.GetGenericTypes();
             IDSharpType[] generics;
-            IDSharpType[] baseTypes = type.GetBaseTypes();
+            IDSharpType[] interfaces = [.. type.GetInterfaces()];
+            IDSharpType baseType = type.GetBaseTypes().FirstOrDefault(t => t.ObjectType == DSharpObjectType.Class) ?? type.Assembly.ObjectType;
 
+            List<IDSharpFieldInfo> allFields = [..type.GetAllFields(true), ..type.GetAllFields(false)];
             List<IDSharpFieldInfo> fields = [];
             List<IDSharpPropertyInfo> properties = [];
             List<IDSharpMethodInfo> methods = [];
             Dictionary<IDSharpMemberInfo, int> memberInfoSize = [];
             Pointer<DSharpRuntimeTypeInfo>[] runtimeGenericParameters;
-            Pointer<DSharpRuntimeTypeInfo>[] runtimeBaseTypes;
-
-            Pointer<DSharpRuntimeTypeInfo>[] CreateTypes(IDSharpType[] types)
-            {
-                if (types.Length == 0)
-                {
-                    return [];
-                }
-
-                var result = new Pointer<DSharpRuntimeTypeInfo>[types.Length];
-
-                for (int i = 0; i < types.Length; i++)
-                {
-                    result[i] = GetRuntimeInfo(types[i]);
-                }
-
-                return result;
-            }
+            Pointer<DSharpRuntimeTypeInfo>[] runtimeInterfaces;
 
             if (genericParameters.Length > 0)
             {
@@ -403,12 +399,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 foreach (var field in type.GetFields())
                 {
                     fields.Add(field);
-                    memberInfoSize.Add(field, sizeof(DSharpRuntimeFieldInfo));
+                    var size = DSharpRuntimeFieldInfo.GetSize(field);
+                    memberInfoSize.Add(field, size);
                 }
                 foreach (var property in type.GetProperties())
                 {
                     properties.Add(property);
-                    memberInfoSize.Add(property, sizeof(DSharpRuntimePropertyInfo));
+                    var size = DSharpRuntimePropertyInfo.GetSize(property);
+                    memberInfoSize.Add(property, size);
                 }
                 foreach (var method in type.GetMethods())
                 {
@@ -417,22 +415,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                     memberInfoSize.Add(method, size);
                 }
             }
-            void ParseType(IDSharpType type)
-            {
-                foreach (var baseType in type.GetBaseTypes().Where(t => t.ObjectType != DSharpObjectType.Interface))
-                {
-                    ParseType(baseType);
-                }
 
-                AddMembers(type);
-            }
+            AddMembers(type);
 
-            ParseType(type);
-
+            int instanceSize = type.GetSize(true, false);
             int staticSize = type.GetSize(false, false);
             int infoSize = staticSize +
                            generics.Length * sizeof(Pointer<DSharpRuntimeTypeInfo>) +
-                           baseTypes.Length * sizeof(Pointer<DSharpRuntimeTypeInfo>) +
+                           interfaces.Length * sizeof(Pointer<DSharpRuntimeTypeInfo>) +
+                           allFields.Count * sizeof(UnmanagedDictionary<Pointer<DSharpRuntimeFieldInfo>, UnmanagedArray<byte>>) +
                            memberInfoSize.Values.Sum() +
                            type.Name.Length * sizeof(char) +
                            ((type.Namespace?.Length ?? 0) * sizeof(char));
@@ -445,22 +436,24 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
             info->MetadataToken = type.MetadataToken;
             info->ObjectType = type.ObjectType;
-            info->Size = type.GetSize(true, false);
+            info->Size = instanceSize;
             info->IsGeneric = type.IsGeneric;
             info->Name = builder.AllocateString(type.Name);
             info->Namespace = builder.AllocateString(type.Namespace);
-            info->Constructors = builder.AllocateArray<Pointer<DSharpRuntimeMethodInfo>>(constructors.Length);
-            info->Methods = builder.AllocateArray<Pointer<DSharpRuntimeMethodInfo>>(methods.Count);
-            info->Properties = builder.AllocateArray<Pointer<DSharpRuntimePropertyInfo>>(properties.Count);
-            info->Fields = builder.AllocateArray<Pointer<DSharpRuntimeFieldInfo>>(fields.Count);
+            info->Constructors = builder.AllocateArray<DSharpRuntimeMethodInfo>(constructors.Length);
+            info->Methods = builder.AllocateArray<DSharpRuntimeMethodInfo>(methods.Count);
+            info->Properties = builder.AllocateArray<DSharpRuntimePropertyInfo>(properties.Count);
+            info->Fields = builder.AllocateArray<DSharpRuntimeFieldInfo>(fields.Count);
+            info->FieldsOffset = builder.AllocateDictionary<Pointer<DSharpRuntimeFieldInfo>, int>(allFields.Count);
             info->StaticFieldsData = builder.AllocateArray<byte>(staticSize);
             info->IsStaticInitializerCalled = false;
 
             runtimeGenericParameters = CreateTypes(generics);
-            runtimeBaseTypes = CreateTypes(baseTypes);
+            runtimeInterfaces = CreateTypes(interfaces);
 
             info->GenericParameters = builder.AllocateArray(runtimeGenericParameters);
-            info->BaseTypes = builder.AllocateArray(runtimeBaseTypes);
+            info->BaseType = GetRuntimeInfo(baseType);
+            info->Interfaces = builder.AllocateArray(runtimeInterfaces);
 
             if (DSharpBuildInTypes.TryGetValueTypeIndex(type, out var valueTypeIndex))
             {
@@ -493,45 +486,68 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
             for (int i = 0; i < fields.Count; i++)
             {
-                var field = info->Fields.GetItemReference(i);
-                CreateFieldInfo(info, fields[i], field, ref builder);
+                var fieldInfo = info->Fields.GetItemReference(i);
+                CreateFieldInfo(info, fields[i], fieldInfo, ref builder);
 
-                int fieldSize = field->FieldType->ItemSize;
+                int fieldSize = fieldInfo->FieldType->ItemSize;
 
-                if (field->IsStatic)
+                if (fieldInfo->FieldType->IsValueType)
                 {
-                    field->Offset = staticFieldOffset;
+                    fieldSize += sizeof(DSharpObject);
+                }
+
+                if (fieldInfo->IsStatic)
+                {
+                    info->FieldsOffset.Add(fieldInfo, staticFieldOffset);
                     staticFieldOffset += fieldSize;
                 }
                 else
                 {
-                    field->Offset = fieldOffset;
+                    info->FieldsOffset.Add(fieldInfo, fieldOffset);
                     fieldOffset += fieldSize;
                 }
             }
             for (int i = 0; i < properties.Count; i++)
             {
                 var property = properties[i];
+                var propertyInfo = info->Properties.GetItemReference(i);
+                var implementations = property.GetImplementedProperties();
+                var implementedProperties = builder.AllocateArray<Pointer<DSharpRuntimePropertyInfo>>(implementations.Length);
 
-                if (property.OverrideProperty == null ||
-                    !info->TryGetProperty(property.MetadataToken, out var overridenProperty))
+                propertyInfo->PropertyType = GetRuntimeInfo(property.PropertyType);
+                propertyInfo->ImplementedProperties = implementedProperties;
+
+                for (int m = 0; m < implementations.Length; m++)
                 {
-                    continue;
+                    implementedProperties[m] = GetMethod(implementations[m].MetadataToken);
                 }
-
-                info->Properties.GetItemReference(i)->Overrides = overridenProperty;
+                if (property.OverrideProperty != null)
+                {
+                    propertyInfo->Overrides = GetProperty(property.OverrideProperty.MetadataToken);
+                }
             }
             for (int i = 0; i < methods.Count; i++)
             {
                 var method = methods[i];
+                var methodInfo = info->Methods.GetItemReference(i);
+                var implementations = method.GetImplementedMethods();
+                var implementedMethods = builder.AllocateArray<Pointer<DSharpRuntimeMethodInfo>>(implementations.Length);
+                var methodParameters = method.GetParameters();
+                var methodGenericParameters = method.GetGenericParameters();
 
-                if (method.OverrideMethod == null ||
-                    !info->TryGetMethod(method.MetadataToken, out var overridenMethod))
+                methodInfo->ReturnType = method.ReturnType == null ? null : GetRuntimeInfo(method.ReturnType);
+                methodInfo->ImplementedMethods = implementedMethods;
+                methodInfo->ParametersType = DSharpRuntimeParameterInfo.Create(this, methodParameters, ref builder);
+                methodInfo->GenericTypes = builder.AllocateArray(methodGenericParameters, t => (nint)GetRuntimeInfo(t));
+
+                for (int m = 0; m < implementations.Length; m++)
                 {
-                    continue;
+                    implementedMethods[m] = GetMethod(implementations[m].MetadataToken);
                 }
-
-                info->Methods.GetItemReference(i)->Overrides = overridenMethod;
+                if (method.OverrideMethod != null)
+                {
+                    methodInfo->Overrides = GetMethod(method.OverrideMethod.MetadataToken);
+                }
             }
 
             return info;
@@ -539,20 +555,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         private void CreateMethodInfo(DSharpRuntimeTypeInfo* type, IDSharpMethodInfo method, DSharpRuntimeMethodInfo* info, ref MemoryBuilder builder)
         {
             info->MetadataToken = method.MetadataToken;
+            info->Name = builder.AllocateString(method.Name);
             info->IsAbstract = method.IsAbstract;
             info->IsVirtual = method.IsVirtual;
             info->IsStatic = method.IsStatic;
             info->IsExtern = method.IsExtern;
             info->DeclaringType = type;
             info->MethodType = method.MethodType;
-            info->ReturnType = method.ReturnType == null ? null : GetRuntimeInfo(method.ReturnType);
             info->ParsedBytecode = null;
-
-            var parameters = method.GetParameters();
-            var genericParameters = method.GetGenericParameters();
-
-            info->ParametersType = DSharpRuntimeParameterInfo.Create(this, parameters, ref builder);
-            info->GenericTypes = builder.AllocateArray(genericParameters, t => (nint)GetRuntimeInfo(t));
 
             var bytecode = method.Bytecode;
 
@@ -581,19 +591,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             {
                 type->Finalizer = info;
             }
-            if (method.IsStatic)
-            {
-                _staticMethods.Add(method.MetadataToken, (nint)info);
-            }
+
+            _methods.Add(method.MetadataToken, info);
         }
         private void CreatePropertyInfo(DSharpRuntimeTypeInfo* type, IDSharpPropertyInfo property, DSharpRuntimePropertyInfo* info, ref MemoryBuilder builder)
         {
             info->MetadataToken = property.MetadataToken;
+            info->Name = builder.AllocateString(property.Name);
             info->IsAbstract = property.IsAbstract;
             info->IsVirtual = property.IsVirtual;
             info->IsStatic = property.IsStatic;
             info->DeclaringType = type;
-            info->PropertyType = GetRuntimeInfo(property.PropertyType);
 
             if (property.Getter != null && type->TryGetMethod(property.Getter.MetadataToken, out var getter))
             {
@@ -604,22 +612,34 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 info->Setter = setter;
             }
 
-            if (property.IsStatic)
-            {
-                _staticProperties.Add(property.MetadataToken, (nint)info);
-            }
+            _properties.Add(property.MetadataToken, info);
         }
         private void CreateFieldInfo(DSharpRuntimeTypeInfo* type, IDSharpFieldInfo field, DSharpRuntimeFieldInfo* info, ref MemoryBuilder builder)
         {
             info->MetadataToken = field.MetadataToken;
+            info->Name = builder.AllocateString(field.Name);
             info->IsStatic = field.IsStatic;
             info->DeclaringType = type;
             info->FieldType = GetRuntimeInfo(field.FieldType);
 
-            if (field.IsStatic)
+            _fields.Add(field.MetadataToken, info);
+        }
+
+        private Pointer<DSharpRuntimeTypeInfo>[] CreateTypes(IDSharpType[] types)
+        {
+            if (types.Length == 0)
             {
-                _staticFields.Add(field.MetadataToken, (nint)info);
+                return [];
             }
+
+            var result = new Pointer<DSharpRuntimeTypeInfo>[types.Length];
+
+            for (int i = 0; i < types.Length; i++)
+            {
+                result[i] = GetRuntimeInfo(types[i]);
+            }
+
+            return result;
         }
 
         #endregion
@@ -634,7 +654,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             {
                 foreach (var typeReference in _types.Values)
                 {
-                    var typeInfo = *(DSharpRuntimeTypeInfo**)typeReference;
+                    var typeInfo = (DSharpRuntimeTypeInfo*)*typeReference.AsPointer();
 
                     for (int i = 0; i < typeInfo->Methods.Length; i++)
                     {
@@ -652,9 +672,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             }
 
             _types.Clear();
-            _staticMethods.Clear();
-            _staticProperties.Clear();
-            _staticFields.Clear();
+            _methods.Clear();
+            _properties.Clear();
+            _fields.Clear();
         }
 
         #endregion

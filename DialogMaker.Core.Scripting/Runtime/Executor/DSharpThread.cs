@@ -33,7 +33,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         {
             if (methodInfo.IsStatic)
             {
-                var method = Executor.RuntimeTypesProvider.GetStaticMethod(methodInfo.MetadataToken);
+                var method = Executor.RuntimeTypesProvider.GetMethod(methodInfo.MetadataToken);
                 Start(null, default, default, method);
                 return;
             }

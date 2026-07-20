@@ -138,10 +138,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
             set;
         }
-        public override bool IsVirtual 
-        { 
-            get => base.IsVirtual || OriginalProperty != null; 
-            set => base.IsVirtual = value; 
+        public override bool IsVirtual
+        {
+            get => base.IsVirtual || OriginalProperty != null;
+            set => base.IsVirtual = value;
         }
         public override bool IsDeclaration
         {
@@ -151,6 +151,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 var setter = Setter;
 
                 return getter == null && setter == null;
+            }
+        }
+        public ReferenceReadOnlyList<IDSharpPropertyInfo> ImplementedProperties
+        {
+            get
+            {
+                field ??= new(_implementedProperties);
+                return field;
             }
         }
         internal IDSharpPropertyInfo? OriginalProperty { get; set; }
@@ -171,16 +179,34 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         IDSharpMethodInfo? IDSharpPropertyInfo.Getter => Getter;
         IDSharpMethodInfo? IDSharpPropertyInfo.Setter => Setter;
 
+        private readonly List<IDSharpPropertyInfo> _implementedProperties = [];
         private bool _triedToFindGetter;
         private bool _triedToFindSetter;
 
-        #region Управление
+        #region Controls
 
         internal override void Update()
         {
             base.Update();
             _ = PropertyType;
         }
+
+        public void AddImplementedProperty(IDSharpPropertyInfo property)
+        {
+            if (property.DeclaringType.ObjectType != DSharpObjectType.Interface)
+            {
+                throw new ArgumentException($"Property should be declared in interface: {property}", nameof(property));
+            }
+            if (property == this)
+            {
+                throw new ArgumentException($"Property can not implement itself", nameof(property));
+            }
+            if (!_implementedProperties.Contains(property))
+            {
+                _implementedProperties.Add(property);
+            }
+        }
+        public bool RemoveImplementedProperty(IDSharpPropertyInfo property) => _implementedProperties.Remove(property);
 
         public DSharpMethodBuilder CreateGetter()
         {
@@ -236,6 +262,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             return false;
         }
 
+        public IDSharpPropertyInfo[] GetImplementedProperties() => [.. _implementedProperties];
+
         public override string ToString()
         {
             return $"{Assembly.GetTypeOrDefault(PropertyType)} {DeclaringType.FullName}.{Name}";
@@ -243,7 +271,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
         #endregion
 
-        #region События
+        #region Events
 
         protected override void OnNameChanged(string name)
         {

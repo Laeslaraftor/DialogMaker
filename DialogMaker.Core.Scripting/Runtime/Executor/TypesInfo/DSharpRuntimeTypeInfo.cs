@@ -65,29 +65,33 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// </summary>
         public UnmanagedArray<char> Namespace;
         /// <summary>
+        /// Type that inherited by current type
+        /// </summary>
+        public DSharpRuntimeTypeInfo* BaseType;
+        /// <summary>
         /// Array of generic parameters
         /// </summary>
         public UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>> GenericParameters;
         /// <summary>
-        /// Types that inherited or implemented by current type
+        /// Interfaces that implemented or inherited (if current type is interface) by current type
         /// </summary>
-        public UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>> BaseTypes;
+        public UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>> Interfaces;
         /// <summary>
         /// Array of constructors
         /// </summary>
-        public UnmanagedArray<Pointer<DSharpRuntimeMethodInfo>> Constructors;
+        public UnmanagedArray<DSharpRuntimeMethodInfo> Constructors;
         /// <summary>
         /// Array of all methods includes inherited
         /// </summary>
-        public UnmanagedArray<Pointer<DSharpRuntimeMethodInfo>> Methods;
+        public UnmanagedArray<DSharpRuntimeMethodInfo> Methods;
         /// <summary>
         /// Array of properties includes inherited
         /// </summary>
-        public UnmanagedArray<Pointer<DSharpRuntimePropertyInfo>> Properties;
+        public UnmanagedArray<DSharpRuntimePropertyInfo> Properties;
         /// <summary>
         /// Array of fields includes inherited
         /// </summary>
-        public UnmanagedArray<Pointer<DSharpRuntimeFieldInfo>> Fields;
+        public UnmanagedArray<DSharpRuntimeFieldInfo> Fields;
         /// <summary>
         /// Method that calls when object instance is clearing before it will be deleted by GC
         /// </summary>
@@ -102,6 +106,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// It sets static fields values
         /// </summary>
         public DSharpRuntimeMethodInfo* StaticInitializer;
+        /// <summary>
+        /// Fields offsets to data 
+        /// </summary>
+        public UnmanagedDictionary<Pointer<DSharpRuntimeFieldInfo>, int> FieldsOffset;
         /// <summary>
         /// Is static initializer already called
         /// </summary>
@@ -120,14 +128,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <returns>Is current type inherit from specified type</returns>
         public readonly bool IsInheritFrom(DSharpRuntimeTypeInfo* type)
         {
-            for (int i = 0; i < BaseTypes.Length; i++)
+            if (MetadataToken == type->MetadataToken)
             {
-                DSharpRuntimeTypeInfo* baseType = BaseTypes[i];
+                return true;
+            }
+            if (type->ObjectType == DSharpObjectType.Interface)
+            {
+                return Interfaces.Contains(type);
+            }
 
-                if (baseType == type || baseType->IsInheritFrom(type))
+            DSharpRuntimeTypeInfo* baseType = BaseType;
+
+            while (baseType != null)
+            {
+                if (baseType == type)
                 {
                     return true;
                 }
+
+                baseType = baseType->BaseType;
             }
 
             return false;
@@ -173,6 +192,28 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         {
             return TryGetMember(Methods, metadataToken, out result);
         }
+        /// <summary>
+        /// Try to get field data offset
+        /// </summary>
+        /// <param name="metadataToken">Field metadata token</param>
+        /// <param name="result">Field data offset</param>
+        /// <returns>Is offset successfully found</returns>
+        public readonly bool TryGetFieldOffset(DSharpMetadataToken metadataToken, out int result)
+        {
+            for (int i = 0; i < FieldsOffset.Count; i++)
+            {
+                var pair = FieldsOffset[i];
+
+                if (pair.Key.AsPointer()->MetadataToken == metadataToken)
+                {
+                    result = pair.Value;
+                    return true;
+                }
+            }
+
+            result = -1;
+            return false;
+        }
 
         public readonly override string ToString()
         {
@@ -181,22 +222,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 return string.Empty;
             }
 
-            string name = new(Name);
+            string name = new((ReadOnlySpan<char>)Name);
 
             if (Namespace.Length > 0)
             {
-                name = new string(Namespace) + "." + name;
+                name = new string((ReadOnlySpan<char>)Namespace) + "." + name;
             }
 
             return name;
         }
 
-        private readonly bool TryGetMember<T>(UnmanagedArray<Pointer<T>> members, DSharpMetadataToken metadataToken, out T* result)
+        private readonly bool TryGetMember<T>(UnmanagedArray<T> members, DSharpMetadataToken metadataToken, out T* result)
             where T : unmanaged
         {
             for (int i = 0; i < members.Length; i++)
             {
-                T* member = members[i];
+                T* member = members.GetItemReference(i);
 
                 if (*(DSharpMetadataToken*)member == metadataToken)
                 {

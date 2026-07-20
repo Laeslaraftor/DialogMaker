@@ -80,11 +80,11 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <summary>
         /// Native integer which size depends on platform (4 or 8 bytes)
         /// </summary>
-        public static unsafe readonly DSharpBuildInTypeInfo NativeInt = new("System.IntPtr", sizeof(nint), DSharpTokenType.Nint, &ToIntPtr);
+        public static readonly DSharpBuildInTypeInfo NativeInt = new("System.IntPtr", sizeof(nint), DSharpTokenType.Nint, &ToIntPtr);
         /// <summary>
         /// Unsigned native integer which size depends on platform (4 or 8 bytes)
         /// </summary>
-        public static unsafe readonly DSharpBuildInTypeInfo NativeUnsignedInt = new("System.UIntPtr", sizeof(nuint), DSharpTokenType.Nuint, &ToUIntPtr);
+        public static readonly DSharpBuildInTypeInfo NativeUnsignedInt = new("System.UIntPtr", sizeof(nuint), DSharpTokenType.Nuint, &ToUIntPtr);
         /// <summary>
         /// Long: -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807 (8 bytes)
         /// </summary>

@@ -23,5 +23,10 @@ namespace DialogMaker.Core.Scripting.Runtime
         public DSharpAccessModifier? GetterAccess => throw new NotImplementedException();
 
         public DSharpAccessModifier? SetterAccess => throw new NotImplementedException();
+
+        public IDSharpPropertyInfo[] GetImplementedProperties()
+        {
+            throw new NotImplementedException();
+        }
     }
 }
