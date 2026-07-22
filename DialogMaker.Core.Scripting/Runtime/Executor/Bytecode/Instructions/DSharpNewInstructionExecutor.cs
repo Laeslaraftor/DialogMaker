@@ -56,15 +56,23 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 newInstance = context.ObjectsContainer.Create(typeToInstantiate);
                 context.Stack.PushReference(newInstance);
             }
-
             if (constructor != null)
             {
-                return DSharpMethodExecutionCallback.InitializeObject(newInstance, constructor, default);
+                UnmanagedArray<DSharpExecutionLocalVariable> args = default;
+
+                if (constructor->ParametersType.Length > 0)
+                {
+                    args = DSharpCallInstructionExecutor.CreateArguments(context, constructor, 1);
+                }
+
+                return DSharpMethodExecutionCallback.InitializeObject(newInstance, constructor, args);
             }
             if (typeToInstantiate->Initializer != null)
             {
-                return DSharpMethodExecutionCallback.Call(newInstance, typeToInstantiate->Initializer, new(0, 0));
+                return DSharpMethodExecutionCallback.Call(newInstance, typeToInstantiate->Initializer, default);
             }
+
+            newInstance->IsInitialized = true;
 
             return DSharpMethodExecutionCallback.Complete();
         }

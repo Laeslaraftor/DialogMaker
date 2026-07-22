@@ -408,6 +408,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                     var size = DSharpRuntimePropertyInfo.GetSize(property);
                     memberInfoSize.Add(property, size);
                 }
+                foreach (var indexer in type.GetIndexers())
+                {
+                    properties.Add(indexer);
+                    var size = DSharpRuntimePropertyInfo.GetSize(indexer);
+                    memberInfoSize.Add(indexer, size);
+                }
                 foreach (var method in type.GetMethods())
                 {
                     methods.Add(method);
@@ -548,6 +554,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 {
                     methodInfo->Overrides = GetMethod(method.OverrideMethod.MetadataToken);
                 }
+            }
+            for (int i = 0; i < constructors.Length; i++)
+            {
+                var constructor = constructors[i];
+                var constructorInfo = info->Constructors.GetItemReference(i);
+                var constructorParameters = constructor.GetParameters();
+
+                constructorInfo->ReturnType = constructor.ReturnType == null ? null : GetRuntimeInfo(constructor.ReturnType);
+                constructorInfo->ParametersType = DSharpRuntimeParameterInfo.Create(this, constructorParameters, ref builder);
             }
 
             return info;

@@ -1,5 +1,3 @@
-using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
-
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
     /// <summary>
@@ -14,24 +12,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return &InstanceExecute;
         }
 
-        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
+        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
         {
-            if (CheckStackValues(instruction, context, 1, out var error))
-            {
-                return error;
-            }
-
-            return TryGetInstanceFromStack(ref context, (ref context, instance) =>
-            {
-                if (!instance->Type->TryGetField(metadataToken, out var field))
-                {
-                    return context.ThrowExecutionException($"Unable to get field for token: {metadataToken}");
-                }
-
-                field->Read(instance, context.Stack);
-
-                return DSharpMethodExecutionCallback.Complete();
-            });
+            return DSharpLoadFieldInstructionExecutor.Load(instruction, ref context, metadataToken, true);
         }
 
         #endregion

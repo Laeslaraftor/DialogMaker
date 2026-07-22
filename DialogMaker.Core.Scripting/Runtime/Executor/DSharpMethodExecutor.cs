@@ -63,6 +63,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// Exception that currently unhandled
         /// </summary>
         public DSharpObject* UnhandledException;
+        /// <summary>
+        /// Last callback that returned by <see cref="Execute(DSharpMethodExecutor*, DSharpObjectsContainer, DSharpThread)"/>
+        /// </summary>
+        public DSharpMethodExecutionCallback? LastCallback;
 
         /// <summary>
         /// Execute current method starts with specified instruction index
@@ -95,7 +99,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 }
             }
 
-            return result ?? DSharpMethodExecutionCallback.Complete();
+            result ??= DSharpMethodExecutionCallback.Complete();
+            executor->LastCallback = result;
+
+            return result.Value;
         }
         /// <summary>
         /// Try find catch block for specified exception

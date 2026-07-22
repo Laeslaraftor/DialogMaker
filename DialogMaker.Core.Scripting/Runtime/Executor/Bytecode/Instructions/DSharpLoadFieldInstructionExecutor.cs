@@ -1,5 +1,3 @@
-using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
-
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
     /// <summary>
@@ -14,22 +12,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return &InstanceExecute;
         }
 
-        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
+        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
         {
-            DSharpRuntimeFieldInfo* fieldInfo;
-
-            try
-            {
-                fieldInfo = context.TypesProvider.GetField(metadataToken);
-            }
-            catch (Exception error2)
-            {
-                return context.ThrowExecutionException(error2);
-            }
-
-            fieldInfo->Read(null, context.Stack);
-
-            return DSharpMethodExecutionCallback.Complete();
+            return Load(instruction, ref context, metadataToken, false);
         }
 
         #endregion
@@ -40,6 +25,38 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// Global instance of <see cref="DSharpBytecodeOperation.LoadField"/> operation executor
         /// </summary>
         public static readonly DSharpLoadFieldInstructionExecutor Instance = new();
+
+        internal static unsafe DSharpMethodExecutionCallback Load(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken, bool isInstance)
+        {
+            DSharpObject* instance = null;
+
+            if (isInstance)
+            {
+                if (CheckStackValues(instruction, context, 1, out var error))
+                {
+                    return error;
+                }
+
+                instance = GetInstance(context, 0, out error);
+
+                if (instance == null)
+                {
+                    return error;
+                }
+            }
+
+            try
+            {
+                var field = context.TypesProvider.GetField(metadataToken);
+                field->Read(instance, context.Stack);
+            }
+            catch (Exception exception)
+            {
+                return context.ThrowExecutionException(exception);
+            }
+
+            return DSharpMethodExecutionCallback.Complete();
+        }
 
         private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {

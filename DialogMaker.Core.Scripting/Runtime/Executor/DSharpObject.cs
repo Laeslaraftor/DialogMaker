@@ -29,6 +29,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// </summary>
         public DSharpObjectPlacement Placement;
         /// <summary>
+        /// Is current object instance initialized.
+        /// It sets <c>true</c> after calling initializer.
+        /// If type have not initializer it always <c>true</c>
+        /// </summary>
+        public bool IsInitialized;
+        /// <summary>
         /// Size for managed data, this not includes size of DSharpObject structure size.
         /// </summary>
         public int Size;

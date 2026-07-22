@@ -1,5 +1,4 @@
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
-using static DialogMaker.Core.Scripting.Compiler.Builders.DSharpBytecodeBuilder;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -17,17 +16,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
         protected unsafe override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
         {
-            var method = context.TypesProvider.GetMethod(metadataToken);
-            var parametersCount = method->ParametersType.Length;
-
-            if (CheckStackValues(instruction, context, parametersCount, out var error))
-            {
-                return error;
-            }
-
-            var arguments = CreateArguments(context, method, 0);
-
-            return DSharpMethodExecutionCallback.Call(null, method, arguments);
+            return Call(instruction, ref context, metadataToken, false, false);
         }
 
         #endregion
@@ -39,6 +28,36 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpCallInstructionExecutor Instance = new();
 
+        internal static unsafe DSharpMethodExecutionCallback Call(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken, bool isInstance, bool isBase)
+        {
+            var method = context.TypesProvider.GetMethod(metadataToken);
+            var parametersCount = method->ParametersType.Length;
+
+            if (isInstance)
+            {
+                parametersCount++;
+            }
+            if (CheckStackValues(instruction, context, parametersCount, out var error))
+            {
+                return error;
+            }
+
+            DSharpObject* instance = null;
+
+            if (isInstance)
+            {
+                instance = GetInstance(context, (uint)parametersCount - 1, out error);
+
+                if (instance == null)
+                {
+                    return error;
+                }
+            }
+
+            var arguments = CreateArguments(context, method, 0);
+
+            return DSharpMethodExecutionCallback.Call(instance, method, arguments);
+        }
         internal static unsafe UnmanagedArray<DSharpExecutionLocalVariable> CreateArguments(DSharpExecutionContext context, DSharpRuntimeMethodInfo* methodInfo, uint offset = 0)
         {
             if (methodInfo->ParametersType.IsNull)

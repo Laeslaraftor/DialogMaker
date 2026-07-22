@@ -45,7 +45,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="context">Current execution context</param>
         /// <param name="requiredArgumentsCount">Requires amount of arguments</param>
         /// <returns>Is arguments count matched</returns>
-        protected bool CheckArguments(DSharpRuntimeInstruction instruction, DSharpExecutionContext context, int requiredArgumentsCount, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
+        protected static bool CheckArguments(DSharpRuntimeInstruction instruction, DSharpExecutionContext context, int requiredArgumentsCount, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
         {
             if (instruction.Arguments.Length != requiredArgumentsCount)
             {
@@ -63,7 +63,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="context">Current execution context</param>
         /// <param name="requiredValuesCount">Requires amount of values is stack</param>
         /// <returns>Is stack values enough</returns>
-        protected bool CheckStackValues(DSharpRuntimeInstruction instruction, DSharpExecutionContext context, int requiredValuesCount, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
+        protected static bool CheckStackValues(DSharpRuntimeInstruction instruction, DSharpExecutionContext context, int requiredValuesCount, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
         {
             if (context.Stack.Count < requiredValuesCount)
             {
@@ -73,6 +73,43 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
 
             errorCallback = default;
             return false;
+        }
+        /// <summary>
+        /// Get object instance from stack with specified offset
+        /// </summary>
+        /// <param name="context">Current execution context</param>
+        /// <param name="offset">Stack peek offset</param>
+        /// <param name="error">Error that occurred while finding object instance</param>
+        /// <returns>Pointer to object instance</returns>
+        protected unsafe static DSharpObject* GetInstance(DSharpExecutionContext context, uint offset, [NotNullWhen(true)] out DSharpMethodExecutionCallback error)
+        {
+            var instanceFrame = context.Stack.Peek(offset);
+
+            if (instanceFrame.ValueType == DSharpStackValueType.Null)
+            {
+                error = context.ThrowExecutionException("Null object reference");
+                return null;
+            }
+
+            DSharpObject* instance;
+
+            if (instanceFrame.ValueType == DSharpStackValueType.Reference)
+            {
+                instance = (DSharpObject*)instanceFrame.ReadReference();
+            }
+            else if (instanceFrame.ValueType == DSharpStackValueType.Structure)
+            {
+                instance = (DSharpObject*)instanceFrame.StackPointer;
+            }
+            else
+            {
+                error = context.ThrowExecutionException($"Invalid instance value: {instanceFrame.ValueType}");
+                return null;
+            }
+
+            error = DSharpMethodExecutionCallback.Complete();
+
+            return instance;
         }
 
         /// <summary>

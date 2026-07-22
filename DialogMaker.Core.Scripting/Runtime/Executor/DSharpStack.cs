@@ -328,7 +328,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
 
             _frameIndex = framesRemains;
-            _allocatedStackSize -= removedStackSize;
+            int size = 0;
+
+            for (int i = 0; i < Count; i++)
+            {
+                size += _frames[i].Size;
+            }
+
+            _allocatedStackSize -= size;
         }
 
         public Scope StartScope()
@@ -349,7 +356,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 return 0;
             }
 
-            uint delta = Count - scopeStackCount;
+            uint delta = Count - scope.StackCount - offset;
             Pop(offset, delta);
 
             return delta;
@@ -473,6 +480,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                     }
 
                     return obj->Type;
+                }
+            }
+            public readonly DSharpMethodExecutor* MethodExecutor
+            {
+                get
+                {
+                    if (ValueType != DSharpStackValueType.MethodCallingInfo)
+                    {
+                        return null;
+                    }
+
+                    return (DSharpMethodExecutor*)StackPointer;
                 }
             }
 

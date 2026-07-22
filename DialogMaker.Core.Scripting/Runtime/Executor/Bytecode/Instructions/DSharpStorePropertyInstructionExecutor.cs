@@ -5,26 +5,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.StoreProperty"/> operation
     /// </summary>
-    public class DSharpStorePropertyInstructionExecutor : DSharpInstructionExecutor
+    public class DSharpStorePropertyInstructionExecutor : DSharpMetadataTokenInstructionExecutor
     {
         #region Controls
-
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
-        {
-            throw new NotImplementedException();
-        }
 
         public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
+
+        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
         {
-            throw new NotImplementedException();
-        }
-        public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
-        {
-            throw new NotImplementedException();
+            return Store(instruction, ref context, metadataToken, false, false);
         }
 
         #endregion
@@ -35,6 +27,51 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// Global instance of <see cref="DSharpBytecodeOperation.StoreProperty"/> operation executor
         /// </summary>
         public static readonly DSharpStorePropertyInstructionExecutor Instance = new();
+
+        internal static unsafe DSharpMethodExecutionCallback Store(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken, bool isInstance, bool isBase)
+        {
+            DSharpObject* instance = null;
+            DSharpRuntimePropertyInfo* property;
+
+            try
+            {
+                property = context.TypesProvider.GetProperty(metadataToken);
+            }
+            catch (Exception exception)
+            {
+                return context.ThrowExecutionException(exception);
+            }
+
+            if (property->Setter == null)
+            {
+                return context.ThrowExecutionException($"Unable to set value to property \"{property->ToString()}\" because it have not setter");
+            }
+
+            int stackValues = property->Setter->ParametersType.Length;
+
+            if (isInstance)
+            {
+                stackValues++;
+            }
+            if (CheckStackValues(instruction, context, stackValues, out var error))
+            {
+                return error;
+            }
+            if (isInstance)
+            {
+                stackValues--;
+                instance = GetInstance(context, (uint)stackValues, out error);
+
+                if (instance == null)
+                {
+                    return error;
+                }
+            }
+
+            var args = DSharpCallInstructionExecutor.CreateArguments(context, property->Setter);
+
+            return DSharpMethodExecutionCallback.Call(instance, property->Setter, args);
+        }
 
         private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {

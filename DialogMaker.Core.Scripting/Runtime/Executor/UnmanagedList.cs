@@ -79,7 +79,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <returns>Is item added</returns>
         public bool Add(T item)
         {
-            if (_count + 1 >= _array.Length)
+            if (_count + 1 > _array.Length)
             {
                 return false;
             }

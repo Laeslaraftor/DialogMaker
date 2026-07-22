@@ -8,7 +8,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     /// <typeparam name="TKey">Key type</typeparam>
     /// <typeparam name="TValue">Value type</typeparam>
     /// <param name="buffer">Pairs buffer</param>
-    public readonly struct UnmanagedDictionary<TKey, TValue>(UnmanagedList<UnmanagedPair<TKey, TValue>> buffer)
+    public struct UnmanagedDictionary<TKey, TValue>(UnmanagedList<UnmanagedPair<TKey, TValue>> buffer)
         where TKey : unmanaged
         where TValue : unmanaged
     {
@@ -67,7 +67,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <returns>Pair on specified index</returns>
         public UnmanagedPair<TKey, TValue> this[int index] => _pairs[index];
 
-        private readonly UnmanagedList<UnmanagedPair<TKey, TValue>> _pairs = buffer;
+        private UnmanagedList<UnmanagedPair<TKey, TValue>> _pairs = buffer;
 
         /// <summary>
         /// Check is specified key contains in dictionary

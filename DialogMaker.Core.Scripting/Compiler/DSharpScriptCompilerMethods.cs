@@ -121,7 +121,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             foreach (var field in type.Fields)
             {
-                if (_createdFields.TryGetValue(field, out var node) && 
+                if (_createdFields.TryGetValue(field, out var node) &&
                     node.Initializer != null)
                 {
                     AddMember(field, node.Initializer);
@@ -129,7 +129,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             foreach (var property in type.Properties)
             {
-                if (_createdProperties.TryGetValue(property, out var node) && 
+                if (_createdProperties.TryGetValue(property, out var node) &&
                     node.Initializer != null)
                 {
                     if (property.Setter == null)
@@ -149,7 +149,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             void CreateInitializers(Dictionary<DSharpMemberInfoBuilder, ExpressionNode> initializers, bool isStatic)
             {
-                DSharpMethodBuilder? initializer = (isStatic ? type.StaticInitializer : type.Initializer) 
+                DSharpMethodBuilder? initializer = (isStatic ? type.StaticInitializer : type.Initializer)
                     ?? throw new InvalidOperationException($"Unable to compile fields initializer because it not exists in \"{type}\"");
                 var code = initializer.GetBytecodeBuilder();
                 DSharpMethodCompileSettings settings = new()
@@ -2173,7 +2173,17 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             var code = method.GetBytecodeBuilder();
-            code.LoadField(field);
+
+            if (method.IsStatic)
+            {
+                code.LoadField(field);
+            }
+            else
+            {
+                code.LoadInstance();
+                code.LoadInstanceField(field);
+            }
+
             code.Return();
         }
         private void CompileSetterMethod(DSharpMethodBuilder method, DSharpMethodCompileSettings settings = default)
@@ -2185,7 +2195,16 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             var code = method.GetBytecodeBuilder();
             code.LoadLocal(method.Parameters[0]);
-            code.StoreField(field);
+
+            if (method.IsStatic)
+            {
+                code.StoreField(field);
+            }
+            else
+            {
+                code.LoadInstance();
+                code.StoreInstanceField(field);
+            }
         }
 
         #endregion

@@ -91,6 +91,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                             throw new NotImplementedException("Handling value from external method not implemented yet");
                         }
 
+                        if (stack.Count > 0)
+                        {
+                            var lastValue = stack.Peek();
+
+                            if (lastValue.ValueType == DSharpStackValueType.MethodParametersBuffer)
+                            {
+                                stack.Pop();
+                            }
+                        }
+
                         instance = methodExecutor->ObjectInstance;
                         methodInfo = methodExecutor->MethodInfo;
                         arguments = methodExecutor->Arguments;
@@ -113,7 +123,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 if (!continueExecuting)
                 {
                     var bytecode = typesProvider.GetRuntimeBytecode(methodInfo);
-                    int variablesCount = arguments.Length + bytecode->Variables.Length;
+                    int variablesCount = bytecode->Variables.Length;
                     int extraSize = variablesCount * sizeof(DSharpExecutionLocalVariable) +
                                     (int)bytecode->ScopesCount * sizeof(DSharpStack.Scope) +
                                     (int)bytecode->TryingBlocksCount * sizeof(DSharpCatchBlock);
@@ -133,14 +143,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                     newMethodExecutor->LocalVariables = builder.AllocateArray<DSharpExecutionLocalVariable>(variablesCount);
                     newMethodExecutor->CatchBlocks = builder.AllocateArray<DSharpCatchBlock>((int)bytecode->TryingBlocksCount);
                     newMethodExecutor->LocalScopes = builder.AllocateArray<DSharpStack.Scope>((int)bytecode->ScopesCount);
+                    newMethodExecutor->InstructionIndex = 0;
 
+                    if (methodInfo->MethodType == DSharpMethodType.Initializer)
+                    {
+                        if (instance->IsInitialized)
+                        {
+                            throw new InvalidOperationException($"Unable to call initialized on initialized object: {instance->ToString()}");
+                        }
+
+                        instance->IsInitialized = true;
+                    }
+
+                    for (int i = arguments.Length; i < bytecode->Variables.Length; i++)
+                    {
+                        newMethodExecutor->LocalVariables[i] = DSharpExecutionLocalVariable.Create(stack, bytecode->Variables.GetItemReference(i));
+                    }
                     for (int i = 0; i < arguments.Length; i++)
                     {
                         newMethodExecutor->LocalVariables[i] = arguments[i];
-                    }
-                    for (int i = 0; i < bytecode->Variables.Length; i++)
-                    {
-                        newMethodExecutor->LocalVariables[i + arguments.Length] = DSharpExecutionLocalVariable.Create(stack, bytecode->Variables.GetItemReference(i));
                     }
 
                     methodExecutor = newMethodExecutor;
@@ -152,6 +173,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                     if (methodExecutor->HaveUnhandledException)
                     {
                         HandleException(methodExecutor->UnhandledException);
+                    }
+
+                    var lastCallback = methodExecutor->LastCallback;
+
+                    if (lastCallback != null && 
+                        lastCallback.Value.Type == DSharpMethodExecutionCallbackType.InitializeObject &&
+                        lastCallback.Value.ObjectInstance->Type->Initializer != null)
+                    {
+                        var newCallback = lastCallback.Value;
+                        newCallback.Type = DSharpMethodExecutionCallbackType.RequiredCallingNextMethod;
+                        methodExecutor->LastCallback = newCallback;
+                        SetNextMethod(newCallback);
+                        continue;
                     }
                 }
 
@@ -204,6 +238,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                         Unwind();
                     }
                 }
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                void SetNextMethod(DSharpMethodExecutionCallback callback)
+                {
+                    methodInfo = callback.NextMethod;
+                    instance = callback.ObjectInstance;
+                    arguments = callback.CallingArguments;
+                    genericParameters = callback.CallingGenericParameters;
+                }
 
                 if (callback.Type == DSharpMethodExecutionCallbackType.ExecutionComplete)
                 {
@@ -214,12 +256,27 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                     uint offset = methodInfo->ReturnType != null ? 1u : 0u;
                     Unwind(offset);
                 }
+                else if (callback.Type == DSharpMethodExecutionCallbackType.InitializeObject)
+                {
+                    if (callback.ObjectInstance == null)
+                    {
+                        throw new InvalidOperationException("Unable initialize object instance when instance not provided");
+                    }
+                    if (callback.ObjectInstance->Type->Initializer != null)
+                    {
+                        methodInfo = callback.ObjectInstance->Type->Initializer;
+                        instance = callback.ObjectInstance;
+                        arguments = default;
+                        genericParameters = default;
+
+                        continue;
+                    }
+
+                    SetNextMethod(callback);
+                }
                 else if (callback.Type == DSharpMethodExecutionCallbackType.RequiredCallingNextMethod)
                 {
-                    methodInfo = callback.NextMethod;
-                    instance = callback.ObjectInstance;
-                    arguments = callback.CallingArguments;
-                    genericParameters = callback.CallingGenericParameters;
+                    SetNextMethod(callback);
                 }
                 else if (callback.Type == DSharpMethodExecutionCallbackType.UnhandledException)
                 {

@@ -4,11 +4,22 @@ public class Program
 {
     public static void Main()
     {
-        var value = "Hello, world!";
+        Player player = new("Ura");
         
         for (int i = 0; i < 5; i++)
         {
-            Console.WriteLine(value);
+            Console.WriteLine(player.Name);
         }
     }
+}
+public class Player
+{
+    public Player(string name)
+    {
+        Name = name;
+    }
+
+    public string Name { get; }
+
+    public string GetName() => Name;
 }
