@@ -247,7 +247,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 data = (byte*)instance;
             }
 
-            return data + GetOffset(instance);
+            int offset = GetOffset(instance);
+
+            return data + offset;
         }
         private DSharpObject* GetValuePointer(DSharpObject* instance)
         {

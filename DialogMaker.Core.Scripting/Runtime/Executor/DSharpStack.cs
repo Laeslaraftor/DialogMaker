@@ -243,10 +243,38 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 throw new ArgumentException($"Unsupported literal type: {type}");
             }
         }
-        public void PushReference(nint value) => PushReference((DSharpObject*)value);
-        public FrameInfo PushReference(DSharpObject* value)
+        public void Push(DSharpLiteralValue literalValue)
         {
-            if (value != null && !value->IsReferenceObject)
+            if (literalValue.IsNull)
+            {
+                PushNull();
+            }
+            else if (literalValue.IsBool)
+            {
+                Push(literalValue.AsBool());
+            }
+            else if (literalValue.IsChar)
+            {
+                Push(literalValue.AsChar());
+            }
+            else if (literalValue.IsNumber)
+            {
+                byte* buffer = stackalloc byte[64];
+                nint bufferPointer = (nint)buffer;
+                UnmanagedStream stream = new(bufferPointer, 64);
+                literalValue.Write(&stream);
+
+                Push(literalValue.Type, bufferPointer + sizeof(DSharpLiteralType));
+            }
+            else
+            {
+                throw new ArgumentException($"Unsupported literal value ({literalValue.Type})", nameof(literalValue));
+            }
+        }
+        public void PushReference(nint value) => PushReference((DSharpObject*)value);
+        public FrameInfo PushReference(DSharpObject* value, bool force = false)
+        {
+            if (value != null && !value->IsReferenceObject && !force)
             {
                 return PushStructure(value, true);
             }
@@ -272,7 +300,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 return PushReference(structure);
             }
 
-            var size = structure->TotalSize;
+            var size = DSharpObject.GetTotalSize(structure);
             var frame = AllocateSized(DSharpStackValueType.Structure, size);
             var obj = (DSharpObject*)frame->StackPointer;
 
@@ -335,7 +363,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 size += _frames[i].Size;
             }
 
-            _allocatedStackSize -= size;
+            _allocatedStackSize = size;
         }
 
         public Scope StartScope()
@@ -376,6 +404,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             if (IsDisposed)
             {
                 throw new ObjectDisposedException(nameof(DSharpStack), "Stack has been disposed");
+            }
+            if (0 > size)
+            {
+                throw new ArgumentException($"Size can not be negative: {size}", nameof(size));
             }
 
             nint stackPointer;
@@ -598,17 +630,26 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             public readonly override string ToString()
             {
-                var result = $"{ValueType}:{Size}";
-                var objectType = ObjectType;
-
-                if (objectType != null && objectType->BuildInValueTypeIndex != -1 &&
-                    DSharpBuildInTypes.TryGetValueTypeByIndex(objectType->BuildInValueTypeIndex, out var typeInfo))
+                try
                 {
-                    result += $" ({typeInfo})";
-                }
+                    var result = $"{ValueType}:{Size}";
+                    var objectType = ObjectType;
 
-                return result;
+                    if (objectType != null && objectType->BuildInValueTypeIndex != -1 &&
+                        DSharpBuildInTypes.TryGetValueTypeByIndex(objectType->BuildInValueTypeIndex, out var typeInfo))
+                    {
+                        result += $" ({typeInfo})";
+                    }
+
+                    return result;
+                }
+                catch (Exception error)
+                {
+                    return error.ToString();
+                }
             }
+
+            public static implicit operator UnmanagedArray<byte>(FrameInfo frame) => new(frame.StackPointer, frame.Size);
 
             public static bool ValueEquals(FrameInfo left, FrameInfo right)
             {

@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Compiler;
-using DialogMaker.Core.Scripting.Compiler.Ast;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Runtime;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders

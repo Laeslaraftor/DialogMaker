@@ -31,9 +31,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <returns>New instance of D# array</returns>
         public DSharpObject* CreateArray(DSharpRuntimeTypeInfo* type, int length)
         {
-            var size = ((DSharpRuntimeTypeInfo*)type->GenericParameters[0])->ItemSize * length;
-            var obj = Create(type, size);
-            obj->Length = length;
+            var itemType = (DSharpRuntimeTypeInfo*)type->GenericParameters[0];
+            var itemsSize = itemType->ItemSize;
+
+            if (itemType->IsValueType)
+            {
+                itemsSize += sizeof(DSharpObject);
+            }
+
+            var size = itemsSize * length;
+            var obj = Create(type, size, true);
+            var array = (DSharpArray*)obj;
+            array->Size = size;
+            array->Length = length;
 
             return obj;
         }
@@ -68,20 +78,35 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <returns>New instance of D# string</returns>
         public DSharpObject* CreateString(UnmanagedArray<char> str)
         {
+            var obj = CreateString(str.Length);
+            char* chars = DSharpObject.GetData<char>(obj);
+
+            for (int i = 0; i < str.Length; i++)
+            {
+                chars[i] = str[i];
+            }
+
+            return obj;
+        }
+        /// <summary>
+        /// Create new instance of empty string
+        /// </summary>
+        /// <param name="length">String length</param>
+        /// <returns>New instance of D# string</returns>
+        public DSharpObject* CreateString(int length)
+        {
             if (Assembly.GetType(DSharpBuildInTypes.String) is not IDSharpType stringType)
             {
                 throw new InvalidOperationException("Unable to find string type for creating new instance of D# string");
             }
 
             var runtimeStringType = _runtimeInformationProvider.GetRuntimeInfo(stringType);
-            var obj = Create(runtimeStringType, runtimeStringType->Size + sizeof(char) * str.Length);
-            obj->Length = str.Length;
-            char* chars = (char*)DSharpObject.GetData(obj);
-
-            for (int i = 0; i < str.Length; i++)
-            {
-                chars[i] = str[i];
-            }
+            var size = runtimeStringType->Size + sizeof(char) * length;
+            var obj = Create(runtimeStringType, size, true);
+            var array = (DSharpArray*)obj;
+            array->Size = size;
+            array->Length = length;
+            obj->Attributes |= DSharpObjectAttributes.String;
 
             return obj;
         }
@@ -93,18 +118,44 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <returns>Pointer to boxed structure</returns>
         public DSharpObject* Box(DSharpObject* structure)
         {
-            if (structure->Placement == DSharpObjectPlacement.Heap)
+            if (structure->IsReferenceObject)
             {
                 return structure;
             }
 
-            var obj = _memoryManager.Allocate<DSharpObject>(DSharpMemoryBlockType.Object, structure->Size);
+            var obj = _memoryManager.Allocate<DSharpObject>(DSharpMemoryBlockType.Object, DSharpObject.GetSize(structure));
 
             DSharpObject.Copy(structure, obj);
 
             obj->Placement = DSharpObjectPlacement.Heap;
 
             return obj;
+        }
+        /// <summary>
+        /// Unbox D# object into buffer.
+        /// It unboxes only structures
+        /// </summary>
+        /// <param name="instance">D# object instance to unboxing</param>
+        /// <param name="buffer">Buffer for writing unboxed object</param>
+        /// <returns>Is object unboxed</returns>
+        public bool Unbox(DSharpObject* instance, UnmanagedArray<byte> buffer)
+        {
+            if (instance == null || buffer.Length == 0 ||
+                !instance->Type->IsValueType)
+            {
+                return false;
+            }
+
+            var totalSize = DSharpObject.GetTotalSize(instance);
+
+            if (totalSize > buffer.Length)
+            {
+                throw new ArgumentException($"Unable to unbox \"{instance->ToString()}\": buffer too small", nameof(buffer));
+            }
+
+            DSharpObject.Copy(instance, (DSharpObject*)buffer.GetItemReference(0));
+
+            return true;
         }
 
         /// <summary>
@@ -211,18 +262,33 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
         }
 
-        private DSharpObject* Create(DSharpRuntimeTypeInfo* type, int size)
+        private DSharpObject* Create(DSharpRuntimeTypeInfo* type, int size, bool isArray = false)
         {
             if (type->IsValueType)
             {
                 throw new ArgumentException($"Unable to create instance of \"{type->ToString()}\" because it value type", nameof(type));
             }
+            if (isArray)
+            {
+                size += sizeof(DSharpArray);
+            }
+            else
+            {
+                size += sizeof(DSharpObject);
+            }
 
-            var obj = _memoryManager.Allocate<DSharpObject>(DSharpMemoryBlockType.Object, size);
-            obj->Placement = DSharpObjectPlacement.Heap;
+            var obj = (DSharpObject*)_memoryManager.Allocate(DSharpMemoryBlockType.Object, size);
             obj->Type = type;
-            obj->Size = size;
-            obj->Length = 0;
+            obj->Attributes = DSharpObjectAttributes.StoredInHeap;
+
+            if (isArray)
+            {
+                obj->Attributes |= DSharpObjectAttributes.Array;
+            }
+            if (type->Initializer == null)
+            {
+                obj->Attributes |= DSharpObjectAttributes.Initialized;
+            }
 
             _objects.Add((nint)obj);
 
@@ -268,10 +334,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
 
             DSharpObject* obj = (DSharpObject*)buffer.GetItemReference(0);
-            obj->Placement = DSharpObjectPlacement.Buffer;
+            obj->Attributes = DSharpObjectAttributes.StoredInBuffer;
             obj->Type = type;
-            obj->Length = 0;
-            obj->Size = type->Size;
 
             int sizeForData = buffer.Length - sizeof(DSharpObject);
             byte* objectDataBuffer = DSharpObject.GetData(obj);

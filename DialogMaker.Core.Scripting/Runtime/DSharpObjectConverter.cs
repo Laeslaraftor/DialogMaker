@@ -15,9 +15,10 @@ namespace DialogMaker.Core.Scripting.Runtime
         public static string ToString(DSharpObject* obj)
         {
             CheckType(obj, DSharpBuildInTypes.String);
-            char* chars = (char*)DSharpObject.GetData(obj);
+            char* chars = DSharpObject.GetData<char>(obj);
+            var size = DSharpObject.GetSize(obj);
 
-            return new(chars, 0, obj->Length);
+            return new(chars, 0, size);
         }
         /// <summary>
         /// Convert D# byte to C# byte

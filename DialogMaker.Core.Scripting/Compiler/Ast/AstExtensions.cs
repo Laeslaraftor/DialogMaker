@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core.Scripting.Compiler.Ast
+﻿using DialogMaker.Core.Scripting.Runtime;
+
+namespace DialogMaker.Core.Scripting.Compiler.Ast
 {
     internal static class AstExtensions
     {

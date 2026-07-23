@@ -10,6 +10,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
     public unsafe struct DSharpRuntimePropertyInfo
     {
         /// <summary>
+        /// Returns <c>true</c> when current method can be overriden
+        /// </summary>
+        public bool CanBeOverriden => DeclaringType->ObjectType == DSharpObjectType.Interface ||
+                                      (!IsSealed && (IsAbstract || IsVirtual));
+
+        /// <summary>
         /// Property metadata token
         /// </summary>
         public DSharpMetadataToken MetadataToken;
@@ -29,6 +35,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// Is property static
         /// </summary>
         public bool IsStatic;
+        /// <summary>
+        /// Is property sealed
+        /// </summary>
+        public bool IsSealed;
         /// <summary>
         /// Type that declares current property
         /// </summary>

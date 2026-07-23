@@ -5,26 +5,49 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.NewArray"/> operation
     /// </summary>
-    public class DSharpNewArrayInstructionExecutor : DSharpInstructionExecutor
+    public class DSharpNewArrayInstructionExecutor : DSharpMetadataTokenInstructionExecutor
     {
         #region Controls
-
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
-        {
-            throw new NotImplementedException();
-        }
 
         public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
+
+        protected unsafe override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
         {
-            throw new NotImplementedException();
-        }
-        public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
-        {
-            throw new NotImplementedException();
+            if (CheckStackValues(instruction, context, 1, out var error))
+            {
+                return error;
+            }
+
+            int length;
+
+            try
+            {
+                var lastValue = context.Stack.Peek();
+                length = (int)lastValue.ReadAsDecimal().GetValueOrDefault();
+            }
+            catch (Exception exception)
+            {
+                return context.ThrowExecutionException($"Unable to get array length: {exception}");
+            }
+
+            DSharpRuntimeTypeInfo* arrayType;
+
+            try
+            {
+                arrayType = context.TypesProvider.GetRuntimeInfo(metadataToken);
+            }
+            catch (Exception exception)
+            {
+                return context.ThrowExecutionException(exception);
+            }
+
+            var arrayInstance = context.ObjectsContainer.CreateArray(arrayType, length);
+            context.Stack.PushReference(arrayInstance);
+
+            return DSharpMethodExecutionCallback.Complete();
         }
 
         #endregion

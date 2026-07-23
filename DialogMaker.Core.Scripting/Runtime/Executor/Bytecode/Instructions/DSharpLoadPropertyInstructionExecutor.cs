@@ -1,4 +1,5 @@
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -28,49 +29,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpLoadPropertyInstructionExecutor Instance = new();
 
-        internal static unsafe DSharpMethodExecutionCallback Load(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken, bool isInstance, bool isBase)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static DSharpMethodExecutionCallback Load(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken, bool isInstance, bool isBase)
         {
-            DSharpObject* instance = null;
-            DSharpRuntimePropertyInfo* property;
-
-            try
-            {
-                property = context.TypesProvider.GetProperty(metadataToken);
-            }
-            catch (Exception exception)
-            {
-                return context.ThrowExecutionException(exception);
-            }
-
-            if (property->Getter == null)
-            {
-                return context.ThrowExecutionException($"Unable to get value from property \"{property->ToString()}\" because it have not getter");
-            }
-
-            int stackValues = property->Getter->ParametersType.Length;
-
-            if (isInstance)
-            {
-                stackValues++;
-            }
-            if (CheckStackValues(instruction, context, stackValues, out var error))
-            {
-                return error;
-            }
-            if (isInstance)
-            {
-                stackValues--;
-                instance = GetInstance(context, (uint)stackValues, out error);
-
-                if (instance == null)
-                {
-                    return error;
-                }
-            }
-
-            var args = DSharpCallInstructionExecutor.CreateArguments(context, property->Getter);
-
-            return DSharpMethodExecutionCallback.Call(instance, property->Getter, args);
+            return CallAccessor(instruction, ref context, metadataToken, DSharpPropertyAccessor.Getter, isInstance, isBase);
         }
 
         private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)

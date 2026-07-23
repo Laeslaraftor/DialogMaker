@@ -146,7 +146,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                field ??= GetTypeToken(DSharpBuildInTypes.String);
+                field ??= GetTypeToken(StringType);
                 return field;
             }
         }
@@ -238,14 +238,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
-        public IDSharpType StringType
-        {
-            get
-            {
-                field ??= (IDSharpType)GetType(StringToken);
-                return field;
-            }
-        }
+        public IDSharpType StringType => StringTypeInfo.Type;
         public IDSharpType Int32Type
         {
             get
@@ -435,6 +428,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             get
             {
                 field ??= DSharpRuntimeHelperType.Create(this);
+                return field;
+            }
+        }
+        public DSharpStringType StringTypeInfo
+        {
+            get
+            {
+                field ??= DSharpStringType.Create(this);
                 return field;
             }
         }
@@ -1326,7 +1327,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
                 foreach (var type in _types)
                 {
-                    var method = type.Methods.FirstOrDefault(m => m.MetadataToken == metadata);
+                    var method = type.Methods.Union(type.Constructors).FirstOrDefault(m => m.MetadataToken == metadata);
 
                     if (method != null)
                     {

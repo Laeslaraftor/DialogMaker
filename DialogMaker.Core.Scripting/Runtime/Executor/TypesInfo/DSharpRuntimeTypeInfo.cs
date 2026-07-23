@@ -111,6 +111,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// </summary>
         public UnmanagedDictionary<Pointer<DSharpRuntimeFieldInfo>, int> FieldsOffset;
         /// <summary>
+        /// Methods that was overriden
+        /// </summary>
+        public UnmanagedDictionary<Pointer<DSharpRuntimeMethodInfo>, Pointer<DSharpRuntimeMethodInfo>> OverridenMethods;
+        /// <summary>
+        /// Properties that was overriden
+        /// </summary>
+        public UnmanagedDictionary<Pointer<DSharpRuntimePropertyInfo>, Pointer<DSharpRuntimePropertyInfo>> OverridenProperties;
+        /// <summary>
         /// Is static initializer already called
         /// </summary>
         public bool IsStaticInitializerCalled;
@@ -150,6 +158,31 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             }
 
             return false;
+        }
+        /// <summary>
+        /// Get max field offset in current type
+        /// </summary>
+        /// <returns>Max field offset in bytes</returns>
+        public readonly int GetMaxInstanceFieldOffset()
+        {
+            if (FieldsOffset.Count > 0)
+            {
+                return FieldsOffset[^1].Value;
+            }
+
+            var baseType = BaseType;
+
+            while (baseType != null)
+            {
+                var fieldsOffset = baseType->FieldsOffset;
+
+                if (fieldsOffset.Count > 0)
+                {
+                    return fieldsOffset[^1].Value;
+                }
+            }
+
+            return 0;
         }
 
         /// <summary>
@@ -200,15 +233,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <returns>Is offset successfully found</returns>
         public readonly bool TryGetFieldOffset(DSharpMetadataToken metadataToken, out int result)
         {
-            for (int i = 0; i < FieldsOffset.Count; i++)
-            {
-                var pair = FieldsOffset[i];
+            var t = this;
+            var currentType = &t;
 
-                if (pair.Key.AsPointer()->MetadataToken == metadataToken)
+            while (currentType != null)
+            {
+                var offsets = currentType->FieldsOffset;
+
+                for (int i = 0; i < offsets.Count; i++)
                 {
-                    result = pair.Value;
-                    return true;
+                    var pair = offsets[i];
+
+                    if (pair.Key.AsPointer()->MetadataToken == metadataToken)
+                    {
+                        result = pair.Value;
+                        return true;
+                    }
                 }
+
+                currentType = currentType->BaseType;
             }
 
             result = -1;

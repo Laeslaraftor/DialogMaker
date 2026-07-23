@@ -3,15 +3,15 @@
     /// <summary>
     /// Storage that contains D# object
     /// </summary>
-    public enum DSharpObjectPlacement : byte
+    public enum DSharpObjectPlacement
     {
         /// <summary>
         /// Object stores in some buffer (stack or field)
         /// </summary>
-        Buffer,
+        Buffer = DSharpObjectAttributes.StoredInBuffer,
         /// <summary>
         /// Object stores in heap
         /// </summary>
-        Heap
+        Heap = DSharpObjectAttributes.StoredInHeap
     }
 }

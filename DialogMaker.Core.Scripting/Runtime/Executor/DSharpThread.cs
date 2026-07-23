@@ -85,19 +85,34 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                     if (externalMethod != null)
                     {
                         var result = externalMethod(instance, methodInfo, genericParameters, arguments);
+                        uint popOffset = 0;
 
                         if (result != null)
                         {
-                            throw new NotImplementedException("Handling value from external method not implemented yet");
+                            popOffset = 1;
+                            var resultValue = result.Value;
+
+                            if (resultValue.IsObject)
+                            {
+                                stack.PushReference(resultValue.AsObject());
+                            }
+                            else if (resultValue.IsLiteralValue)
+                            {
+                                stack.Push(resultValue.AsLiteralValue());
+                            }
+                            else
+                            {
+                                stack.PushNull();
+                            }
                         }
 
-                        if (stack.Count > 0)
+                        if (stack.Count > popOffset)
                         {
                             var lastValue = stack.Peek();
 
                             if (lastValue.ValueType == DSharpStackValueType.MethodParametersBuffer)
                             {
-                                stack.Pop();
+                                stack.Pop(popOffset);
                             }
                         }
 
@@ -115,7 +130,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 {
                     throw new InvalidOperationException("Unable to start executing non static method without object instance");
                 }
-                if (!methodInfo->IsStatic && instance->Type != methodInfo->DeclaringType)
+                if (!methodInfo->IsStatic && !instance->Type->IsInheritFrom(methodInfo->DeclaringType))
                 {
                     throw new InvalidOperationException("Unable to invoke method with object instance that not declares calling method");
                 }
@@ -144,6 +159,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                     newMethodExecutor->CatchBlocks = builder.AllocateArray<DSharpCatchBlock>((int)bytecode->TryingBlocksCount);
                     newMethodExecutor->LocalScopes = builder.AllocateArray<DSharpStack.Scope>((int)bytecode->ScopesCount);
                     newMethodExecutor->InstructionIndex = 0;
+                    newMethodExecutor->HaveUnhandledException = false;
+                    newMethodExecutor->UnhandledException = null;
 
                     if (methodInfo->MethodType == DSharpMethodType.Initializer)
                     {

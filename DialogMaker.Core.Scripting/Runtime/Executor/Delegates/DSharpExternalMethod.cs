@@ -12,10 +12,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     /// <returns>
     /// Value that will be added to stack after executing method.
     /// If you don't want return anything then return <c>null</c>.
-    /// If you want to return D# null value, use <see cref="DSharpLiteralValue.Null"/>
+    /// If you want to return D# null value, use <see cref="DSharpExternalMethodResult.Null"/>
     /// </returns>
-    public unsafe delegate DSharpLiteralValue? DSharpExternalMethod(DSharpObject* instance, 
-                                                                    DSharpRuntimeMethodInfo* methodInfo,
-                                                                    UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters, 
-                                                                    UnmanagedArray<DSharpExecutionLocalVariable> arguments);
+    public unsafe delegate DSharpExternalMethodResult? DSharpExternalMethod(DSharpObject* instance, 
+                                                                            DSharpRuntimeMethodInfo* methodInfo,
+                                                                            UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters, 
+                                                                            UnmanagedArray<DSharpExecutionLocalVariable> arguments);
 }

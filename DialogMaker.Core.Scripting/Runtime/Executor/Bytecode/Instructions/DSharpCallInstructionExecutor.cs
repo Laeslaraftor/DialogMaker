@@ -1,3 +1,4 @@
+using Acly.Commands;
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
@@ -52,6 +53,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 {
                     return error;
                 }
+                if (!isBase && method->CanBeOverriden)
+                {
+                    if (instance->Type->OverridenMethods.TryGetValue(method, out var endPointMethod))
+                    {
+                        method = endPointMethod;
+                    }
+                    else if (method->DeclaringType->ObjectType == DSharpObjectType.Interface ||
+                             method->IsAbstract)
+                    {
+                        return context.ThrowExecutionException($"Unable to find end-point method for \"{method->ToString()}\"");
+                    }
+                }
             }
 
             var arguments = CreateArguments(context, method, 0);
@@ -71,10 +84,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             for (int i = 0; i < parametersCount; i++)
             {
+                var peekOffset = (uint)(parametersCount - i) + offset;
+                var frame = context.Stack.Peek(peekOffset);
                 arguments[i] = new()
                 {
                     ParameterInfo = methodInfo->ParametersType.GetItemReference(i),
-                    Buffer = context.Stack.Peek((uint)(parametersCount - i) + offset)
+                    Buffer = frame
                 };
             }
 

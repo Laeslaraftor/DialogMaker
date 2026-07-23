@@ -187,7 +187,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         private readonly char? _charValue;
         private object? _numberValue;
 
-        #region Управление
+        #region Controls
 
         /// <summary>
         /// Get string value of this literal value
@@ -266,7 +266,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         /// <param name="obj"><inheritdoc/></param>
         /// <returns><inheritdoc/></returns>
-        public readonly override bool Equals(object obj)
+        public readonly override bool Equals(object? obj)
         {
             return obj is DSharpLiteralValue other &&
                    Equals(other);
@@ -279,115 +279,35 @@ namespace DialogMaker.Core.Scripting.Runtime
         public readonly bool Equals(DSharpLiteralValue other)
         {
             return ToString() == other.ToString();
-            //return _stringValue == other._stringValue &&
-            //       _numberValue == other._numberValue &&
-            //       _boolValue == other._boolValue &&
-            //       _charValue == other._charValue;
         }
 
         #endregion
 
-        #region Операторы
+        #region Operators
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="l"><inheritdoc/></param>
-        /// <param name="r"><inheritdoc/></param>
-        /// <returns><inheritdoc/></returns>
         public static bool operator ==(DSharpLiteralValue l, DSharpLiteralValue r) => l.Equals(r);
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="l"><inheritdoc/></param>
-        /// <param name="r"><inheritdoc/></param>
-        /// <returns><inheritdoc/></returns>
         public static bool operator !=(DSharpLiteralValue l, DSharpLiteralValue r) => !l.Equals(r);
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="text"><inheritdoc/></param>
         public static implicit operator DSharpLiteralValue(string? text) => new(text);
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="number"><inheritdoc/></param>
         public static implicit operator DSharpLiteralValue(double number) => new(number);
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="number"><inheritdoc/></param>
         public static implicit operator DSharpLiteralValue(int number) => new(number);
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="number"><inheritdoc/></param>
         public static implicit operator DSharpLiteralValue(uint number) => new(number);
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="number"><inheritdoc/></param>
         public static implicit operator DSharpLiteralValue(long number) => new(number);
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="number"><inheritdoc/></param>
         public static implicit operator DSharpLiteralValue(ulong number) => new(number);
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="number"><inheritdoc/></param>
         public static implicit operator DSharpLiteralValue(short number) => new(number);
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="number"><inheritdoc/></param>
         public static implicit operator DSharpLiteralValue(ushort number) => new(number);
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="number"><inheritdoc/></param>
         public static implicit operator DSharpLiteralValue(byte number) => new(number);
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="number"><inheritdoc/></param>
         public static implicit operator DSharpLiteralValue(sbyte number) => new(number);
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="number"><inheritdoc/></param>
         public static implicit operator DSharpLiteralValue(nint number) => new(number);
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="number"><inheritdoc/></param>
         public static implicit operator DSharpLiteralValue(nuint number) => new(number);
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="number"><inheritdoc/></param>
         public static implicit operator DSharpLiteralValue(float number) => new(number);
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="number"><inheritdoc/></param>
         public static implicit operator DSharpLiteralValue(decimal number) => new(number);
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="boolean"><inheritdoc/></param>
         public static implicit operator DSharpLiteralValue(bool boolean) => new(boolean);
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="character"><inheritdoc/></param>
         public static implicit operator DSharpLiteralValue(char character) => new(character);
 
         #endregion
 
-        #region Константы
+        #region Constants
 
         /// <summary>
         /// Null text
@@ -396,7 +316,7 @@ namespace DialogMaker.Core.Scripting.Runtime
 
         #endregion
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Null literal value

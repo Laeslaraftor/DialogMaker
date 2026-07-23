@@ -21,7 +21,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             _memoryManager = memoryManager;
             _objectContainer = new(runtimeInformationProvider.Assembly, memoryManager, runtimeInformationProvider);
             _multiExternalMethodsProviders = new();
-            _multiExternalMethodsProviders.Providers.Add(StandardLibraryExternalMethodsProvider.Instance);
+            _standardLibraryExternalMethodsProvider = new(_objectContainer);
+            _multiExternalMethodsProviders.Providers.Add(_standardLibraryExternalMethodsProvider);
         }
 
         /// <summary>
@@ -74,6 +75,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
         private readonly DSharpObjectsContainer _objectContainer;
         private readonly DSharpMultiExternalMethodsProviders _multiExternalMethodsProviders;
+        private readonly StandardLibraryExternalMethodsProvider _standardLibraryExternalMethodsProvider;
         private readonly DSharpVmMemoryManager _memoryManager = new();
 
         /// <summary>

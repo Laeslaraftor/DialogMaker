@@ -39,5 +39,75 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// <returns>Is successfully executed</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected abstract DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken);
+
+        #region Static
+
+        internal static unsafe DSharpMethodExecutionCallback CallAccessor(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken, DSharpPropertyAccessor accessorType, bool isInstance, bool isBase)
+        {
+            DSharpObject* instance = null;
+            DSharpRuntimePropertyInfo* property;
+
+            try
+            {
+                property = context.TypesProvider.GetProperty(metadataToken);
+            }
+            catch (Exception exception)
+            {
+                return context.ThrowExecutionException(exception);
+            }
+
+            var accessor = GetAccessor(property, accessorType);
+
+            if (accessor == null)
+            {
+                return context.ThrowExecutionException($"Unable to get value from property \"{property->ToString()}\" because it have not getter");
+            }
+
+            int stackValues = accessor->ParametersType.Length;
+
+            if (isInstance)
+            {
+                stackValues++;
+            }
+            if (CheckStackValues(instruction, context, stackValues, out var error))
+            {
+                return error;
+            }
+            if (isInstance)
+            {
+                stackValues--;
+                instance = GetInstance(context, (uint)stackValues, out error);
+
+                if (instance == null)
+                {
+                    return error;
+                }
+                if (!isBase && property->CanBeOverriden)
+                {
+                    if (instance->Type->OverridenProperties.TryGetValue(property, out var endPointProperty))
+                    {
+                        property = endPointProperty;
+                        accessor = GetAccessor(endPointProperty, accessorType);
+                    }
+                    else if (property->DeclaringType->ObjectType == DSharpObjectType.Interface ||
+                             property->IsAbstract)
+                    {
+                        return context.ThrowExecutionException($"Unable to find end-point method for \"{property->ToString()}\"");
+                    }
+                }
+            }
+
+            var args = DSharpCallInstructionExecutor.CreateArguments(context, accessor);
+
+            return DSharpMethodExecutionCallback.Call(instance, accessor, args);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private unsafe static DSharpRuntimeMethodInfo* GetAccessor(DSharpRuntimePropertyInfo* property, DSharpPropertyAccessor accessorType)
+        {
+            return accessorType == DSharpPropertyAccessor.Getter ? property->Getter : property->Setter;
+        }
+
+        #endregion
     }
 }

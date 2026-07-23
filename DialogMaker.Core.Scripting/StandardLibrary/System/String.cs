@@ -7,10 +7,7 @@ public sealed class String : IEnumerable<char>
     public String()
     {
     }
-    public String(char[] chars) : this(chars, true)
-    {
-    }
-    private String(char[] chars, bool makeCopy)
+    public String(char[] chars)
     {
     }
 
@@ -42,12 +39,17 @@ public sealed class String : IEnumerable<char>
 
         return new(chars);
     }
-    public static string operator +(string l, object r) => l + r.ToString();
-    public static string operator +(object l, string r) => l.ToString() + r;
+    public static string operator +(string l, object r) => Ctor(l, r.ToString());
+    public static string operator +(object l, string r) => Ctor(l.ToString(), r);
 
     public static readonly string Empty = "";
 
     public static bool IsNullOrEmpty(string str) => str == null || str == Empty;
+
+    private static string Ctor() => Empty;
+    private static extern string Ctor(char[] chars);
+    private static extern string Ctor(string str1, string str2);
+    private static extern string Ctor(string[] values);
 
     private class Enumerator : IEnumerator<char>
     {

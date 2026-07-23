@@ -951,7 +951,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 membersSource = currentType;
                 members = currentType.GetAllMembers(m => m.Name == name &&
                                                          m is IDSharpMethodInfo method &&
-                                                         m.DeclaringType?.ObjectType != DSharpObjectType.Interface &&
                                                          method.MethodType == DSharpMethodType.Default);
             }
 
@@ -977,7 +976,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     var callingInfo = DSharpMethodCallingInfo.Create(method, parameters, genericParameters);
 
-                    if (methodCallingInfo != null)
+                    if (methodCallingInfo != null && methodCallingInfo.Method.DeclaringType.ObjectType != DSharpObjectType.Interface)
                     {
                         if (methodCallingInfo.Method.OverrideMethod != null)
                         {

@@ -15,11 +15,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <summary>
         /// Dictionary capacity
         /// </summary>
-        public int Capacity => _pairs.Capacity;
+        public readonly int Capacity => _pairs.Capacity;
         /// <summary>
         /// Current amount of pairs
         /// </summary>
-        public int Count => _pairs.Count;
+        public readonly int Count => _pairs.Count;
         /// <summary>
         /// Value getter/setter
         /// </summary>
@@ -65,7 +65,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// </summary>
         /// <param name="index">Pair index</param>
         /// <returns>Pair on specified index</returns>
-        public UnmanagedPair<TKey, TValue> this[int index] => _pairs[index];
+        public readonly UnmanagedPair<TKey, TValue> this[int index] => _pairs[index];
 
         private UnmanagedList<UnmanagedPair<TKey, TValue>> _pairs = buffer;
 
@@ -112,11 +112,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// Add pair
         /// </summary>
         /// <param name="key">Pair key</param>
+        /// <param name="fast">Disable key checking</param>
         /// <param name="value">Pair value</param>
         /// <exception cref="ArgumentException">Value with same key already added</exception>
-        public void Add(TKey key, TValue value)
+        public void Add(TKey key, TValue value, bool fast = false)
         {
-            if (ContainsKey(key))
+            if (!fast && ContainsKey(key))
             {
                 throw new ArgumentException("Value with same key already added", nameof(key));
             }

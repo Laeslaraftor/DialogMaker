@@ -42,7 +42,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             if (method.MethodType == DSharpMethodType.Constructor &&
                 _createdConstructors.TryGetValue(method, out var node))
             {
-                CompileConstructor(method, node, code, context);
+                CompileConstructor(method, node, code, ref settings, context);
             }
 
             CompileStatement(method, body, 0, code, ref settings, context);
@@ -63,7 +63,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
         }
 
-        private void CompileConstructor(DSharpMethodBuilder method, ConstructorNode node, DSharpBytecodeBuilder code, DSharpCompilerContext context = default)
+        private void CompileConstructor(DSharpMethodBuilder method, ConstructorNode node, DSharpBytecodeBuilder code, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context = default)
         {
             if (node.Type == DSharpConstructorType.Default)
             {
@@ -84,6 +84,11 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             code.LoadInstance();
+
+            foreach (var parameter in node.ExtraInvokeParameters)
+            {
+                CompileValueExpression(method, parameter, ref settings, null, context);
+            }
 
             if (node.Type == DSharpConstructorType.BaseInvocation)
             {
@@ -471,12 +476,12 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new ArgumentException($"Incomplete foreach statement: {statement}", nameof(statement));
                 }
 
-                var expressionResult = CompileValueExpression(method, foreachStatement.EnumeratorExpression, ref settings, null, context)
-                    ?? throw new ArgumentException($"Invalid expression in foreach statement: {statement}", nameof(statement));
+                var expressionReturnType = foreachStatement.EnumeratorExpression.GetExpressionType(Assembly, context) as IDSharpType;
+                var expressionResult = CompileValueExpression(method, foreachStatement.EnumeratorExpression, ref settings, null, context);
 
-                if (!expressionResult.TryGetReturnType(out var expressionReturnType))
+                if (expressionReturnType == null)
                 {
-                    throw new ArgumentException($"Unable to get return type of expression in foreach statement: {statement}", nameof(statement));
+                    throw new ArgumentException($"Unable to get return type of expression in foreach statement: {foreachStatement.EnumeratorExpression}", nameof(statement));
                 }
 
                 var returnTypeMethods = expressionReturnType.GetAllMembers(m => m is IDSharpMethodInfo &&
@@ -1068,6 +1073,11 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     c.ParentExpression = p;
                     var result = CompileValueExpression(method, e, ref s, p, c);
+                    
+                    if (result != null && result is not IDSharpType && !result.IsStatic)
+                    {
+                        code.PopOffset(1);
+                    }
 
                     return result;
                 }, ref settings, context);
@@ -1094,6 +1104,16 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 context.CurrentMember = method;
+                bool removeInstance = false;
+
+                if (!calledMethod.IsStatic &&
+                    (parentExpression == null ||
+                    parentExpression is ThisExpressionNode ||
+                    parentExpression is BaseExpressionNode))
+                {
+                    code.LoadInstance();
+                    removeInstance = true;
+                }
 
                 foreach (var arg in callExpression.Arguments)
                 {
@@ -1103,7 +1123,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 context.CurrentMember = startCurrentMember;
 
                 int popOffset = 0;
-                bool removeInstance = false;
 
                 void CallAuto(IDSharpMethodInfo method, ref DSharpMethodCompileSettings settings)
                 {
@@ -1133,14 +1152,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 if (calledMethod.ReturnType != null)
                 {
                     popOffset = 1;
-                }
-                if (!calledMethod.IsStatic &&
-                    (parentExpression == null ||
-                    parentExpression is ThisExpressionNode ||
-                    parentExpression is BaseExpressionNode))
-                {
-                    code.LoadInstance();
-                    removeInstance = true;
                 }
 
                 CallAuto(calledMethod, ref settings);
@@ -1269,7 +1280,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                             ?? throw new InvalidOperationException($"Can not create new instance of object \"{type}\" because it not contains constructor with no parameters");
                     }
 
-                    code.New(type);
+                    if (type == method.Assembly.StringType)
+                    {
+                        code.Call(method.Assembly.StringTypeInfo.EmptyConstructor);
+                    }
+                    else
+                    {
+                        code.New(type);
+                    }
                 }
                 else
                 {
@@ -1285,7 +1303,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                     {
                         var constructor = typeContext.FindConstructor(parameters)
                             ?? throw new ArgumentException($"Unable to find constructor with parameters {newExpression.Parameters.Count} at {type}:{Environment.NewLine} {expression}", nameof(expression));
-                        code.New(constructor);
+
+                        if (type == method.Assembly.StringType)
+                        {
+                            code.Call(method.Assembly.StringTypeInfo.CharsArrayConstructor);
+                        }
+                        else
+                        {
+                            code.New(constructor);
+                        }
                     }
                     catch (Exception error)
                     {

@@ -19,14 +19,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             {
                 return context.ThrowExecutionException("Unable to load current instance when it not provided");
             }
-            if (context.ObjectInstance->Type->IsValueType)
-            {
-                context.Stack.PushStructure(context.ObjectInstance, false);
-            }
-            else
-            {
-                context.Stack.PushReference(context.ObjectInstance);
-            }
+           
+            // Force push reference to current instance.
+            // If current type is value type and push it as structure
+            // it counts as creating new instance and because of this
+            // makes impossible to set fields values to current instance.
+            // Force pushing reference not make value types boxing,
+            // it just push pointer to other stack frame (with current instance)
+            context.Stack.PushReference(context.ObjectInstance, true);
 
             return DSharpMethodExecutionCallback.Complete();
         }

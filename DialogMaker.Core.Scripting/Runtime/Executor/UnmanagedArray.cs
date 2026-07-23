@@ -159,6 +159,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         public static implicit operator ReadOnlySpan<T>(UnmanagedArray<T> array) => new(array._items, array._length);
         public static implicit operator T*(UnmanagedArray<T> array) => array._items;
 
+        public static bool operator ==(UnmanagedArray<T> array, string text)
+        {
+            if (array.Length != text.Length)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                if (!Equals(text[i], array[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        public static bool operator !=(UnmanagedArray<T> array, string text) => !(array == text);
+
         #endregion
 
         #region Enumeration
