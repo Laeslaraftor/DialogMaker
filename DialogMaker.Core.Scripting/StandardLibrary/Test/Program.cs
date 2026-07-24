@@ -4,35 +4,37 @@ public class Program
 {
     public static void Main()
     {
-        /*
         IPlayer player = new Enemy("zeWhite");
 
         for (int i = 0; i < 5; i++)
         {
             player.PrintMessage();
         }
-        */
 
+        Console.WriteLine();
+
+        TestArray();
+        TestPlayersArray("zeBlack", 2);
+    }
+
+    private static void TestArray()
+    {
         string[] values = new string[] { "value1", "value2" };
         
         foreach (var value in values)
         {
             Console.WriteLine(value);
         }
+    }
+    private static void TestPlayersArray(string name, int count)
+    {
+        ValuePlayer[] players = new ValuePlayer[count];
 
-        /*
-        for (int i = 0; i < values.Length; i++)
+        for (int i = 0; i < players.Length; i++)
         {
-            var value = values[i]; 
-
-            Console.WriteLine(value);
-
-            for (int c = 0; c < value.Length; c++)
-            {
-                Console.WriteLine(value[c]);
-            }
+            players[i] = new(name);
+            players[i].PrintMessage();   
         }
-        */
     }
 }
 

@@ -83,7 +83,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <returns>Pointer to object instance</returns>
         protected unsafe static DSharpObject* GetInstance(DSharpExecutionContext context, uint offset, [NotNullWhen(true)] out DSharpMethodExecutionCallback error)
         {
-            var instanceFrame = context.Stack.Peek(offset);
+            var instanceFrame = context.Stack.PeekOnlyValues(offset);
 
             if (instanceFrame.ValueType == DSharpStackValueType.Null)
             {

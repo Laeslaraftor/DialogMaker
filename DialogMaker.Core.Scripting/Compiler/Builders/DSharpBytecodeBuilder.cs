@@ -163,7 +163,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 {
                     int index = Instructions.IndexOf(reference.ReferencedInstruction);
                     otherReference.ReferencedInstruction = otherInstructions[index];
-                } 
+                }
             }
         }
         public void CopyTo(UnmanagedArray<byte> byteArray)
@@ -205,6 +205,91 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 if (replacedMembers.TryGetValue(member, out var replacedMember))
                 {
                     return replacedMember;
+                }
+
+                List<IDSharpType> declaringTypes = [];
+                var declaringType = member.DeclaringType;
+
+                while (declaringType != null)
+                {
+                    if (replacedMembers.TryGetValue(declaringType, out var replaced))
+                    {
+                        declaringType = (IDSharpType)replaced;
+                        break;
+                    }
+
+                    var replacedType = Method.Assembly.ReplaceGenericParameters(declaringType, replacedMembers);
+
+                    if (replacedType != declaringType)
+                    {
+                        declaringType = replacedType;
+                        break;
+                    }
+
+                    declaringTypes.Add(declaringType);
+                    declaringType = declaringType.DeclaringType;
+                }
+                if (declaringType == null)
+                {
+                    return member;
+                }
+
+                while (declaringTypes.Count > 0)
+                {
+                    var searchType = declaringTypes[^1];
+                    var newType = declaringType.GetChildrenTypes().FirstOrDefault(t => t.Name == searchType.Name)
+                        ?? throw new InvalidOperationException($"Unable to find \"{searchType}\" in \"{declaringType}\"");
+                    declaringType = newType;
+                    declaringTypes.RemoveAt(declaringTypes.Count - 1);
+                }
+
+                List<IDSharpType> ReplaceParameterTypes(IEnumerable<IDSharpParameterInfo> parameters)
+                {
+                    List<IDSharpType> parameterTypes = [];
+
+                    foreach (var parameter in parameters)
+                    {
+                        if (replacedMembers.TryGetValue(parameter.Type, out var replacedType))
+                        {
+                            parameterTypes.Add((IDSharpType)replacedType);
+                            continue;
+                        }
+
+                        var type = Method.Assembly.ReplaceGenericParameters(parameter.Type, replacedMembers);
+
+                        parameterTypes.Add(type);
+                    }
+
+                    return parameterTypes;
+                }
+
+                if (member is IDSharpIndexerInfo indexer)
+                {
+                    var replacedParameterTypes = ReplaceParameterTypes(indexer.GetParameters());
+                    return declaringType.GetIndexer(replacedParameterTypes);
+                }
+                else if (member is IDSharpPropertyInfo)
+                {
+                    return declaringType.GetProperty(member.Name);
+                }
+                else if (member is IDSharpFieldInfo)
+                {
+                    return declaringType.GetField(member.Name);
+                }
+                else if (member is IDSharpMethodInfo method)
+                {
+                    var replacedParameterTypes = ReplaceParameterTypes(method.GetParameters());
+
+                    if (method.MethodType == DSharpMethodType.Constructor)
+                    {
+                        return declaringType.GetConstructors(m => m.Name == member.Name &&
+                                                                  m.GetParameters().Select(p => p.Type).SequenceEqual(replacedParameterTypes)).FirstOrDefault()
+                                                                  ?? throw new InvalidOperationException($"Unable to find constructor \"{method}\" in \"{declaringType}\"");
+                    }
+
+                    return declaringType.GetMethods(m => m.Name == member.Name &&
+                                                         m.GetParameters().Select(p => p.Type).SequenceEqual(replacedParameterTypes)).FirstOrDefault()
+                                                         ?? throw new InvalidOperationException($"Unable to find method \"{method}\" in \"{declaringType}\"");
                 }
 
                 return member;
@@ -888,7 +973,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         }
         public TypeInstruction CallAuto(IDSharpMethodInfo method, bool isAwait = false, bool nextNonVirtualizedAccess = false)
         {
-            bool isStatic = method.IsStatic || 
+            bool isStatic = method.IsStatic ||
                             method.DeclaringType == null;
 
             if (isAwait)
@@ -1394,7 +1479,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             if (variableName != null)
             {
                 var variable = LocalVariables.FirstOrDefault(v => v.Name == variableName);
-                
+
                 if (variable == null)
                 {
                     return null;

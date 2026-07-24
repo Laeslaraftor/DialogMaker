@@ -56,27 +56,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 return context.ThrowExecutionException(exception);
             }
 
-            var accessor = GetAccessor(property, accessorType);
+            DSharpRuntimeMethodInfo* accessor = GetAccessor(property, accessorType);
 
-            if (accessor == null)
-            {
-                return context.ThrowExecutionException($"Unable to get value from property \"{property->ToString()}\" because it have not getter");
-            }
-
-            int stackValues = accessor->ParametersType.Length;
+            uint parametersOffset = 0;
 
             if (isInstance)
             {
-                stackValues++;
-            }
-            if (CheckStackValues(instruction, context, stackValues, out var error))
-            {
-                return error;
-            }
-            if (isInstance)
-            {
-                stackValues--;
-                instance = GetInstance(context, (uint)stackValues, out error);
+                parametersOffset = 1;
+                instance = GetInstance(context, 0, out var error);
 
                 if (instance == null)
                 {
@@ -96,8 +83,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                     }
                 }
             }
+            else if (accessor == null)
+            {
+                return context.ThrowExecutionException($"Unable to get value from property \"{property->ToString()}\" because it have not getter");
+            }
 
-            var args = DSharpCallInstructionExecutor.CreateArguments(context, accessor);
+            var args = DSharpCallInstructionExecutor.CreateArguments(context, accessor, parametersOffset);
 
             return DSharpMethodExecutionCallback.Call(instance, accessor, args);
         }

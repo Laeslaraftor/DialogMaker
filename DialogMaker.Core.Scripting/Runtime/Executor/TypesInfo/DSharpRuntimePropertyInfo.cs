@@ -69,12 +69,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
         public readonly override string ToString()
         {
+            string declaringType = string.Empty;
+
+            if (DeclaringType != null)
+            {
+                declaringType = DeclaringType->ToString() + ".";
+            }
             if (Name.Length == 0)
             {
-                return "Nameless field";
+                return "Nameless property";
             }
 
-            return new((ReadOnlySpan<char>)Name);
+            return declaringType + new string((ReadOnlySpan<char>)Name);
         }
 
         #region Static

@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
+﻿using DialogMaker.Core.Scripting.Compiler.Builders;
+using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
 using System.Reflection;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
@@ -288,6 +289,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             if (methodInfo->IsExtern)
             {
                 throw new InvalidOperationException("Unable to get bytecode for extern method");
+            }
+
+            if (Assembly.GetType(methodInfo->MetadataToken) is DSharpMethodBuilder m)
+            {
+                var b = m.GetBytecodeBuilder();
+                Console.WriteLine($"Parsing method bytecode \"{m}\":");
+                Console.WriteLine(b.ToString());
+                Console.WriteLine();
             }
 
             methodInfo->ParsedBytecode = DSharpRuntimeBytecode.Parse(_memoryManager, this, methodInfo->Bytecode);

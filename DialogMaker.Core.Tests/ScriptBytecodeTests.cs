@@ -36,6 +36,12 @@ namespace DialogMaker.Core.Tests
             var assembly = ScriptCompilerTests.CompileScript(scriptName);
             ReadFunctionOrMethod(assembly, functionName);
         }
+        [TestCase("System.Array`1.Enumerator.MoveNext")]
+        public static void PrintMethodBytecode(string methodName)
+        {
+            var assembly = ScriptCompilerTests.CompileStandardLibrary();
+            ReadFunctionOrMethod(assembly, methodName);
+        }
 
         private static void ReadFunctionOrMethod(DSharpAssemblyBuilder assembly, string fullName)
         {

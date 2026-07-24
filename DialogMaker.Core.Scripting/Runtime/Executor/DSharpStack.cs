@@ -42,6 +42,40 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
         #region Controls
 
+        public FrameInfo PeekOnlyValues(uint offset = 0)
+        {
+            if (IsDisposed)
+            {
+                throw new ObjectDisposedException(nameof(DSharpStack), "Stack has been disposed");
+            }
+            if (_frameIndex == -1)
+            {
+                throw new InvalidOperationException("Stack is empty");
+            }
+
+            int index = _frameIndex;
+
+            while (index >= 0)
+            {
+                var frame = _frames[index];
+
+                if (frame.ValueType == DSharpStackValueType.Null ||
+                    frame.ValueType == DSharpStackValueType.Reference ||
+                    frame.ValueType == DSharpStackValueType.Structure)
+                {
+                    if (offset == 0)
+                    {
+                        return frame;
+                    }
+
+                    offset--;
+                }
+
+                index--;
+            }
+
+            throw new IndexOutOfRangeException();
+        }
         public FrameInfo Peek(uint offset = 0)
         {
             if (IsDisposed)

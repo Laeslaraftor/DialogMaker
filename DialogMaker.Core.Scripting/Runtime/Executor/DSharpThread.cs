@@ -194,7 +194,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
                     var lastCallback = methodExecutor->LastCallback;
 
-                    if (lastCallback != null && 
+                    if (lastCallback != null &&
                         lastCallback.Value.Type == DSharpMethodExecutionCallbackType.InitializeObject &&
                         lastCallback.Value.ObjectInstance->Type->Initializer != null)
                     {

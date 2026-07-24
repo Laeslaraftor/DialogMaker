@@ -29,7 +29,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             var stackValue = context.Stack.Peek();
             var objectReference = (DSharpObject*)stackValue.ReadReference();
 
-            //Unboxing references to stack
+            // Unboxing references to stack
             if (stackValue.ValueType == DSharpStackValueType.Reference &&
                 !objectReference->IsReferenceObject &&
                 context.ObjectsContainer.Unbox(objectReference, variable->Buffer))
@@ -37,7 +37,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 variable->Buffer.ValueType = DSharpStackValueType.Structure;
             }
             else if (!variable->ParameterInfo->Type->IsValueType &&
-                stackValue.ValueType == DSharpStackValueType.Structure)
+                     stackValue.ValueType == DSharpStackValueType.Structure)
             {
                 var boxedValue = (nint)context.ObjectsContainer.Box((DSharpObject*)stackValue.StackPointer);
                 variable->Buffer.ValueType = DSharpStackValueType.Reference;

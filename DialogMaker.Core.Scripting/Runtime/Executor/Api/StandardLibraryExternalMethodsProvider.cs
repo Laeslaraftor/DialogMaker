@@ -343,6 +343,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                                                                     UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters,
                                                                     UnmanagedArray<DSharpExecutionLocalVariable> arguments)
         {
+            if (arguments.Length == 0)
+            {
+                Console.WriteLine();
+                return null;
+            }
             if (arguments[0].ParameterInfo->Type->Name == "Char")
             {
                 return ConsoleWriteLineChar(instance, methodInfo, genericParameters, arguments);

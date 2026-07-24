@@ -54,7 +54,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         {
             var scopes = &_executor->LocalScopes;
 
-            if (scopes->Count + 1 >= scopes->Capacity)
+            if (scopes->Count + 1 > scopes->Capacity)
             {
                 throw new InvalidOperationException("Unable to get next scope because all allocated scopes already used");
             }

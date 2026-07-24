@@ -41,7 +41,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             if (isInstance)
             {
-                instance = GetInstance(context, 1, out error);
+                instance = GetInstance(context, 0, out error);
 
                 if (instance == null)
                 {
@@ -52,7 +52,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             try
             {
                 var field = context.TypesProvider.GetField(metadataToken);
-                field->Write(context.ObjectsContainer, instance, context.Stack);
+                field->Write(context.ObjectsContainer, instance, context.Stack, 1);
             }
             catch (Exception exception)
             {

@@ -36,10 +36,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
         public IDSharpParameterInfo[] GetParameters() => [.. Parameters];
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             var result = base.ToString() + "[";
@@ -99,7 +95,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             CopyTo(Parameters, method.Parameters, true);
         }
 
-        private void OnParametersCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        private void OnParametersCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             if (Getter != null)
             {

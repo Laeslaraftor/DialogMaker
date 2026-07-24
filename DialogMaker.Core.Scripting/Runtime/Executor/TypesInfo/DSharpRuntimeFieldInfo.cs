@@ -178,11 +178,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <summary>
         /// Write current stack value to field
         /// </summary>
+        /// <param name="objectsContainer">D# objects container</param>
         /// <param name="instance">Object instance</param>
         /// <param name="stack">Stack for writing it's current value to field</param>
-        public void Write(DSharpObjectsContainer objectsContainer, DSharpObject* instance, DSharpStack stack)
+        /// <param name="offset">Stack peek offset</param>
+        public void Write(DSharpObjectsContainer objectsContainer, DSharpObject* instance, DSharpStack stack, uint offset)
         {
-            var frame = stack.Peek(0);
+            var frame = stack.Peek(offset);
 
             if (frame.ValueType == DSharpStackValueType.Structure)
             {
@@ -204,12 +206,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
         public readonly override string ToString()
         {
+            string declaringType = string.Empty;
+
+            if (DeclaringType != null)
+            {
+                declaringType = DeclaringType->ToString() + ".";
+            }
             if (Name.Length == 0)
             {
                 return "Nameless field";
             }
 
-            return new((ReadOnlySpan<char>)Name);
+            return declaringType + new string((ReadOnlySpan<char>)Name);
         }
 
         private int GetOffset(DSharpObject* instance)

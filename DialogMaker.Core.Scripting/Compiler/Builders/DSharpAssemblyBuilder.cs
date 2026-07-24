@@ -895,10 +895,32 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 replacedMembers.Add(method, newMethod);
             }
 
+            replacedMembers.Add(genericType, newType);
+
+            foreach (var info in replacedTypes)
+            {
+                replacedMembers.TryAdd(info.Key, info.Value);
+            }
+
             newType._templatedMembers = new ReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo>(replacedMembers);
             newType._replacedTypes = new(replacedTypes);
 
             return newType;
+        }
+        public IDSharpType ReplaceGenericParameters(IDSharpType genericType, IReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo> replacedMembers)
+        {
+            Dictionary<IDSharpType, IDSharpType> replacedTypes = [];
+
+            foreach (var info in replacedMembers)
+            {
+                if (info.Key is IDSharpType sourceType &&
+                    info.Value is IDSharpType destinationType)
+                {
+                    replacedTypes.Add(sourceType, destinationType);
+                }
+            }
+
+            return ReplaceGenericParameters(genericType, replacedTypes);
         }
         public IDSharpType ReplaceGenericParameters(IDSharpType genericType, IDictionary<IDSharpType, IDSharpType> replacedTypes)
         {

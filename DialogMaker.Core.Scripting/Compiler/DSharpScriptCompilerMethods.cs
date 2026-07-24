@@ -170,13 +170,12 @@ namespace DialogMaker.Core.Scripting.Compiler
                 };
                 context = new(context, initializer);
 
-                code.LoadInstance();
-
                 foreach (var info in initializers)
                 {
                     CompileValueExpression(initializer, info.Value, ref settings, null, context);
+                    code.LoadInstance();
                     code.StorePropertyOrField(info.Key);
-                    code.Pop();
+                    code.PopRepeat(2);
                 }
             }
 
@@ -901,9 +900,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                     var indexerSetterParameters = indexer.Setter.GetParameters();
                     var valueType = indexerSetterParameters[0].Type;
 
-                    CompileValueExpression(method, arrayAccess.Array, ref settings, arrayAccess, context);
-                    CompileExpression(indexer.PropertyType, ref settings);
-
                     for (int i = 0; i < arrayAccess.Arguments.Count; i++)
                     {
                         var requestedType = indexerSetterParameters[i + 1].Type;
@@ -911,12 +907,23 @@ namespace DialogMaker.Core.Scripting.Compiler
                         CompileExpressionValueWithRequestedType(method, requestedType, code, arg, ref settings, arrayAccess, context);
                     }
 
+                    CompileExpression(indexer.PropertyType, ref settings);
+                    CompileValueExpression(method, arrayAccess.Array, ref settings, arrayAccess, context);
+
                     code.LoadPropertyOrField(indexer, settings.NextNonVirtualizedAccess);
-                    //code.CallAuto(indexer.Setter);
                     code.PopRepeat(arrayAccess.Arguments.Count + 2);
                 }
                 else
                 {
+                    var expressionType = assignExpression.Left.GetExpressionType(Assembly, context);
+
+                    if (expressionType is not IDSharpType leftSideType)
+                    {
+                        throw new InvalidOperationException($"Unable to get value type of left expression: {expression}");
+                    }
+
+                    CompileExpression(leftSideType, ref settings);
+
                     IDSharpMemberInfo? member = CompileEndPointMember(method, code, assignExpression.Left, assignExpression, ref settings, context)
                         ?? throw new ArgumentException($"Unable to find member: {assignExpression.Left}", nameof(expression));
 
@@ -924,9 +931,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                     {
                         throw new InvalidOperationException($"Unable to get value type of \"{member}\": {expression}");
                     }
-
-
-                    CompileExpression(returnType, ref settings);
 
                     if (method.MethodType == DSharpMethodType.Constructor &&
                         member is IDSharpPropertyInfo property && !property.CanWrite)
@@ -1073,8 +1077,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     c.ParentExpression = p;
                     var result = CompileValueExpression(method, e, ref s, p, c);
-                    
-                    if (result != null && result is not IDSharpType && !result.IsStatic)
+
+                    if (result != null && result is not IDSharpType && !result.IsStatic &&
+                        p is not BaseExpressionNode &&
+                        p is not ThisExpressionNode && result.TryGetReturnType(out _))
                     {
                         code.PopOffset(1);
                     }
@@ -1144,8 +1150,9 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 if (!calledMethod.IsStatic && method.IsStatic &&
-                        parentExpression is not IdentifierExpressionNode &&
-                        parentExpression is not MemberAccessExpressionNode)
+                     parentExpression is not IdentifierExpressionNode &&
+                     parentExpression is not MemberAccessExpressionNode &&
+                     parentExpression is not ArrayAccessExpressionNode)
                 {
                     throw new InvalidOperationException($"Unable to call instance method from static method: {expression}");
                 }
@@ -1187,13 +1194,12 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new ArgumentException($"Array index must be specified: {arrayExpression}", nameof(expression));
                 }
 
-                var array = CompileValueExpression(method, arrayExpression.Array, ref settings, arrayExpression, context);
-
                 foreach (var arg in arrayExpression.Arguments)
                 {
                     CompileValueExpression(method, arg, ref settings, arrayExpression, context);
                 }
 
+                var array = CompileValueExpression(method, arrayExpression.Array, ref settings, arrayExpression, context);
                 IDSharpIndexerInfo indexer;
 
                 try
@@ -1400,18 +1406,30 @@ namespace DialogMaker.Core.Scripting.Compiler
                 code.NewArray(type);
                 code.PopOffset(1);
 
+                if (context.Scope == null ||
+                    !context.Scope.TryCreateVariable($"_newArrayInstance_{expression.Line}_{expression.Column}", type, out var arrayVariable))
+                {
+                    throw new InvalidOperationException($"Unable to create variable for temporal storing new array instance: {expression}");
+                }
+
+                code.StoreLocal(arrayVariable);
+                code.Pop();
+
                 for (int i = 0; i < newArrayExpression.ItemsExpressions.Count; i++)
                 {
                     var item = newArrayExpression.ItemsExpressions[i];
 
                     CompileValueExpression(method, item, ref settings, expression, context);
                     code.Push(i);
+                    code.LoadLocal(arrayVariable);
                     code.StorePropertyOrField(arrayInfo.Indexer);
-                    //code.CallAuto(arrayInfo.IndexerSetter);
-                    code.PopRepeat(2);
+
+                    code.PopRepeat(3);
                 }
 
                 settings.LastOperationIsReturnsValue = true;
+
+                code.LoadLocal(arrayVariable);
 
                 return Assembly.CreateArray(type);
             }
@@ -1748,7 +1766,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 else
                 {
-                    type = CompileBinaryExpression(method, code, @operator, left.Value, right.Value, ref settings, binaryExpression, context);
+                    type = CompileBinaryExpression(method, code, @operator, left.Value, right.Value, ref settings, binaryExpression, context, leftType != null);
                 }
 
                 expressionTypes.TryAdd(left.Value, type);
@@ -1792,7 +1810,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// <exception cref="InvalidOperationException">Unable to compile binary operation. Unable to get type of left expression</exception>
         /// <exception cref="InvalidOperationException">Unable to compile binary operation. Unable to get type of right expression</exception>
         /// <exception cref="InvalidOperationException">Unable to perform operation</exception>
-        private IDSharpType CompileBinaryExpression(DSharpMethodBuilder method, DSharpBytecodeBuilder code, DSharpBinaryOperator binaryOperator, ExpressionNode left, ExpressionNode right, ref DSharpMethodCompileSettings settings, ExpressionNode? parentExpression = null, DSharpCompilerContext context = default)
+        private IDSharpType CompileBinaryExpression(DSharpMethodBuilder method, DSharpBytecodeBuilder code, DSharpBinaryOperator binaryOperator, ExpressionNode left, ExpressionNode right, ref DSharpMethodCompileSettings settings, ExpressionNode? parentExpression = null, DSharpCompilerContext context = default, bool skipLeftCompiling = false)
         {
             if (left.GetExpressionType(Assembly, context) is not IDSharpType leftType)
             {
@@ -1820,7 +1838,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                 CompileValueExpression(method, expression, ref settings, parentExpression, context);
             }
 
-            CompileExpression(left, ref settings);
+            if (!skipLeftCompiling)
+            {
+                CompileExpression(left, ref settings);
+            }
 
             DSharpBytecodeBuilder.ReferenceInstruction? skipInstruction = null;
 
@@ -2163,8 +2184,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                 ?? throw new ArgumentException($"Unable to find member: {expression}", nameof(expression));
 
             code.LoadPropertyOrField(member, settings.NextNonVirtualizedAccess);
+            
+            if (!member.IsStatic)
+            {
+                code.PopOffset(1);
+            }
+
             settings.NextNonVirtualizedAccess = false;
             operation();
+            CompileEndPointMember(method, code, expression, null, ref settings, context);
             code.StorePropertyOrField(member, settings.NextNonVirtualizedAccess);
             settings.NextNonVirtualizedAccess = false;
 

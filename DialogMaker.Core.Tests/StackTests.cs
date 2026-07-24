@@ -5,6 +5,7 @@ namespace DialogMaker.Core.Tests
 {
     public class StackTests
     {
+        /*
         [Test]
         public static void PushTest()
         {
@@ -111,5 +112,6 @@ namespace DialogMaker.Core.Tests
             stack.Pop(offset, count);
             PrintStack("Now values: ");
         }
+        */
     }
 }

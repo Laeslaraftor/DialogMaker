@@ -532,12 +532,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             var fields = GenericTemplate.GetFields();
             var methods = GenericTemplate.GetMethods();
             var constructors = GenericTemplate.GetConstructors();
-            var genericTypes = GenericTemplate.GetGenericTypes();
 
-            if (genericTypes.Length != GenericParameters.Count)
-            {
-                throw new InvalidOperationException($"Type must contains same amount of generic parameters that it's template");
-            }
             if (properties.Length != Properties.Count)
             {
                 throw new InvalidOperationException($"Type must contains same properties that it's template");
@@ -564,10 +559,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 }
             }
 
-            for (int i = 0; i < genericTypes.Length; i++)
+            var declaringType = this;
+
+            while (declaringType != null)
             {
-                var newType = (IDSharpType)Assembly.GetType(GenericParameters[i]);
-                members.Add(genericTypes[i], newType);
+                if (declaringType.GenericTemplate != null)
+                {
+                    var genericTypes = declaringType.GenericTemplate.GetGenericTypes();
+                    var genericParameters = declaringType.GetGenericParameters();
+
+                    for (int i = 0; i < genericTypes.Length; i++)
+                    {
+                        members.TryAdd(genericTypes[i], genericParameters[i]);
+                    }
+                }
+
+                declaringType = declaringType.DeclaringType;
             }
 
             Copy(properties, Properties);

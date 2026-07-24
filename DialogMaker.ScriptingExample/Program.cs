@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Builders;
-using DialogMaker.Core.Scripting.Runtime;
+﻿using DialogMaker.Core.Scripting.Runtime;
 using DialogMaker.Core.Scripting.Runtime.Executor;
 using DialogMaker.ScriptingExample;
 
@@ -29,13 +28,6 @@ if (entryPoint == null)
 {
     Console.WriteLine($"Entry method \"Main\" not found at \"{entryType}\"");
     return;
-}
-
-if (entryPoint is DSharpMethodBuilder builder)
-{
-    var bytecode = builder.GetBytecodeBuilder();
-    Console.WriteLine("Bytecode: ");
-    Console.WriteLine(bytecode.ToString());
 }
 
 DSharpVm vm = new(assembly);
