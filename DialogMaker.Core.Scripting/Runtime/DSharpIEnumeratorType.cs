@@ -1,7 +1,7 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
-using DialogMaker.Core.Scripting.Runtime;
+﻿using DialogMaker.Core.Scripting.Compiler;
+using DialogMaker.Core.Scripting.Compiler.Ast;
 
-namespace DialogMaker.Core.Scripting.Compiler.Builders
+namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
     /// Class that provides information about enumerator

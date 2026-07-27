@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor;
+using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
@@ -196,6 +197,21 @@ namespace DialogMaker.Core.Scripting.Runtime
             }
 
             return obj->Type->Converter(obj);
+        }
+        /// <summary>
+        /// Get message from D# exception instance
+        /// </summary>
+        /// <param name="exception">D# exception instance</param>
+        /// <returns>Exception message</returns>
+        public static string GetMessage(DSharpObject* exception)
+        {
+            if (exception->Type->TryGetField("Message__value", out var field))
+            {
+                var value = field->Read(exception);
+                return ToString(value);
+            }
+
+            throw new ArgumentException($"Unable to find field with message value at {exception->ToString()}", nameof(exception));
         }
 
         private static void CheckType(DSharpObject* obj, DSharpBuildInTypeInfo typeInfo)

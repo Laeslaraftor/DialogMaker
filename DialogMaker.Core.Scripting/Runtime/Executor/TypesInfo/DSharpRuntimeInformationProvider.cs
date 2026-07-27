@@ -15,6 +15,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// Assembly that contains providing types information
         /// </summary>
         public IDSharpAssembly Assembly { get; } = assembly;
+        /// <summary>
+        /// Information about runtime helper type
+        /// </summary>
+        public DSharpRuntimeHelperType RuntimeHelperType { get; } = DSharpRuntimeHelperType.Create(assembly);
         public DSharpRuntimeTypeInfo* Object
         {
             get
@@ -291,13 +295,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 throw new InvalidOperationException("Unable to get bytecode for extern method");
             }
 
-            if (Assembly.GetType(methodInfo->MetadataToken) is DSharpMethodBuilder m)
-            {
-                var b = m.GetBytecodeBuilder();
-                Console.WriteLine($"Parsing method bytecode \"{m}\":");
-                Console.WriteLine(b.ToString());
-                Console.WriteLine();
-            }
+            //if (Assembly.GetType(methodInfo->MetadataToken) is DSharpMethodBuilder m)
+            //{
+            //    var b = m.GetBytecodeBuilder();
+            //    Console.WriteLine($"Parsing method bytecode \"{m}\":");
+            //    Console.WriteLine(b.ToString());
+            //    Console.WriteLine();
+            //}
 
             methodInfo->ParsedBytecode = DSharpRuntimeBytecode.Parse(_memoryManager, this, methodInfo->Bytecode);
 
@@ -563,8 +567,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 CreatePropertyInfo(info, properties[i], info->Properties.GetItemReference(i), ref builder);
             }
 
-            int fieldOffset = sizeof(DSharpObject);
+            int fieldOffset;
             int staticFieldOffset = 0;
+
+            if (type.Name == "Array" && type.Namespace == "System")
+            {
+                fieldOffset = sizeof(DSharpArray);
+            }
+            else
+            {
+                fieldOffset = sizeof(DSharpObject);
+            }
+
 
             for (int i = 0; i < fields.Count; i++)
             {

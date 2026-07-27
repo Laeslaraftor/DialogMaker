@@ -9,9 +9,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
-            throw new NotImplementedException();
+            if (CheckArguments(instruction, context, 1, out var error))
+            {
+                return error;
+            }
+            if (0 >= context.CurrentTryCatchFinallyId)
+            {
+                return context.ThrowExecutionException("Unable to register finally block with no any try-catch-finally block");
+            }
+
+            int instructionIndex = *(int*)instruction.Arguments[0];
+
+            if (!context.AddFinallyBlock(instructionIndex))
+            {
+                return context.ThrowExecutionException("Current try-catch-finally block already contains finally block");
+            }
+
+            return DSharpMethodExecutionCallback.Complete();
         }
 
         public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
@@ -20,11 +36,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         }
         public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
-            throw new NotImplementedException();
+            stream->Read<int>();
+            return 1;
         }
         public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
         {
-            throw new NotImplementedException();
+            arguments[0] = stream->ReadSafePointer<int>();
         }
 
         #endregion

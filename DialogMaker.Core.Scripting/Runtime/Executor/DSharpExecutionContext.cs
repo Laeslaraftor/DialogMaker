@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions;
+using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
 {
@@ -40,6 +41,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// Current method local variables
         /// </summary>
         public UnmanagedArray<DSharpExecutionLocalVariable>* LocalVariables => &_executor->LocalVariables;
+        /// <summary>
+        /// <inheritdoc cref="DSharpMethodExecutor.CurrentTryCatchFinallyId"/>
+        /// </summary>
+        public int CurrentTryCatchFinallyId => _executor->CurrentTryCatchFinallyId;
+        /// <summary>
+        /// <inheritdoc cref="DSharpMethodExecutor.NextReturnInstructions"/>
+        /// </summary>
+        public UnmanagedList<uint>* NextReturnInstructions => &_executor->NextReturnInstructions;
+        /// <summary>
+        /// <inheritdoc cref="DSharpMethodExecutor.NowClosingTryCatchFinallyBlock"/>
+        /// </summary>
+        public bool NowClosingTryCatchFinallyBlock => _executor->NowClosingTryCatchFinallyBlock;
 
         private readonly DSharpMethodExecutor* _executor = executor;
 
@@ -83,26 +96,173 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         }
 
         /// <summary>
+        /// Start new try-catch-finally block
+        /// </summary>
+        /// <returns>Identifier of started try-catch-finally block</returns>
+        public int StartTryCatchFinally()
+        {
+            return _executor->CurrentTryCatchFinallyId++;
+        }
+        /// <summary>
+        /// End current try-catch-finally block
+        /// </summary>
+        /// <returns>Is try-catch-finally block ended</returns>
+        public bool EndTryCatchFinally() => EndTryCatchFinally(_executor);
+
+        /// <summary>
+        /// Add finally block start instruction index for current try-catch-finally block
+        /// </summary>
+        /// <param name="instructionIndex">Index of instruction that represents start of finally block</param>
+        /// <returns>Is finally block added</returns>
+        public bool AddFinallyBlock(int instructionIndex)
+        {
+            int currentId = _executor->CurrentTryCatchFinallyId;
+
+            for (int i = _executor->TryCatchFinallyDescriptions.Count - 1; i >= 0; i--)
+            {
+                var description = _executor->TryCatchFinallyDescriptions[i];
+
+                if (description.TryCatchFinallyBlockId == currentId &&
+                    description.IsFinallyBlock)
+                {
+                    return false;
+                }
+            }
+
+            _executor->TryCatchFinallyDescriptions.Add(new()
+            {
+                TryCatchFinallyBlockId = currentId,
+                InstructionIndex = (uint)instructionIndex,
+                IsFinallyBlock = true
+            });
+
+            return true;
+        }
+        /// <summary>
+        /// Add catch block for current try-catch-finally block
+        /// </summary>
+        /// <param name="exceptionType">Type of exception that specified catch block should handling</param>
+        /// <param name="instructionIndex">Index of instruction that represents start of catch block</param>
+        /// <returns>Is catch block added</returns>
+        public bool AddCatchBlock(DSharpRuntimeTypeInfo* exceptionType, int instructionIndex)
+        {
+            int currentId = _executor->CurrentTryCatchFinallyId;
+
+            for (int i = _executor->TryCatchFinallyDescriptions.Count - 1; i >= 0; i--)
+            {
+                var description = _executor->TryCatchFinallyDescriptions[i];
+
+                if (description.TryCatchFinallyBlockId == currentId &&
+                    !description.IsFinallyBlock &&
+                    description.ExceptionType == exceptionType)
+                {
+                    return false;
+                }
+            }
+
+            _executor->TryCatchFinallyDescriptions.Add(new()
+            {
+                TryCatchFinallyBlockId = currentId,
+                InstructionIndex = (uint)instructionIndex,
+                IsFinallyBlock = false,
+                ExceptionType = exceptionType
+            });
+
+            return true;
+        }
+        /// <summary>
+        /// Try to get current try-catch-finally block finally start instruction index
+        /// </summary>
+        /// <param name="result">Instruction index of start finally block</param>
+        /// <returns>Is instruction index successfully found</returns>
+        public bool TryGetCurrentFinallyBlockInstructionIndex(out uint result)
+        {
+            int currentId = _executor->CurrentTryCatchFinallyId;
+
+            for (int i = _executor->TryCatchFinallyDescriptions.Count - 1; i >= 0; i--)
+            {
+                var description = _executor->TryCatchFinallyDescriptions[i];
+
+                if (description.TryCatchFinallyBlockId == currentId &&
+                    description.IsFinallyBlock)
+                {
+                    result = description.InstructionIndex;
+                    return true;
+                }
+            }
+
+            result = 0;
+            return false;
+        }
+
+        /// <summary>
         /// Throw execution engine exception.
         /// This exception will be thrown in virtual machine, not in C#
         /// </summary>
         /// <param name="message">Exception message</param>
-        [Obsolete("todo: remove InvalidOperationException and add throwing exception directly in virtual machine")]
         public DSharpMethodExecutionCallback ThrowExecutionException(string message)
         {
-            throw new InvalidOperationException(message);
-            return DSharpMethodExecutionCallback.Throw(null);
+            var throwMethod = TypesProvider.RuntimeHelperType.ThrowExecutionEngineExceptionMethod;
+            var runtimeThrowMethod = TypesProvider.GetMethod(throwMethod.MetadataToken);
+
+            var messageInstance = ObjectsContainer.CreateString(message);
+            Stack.PushReference(messageInstance);
+            var args = DSharpCallInstructionExecutor.CreateArguments(this, runtimeThrowMethod);
+
+            return DSharpMethodExecutionCallback.Call(null, runtimeThrowMethod, args);
         }
         /// <summary>
         /// Throw execution engine exception.
         /// This exception will be thrown in virtual machine, not in C#
         /// </summary>
         /// <param name="exception">Exception for throwing</param>
-        [Obsolete("todo: remove InvalidOperationException and add throwing exception directly in virtual machine")]
         public DSharpMethodExecutionCallback ThrowExecutionException(Exception exception)
         {
-            throw exception;
             return ThrowExecutionException(exception.ToString());
+        }
+
+        #endregion
+
+        #region Static
+
+        /// <summary>
+        /// End current try-catch-finally block
+        /// </summary>
+        /// <returns>Is try-catch-finally block ended</returns>
+        public static bool EndTryCatchFinally(DSharpMethodExecutor* executor)
+        {
+            int currentId = executor->CurrentTryCatchFinallyId;
+
+            if (0 >= currentId)
+            {
+                return false;
+            }
+
+            while (true)
+            {
+                bool isDescriptionRemoved = false;
+
+                for (int i = executor->TryCatchFinallyDescriptions.Count - 1; i >= 0; i--)
+                {
+                    var description = executor->TryCatchFinallyDescriptions[i];
+
+                    if (description.TryCatchFinallyBlockId == currentId)
+                    {
+                        executor->TryCatchFinallyDescriptions.RemoveAt(i);
+                        isDescriptionRemoved = true;
+                        break;
+                    }
+                }
+
+                if (!isDescriptionRemoved)
+                {
+                    break;
+                }
+            }
+
+            executor->CurrentTryCatchFinallyId--;
+
+            return true;
         }
 
         #endregion

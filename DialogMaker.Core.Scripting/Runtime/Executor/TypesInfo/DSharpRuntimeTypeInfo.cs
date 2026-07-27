@@ -206,6 +206,36 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             return TryGetMember(Fields, metadataToken, out result);
         }
         /// <summary>
+        /// Try to get field by name
+        /// </summary>
+        /// <param name="name">Name of searching field</param>
+        /// <param name="result">Field that was found by name</param>
+        /// <returns>Is field successfully found</returns>
+        public readonly bool TryGetField(string name, out DSharpRuntimeFieldInfo* result)
+        {
+            DSharpRuntimeTypeInfo thisInfo = this;
+            DSharpRuntimeTypeInfo* type = &thisInfo;
+
+            while (type != null)
+            {
+                for (int i = 0; i < type->Fields.Length; i++)
+                {
+                    var field = type->Fields.GetItemReference(i);
+
+                    if (field->Name == name)
+                    {
+                        result = field;
+                        return true;
+                    }
+                }
+
+                type = type->BaseType;
+            }
+
+            result = null;
+            return false;
+        }
+        /// <summary>
         /// Try to get property by metadata token
         /// </summary>
         /// <param name="metadataToken">Property metadata token</param>

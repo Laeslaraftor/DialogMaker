@@ -28,8 +28,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                     throw new InvalidOperationException($"Referenced instruction ({ReferencedInstruction}) not exists in bytecode at \"{BytecodeBuilder.Method}\"");
                 }
 
-                var indexBytes = BitConverter.GetBytes(index);
-                stream.Write(indexBytes);
+                stream.Write(index);
             }
 
             public override Instruction Copy(DSharpBytecodeBuilder builder)

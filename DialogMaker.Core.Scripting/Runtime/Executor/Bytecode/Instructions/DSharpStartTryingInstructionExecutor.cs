@@ -11,7 +11,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
         public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
-            throw new NotImplementedException();
+            context.StartTryCatchFinally();
+            return DSharpMethodExecutionCallback.Complete();
         }
 
         public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
@@ -20,11 +21,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         }
         public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
-            throw new NotImplementedException();
+            return 0;
         }
         public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
         {
-            throw new NotImplementedException();
         }
 
         #endregion

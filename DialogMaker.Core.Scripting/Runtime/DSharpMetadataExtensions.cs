@@ -544,12 +544,23 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// <returns>Size of object</returns>
             public unsafe int GetSize(bool instance, bool failOnDynamicSize)
             {
+                var currentTypeFullName = type.FullName;
+
+                if (DSharpBuildInTypes.TryGetInfo(type, out var info))
+                {
+                    if (failOnDynamicSize && (currentTypeFullName == DSharpBuildInTypes.NativeInt ||
+                                              currentTypeFullName == DSharpBuildInTypes.NativeUnsignedInt))
+                    {
+                        return -1;
+                    }
+
+                    return info.Size;
+                }
+
                 int size = 0;
 
                 bool AddSize(IDSharpType type)
                 {
-                    var typeFullName = type.FullName;
-
                     if (!type.IsValueType())
                     {
                         if (failOnDynamicSize)
@@ -558,26 +569,27 @@ namespace DialogMaker.Core.Scripting.Runtime
                         }
 
                         size += sizeof(nint);
-                    }
-                    if (DSharpBuildInTypes.TryGetInfo(type, out var info))
-                    {
-                        if (failOnDynamicSize && (typeFullName == DSharpBuildInTypes.NativeInt ||
-                                                  typeFullName == DSharpBuildInTypes.NativeUnsignedInt))
-                        {
-                            return false;
-                        }
-
-                        size += sizeof(DSharpObject) + info.Size;
                         return true;
                     }
 
-                    size += type.GetSize(true, failOnDynamicSize);
+                    var typeFullName = type.FullName;
+                    var typeSize = type.GetSize(true, failOnDynamicSize);
+
+                    if (typeSize == -1)
+                    {
+                        return false;
+                    }
+
+                    size += typeSize;
                     return true;
                 }
 
                 foreach (var field in type.GetAllFields(instance))
                 {
-                    AddSize(field.FieldType);
+                    if (!AddSize(field.FieldType))
+                    {
+                        return -1;
+                    }
                 }
 
                 return size;

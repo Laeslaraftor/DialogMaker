@@ -22,7 +22,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             if (lastValue.ValueType == DSharpStackValueType.Reference)
             {
                 // todo: add type checking
-                exceptionInstance = (DSharpObject*)lastValue.StackPointer;
+                exceptionInstance = (DSharpObject*)lastValue.ReadReference();
             }
 
             return DSharpMethodExecutionCallback.Throw(exceptionInstance);

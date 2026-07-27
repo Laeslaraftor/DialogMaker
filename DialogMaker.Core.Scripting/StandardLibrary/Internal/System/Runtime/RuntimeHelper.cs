@@ -8,4 +8,8 @@ internal static class RuntimeHelper
     {
         throw new NotImplementedException();
     }
+    public static void ThrowExecutionEngineException(string message)
+    {
+        throw new ExecutionEngineException(message);
+    }
 }

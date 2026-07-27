@@ -9,8 +9,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
+            var nextInstructions = context.NextReturnInstructions;
+
+            if (nextInstructions->Count > 0)
+            {
+                var lastIndex = nextInstructions->Count - 1;
+                context.InstructionIndex = (*nextInstructions)[lastIndex];
+                nextInstructions->RemoveAt(lastIndex);
+                context.EndTryCatchFinally();
+
+                if (context.NowClosingTryCatchFinallyBlock)
+                {
+                    return DSharpMethodExecutionCallback.Throw(null);
+                }
+
+                return DSharpMethodExecutionCallback.Complete();
+            }
+
             return DSharpMethodExecutionCallback.Return();
         }
 

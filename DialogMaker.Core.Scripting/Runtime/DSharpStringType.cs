@@ -1,6 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Runtime;
-
-namespace DialogMaker.Core.Scripting.Compiler.Builders
+﻿namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
     /// Class that provides information about string type

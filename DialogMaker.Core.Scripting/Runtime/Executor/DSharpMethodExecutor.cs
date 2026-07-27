@@ -44,9 +44,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// </summary>
         public UnmanagedArray<DSharpRuntimeTypeInfo> GenericParameters;
         /// <summary>
-        /// List of registered catch blocks
+        /// List of try-catch-finally blocks descriptions
         /// </summary>
-        public UnmanagedList<DSharpCatchBlock> CatchBlocks;
+        public UnmanagedList<DSharpTryCatchFinallyDescription> TryCatchFinallyDescriptions;
         /// <summary>
         /// Scopes that created by bytecode
         /// </summary>
@@ -67,6 +67,98 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// Last callback that returned by <see cref="Execute(DSharpMethodExecutor*, DSharpObjectsContainer, DSharpThread)"/>
         /// </summary>
         public DSharpMethodExecutionCallback? LastCallback;
+        /// <summary>
+        /// Identifier of current try-catch-finally block
+        /// </summary>
+        public int CurrentTryCatchFinallyId;
+        /// <summary>
+        /// Instruction index that will be executed after next return instruction
+        /// </summary>
+        public UnmanagedList<uint> NextReturnInstructions;
+        /// <summary>
+        /// Now is closing try-catch-finally block
+        /// </summary>
+        public bool NowClosingTryCatchFinallyBlock;
+
+        #region Controls
+
+        /// <summary>
+        /// Check finally block containing on try-catch-finally block with specified id
+        /// </summary>
+        /// <param name="tryCatchFinallyId">try-catch-finally id</param>
+        /// <returns>Is finally block contains in try-catch-finally with specified id</returns>
+        public readonly bool ContainsFinallyBlock(int tryCatchFinallyId)
+        {
+            for (int i = 0; i < TryCatchFinallyDescriptions.Count; i++)
+            {
+                var description = TryCatchFinallyDescriptions[i];
+
+                if (description.TryCatchFinallyBlockId == tryCatchFinallyId &&
+                    description.IsFinallyBlock)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        /// <summary>
+        /// Try find catch block for specified exception
+        /// </summary>
+        /// <param name="exception">Exception for searching catch block that can handle it</param>
+        /// <param name="result">Catch block that found</param>
+        /// <returns>Is catch block found</returns>
+        public static bool TryFindCatchBlockForException(DSharpMethodExecutor* executor, DSharpObject* exception, out DSharpTryCatchFinallyDescription result)
+        {
+            var descriptions = &executor->TryCatchFinallyDescriptions;
+            var currentId = executor->CurrentTryCatchFinallyId;
+
+            DSharpTryCatchFinallyDescription? anyExceptionHandler = null;
+            DSharpTryCatchFinallyDescription? finallyBlock = null;
+
+            for (int i = descriptions->Count - 1; i >= 0; i--)
+            {
+                var description = (*descriptions)[i];
+
+                if (description.TryCatchFinallyBlockId != currentId)
+                {
+                    continue;
+                }
+                if (description.ExceptionType == null)
+                {
+                    anyExceptionHandler = description;
+                    continue;
+                }
+                else if (description.IsFinallyBlock)
+                {
+                    finallyBlock = description;
+                    continue;
+                }
+
+                var exceptionInstanceType = exception->Type;
+
+                if (exceptionInstanceType == description.ExceptionType ||
+                    exceptionInstanceType->IsInheritFrom(description.ExceptionType))
+                {
+                    result = description;
+                    return true;
+                }
+            }
+
+            if (anyExceptionHandler != null)
+            {
+                result = anyExceptionHandler.Value;
+                return true;
+            }
+            else if (finallyBlock != null)
+            {
+                result = finallyBlock.Value;
+                return true;
+            }
+
+            result = default;
+            return false;
+        }
 
         /// <summary>
         /// Execute current method starts with specified instruction index
@@ -104,41 +196,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             return result.Value;
         }
-        /// <summary>
-        /// Try find catch block for specified exception
-        /// </summary>
-        /// <param name="exception">Exception for searching catch block that can handle it</param>
-        /// <param name="result">Catch block that found</param>
-        /// <returns>Is catch block found</returns>
-        public readonly bool TryFindCatchBlockForException(DSharpObject* exception, out DSharpCatchBlock result)
-        {
-            for (int i = CatchBlocks.Count - 1; i >= 0; i--)
-            {
-                var catchBlock = CatchBlocks[i];
 
-                if (exception == null)
-                {
-                    if (catchBlock.ExceptionType == null)
-                    {
-                        result = catchBlock;
-                        return true;
-                    }
-
-                    continue;
-                }
-
-                var exceptionInstanceType = exception->Type;
-
-                if (exceptionInstanceType == catchBlock.ExceptionType ||
-                    exceptionInstanceType->IsInheritFrom(catchBlock.ExceptionType))
-                {
-                    result = catchBlock;
-                    return true;
-                }
-            }
-
-            result = default;
-            return false;
-        }
+        #endregion
     }
 }

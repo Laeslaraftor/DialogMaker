@@ -1,11 +1,9 @@
-﻿using DialogMaker.Core.Scripting.Runtime;
-
-namespace DialogMaker.Core.Scripting.Compiler.Builders
+﻿namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
     /// Class that describes runtime helper class
     /// </summary>
-    public class DSharpRuntimeHelperType(IDSharpType type, IDSharpMethodInfo createTypeMethod)
+    public class DSharpRuntimeHelperType(IDSharpType type, IDSharpMethodInfo createTypeMethod, IDSharpMethodInfo throwExecutionEngineException)
     {
         /// <summary>
         /// RuntimeHelper type
@@ -15,6 +13,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// Method for creating type information instance
         /// </summary>
         public IDSharpMethodInfo CreateTypeMethod { get; } = createTypeMethod;
+        /// <summary>
+        /// Method for throwing execution engine exception
+        /// </summary>
+        public IDSharpMethodInfo ThrowExecutionEngineExceptionMethod { get; } = throwExecutionEngineException;
 
         #region Constants
 
@@ -22,6 +24,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// Name of method for creating type information instance
         /// </summary>
         public const string CreateTypeMethodName = "CreateType";
+        /// <summary>
+        /// Name of method for creating type information instance
+        /// </summary>
+        public const string ThrowExecutionEngineExceptionMethodName = "ThrowExecutionEngineException";
 
         #endregion
 
@@ -36,8 +42,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             var type = assembly.GetType(DSharpBuildInTypes.Extra.RuntimeHelper);
             var createTypeMethod = type.GetMethod(CreateTypeMethodName);
+            var throwExecutionEngineException = type.GetMethod(ThrowExecutionEngineExceptionMethodName);
 
-            return new(type, createTypeMethod);
+            return new(type, createTypeMethod, throwExecutionEngineException);
         }
 
         #endregion

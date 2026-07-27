@@ -18,9 +18,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// </summary>
         public UnmanagedArray<DSharpRuntimeInstruction> Instructions;
         /// <summary>
-        /// Amount of try/catch/finally blocks
+        /// Amount of catch blocks
         /// </summary>
-        public uint TryingBlocksCount;
+        public uint CatchBlocksCount;
+        /// <summary>
+        /// Amount of finally blocks
+        /// </summary>
+        public uint FinallyBlocksCount;
         /// <summary>
         /// Amount of scopes
         /// </summary>
@@ -66,7 +70,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
 
             runtimeBytecode->Variables = builder.AllocateArray<DSharpRuntimeParameterInfo>(variablesCount);
             runtimeBytecode->Instructions = builder.AllocateArray<DSharpRuntimeInstruction>(instructionsCount);
-            runtimeBytecode->TryingBlocksCount = 0;
+            runtimeBytecode->CatchBlocksCount = 0;
+            runtimeBytecode->FinallyBlocksCount = 0;
             runtimeBytecode->ScopesCount = 0;
 
             for (int i = 0; i < variablesCount; i++)
@@ -81,9 +86,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
                 var instruction = DSharpRuntimeInstruction.Create(typesProvider, ref builder, streamPointer);
                 runtimeBytecode->Instructions[i] = instruction;
 
-                if (instruction.Operation == DSharpBytecodeOperation.StartTrying)
+                if (instruction.Operation == DSharpBytecodeOperation.RegisterFinally)
                 {
-                    runtimeBytecode->TryingBlocksCount++;
+                    runtimeBytecode->FinallyBlocksCount++;
+                }
+                else if (instruction.Operation == DSharpBytecodeOperation.RegisterCatch ||
+                         instruction.Operation == DSharpBytecodeOperation.RegisterTypedCatch)
+                {
+                    runtimeBytecode->CatchBlocksCount++;
                 }
                 else if (instruction.Operation == DSharpBytecodeOperation.StartScope)
                 {

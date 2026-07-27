@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
 using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
@@ -139,9 +140,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 {
                     var bytecode = typesProvider.GetRuntimeBytecode(methodInfo);
                     int variablesCount = bytecode->Variables.Length;
+                    uint catchFinallyCount = bytecode->CatchBlocksCount + bytecode->FinallyBlocksCount;
                     int extraSize = variablesCount * sizeof(DSharpExecutionLocalVariable) +
                                     (int)bytecode->ScopesCount * sizeof(DSharpStack.Scope) +
-                                    (int)bytecode->TryingBlocksCount * sizeof(DSharpCatchBlock);
+                                    (int)catchFinallyCount * sizeof(DSharpTryCatchFinallyDescription) +
+                                    (int)bytecode->FinallyBlocksCount * sizeof(uint);
                     var newMethodExecutor = stack.PushMethodExecutor(methodInfo, extraSize);
                     MemoryBuilder builder = new((nint)newMethodExecutor + sizeof(DSharpMethodExecutor), extraSize);
 
@@ -156,11 +159,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                     newMethodExecutor->Arguments = arguments;
                     newMethodExecutor->PreviousExecutor = methodExecutor;
                     newMethodExecutor->LocalVariables = builder.AllocateArray<DSharpExecutionLocalVariable>(variablesCount);
-                    newMethodExecutor->CatchBlocks = builder.AllocateArray<DSharpCatchBlock>((int)bytecode->TryingBlocksCount);
+                    newMethodExecutor->TryCatchFinallyDescriptions = builder.AllocateArray<DSharpTryCatchFinallyDescription>((int)catchFinallyCount);
+                    newMethodExecutor->NextReturnInstructions = builder.AllocateArray<uint>((int)bytecode->FinallyBlocksCount);
                     newMethodExecutor->LocalScopes = builder.AllocateArray<DSharpStack.Scope>((int)bytecode->ScopesCount);
                     newMethodExecutor->InstructionIndex = 0;
                     newMethodExecutor->HaveUnhandledException = false;
                     newMethodExecutor->UnhandledException = null;
+                    newMethodExecutor->CurrentTryCatchFinallyId = 0;
+                    newMethodExecutor->NowClosingTryCatchFinallyBlock = false;
 
                     if (methodInfo->MethodType == DSharpMethodType.Initializer)
                     {
@@ -187,7 +193,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 {
                     continueExecuting = false;
 
-                    if (methodExecutor->HaveUnhandledException)
+                    if (methodExecutor->HaveUnhandledException && !methodExecutor->NowClosingTryCatchFinallyBlock)
                     {
                         HandleException(methodExecutor->UnhandledException);
                     }
@@ -231,10 +237,29 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                     stack.CloseScope(methodScope, offset);
                 }
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                void SetException(DSharpObject* exception)
+                {
+                    methodExecutor->HaveUnhandledException = true;
+                    methodExecutor->UnhandledException = exception;
+                }
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 void HandleException(DSharpObject* exception)
                 {
-                    if (methodExecutor->TryFindCatchBlockForException(exception, out var catchBlock))
+                    if (methodExecutor->NowClosingTryCatchFinallyBlock)
                     {
+                        methodExecutor->NowClosingTryCatchFinallyBlock = false;
+                        exception = methodExecutor->UnhandledException;
+                    }
+                    if (DSharpMethodExecutor.TryFindCatchBlockForException(methodExecutor, exception, out var catchBlock))
+                    {
+                        if (catchBlock.IsFinallyBlock)
+                        {
+                            SetException(exception);
+                            methodExecutor->NowClosingTryCatchFinallyBlock = true;
+                            methodExecutor->InstructionIndex = catchBlock.InstructionIndex;
+                            continueExecuting = true;
+                            return;
+                        }
                         if (exception != null)
                         {
                             var frame = stack.Peek();
@@ -248,11 +273,28 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
                         methodExecutor->HaveUnhandledException = false;
                         methodExecutor->InstructionIndex = catchBlock.InstructionIndex;
+                        
+                        if (!methodExecutor->ContainsFinallyBlock(catchBlock.TryCatchFinallyBlockId))
+                        {
+                            DSharpExecutionContext.EndTryCatchFinally(methodExecutor);
+                        }
+
                         continueExecuting = true;
+                    }
+                    else if (methodExecutor->PreviousExecutor != null)
+                    {
+                        SetException(exception);
+                        Unwind();
                     }
                     else
                     {
-                        Unwind();
+                        if (exception == null)
+                        {
+                            throw new DSharpExecutionEngineException("Unhandled exception");
+                        }
+
+                        var message = DSharpObjectConverter.GetMessage(exception);
+                        throw new DSharpExecutionEngineException($"Unhandled exception \"{exception->ToString()}\": {message}", exception);
                     }
                 }
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]

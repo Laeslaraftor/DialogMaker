@@ -14,7 +14,15 @@ public class Program
         Console.WriteLine();
 
         TestArray();
+
+        Console.WriteLine();
+
         TestPlayersArray("zeBlack", 2);
+
+        Console.WriteLine();
+
+        // last exception should be unhandled
+        TestExceptionHandling();
     }
 
     private static void TestArray()
@@ -35,6 +43,32 @@ public class Program
             players[i] = new(name);
             players[i].PrintMessage();   
         }
+    }
+    private static void TestExceptionHandling()
+    {
+        try
+        {
+            throw new Exception("Random exception");
+        }
+        catch
+        {
+            Console.WriteLine("An random exception was catched");
+        }
+        try
+        {
+            throw new InvalidOperationException("Invalid operation exception");
+            Console.WriteLine("Этого никогда не было");
+        }
+        catch (InvalidOperationException exception)
+        {
+            Console.WriteLine(exception.Message);
+        }
+        finally
+        {
+            Console.WriteLine("\"TestExceptionHandling\" completed");
+        }
+
+        throw new NotImplementedException("Сказал как с лестницы упал");
     }
 }
 

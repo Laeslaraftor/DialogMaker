@@ -338,6 +338,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             var frame = AllocateSized(DSharpStackValueType.Structure, size);
             var obj = (DSharpObject*)frame->StackPointer;
 
+            RuntimeExtensions.FillZero(obj, size);
             DSharpObject.Copy(structure, obj);
 
             obj->Placement = DSharpObjectPlacement.Buffer;
@@ -481,6 +482,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             frame->IsNumber = type->BuildInValueTypeIndex != -1;
             UnmanagedArray<byte> objectBuffer = new((byte*)frame->StackPointer, size);
 
+            RuntimeExtensions.FillZero((void*)frame->StackPointer, size);
             DSharpObjectsContainer.CreateStructure(type, dataBuffer, objectBuffer);
 
             return *frame;

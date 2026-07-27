@@ -9,9 +9,27 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
-            throw new NotImplementedException();
+            if (CheckArguments(instruction, context, 2, out var error))
+            {
+                return error;
+            }
+            if (0 >= context.CurrentTryCatchFinallyId)
+            {
+                return context.ThrowExecutionException("Unable to register catch block with no any try-catch-finally block");
+            }
+
+            int instructionIndex = *(int*)instruction.Arguments[0];
+            var exceptionTypeToken = *(DSharpMetadataToken*)instruction.Arguments[1];
+            var exceptionType = context.TypesProvider.GetRuntimeInfo(exceptionTypeToken);
+
+            if (!context.AddCatchBlock(exceptionType, instructionIndex))
+            {
+                return context.ThrowExecutionException($"Current try-catch-finally block already contains catch block that handles \"{exceptionType->ToString()}\"");
+            }
+
+            return DSharpMethodExecutionCallback.Complete();
         }
 
         public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
@@ -20,11 +38,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         }
         public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
-            throw new NotImplementedException();
+            stream->Read<int>();
+            stream->Read<DSharpMetadataToken>();
+            return 2;
         }
         public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
         {
-            throw new NotImplementedException();
+            arguments[0] = stream->ReadSafePointer<int>();
+            arguments[1] = stream->ReadSafePointer<DSharpMetadataToken>();
         }
 
         #endregion

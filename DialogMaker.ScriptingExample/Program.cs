@@ -1,9 +1,10 @@
-﻿using DialogMaker.Core.Scripting.Runtime;
+﻿using DialogMaker.Core.Scripting;
+using DialogMaker.Core.Scripting.Compiler.Builders;
+using DialogMaker.Core.Scripting.Runtime;
 using DialogMaker.Core.Scripting.Runtime.Executor;
 using DialogMaker.ScriptingExample;
 
-StandardExternalMethodsProvider externalMethodsProvider = new();
-var assembly = Projects.CompileStandardLibrary();
+DSharpAssemblyBuilder assembly = Projects.CompileStandardLibrary();
 IDSharpType entryType;
 
 try
@@ -18,11 +19,11 @@ catch (Exception error)
 
 if (entryType == null)
 {
-    Console.WriteLine("Entry type not found");
+    Console.WriteLine("Entry type \"Program\" not found");
     return;
 }
 
-var entryPoint = entryType.GetMethodOrDefault("Main");
+IDSharpMethodInfo? entryPoint = entryType.GetMethodOrDefault("Main");
 
 if (entryPoint == null)
 {
@@ -31,14 +32,23 @@ if (entryPoint == null)
 }
 
 DSharpVm vm = new(assembly);
-vm.ExternalMethodsProviders.Add(externalMethodsProvider);
-var thread = vm.CreateThread();
+DSharpThread thread = vm.CreateThread();
 
-Console.WriteLine("Start executing: ");
+Console.WriteLine($"Starting with \"{entryPoint}\": ");
+Console.WriteLine();
 
 unsafe
 {
-    thread.Start(null, entryPoint);
+    try
+    {
+        thread.Start(null, entryPoint);
+    }
+    catch (DSharpException exception)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine(exception);
+        Console.ResetColor();
+    }
 }
 
 Console.WriteLine();

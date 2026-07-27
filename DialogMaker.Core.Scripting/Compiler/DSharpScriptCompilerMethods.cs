@@ -900,6 +900,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                     var indexerSetterParameters = indexer.Setter.GetParameters();
                     var valueType = indexerSetterParameters[0].Type;
 
+                    CompileExpression(indexer.PropertyType, ref settings);
+
                     for (int i = 0; i < arrayAccess.Arguments.Count; i++)
                     {
                         var requestedType = indexerSetterParameters[i + 1].Type;
@@ -907,10 +909,9 @@ namespace DialogMaker.Core.Scripting.Compiler
                         CompileExpressionValueWithRequestedType(method, requestedType, code, arg, ref settings, arrayAccess, context);
                     }
 
-                    CompileExpression(indexer.PropertyType, ref settings);
                     CompileValueExpression(method, arrayAccess.Array, ref settings, arrayAccess, context);
 
-                    code.LoadPropertyOrField(indexer, settings.NextNonVirtualizedAccess);
+                    code.StorePropertyOrField(indexer, settings.NextNonVirtualizedAccess);
                     code.PopRepeat(arrayAccess.Arguments.Count + 2);
                 }
                 else
