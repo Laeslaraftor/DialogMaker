@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor;
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
@@ -15,7 +16,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <returns>C# string instance</returns>
         public static string ToString(DSharpObject* obj)
         {
-            CheckType(obj, DSharpBuildInTypes.String);
+            CheckType(obj, DSharpBuildInTypes.String, false);
             char* chars = DSharpObject.GetData<char>(obj);
             var size = DSharpObject.GetSize(obj);
 
@@ -181,6 +182,13 @@ namespace DialogMaker.Core.Scripting.Runtime
         public static T ToObject<T>(DSharpObject* obj)
         {
             var convertedValue = ToObject(obj);
+
+            if (convertedValue is char charValue && typeof(T) == typeof(decimal))
+            {
+                decimal d = charValue;
+                convertedValue = d;
+            }
+
             return (T)Convert.ChangeType(convertedValue, typeof(T));
         }
         /// <summary>
@@ -214,8 +222,17 @@ namespace DialogMaker.Core.Scripting.Runtime
             throw new ArgumentException($"Unable to find field with message value at {exception->ToString()}", nameof(exception));
         }
 
-        private static void CheckType(DSharpObject* obj, DSharpBuildInTypeInfo typeInfo)
+        private static void CheckType(DSharpObject* obj, DSharpBuildInTypeInfo typeInfo, bool allowNull = true)
         {
+            if (obj == null)
+            {
+                if (allowNull)
+                {
+                    return;
+                }
+
+                throw new ArgumentException($"Null object", nameof(obj));
+            }
             if (CompareString(obj->Type->Namespace, typeInfo.Namespace) &&
                 CompareString(obj->Type->Name, typeInfo.Name))
             {

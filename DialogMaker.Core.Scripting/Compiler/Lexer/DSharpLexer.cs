@@ -439,7 +439,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                     if (next == '=')
                     {
                         GetNext();
-                        AddToken(DSharpTokenType.MultiplyAssign, "/=", startLine, startColumn);
+                        AddToken(DSharpTokenType.DivideAssign, "/=", startLine, startColumn);
                     }
                     else
                     {

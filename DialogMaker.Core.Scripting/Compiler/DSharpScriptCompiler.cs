@@ -122,6 +122,10 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 CompileProperty(info.Key, info.Value);
             }
+            foreach (var info in _createdOperators)
+            {
+                CompileMethod(info.Key.Method, info.Value);
+            }
             foreach (var info in _createdMethods)
             {
                 CompileMethod(info.Key, info.Value);

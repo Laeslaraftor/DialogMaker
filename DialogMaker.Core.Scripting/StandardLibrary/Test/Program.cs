@@ -19,7 +19,7 @@ public class Program
 
         TestPlayersArray("zeBlack", 2);
 
-        Console.WriteLine();
+        Console.WriteLine("Text: " + "example" + long.GetString(12));
 
         // last exception should be unhandled
         TestExceptionHandling();

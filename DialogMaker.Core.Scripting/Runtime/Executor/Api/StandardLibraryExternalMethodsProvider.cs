@@ -137,9 +137,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
 
             var index = DSharpObjectConverter.ToInt32((DSharpObject*)indexArg.Buffer.StackPointer);
             var array = (DSharpArray*)instance;
-            var data = DSharpObject.GetData(instance);
-            int itemSize = array->Size / array->Length;
-            var item = (DSharpObject*)(data + itemSize * index);
+            var item = DSharpArray.GetItem<DSharpObject>(array, index);
 
             if (instance->Type->GenericParameters[0].AsPointer()->IsValueType)
             {
@@ -169,20 +167,31 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
 
             var index = DSharpObjectConverter.ToInt32((DSharpObject*)indexArg.Buffer.StackPointer);
             var array = (DSharpArray*)instance;
-            var data = DSharpObject.GetData(instance);
-            int itemSize = array->Size / array->Length;
-            var item = (DSharpObject*)(data + itemSize * index);
+            var item = DSharpArray.GetItem<DSharpObject>(array, index);
 
             if (valueArg.Buffer.ValueType == DSharpStackValueType.Reference)
             {
-                *(DSharpObject**)item = (DSharpObject*)valueArg.Buffer.ReadReference();
+                var currentValue = *(DSharpObject**)item;
+
+                if (currentValue != null)
+                {
+                    currentValue->ReferencesCount--;
+                }
+
+                var newValue = (DSharpObject*)valueArg.Buffer.ReadReference();
+
+                if (newValue != null)
+                {
+                    newValue->ReferencesCount++;
+                }
+
+                *(DSharpObject**)item = newValue;
             }
             else
             {
                 var value = (DSharpObject*)valueArg.Buffer.StackPointer;
                 DSharpObject.Copy(value, item);
             }
-
 
             return null;
         }
@@ -225,8 +234,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
             }
 
             var charsArray = (DSharpArray*)charsObject;
-            var data = DSharpObject.GetData<char>(charsObject);
-            UnmanagedArray<char> values = new(data, charsArray->Length);
+            char* chars = stackalloc char[charsArray->Length];
+            UnmanagedArray<char> values = new(chars, charsArray->Length);
+            var indexer = DSharpArray.GetIndexer<DSharpObject>(charsArray);
+
+            for (int i = 0; i < charsArray->Length; i++)
+            {
+                var item = indexer.GetPointer(i);
+                values[i] = DSharpObjectConverter.ToChar(item);
+            }
 
             return _objectsContainer.CreateString(values);
         }
@@ -293,7 +309,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
             }
 
             var str1Array = (DSharpArray*)str1;
-            var str2Array = (DSharpArray*)str1;
+            var str2Array = (DSharpArray*)str2;
             var data1 = DSharpObject.GetData<char>(str1);
             var data2 = DSharpObject.GetData<char>(str2);
             var newStr = _objectsContainer.CreateString(str1Array->Length + str2Array->Length);

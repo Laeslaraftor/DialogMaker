@@ -43,6 +43,6 @@ public struct Nullable<T> where T : struct
         return defaultValue;
     }
 
-    public static implicit operator T?(T value) => new(value, value != null);
+    public static implicit operator T?(T value) => new Nullable<T>(value, value != null);
     public static explicit operator T(T? value) => value.Value;
 }

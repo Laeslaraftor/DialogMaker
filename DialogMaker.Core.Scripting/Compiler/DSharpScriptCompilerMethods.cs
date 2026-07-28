@@ -865,8 +865,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                     var resultType = CompileBinaryExpression(method, code, binaryOperator, assignExpression.Left!, assignExpression.Right!, ref settings, assignExpression, context);
 
                     CastTypes(method, resultType, type, code, assignExpression, context);
-
-                    code.PopOffsetRepeat(1, 2);
                 }
 
                 if (assignExpression.Left is IdentifierExpressionNode identifier)
@@ -991,6 +989,9 @@ namespace DialogMaker.Core.Scripting.Compiler
                      expression is NameOfExpressionNode ||
                      expression is TypeOfExpressionNode ||
                      expression is SizeOfExpressionNode ||
+                     expression is NewExpressionNode ||
+                     expression is ArrayExpressionNode ||
+                     expression is ParenContainedExpressionNode ||
                      expression is ThisExpressionNode)
             {
                 return CompileValueExpression(method, expression, ref settings, parentExpression, context);
@@ -1253,7 +1254,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 if (typeInfo == null)
                 {
                     type = context.TypeResolver?.Invoke(null!) ??
-                        throw new ArgumentException($"Can not create new instance when type not specified: {newExpression}", nameof(expression)); ;
+                        throw new ArgumentException($"Can not create new instance when type not specified: {newExpression}", nameof(expression));
                 }
                 else
                 {
@@ -1656,6 +1657,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 return null;
+            }
+            else if (expression is ParenContainedExpressionNode parenContainedExpression)
+            {
+                if (parenContainedExpression.Expression == null)
+                {
+                    throw new ArgumentException($"Incomplete expression: {expression}", nameof(expression));
+                }
+
+                return CompileValueExpression(method, parenContainedExpression.Expression, ref settings, parentExpression, context);
             }
 
             throw new ArgumentException($"Unable to compile expression: {expression}", nameof(expression));

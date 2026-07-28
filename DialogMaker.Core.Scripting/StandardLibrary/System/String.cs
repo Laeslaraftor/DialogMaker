@@ -24,21 +24,7 @@ public sealed class String : IEnumerable<char>
     private extern int GetLength();
     private extern char GetValue(int index);
 
-    public static string operator +(string l, string r)
-    {
-        char[] chars = new chars[l.Length + r.Length];
-        
-        for (int i = 0; i < l.Length; i++)
-        {
-            chars[i] = l[i];
-        }
-        for (int i = 0; i < r.Length; i++)
-        {
-            chars[i + l.Length] = r[i];
-        }
-
-        return new(chars);
-    }
+    public static string operator +(string l, string r) => Ctor(l, r);
     public static string operator +(string l, object r) => Ctor(l, r.ToString());
     public static string operator +(object l, string r) => Ctor(l.ToString(), r);
 

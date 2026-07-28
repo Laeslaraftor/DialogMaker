@@ -200,4 +200,68 @@ public static class Math
 
         return b;
     }
+
+    public static sbyte Abs(sbyte value)
+    {
+        if (0 > value)
+        {
+            return (sbyte)((int)value * -1);
+        }
+
+        return value;
+    }
+    public static short Abs(short value)
+    {
+        if (0 > value)
+        {
+            return value * -1;
+        }
+
+        return value;
+    }
+    public static int Abs(int value)
+    {
+        if (0 > value)
+        {
+            return value * -1;
+        }
+
+        return value;
+    }
+    public static long Abs(long value)
+    {
+        if (0 > value)
+        {
+            return value * -1;
+        }
+
+        return value;
+    }
+    public static float Abs(float value)
+    {
+        if (0 > value)
+        {
+            return value * -1;
+        }
+
+        return value;
+    }
+    public static double Abs(double value)
+    {
+        if (0 > value)
+        {
+            return value * -1;
+        }
+
+        return value;
+    }
+    public static decimal Abs(decimal value)
+    {
+        if (0 > value)
+        {
+            return value * -1;
+        }
+
+        return value;
+    }
 }

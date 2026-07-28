@@ -429,6 +429,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                         throw new InvalidOperationException($"Unable to get get of literal expression: {expression}", error);
                     }
                 }
+                else if (expression is ParenContainedExpressionNode parenContainedExpression)
+                {
+                    if (parenContainedExpression.Expression == null)
+                    {
+                        throw new InvalidOperationException($"Incomplete expression: {expression}");
+                    }
+
+                    return parenContainedExpression.Expression.GetExpressionType(assembly, context);
+                }
                 else if (expression is NameOfExpressionNode)
                 {
                     return assembly.StringType;
@@ -714,20 +723,24 @@ namespace DialogMaker.Core.Scripting.Compiler
                     return leftType;
                 }
 
-                var stringType = (IDSharpType)assembly.GetType(assembly.StringToken);
+                var stringType = assembly.StringType;
 
                 if (leftType == stringType ||
                     rightType == stringType)
                 {
                     return stringType;
                 }
-
-                var charType = (IDSharpType)assembly.GetType(assembly.CharToken);
-
-                if (leftType == charType ||
-                    rightType == charType)
+                if (DSharpBuildInTypes.TryGetInfo(leftType, out var leftTypeInfo) &&
+                    DSharpBuildInTypes.TryGetInfo(rightType, out var rightTypeInfo))
                 {
-                    return stringType;
+                    if (rightTypeInfo.Size > leftTypeInfo.Size)
+                    {
+                        return rightType;
+                    }
+                    else
+                    {
+                        return leftType;
+                    }
                 }
 
                 throw new InvalidOperationException($"Can not get type for expressions: {expression}, {otherExpression}");

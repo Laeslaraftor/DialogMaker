@@ -52,7 +52,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             var resultValue = PerformMathOperation(leftValue.Value, rightValue.Value);
             var bigger = GetBigger(left, right);
 
-            if (!context.Stack.Push(((DSharpObject*)bigger.StackPointer)->Type, resultValue))
+            if (!context.Stack.Push(bigger.ObjectType, resultValue))
             {
                 return context.ThrowExecutionException($"Unable to perform math operation: unsupported result value {resultValue} with type {bigger.ValueType}");
             }

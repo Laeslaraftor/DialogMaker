@@ -199,6 +199,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             {
                 Push(value);
             }
+            else if (type == _runtimeInformationProvider.Boolean)
+            {
+                Push(value > 0);
+            }
             else
             {
                 return false;
