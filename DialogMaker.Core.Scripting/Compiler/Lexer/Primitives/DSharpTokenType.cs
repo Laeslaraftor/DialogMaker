@@ -278,6 +278,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         [Keyword("new")]
         New,
         /// <summary>
+        /// Stackalloc keyword
+        /// </summary>
+        [Keyword("stackalloc")]
+        Stackalloc,
+        /// <summary>
         /// Throw keyword
         /// </summary>
         [Keyword("throw")]

@@ -1,11 +1,11 @@
-using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
     /// <summary>
-    /// Executor of <see cref="DSharpBytecodeOperation.NewArray"/> operation
+    /// Executor of <see cref="DSharpBytecodeOperation.NewStackArray"/> operation
     /// </summary>
-    public class DSharpNewArrayInstructionExecutor : DSharpMetadataTokenInstructionExecutor
+    public class DSharpNewStackArrayInstructionExecutor : DSharpMetadataTokenInstructionExecutor
     {
         #region Controls
 
@@ -44,8 +44,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 return context.ThrowExecutionException(exception);
             }
 
-            var arrayInstance = context.ObjectsContainer.CreateArray(arrayType, length, null);
-            context.Stack.PushReference(arrayInstance);
+            context.ObjectsContainer.CreateArray(arrayType, length, context.Stack);
 
             return DSharpMethodExecutionCallback.Complete();
         }
@@ -55,9 +54,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         #region Static
 
         /// <summary>
-        /// Global instance of <see cref="DSharpBytecodeOperation.NewArray"/> operation executor
+        /// Global instance of <see cref="DSharpBytecodeOperation.NewStackArray"/> operation executor
         /// </summary>
-        public static readonly DSharpNewArrayInstructionExecutor Instance = new();
+        public static readonly DSharpNewStackArrayInstructionExecutor Instance = new();
 
         private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {

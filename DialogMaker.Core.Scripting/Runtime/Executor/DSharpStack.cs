@@ -1,8 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
-using Newtonsoft.Json.Linq;
 using System.Collections;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
@@ -39,6 +37,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         private readonly byte* _stack = (byte*)memoryManager.Allocate(DSharpMemoryBlockType.Stack, stackCapacity * 1024);
         private int _frameIndex = -1;
         private int _allocatedStackSize;
+        private int _currentStackCapacity = stackCapacity * 1024;
 
         #region Controls
 
@@ -329,8 +328,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             return executor;
         }
-        public FrameInfo PushStructure(DSharpRuntimeTypeInfo* type) => CreateStructure(type, new(0, 0));
-        public FrameInfo PushStructure(DSharpRuntimeTypeInfo* type, UnmanagedArray<byte> dataBuffer) => CreateStructure(type, dataBuffer);
+        public FrameInfo* PushStructureRef(DSharpRuntimeTypeInfo* type, bool asArray = false) => CreateStructure(type, new(0, 0), asArray);
+        public FrameInfo PushStructure(DSharpRuntimeTypeInfo* type, bool asArray = false) => *CreateStructure(type, new(0, 0), asArray);
+        public FrameInfo PushStructure(DSharpRuntimeTypeInfo* type, UnmanagedArray<byte> dataBuffer) => *CreateStructure(type, dataBuffer, false);
+        public FrameInfo PushStructure(DSharpRuntimeTypeInfo* type, UnmanagedArray<byte> dataBuffer, bool asArray) => *CreateStructure(type, dataBuffer, asArray);
         public FrameInfo PushStructure(DSharpObject* structure, bool unbox)
         {
             if (structure->IsReferenceObject && !unbox)
@@ -350,6 +351,98 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             return *frame;
         }
         public FrameInfo* Push(DSharpStackValueType type, int size) => AllocateSized(type, size);
+
+        public Buffer* AllocateBuffer(int size)
+        {
+            if (IsDisposed)
+            {
+                throw new ObjectDisposedException(nameof(DSharpStack), "Stack has been disposed");
+            }
+            if (0 >= size)
+            {
+                throw new ArgumentException($"Size should be greater then 0: {size}", nameof(size));
+            }
+            if (_allocatedStackSize + size > _currentStackCapacity)
+            {
+                throw new StackOverflowException();
+            }
+
+            Buffer* previousBuffer = null;
+
+            if (Capacity > _currentStackCapacity)
+            {
+                previousBuffer = (Buffer*)(_stack + _currentStackCapacity);
+            }
+
+            var totalSize = size + sizeof(Buffer);
+            var bufferStart = _currentStackCapacity - totalSize;
+            Buffer* buffer = (Buffer*)(_stack + bufferStart);
+
+            Buffer.Init(buffer, size);
+            buffer->Clear();
+
+            if (previousBuffer != null)
+            {
+                buffer->PreviousBuffer = previousBuffer;
+                previousBuffer->NextBuffer = buffer;
+            }
+
+            _currentStackCapacity -= totalSize;
+
+            return buffer;
+        }
+        public bool FreeBuffer(Buffer* buffer)
+        {
+            if (IsDisposed)
+            {
+                throw new ObjectDisposedException(nameof(DSharpStack), "Stack has been disposed");
+            }
+            if (!Buffer.IsValid(buffer))
+            {
+                return false;
+            }
+
+            var totalSize = buffer->Size + sizeof(Buffer);
+            
+            if (buffer->NextBuffer != null)
+            {
+                var currentBuffer = buffer->NextBuffer;
+                void* sourceCopyAddress = null;
+                int copySize = 0;
+
+                currentBuffer->PreviousBuffer = buffer->PreviousBuffer;
+
+                while (currentBuffer != null)
+                {
+                    sourceCopyAddress = currentBuffer;
+                    copySize += sizeof(Buffer) + currentBuffer->Size;
+
+                    if (currentBuffer->FrameInfo != null)
+                    {
+                        currentBuffer->FrameInfo->Buffer = (Buffer*)((nint)currentBuffer + totalSize);
+                    }
+                    if (currentBuffer->PreviousBuffer != null)
+                    {
+                        currentBuffer->PreviousBuffer = (Buffer*)((nint)currentBuffer->PreviousBuffer + totalSize);
+                    }
+                    if (currentBuffer->NextBuffer != null)
+                    {
+                        currentBuffer->NextBuffer = (Buffer*)((nint)currentBuffer->NextBuffer + totalSize);
+                    }
+
+                    currentBuffer = currentBuffer->NextBuffer;
+                }
+
+                if (copySize > 0)
+                {
+                    System.Buffer.MemoryCopy(sourceCopyAddress, (void*)((nint)sourceCopyAddress + totalSize), copySize, copySize);
+                }
+            }
+
+            _currentStackCapacity += totalSize;
+
+            return true;
+        }
 
         public void Pop(uint offset = 0) => Pop(offset, 1);
         public void Pop(uint offset, uint count)
@@ -383,6 +476,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 var sourceFrame = &_frames[index + i];
                 var destinationStack = (byte*)destinationFrame->StackPointer + destinationStackOffset;
                 removedStackSize += destinationFrame->Size;
+
+                if (destinationFrame->Buffer != null)
+                {
+                    FreeBuffer(destinationFrame->Buffer);
+                }
+                if (sourceFrame->Buffer != null)
+                {
+                    sourceFrame->Buffer->FrameInfo = destinationFrame;
+                }
 
                 for (int d = 0; d < sourceFrame->Size; d++)
                 {
@@ -448,6 +550,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             {
                 throw new ArgumentException($"Size can not be negative: {size}", nameof(size));
             }
+            if (_allocatedStackSize + size > _currentStackCapacity)
+            {
+                throw new StackOverflowException();
+            }
 
             nint stackPointer;
 
@@ -469,6 +575,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             frame->Size = size;
             frame->IsNumber = false;
             frame->StackPointer = stackPointer;
+            frame->Buffer = null;
 
             return frame;
         }
@@ -477,19 +584,29 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             where T : unmanaged
         {
             UnmanagedArray<byte> dataBuffer = new((byte*)&value, sizeof(T));
-            return CreateStructure(type, dataBuffer);
+            return *CreateStructure(type, dataBuffer);
         }
-        private FrameInfo CreateStructure(DSharpRuntimeTypeInfo* type, UnmanagedArray<byte> dataBuffer)
+        private FrameInfo* CreateStructure(DSharpRuntimeTypeInfo* type, UnmanagedArray<byte> dataBuffer, bool asArray = false)
         {
-            int size = type->Size + sizeof(DSharpObject);
+            int size = type->Size;
+
+            if (asArray)
+            {
+                size += sizeof(DSharpArray);
+            }
+            else
+            {
+                size += sizeof(DSharpObject);
+            }
+
             var frame = AllocateSized(DSharpStackValueType.Structure, size);
             frame->IsNumber = type->BuildInValueTypeIndex != -1;
             UnmanagedArray<byte> objectBuffer = new((byte*)frame->StackPointer, size);
 
             RuntimeExtensions.FillZero((void*)frame->StackPointer, size);
-            DSharpObjectsContainer.CreateStructure(type, dataBuffer, objectBuffer);
+            DSharpObjectsContainer.CreateStructure(type, dataBuffer, objectBuffer, asArray);
 
-            return *frame;
+            return frame;
         }
 
         #endregion
@@ -530,6 +647,37 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         #region Frames
 
         [StructLayout(LayoutKind.Sequential)]
+        public struct Buffer
+        {
+            private fixed char Magic[2];
+            public int Size;
+            public nint StackPointer;
+            public FrameInfo* FrameInfo;
+            public Buffer* NextBuffer;
+            public Buffer* PreviousBuffer;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public readonly void Clear()
+            {
+                RuntimeExtensions.FillZero((void*)StackPointer, Size);
+            }
+
+            public static bool IsValid(Buffer* buffer)
+            {
+                return buffer->Magic[0] == 'b' && buffer->Magic[1] == 'f';
+            }
+            public static void Init(Buffer* buffer, int size)
+            {
+                buffer->Magic[0] = 'b';
+                buffer->Magic[1] = 'f';
+                buffer->Size = size;
+                buffer->StackPointer = (nint)buffer + sizeof(Buffer);
+                buffer->FrameInfo = null;
+                buffer->NextBuffer = null;
+                buffer->PreviousBuffer = null;
+            }
+        }
+        [StructLayout(LayoutKind.Sequential)]
         public struct FrameInfo
         {
             public readonly DSharpRuntimeTypeInfo* ObjectType
@@ -566,11 +714,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                     return (DSharpMethodExecutor*)StackPointer;
                 }
             }
+            public readonly bool HasBuffer => Buffer != null;
 
             public DSharpStackValueType ValueType;
             public int Size;
             public bool IsNumber;
             public nint StackPointer;
+            public Buffer* Buffer;
 
             public readonly byte this[int index]
             {
@@ -633,13 +783,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
             public readonly decimal? ReadAsDecimal()
             {
-                if (ValueType != DSharpStackValueType.Structure)
+                DSharpObject* obj = ReadAsObject();
+
+                if (obj == null)
                 {
                     return null;
                 }
-
-                var obj = (DSharpObject*)StackPointer;
-
                 if (obj->Type->Converter == null)
                 {
                     return null;
@@ -649,12 +798,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
             public readonly bool ReadAsBoolean()
             {
-                if (ValueType != DSharpStackValueType.Structure)
+                DSharpObject* obj = ReadAsObject();
+
+                if (obj == null)
                 {
                     return false;
                 }
-
-                var obj = (DSharpObject*)StackPointer;
 
                 return DSharpObjectConverter.ToBoolean(obj);
             }
@@ -666,6 +815,24 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 }
 
                 return *(nint*)StackPointer;
+            }
+            public readonly DSharpObject* ReadAsObject()
+            {
+                if (ValueType == DSharpStackValueType.Structure)
+                {
+                    return (DSharpObject*)StackPointer;
+                }
+                else if (ValueType == DSharpStackValueType.Reference)
+                {
+                    return (DSharpObject*)ReadReference();
+                }
+
+                return null;
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public readonly void Clear()
+            {
+                RuntimeExtensions.FillZero((void*)StackPointer, Size);
             }
 
             public readonly override string ToString()

@@ -294,7 +294,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 return ParseIdentifierAccess(stream);
             }
-            if (stream.Check(DSharpTokenType.New))
+            if (stream.Check(DSharpTokenType.New) ||
+                stream.Check(DSharpTokenType.Stackalloc))
             {
                 return NewExpressionNode.Parse(stream);
             }

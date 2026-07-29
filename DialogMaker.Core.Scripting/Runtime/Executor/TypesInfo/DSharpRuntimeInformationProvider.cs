@@ -570,7 +570,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             int fieldOffset;
             int staticFieldOffset = 0;
 
-            if (type.Name == "Array" && type.Namespace == "System")
+            if (type.Namespace == "System" && type.Name == "Array")
             {
                 fieldOffset = sizeof(DSharpArray);
             }
@@ -587,10 +587,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
                 int fieldSize = fieldInfo->FieldType->ItemSize;
 
-                if (fieldInfo->FieldType->IsValueType)
-                {
-                    fieldSize += sizeof(DSharpObject);
-                }
+                //if (fieldInfo->FieldType->IsValueType)
+                //{
+                //    fieldSize += sizeof(DSharpObject);
+                //}
 
                 if (fieldInfo->IsStatic)
                 {

@@ -38,6 +38,7 @@ namespace DialogMaker.Core.Tests
         }
         [TestCase("System.Array`1.Enumerator.MoveNext")]
         [TestCase("System.Int64.GetString")]
+        [TestCase("System.Span`1.get_Length")]
         [TestCase("Program.TestPlayersArray")]
         [TestCase("Program.TestExceptionHandling")]
         [TestCase("Program.Main")]

@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+using DialogMaker.Core.Scripting.Runtime.Executor;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Runtime
@@ -553,7 +554,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                         return -1;
                     }
 
-                    return info.Size;
+                    return info.Size + sizeof(DSharpObject);
                 }
 
                 int size = 0;

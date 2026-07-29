@@ -626,6 +626,15 @@ namespace DialogMaker.Core.Scripting.Runtime
         [Executor(typeof(DSharpNewArrayInstructionExecutor))]
         NewArray,
         /// <summary>
+        /// Create new array at stack (stackalloc). It allocates memory at stack it push pointer to it
+        /// Stack:
+        /// 0: size
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(1)]
+        [Executor(typeof(DSharpNewStackArrayInstructionExecutor))]
+        NewStackArray,
+        /// <summary>
         /// Throw exception which must be in last stack value
         /// </summary>
         [ArgsCount(0)]

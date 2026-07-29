@@ -17,6 +17,10 @@ public class Program
 
         Console.WriteLine();
 
+        Span<char> chars = stackalloc char[12];
+        Console.WriteLine("got chars length");
+        Console.WriteLine(chars.Length.ToString());
+
         TestPlayersArray("zeBlack", 2);
 
         Console.WriteLine("Text: " + "example" + long.GetString(12));

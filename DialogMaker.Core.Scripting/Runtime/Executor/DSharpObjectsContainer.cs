@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
 {
@@ -28,8 +29,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// Create new instance of array with specified type
         /// </summary>
         /// <param name="type">Type of new array</param>
+        /// <param name="length">Array length</param>
+        /// <param name="stack">Stack for creating array at stack (for span)</param>
         /// <returns>New instance of D# array</returns>
-        public DSharpObject* CreateArray(DSharpRuntimeTypeInfo* type, int length)
+        public DSharpObject* CreateArray(DSharpRuntimeTypeInfo* type, int length, DSharpStack? stack)
         {
             var itemType = (DSharpRuntimeTypeInfo*)type->GenericParameters[0];
             var itemsSize = itemType->ItemSize;
@@ -40,7 +43,48 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
 
             var size = itemsSize * length;
-            var obj = Create(type, size, true);
+            DSharpObject* obj;
+
+            if (type->IsValueType)
+            {
+                if (stack == null)
+                {
+                    throw new ArgumentException($"Stack not provided for creating span");
+                }
+
+                var buffer = stack.AllocateBuffer(size);
+                var spanFrame = stack.PushStructureRef(type, true);
+
+                buffer->FrameInfo = spanFrame;
+                spanFrame->Buffer = buffer;
+                obj = (DSharpObject*)spanFrame->StackPointer;
+
+                Setup(obj, DSharpObjectAttributes.StoredInBuffer, type, false);
+
+                if (!type->TryGetField("_itemsPointer", out var itemsPointerField) ||
+                    !type->TryGetField("_length", out var lengthField) ||
+                    !type->TryGetField("_items", out var itemsField))
+                {
+                    throw new InvalidOperationException($"Unable to find items pointer and/or length field at \"{type->ToString()}\"");
+                }
+
+                itemsField->Write(this, obj, null);
+
+                stack.Push(buffer->StackPointer);
+                itemsPointerField->Write(this, obj, stack, 0);
+                stack.Pop();
+
+                stack.Push(length);
+                lengthField->Write(this, obj, stack, 0);
+                stack.Pop();
+
+                return obj;
+            }
+            else
+            {
+                obj = Create(type, size, true);
+            }
+
             var array = (DSharpArray*)obj;
             array->Size = size;
             array->Length = length;
@@ -278,8 +322,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
 
             var obj = (DSharpObject*)_memoryManager.Allocate(DSharpMemoryBlockType.Object, size);
+            Setup(obj, DSharpObjectAttributes.StoredInHeap, type, isArray);
+
+            _objects.Add((nint)obj);
+
+            return obj;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Setup(DSharpObject* obj, DSharpObjectAttributes baseAttributes, DSharpRuntimeTypeInfo* type, bool isArray)
+        {
             obj->Type = type;
-            obj->Attributes = DSharpObjectAttributes.StoredInHeap;
+            obj->Attributes = baseAttributes;
 
             if (isArray)
             {
@@ -289,10 +342,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             {
                 obj->Attributes |= DSharpObjectAttributes.Initialized;
             }
-
-            _objects.Add((nint)obj);
-
-            return obj;
         }
 
         #endregion
@@ -325,8 +374,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <param name="type">Type of structure for creating</param>
         /// <param name="data">Data for filling structure</param>
         /// <param name="buffer">Buffer that will be filled with structure</param>
+        /// <param name="isArray">Is array structure</param>
         /// <returns>Pointer to structure</returns>
-        public static DSharpObject* CreateStructure(DSharpRuntimeTypeInfo* type, UnmanagedArray<byte> data, UnmanagedArray<byte> buffer)
+        public static DSharpObject* CreateStructure(DSharpRuntimeTypeInfo* type, UnmanagedArray<byte> data, UnmanagedArray<byte> buffer, bool isArray)
         {
             if (type->Size > buffer.Length)
             {
@@ -336,6 +386,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             DSharpObject* obj = (DSharpObject*)buffer.GetItemReference(0);
             obj->Attributes = DSharpObjectAttributes.StoredInBuffer;
             obj->Type = type;
+
+            if (isArray)
+            {
+                obj->Attributes |= DSharpObjectAttributes.Array;
+            } 
 
             int sizeForData = buffer.Length - sizeof(DSharpObject);
             byte* objectDataBuffer = DSharpObject.GetData(obj);

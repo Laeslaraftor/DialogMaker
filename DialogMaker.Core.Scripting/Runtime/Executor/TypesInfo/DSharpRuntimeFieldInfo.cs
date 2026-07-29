@@ -92,7 +92,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             {
                 if (isNull)
                 {
-                    stack.PushStructure(FieldType, new(0, 0));
+                    stack.PushStructure(FieldType);
                 }
                 else
                 {
@@ -134,7 +134,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             {
                 if (isReferenceTypeField)
                 {
-                    *(nint*)pointer = 0;
+                    *(DSharpObject**)pointer = DSharpObject.Null;
                 }
                 else
                 {
@@ -150,7 +150,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                         value = objectsContainer.Box(value);
                     }
 
-                    *(nint*)pointer = (nint)value;
+                    *(DSharpObject**)pointer = value;
                     value->ReferencesCount++;
                 }
                 else

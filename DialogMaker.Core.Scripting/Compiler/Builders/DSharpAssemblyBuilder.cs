@@ -238,6 +238,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
+        public DSharpTypeToken SpanTypeToken
+        {
+            get
+            {
+                field ??= GetTypeToken(SpanType);
+                return field;
+            }
+        }
         public IDSharpType StringType => StringTypeInfo.Type;
         public IDSharpType Int32Type
         {
@@ -407,6 +415,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
+        public IDSharpType SpanType
+        {
+            get
+            {
+                field ??= SpanTypeInfo.Type;
+                return field;
+            }
+        }
         public DSharpArrayType ArrayBaseType
         {
             get
@@ -436,6 +452,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             get
             {
                 field ??= DSharpStringType.Create(this);
+                return field;
+            }
+        }
+        public DSharpSpanType SpanTypeInfo
+        {
+            get
+            {
+                field ??= DSharpSpanType.Create(this);
                 return field;
             }
         }
@@ -984,6 +1008,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         public IDSharpType CreateArray(IDSharpType elementType)
         {
             return FillGeneric(ArrayBaseType.Type, elementType);
+        }
+        public IDSharpType CreateSpan(IDSharpType elementType)
+        {
+            return FillGeneric(SpanTypeInfo.Type, elementType);
         }
         public IDSharpType CreateNullable(IDSharpType type)
         {

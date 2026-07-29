@@ -39,14 +39,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             if (leftValue == null)
             {
-                return context.ThrowExecutionException($"Unable to perform math operation: unsupported left value {left.ValueType}");
+                return context.ThrowExecutionException($"Unable to perform math operation: unsupported left value \"{left.ValueType}\"");
             }
 
             var rightValue = right.ReadAsDecimal();
 
             if (rightValue == null)
             {
-                return context.ThrowExecutionException($"Unable to perform math operation: unsupported right value {right.ValueType}");
+                return context.ThrowExecutionException($"Unable to perform math operation: unsupported right value \"{right.ValueType}\"");
             }
 
             var resultValue = PerformMathOperation(leftValue.Value, rightValue.Value);
@@ -113,12 +113,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
         internal static bool IsNotValid(DSharpRuntimeInstruction instruction, DSharpExecutionContext context, DSharpStackValueType left, DSharpStackValueType right, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
         {
-            if (left != DSharpStackValueType.Structure)
+            if (left != DSharpStackValueType.Structure &&
+                left != DSharpStackValueType.Reference)
             {
                 errorCallback = context.ThrowExecutionException($"Unable to perform math operation: left value \"{left}\" is not supported");
                 return true;
             }
-            if (right != DSharpStackValueType.Structure)
+            if (right != DSharpStackValueType.Structure &&
+                right != DSharpStackValueType.Reference)
             {
                 errorCallback = context.ThrowExecutionException($"Unable to perform math operation: right value \"{right}\" is not supported");
                 return true;

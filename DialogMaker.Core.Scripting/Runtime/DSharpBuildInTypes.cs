@@ -114,6 +114,10 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         public static readonly DSharpBuildInTypeInfo Nullable = new("System.Nullable`1");
         /// <summary>
+        /// Structure that represents spans
+        /// </summary>
+        public static readonly DSharpBuildInTypeInfo Span = new("System.Span`1");
+        /// <summary>
         /// Object type which root of all objects
         /// </summary>
         public static readonly DSharpBuildInTypeInfo Object = new("System.Object", -1, DSharpTokenType.Object, null);

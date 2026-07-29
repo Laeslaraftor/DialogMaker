@@ -26,14 +26,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             if (leftValue == null)
             {
-                return context.ThrowExecutionException($"Unable to perform math operation: unsupported left value {left.ValueType}");
+                return context.ThrowExecutionException($"Unable to perform math operation: unsupported left value \"{left.ValueType}\"");
             }
 
             var rightValue = right.ReadAsDecimal();
 
             if (rightValue == null)
             {
-                return context.ThrowExecutionException($"Unable to perform math operation: unsupported right value {right.ValueType}");
+                return context.ThrowExecutionException($"Unable to perform math operation: unsupported right value \"{right.ValueType}\"");
             }
 
             var resultValue = Compare(leftValue.Value, rightValue.Value);

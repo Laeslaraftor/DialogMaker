@@ -510,6 +510,21 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             CheckAccess(type);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.NewArray, type);
         }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.NewStackArray"/>
+        /// </summary>
+        /// <param name="type">Type of array items that needs to instantiate</param>
+        /// <returns></returns>
+        public TypeInstruction NewStackArray(IDSharpType type)
+        {
+            if (type.IsStatic)
+            {
+                throw new ArgumentException($"Unable to create array of static types");
+            }
+
+            CheckAccess(type);
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.NewStackArray, type);
+        }
 
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.LoadLocal"/>

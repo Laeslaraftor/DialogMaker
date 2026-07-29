@@ -663,8 +663,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                         return null;
                     }
 
-                    if (expression is NewArrayExpressionNode)
+                    if (expression is NewArrayExpressionNode newArrayExpression)
                     {
+                        if (newArrayExpression.IsStackAlloc)
+                        {
+                            return assembly.CreateSpan(type);
+                        }
+
                         return assembly.CreateArray(type);
                     }
 

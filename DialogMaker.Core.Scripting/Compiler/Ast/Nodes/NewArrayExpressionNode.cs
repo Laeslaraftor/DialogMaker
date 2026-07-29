@@ -16,6 +16,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// List of array items expressions
         /// </summary>
         public List<ExpressionNode> ItemsExpressions { get; set; } = [];
+        /// <summary>
+        /// Is array allocating on stack
+        /// </summary>
+        public bool IsStackAlloc { get; set; }
 
         #region Статика
 
@@ -28,7 +32,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         public static NewArrayExpressionNode Parse(AstParserStream stream, DSharpToken token)
         {
             stream.Eat(DSharpTokenType.LeftBracket);
-            NewArrayExpressionNode expression = new(token);
+            NewArrayExpressionNode expression = new(token)
+            {
+                IsStackAlloc = token.Type == DSharpTokenType.Stackalloc
+            };
 
             ParseExpressions(stream, expression.SizeExpressions, DSharpTokenType.RightBracket, "Required array size expression");
 

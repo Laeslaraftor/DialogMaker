@@ -22,7 +22,17 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Parsed new expression</returns>
         public static NewExpressionNode Parse(AstParserStream stream)
         {
-            var newKeyword = stream.Eat(DSharpTokenType.New);
+            DSharpToken newKeyword;
+
+            if (stream.Check(DSharpTokenType.Stackalloc))
+            {
+                newKeyword = stream.Eat(DSharpTokenType.Stackalloc);
+            }
+            else
+            {
+                newKeyword = stream.Eat(DSharpTokenType.New);
+            }
+
             TypeInfoNode? type = null;
             NewExpressionNode expression;
 
@@ -30,7 +40,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 type = TypeInfoNode.ParseOnlyIdentifier(stream, true);
             }
-            if (stream.Check(DSharpTokenType.LeftBracket))
+            if (newKeyword.Type == DSharpTokenType.Stackalloc || stream.Check(DSharpTokenType.LeftBracket))
             {
                 expression = NewArrayExpressionNode.Parse(stream, newKeyword);
             }

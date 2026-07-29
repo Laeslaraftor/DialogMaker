@@ -4,6 +4,7 @@ using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
+using System.Security.Claims;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -1392,8 +1393,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 var type = (IDSharpType)Assembly.GetType(typeToken);
-                type = Assembly.CreateArray(type);
-                var arrayInfo = DSharpArrayType.Create(type);
                 int arraySize = newArrayExpression.SizeExpressions.Count;
 
                 if (newArrayExpression.SizeExpressions.Count > 0)
@@ -1405,8 +1404,20 @@ namespace DialogMaker.Core.Scripting.Compiler
                     code.Push(newArrayExpression.ItemsExpressions.Count);
                 }
 
-                code.NewArray(type);
-                code.PopOffset(1);
+                if (newArrayExpression.IsStackAlloc)
+                {
+                    type = Assembly.CreateSpan(type);
+                    code.NewStackArray(type);
+                    code.PopOffset(2); // skip span and his buffer
+                }
+                else
+                {
+                    type = Assembly.CreateArray(type);
+                    code.NewArray(type);
+                    code.PopOffset(1);
+                }
+
+                var indexer = DSharpArrayType.GetIndexer(type);
 
                 if (context.Scope == null ||
                     !context.Scope.TryCreateVariable($"_newArrayInstance_{expression.Line}_{expression.Column}", type, out var arrayVariable))
@@ -1424,7 +1435,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     CompileValueExpression(method, item, ref settings, expression, context);
                     code.Push(i);
                     code.LoadLocal(arrayVariable);
-                    code.StorePropertyOrField(arrayInfo.Indexer);
+                    code.StorePropertyOrField(indexer);
 
                     code.PopRepeat(3);
                 }
@@ -1433,7 +1444,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 code.LoadLocal(arrayVariable);
 
-                return Assembly.CreateArray(type);
+                return type;
             }
             else if (expression is AwaitExpressionNode awaitExpression)
             {
@@ -2195,7 +2206,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 ?? throw new ArgumentException($"Unable to find member: {expression}", nameof(expression));
 
             code.LoadPropertyOrField(member, settings.NextNonVirtualizedAccess);
-            
+
             if (!member.IsStatic)
             {
                 code.PopOffset(1);

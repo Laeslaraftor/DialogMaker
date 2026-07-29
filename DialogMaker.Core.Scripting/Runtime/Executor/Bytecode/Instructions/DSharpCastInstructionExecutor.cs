@@ -39,11 +39,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 context.Stack.Pop();
                 context.Stack.PushStructure(type);
             }
-            else if (lastValue.ValueType == DSharpStackValueType.Structure)
+            else if (lastValue.ValueType == DSharpStackValueType.Structure ||
+                     lastValue.ValueType == DSharpStackValueType.Reference)
             {
+                var obj = lastValue.ReadAsObject();
                 decimal decimalValue;
 
-                if (lastValue.ObjectType == context.TypesProvider.Boolean)
+                if (obj == null)
+                {
+                    return context.ThrowExecutionException("Unable to cast null object");
+                }
+                else if (!obj->Type->IsValueType)
+                {
+                    return context.ThrowExecutionException($"Cast available only for value types, got: {obj->Type->ToString()}");
+                }
+                if (obj->Type == context.TypesProvider.Boolean)
                 {
                     decimalValue = lastValue.ReadAsBoolean() ? 1 : 0;
                 }

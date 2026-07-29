@@ -290,11 +290,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                     {
                         if (exception == null)
                         {
-                            throw new DSharpExecutionEngineException("Unhandled exception");
+                            throw new DSharpExecutionEngineException($"Unhandled exception at \"{methodInfo->ToString()}\":{methodExecutor->InstructionIndex}");
                         }
 
                         var message = DSharpObjectConverter.GetMessage(exception);
-                        throw new DSharpExecutionEngineException($"Unhandled exception \"{exception->ToString()}\": {message}", exception);
+                        throw new DSharpExecutionEngineException($"Unhandled exception \"{exception->ToString()}\": {message}{Environment.NewLine}   at \"{methodInfo->ToString()}\":{methodExecutor->InstructionIndex}", exception);
                     }
                 }
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
