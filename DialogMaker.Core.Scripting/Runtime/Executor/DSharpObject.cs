@@ -188,6 +188,37 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             return true;
         }
         /// <summary>
+        /// Copy object data to specified buffer
+        /// </summary>
+        /// <param name="obj">Object for copying his data</param>
+        /// <param name="buffer">Buffer for writing object data</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void CopyData(DSharpObject* obj, UnmanagedArray<byte> buffer)
+        {
+            if (buffer.Length > 0)
+            {
+                CopyData(obj, buffer.GetItemReference(0), buffer.Length);
+            }
+        }
+        /// <summary>
+        /// Copy object data to specified buffer
+        /// </summary>
+        /// <param name="obj">Object for copying his data</param>
+        /// <param name="buffer">Buffer for writing object data</param>
+        /// <param name="bufferSize">Buffer size</param>
+        public static void CopyData(DSharpObject* obj, void* buffer, int bufferSize)
+        {
+            var data = GetData(obj);
+            var size = GetSize(obj);
+
+            if (0 >= size)
+            {
+                return;
+            }
+
+            Buffer.MemoryCopy(data, buffer, Math.Min(bufferSize, size), size);
+        }
+        /// <summary>
         /// Is null pointer to object or object data is null
         /// </summary>
         /// <param name="obj">Pointer to object</param>

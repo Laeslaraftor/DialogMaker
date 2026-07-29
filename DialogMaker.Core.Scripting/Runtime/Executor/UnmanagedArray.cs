@@ -111,6 +111,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
         }
         /// <summary>
+        /// Clear array
+        /// </summary>
+        public void Clear() => RuntimeExtensions.FillZero(_items, _length * sizeof(T));
+        /// <summary>
         /// Get unmanaged stream from current array
         /// </summary>
         /// <returns>Unmanaged stream</returns>
@@ -155,6 +159,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <param name="item">Item to check</param>
         /// <returns>Is item contains in array</returns>
         public bool Contains(T item) => IndexOf(item) != -1;
+
+        public override bool Equals(object? obj)
+        {
+            return obj is UnmanagedArray<T> array &&
+                   _length == array._length &&
+                   _items == array._items;
+        }
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(_length, (nint)_items);
+        }
 
         public static implicit operator ReadOnlySpan<T>(UnmanagedArray<T> array) => new(array._items, array._length);
         public static implicit operator T*(UnmanagedArray<T> array) => array._items;

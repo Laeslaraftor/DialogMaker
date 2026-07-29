@@ -52,7 +52,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             try
             {
                 var field = context.TypesProvider.GetField(metadataToken);
-                field->Write(context.ObjectsContainer, instance, context.Stack, 1);
+                field->Write(context.ObjectsContainer, instance, context.Stack, (uint)stackValuesCount - 1);
             }
             catch (Exception exception)
             {

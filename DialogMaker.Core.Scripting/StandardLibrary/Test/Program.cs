@@ -17,13 +17,9 @@ public class Program
 
         Console.WriteLine();
 
-        Span<char> chars = stackalloc char[12];
-        Console.WriteLine("got chars length");
-        Console.WriteLine(chars.Length.ToString());
-
         TestPlayersArray("zeBlack", 2);
 
-        Console.WriteLine("Text: " + "example" + long.GetString(12));
+        Console.WriteLine("Text: " + "example" + Numbers.Int64ToString(12));
 
         // last exception should be unhandled
         TestExceptionHandling();
@@ -31,11 +27,13 @@ public class Program
 
     private static void TestArray()
     {
-        string[] values = new string[] { "value1", "value2" };
-        
+        string[] values = new string[] { "value", "value" };
+        int i = 0;
+
         foreach (var value in values)
         {
-            Console.WriteLine(value);
+            Console.WriteLine(value + i);
+            i++;
         }
     }
     private static void TestPlayersArray(string name, int count)

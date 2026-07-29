@@ -4,7 +4,7 @@ public struct Char
 {
     public override string ToString()
     {
-        char[] values = new char[] { this };
+        Span<char> values = stackalloc char[] { this };
         return new(values);
     }
 }

@@ -36,12 +36,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         {
             var itemType = (DSharpRuntimeTypeInfo*)type->GenericParameters[0];
             var itemsSize = itemType->ItemSize;
-
-            if (itemType->IsValueType)
-            {
-                itemsSize += sizeof(DSharpObject);
-            }
-
             var size = itemsSize * length;
             DSharpObject* obj;
 
@@ -86,6 +80,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
 
             var array = (DSharpArray*)obj;
+            array->ItemsType = itemType;
             array->Size = size;
             array->Length = length;
 
@@ -139,15 +134,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <returns>New instance of D# string</returns>
         public DSharpObject* CreateString(int length)
         {
-            if (Assembly.GetType(DSharpBuildInTypes.String) is not IDSharpType stringType)
-            {
-                throw new InvalidOperationException("Unable to find string type for creating new instance of D# string");
-            }
+            var runtimeStringType = _runtimeInformationProvider.String;
+            var runtimeCharType = _runtimeInformationProvider.Char;
 
-            var runtimeStringType = _runtimeInformationProvider.GetRuntimeInfo(stringType);
-            var size = runtimeStringType->Size + sizeof(char) * length;
+            var size = runtimeStringType->Size + runtimeCharType->Size * length;
             var obj = Create(runtimeStringType, size, true);
             var array = (DSharpArray*)obj;
+            array->ItemsType = runtimeCharType;
             array->Size = size;
             array->Length = length;
             obj->Attributes |= DSharpObjectAttributes.String;

@@ -215,7 +215,11 @@ namespace DialogMaker.Core.Scripting.Runtime
         {
             if (exception->Type->TryGetField("Message__value", out var field))
             {
-                var value = field->Read(exception);
+                var size = field->FieldType->ItemSize;
+                byte* fieldBuffer = stackalloc byte[size];
+                UnmanagedArray<byte> buffer = new(fieldBuffer, size);
+
+                var value = field->Read(exception, buffer);
                 return ToString(value);
             }
 

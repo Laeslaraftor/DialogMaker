@@ -23,10 +23,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// Is current thread executing
         /// </summary>
         public bool IsExecuting { get; private set; }
+        /// <summary>
+        /// Last exception that was thrown
+        /// </summary>
+        public Exception? LastException { get; private set; }
 
         private readonly DSharpVmMemoryManager _memoryManager = memoryManager;
         private readonly DSharpObjectsContainer _objectsContainer = objectsContainer;
         private readonly IDSharpExternalMethodsProvider _externalMethodsProvider = externalMethodsProvider;
+        private Thread? _thread;
 
         #region Controls
 
@@ -62,10 +67,35 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         {
             if (IsExecuting)
             {
-                return;
+                throw new InvalidOperationException("Thread already started");
             }
 
             IsExecuting = true;
+            Thread thread = new(() =>
+            {
+                try
+                {
+                    ThreadLoop(instance, genericParameters, arguments, methodInfo);
+                }
+                catch (Exception error)
+                {
+                    LastException = error;
+                }
+                finally
+                {
+                    IsExecuting = false;
+                }
+            })
+            {
+                IsBackground = true,
+            };
+            _thread = thread;
+
+            thread.Start();
+        }
+
+        private void ThreadLoop(DSharpObject* instance, UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments, DSharpRuntimeMethodInfo* methodInfo)
+        {
             var typesProvider = Executor.RuntimeTypesProvider;
             var objectContainer = _objectsContainer;
             var stack = Stack;
@@ -85,7 +115,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
                     if (externalMethod != null)
                     {
-                        var result = externalMethod(instance, methodInfo, genericParameters, arguments);
+                        DSharpExternalCallingArgs args = new(instance, methodInfo, genericParameters, arguments, stack, Executor.Assembly);
+                        var result = externalMethod(args);
                         uint popOffset = 0;
 
                         if (result != null)
@@ -106,10 +137,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                                 stack.PushNull();
                             }
                         }
-
                         if (stack.Count > popOffset)
                         {
-                            var lastValue = stack.Peek();
+                            var lastValue = stack.Peek(popOffset);
 
                             if (lastValue.ValueType == DSharpStackValueType.MethodParametersBuffer)
                             {
@@ -168,7 +198,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                     newMethodExecutor->CurrentTryCatchFinallyId = 0;
                     newMethodExecutor->NowClosingTryCatchFinallyBlock = false;
 
-                    if (methodInfo->MethodType == DSharpMethodType.Initializer)
+                    if (methodInfo->MethodType == DSharpMethodType.Initializer &&
+                        !methodInfo->IsStatic)
                     {
                         if (instance->IsInitialized)
                         {
@@ -343,8 +374,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 }
             }
             while (methodExecutor != null);
-
-            IsExecuting = false;
         }
 
         #endregion

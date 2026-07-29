@@ -38,13 +38,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             try
             {
                 arrayType = context.TypesProvider.GetRuntimeInfo(metadataToken);
+                context.ObjectsContainer.CreateArray(arrayType, length, context.Stack);
             }
             catch (Exception exception)
             {
                 return context.ThrowExecutionException(exception);
             }
-
-            context.ObjectsContainer.CreateArray(arrayType, length, context.Stack);
 
             return DSharpMethodExecutionCallback.Complete();
         }

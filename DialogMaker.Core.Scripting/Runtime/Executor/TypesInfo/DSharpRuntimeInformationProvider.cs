@@ -1,6 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Builders;
-using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
-using System.Reflection;
+﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 {
@@ -19,6 +17,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// Information about runtime helper type
         /// </summary>
         public DSharpRuntimeHelperType RuntimeHelperType { get; } = DSharpRuntimeHelperType.Create(assembly);
+        /// <summary>
+        /// D# virtual machine
+        /// </summary>
+        public DSharpVm? Vm { get; set; }
         public DSharpRuntimeTypeInfo* Object
         {
             get
@@ -251,7 +253,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 typeReference = pointer;
                 _types.Add(type.MetadataToken, typeReference);
 
-                *pointer = CreateTypeInfo(type, pointer);
+                var info = CreateTypeInfo(type, pointer);
+                *pointer = info;
+
+                Initialize(info);
             }
 
             return *typeReference.AsPointer();
@@ -534,6 +539,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             info->StaticFieldsData = builder.AllocateArray<byte>(staticSize);
             info->IsStaticInitializerCalled = false;
 
+            info->StaticFieldsData.Clear();
             runtimeGenericParameters = CreateTypes(generics);
             runtimeInterfaces = CreateTypes(interfaces);
 
@@ -579,18 +585,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 fieldOffset = sizeof(DSharpObject);
             }
 
-
             for (int i = 0; i < fields.Count; i++)
             {
                 var fieldInfo = info->Fields.GetItemReference(i);
                 CreateFieldInfo(info, fields[i], fieldInfo, ref builder);
 
                 int fieldSize = fieldInfo->FieldType->ItemSize;
-
-                //if (fieldInfo->FieldType->IsValueType)
-                //{
-                //    fieldSize += sizeof(DSharpObject);
-                //}
 
                 if (fieldInfo->IsStatic)
                 {
@@ -734,6 +734,65 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             _fields.Add(field.MetadataToken, info);
         }
 
+        private void Initialize(DSharpRuntimeTypeInfo* type)
+        {
+            if (type->IsStaticInitializerCalled)
+            {
+                return;
+            }
+            if (Vm == null)
+            {
+                throw new InvalidOperationException($"Unable to initialize \"{type->ToString()}\" because virtual machine not provided");
+            }
+
+            void WaitThread(DSharpThread thread)
+            {
+                while (thread.IsExecuting)
+                {
+                    Thread.Sleep(50);
+                }
+                if (thread.LastException != null)
+                {
+                    throw thread.LastException;
+                }
+            }
+
+            lock (Vm)
+            {
+                var vm = Vm;
+                var thread = vm.CreateThread();
+
+                if (type->StaticInitializer != null && !type->IsStaticInitializerCalled)
+                {
+                    type->IsStaticInitializerCalled = true;
+                    thread.Start(null, default, default, type->StaticInitializer);
+                    WaitThread(thread);
+                }
+                else
+                {
+                    type->IsStaticInitializerCalled = true;
+                }
+
+                DSharpRuntimeMethodInfo* staticConstructor = null;
+
+                for (int i = 0; i < type->Constructors.Length; i++)
+                {
+                    var constructor = type->Constructors.GetItemReference(i);
+
+                    if (constructor->IsStatic)
+                    {
+                        staticConstructor = constructor;
+                        break;
+                    }
+                }
+
+                if (staticConstructor != null)
+                {
+                    thread.Start(null, default, default, staticConstructor);
+                    WaitThread(thread);
+                }
+            }
+        }
         private Pointer<DSharpRuntimeTypeInfo>[] CreateTypes(IDSharpType[] types)
         {
             if (types.Length == 0)

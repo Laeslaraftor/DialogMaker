@@ -23,6 +23,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             _multiExternalMethodsProviders = new();
             _standardLibraryExternalMethodsProvider = new(_objectContainer);
             _multiExternalMethodsProviders.Providers.Add(_standardLibraryExternalMethodsProvider);
+            runtimeInformationProvider.Vm ??= this;
         }
 
         /// <summary>

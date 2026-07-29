@@ -10,6 +10,9 @@ public sealed class String : IEnumerable<char>
     public String(char[] chars)
     {
     }
+    public String(Span<char> chars)
+    {
+    }
 
     public int Length => GetLength();
     public char this[int index] => GetValue(index);
@@ -34,6 +37,7 @@ public sealed class String : IEnumerable<char>
 
     private static string Ctor() => Empty;
     private static extern string Ctor(char[] chars);
+    private static extern string Ctor(Span<char> chars);
     private static extern string Ctor(string str1, string str2);
     private static extern string Ctor(string[] values);
 

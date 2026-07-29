@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Collections;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -11,9 +12,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     public unsafe struct DSharpArray
     {
         /// <summary>
+        /// Item size
+        /// </summary>
+        public readonly int ItemSize => Size / Length;
+
+        /// <summary>
         /// Current D# object
         /// </summary>
         public DSharpObject Object;
+        /// <summary>
+        /// Items type
+        /// </summary>
+        public DSharpRuntimeTypeInfo* ItemsType;
         /// <summary>
         /// Size for managed data, this not includes size of DSharpObject structure size.
         /// </summary>
@@ -43,6 +53,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
 
             return 0;
+        }
+        /// <summary>
+        /// Get item data on specified index
+        /// </summary>
+        /// <param name="array">Array for getting item</param>
+        /// <param name="itemSize">Item size</param>
+        /// <param name="index">Item index</param>
+        /// <returns>Pointer to start of item data</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static byte* GetItem(void* array, int itemSize, int index)
+        {
+            return (byte*)array + itemSize * index;
         }
         /// <summary>
         /// Get item data on specified index

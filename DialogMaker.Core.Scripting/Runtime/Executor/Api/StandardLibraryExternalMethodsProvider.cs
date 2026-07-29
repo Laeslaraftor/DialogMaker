@@ -1,7 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
-using Newtonsoft.Json.Linq;
-
-namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
+﻿namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
 {
     internal unsafe class StandardLibraryExternalMethodsProvider(DSharpObjectsContainer objectsContainer) : IDSharpExternalMethodsProvider
     {
@@ -25,82 +22,121 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
 
         public DSharpExternalMethod? GetMethodImplementation(IDSharpMethodInfo methodInfo)
         {
-            if (methodInfo.DeclaringType.Namespace == "System" && methodInfo.DeclaringType.Name == "Array")
+            if (methodInfo.DeclaringType.Namespace == "System")
             {
-                if (methodInfo.Name == "GetLength")
+                if (methodInfo.DeclaringType.Name == "Array")
                 {
-                    return GetArrayLength;
+                    if (methodInfo.Name == "GetLength")
+                    {
+                        return GetArrayLength;
+                    }
+                    else if (methodInfo.Name == "GetItem")
+                    {
+                        return GetArrayItem;
+                    }
+                    else if (methodInfo.Name == "SetItem")
+                    {
+                        return SetArrayItem;
+                    }
                 }
-                else if (methodInfo.Name == "GetItem")
+                else if (methodInfo.DeclaringType.Name == "Span")
                 {
-                    return GetArrayItem;
+                    if (methodInfo.Name == "GetValue")
+                    {
+                        return GetSpanItem;
+                    }
+                    else if (methodInfo.Name == "SetValue")
+                    {
+                        return SetSpanItem;
+                    }
                 }
-                else if (methodInfo.Name == "SetItem")
+                else if (methodInfo.DeclaringType.Name == "Numbers")
                 {
-                    return SetArrayItem;
+                    if (methodInfo.Name == "Int64ToString")
+                    {
+                        return NumbersInt64ToString;
+                    }
+                    else if (methodInfo.Name == "UInt64ToString")
+                    {
+                        return NumbersUInt64ToString;
+                    }
+                    else if (methodInfo.Name == "DecimalToString")
+                    {
+                        return NumbersDecimalToString;
+                    }
                 }
-            }
-            else if (methodInfo.DeclaringType.FullName == DSharpBuildInTypes.String)
-            {
-                if (methodInfo.Name == "GetLength")
+                else if (methodInfo.DeclaringType.FullName == DSharpBuildInTypes.String)
                 {
-                    return GetArrayLength;
-                }
-                else if (methodInfo.Name == "GetValue")
-                {
-                    return GetStringValue;
-                }
-                else if (methodInfo.Name != "Ctor")
-                {
-                    return null;
-                }
-
-                var parameters = methodInfo.GetParameters();
-
-                if (parameters.Length == 2 &&
-                    parameters[0].Type.FullName == DSharpBuildInTypes.String &&
-                    parameters[1].Type.FullName == DSharpBuildInTypes.String)
-                {
-                    return String2StringsCtorValue;
-                }
-                else if (parameters.Length == 1)
-                {
-                    if (parameters[0].Type.Namespace != "System" || parameters[0].Type.Name != "Array")
+                    if (methodInfo.Name == "GetLength")
+                    {
+                        return GetArrayLength;
+                    }
+                    else if (methodInfo.Name == "GetValue")
+                    {
+                        return GetStringValue;
+                    }
+                    else if (methodInfo.Name != "Ctor")
                     {
                         return null;
                     }
-                    var genericParameters = parameters[0].Type.GetGenericParameters();
 
-                    if (genericParameters.Length != 1)
+                    var parameters = methodInfo.GetParameters();
+                    var firstParameter = parameters[0];
+
+                    if (parameters.Length == 2 &&
+                        firstParameter.Type.FullName == DSharpBuildInTypes.String &&
+                        parameters[1].Type.FullName == DSharpBuildInTypes.String)
                     {
-                        return null;
+                        return String2StringsCtorValue;
                     }
-
-                    var genericParameter = genericParameters[0];
-
-                    if (genericParameter.FullName == DSharpBuildInTypes.String)
+                    else if (parameters.Length == 1)
                     {
-                        return StringStringsCtorValue;
-                    }
-                    else if (genericParameter.FullName == DSharpBuildInTypes.Char)
-                    {
-                        return StringCharsCtorValue;
+                        if (firstParameter.Type.Namespace != "System")
+                        {
+                            return null;
+                        }
+                        else if (parameters[0].Type.Name == "Span")
+                        {
+                            return StringCharsSpanCtorValue;
+                        }
+                        else if (parameters[0].Type.Name != "Array")
+                        {
+                            return null;
+                        }
+
+                        var genericParameters = parameters[0].Type.GetGenericParameters();
+
+                        if (genericParameters.Length != 1)
+                        {
+                            return null;
+                        }
+
+                        var genericParameter = genericParameters[0];
+
+                        if (genericParameter.FullName == DSharpBuildInTypes.String)
+                        {
+                            return StringStringsCtorValue;
+                        }
+                        else if (genericParameter.FullName == DSharpBuildInTypes.Char)
+                        {
+                            return StringCharsArrayCtorValue;
+                        }
                     }
                 }
-            }
-            if (methodInfo.DeclaringType.FullName == "System.Console")
-            {
-                if (methodInfo.Name == "WriteLine")
+                else if (methodInfo.DeclaringType.FullName == "System.Console")
                 {
-                    return ConsoleWriteLine;
-                }
-                else if (methodInfo.Name == "Write")
-                {
-                    return ConsoleWrite;
-                }
-                else if (methodInfo.Name == "ReadLine")
-                {
-                    return ConsoleReadLine;
+                    if (methodInfo.Name == "WriteLine")
+                    {
+                        return ConsoleWriteLine;
+                    }
+                    else if (methodInfo.Name == "Write")
+                    {
+                        return ConsoleWrite;
+                    }
+                    else if (methodInfo.Name == "ReadLine")
+                    {
+                        return ConsoleReadLine;
+                    }
                 }
             }
 
@@ -111,18 +147,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
 
         #region Array
 
-        private static DSharpExternalMethodResult? GetArrayLength(DSharpObject* instance,
-                                                                  DSharpRuntimeMethodInfo* methodInfo,
-                                                                  UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters,
-                                                                  UnmanagedArray<DSharpExecutionLocalVariable> arguments)
+        private static DSharpExternalMethodResult? GetArrayLength(DSharpExternalCallingArgs args)
         {
-            return DSharpArray.GetLength(instance);
+            return DSharpArray.GetLength(args.Instance);
         }
-        private static DSharpExternalMethodResult? GetArrayItem(DSharpObject* instance,
-                                                                DSharpRuntimeMethodInfo* methodInfo,
-                                                                UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters,
-                                                                UnmanagedArray<DSharpExecutionLocalVariable> arguments)
+        private static DSharpExternalMethodResult? GetArrayItem(DSharpExternalCallingArgs args)
         {
+            var arguments = args.Arguments;
+
             if (arguments.Length == 0)
             {
                 return DSharpExternalMethodResult.Null;
@@ -135,22 +167,23 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                 return DSharpExternalMethodResult.Null;
             }
 
-            var index = DSharpObjectConverter.ToInt32((DSharpObject*)indexArg.Buffer.StackPointer);
-            var array = (DSharpArray*)instance;
-            var item = DSharpArray.GetItem<DSharpObject>(array, index);
+            var index = DSharpObjectConverter.ToInt32(indexArg.Buffer.ReadAsObject());
+            var array = (DSharpArray*)args.Instance;
+            var item = DSharpArray.GetItem(array, index);
 
-            if (instance->Type->GenericParameters[0].AsPointer()->IsValueType)
+            if (!array->ItemsType->IsValueType)
             {
-                return item;
+                return *(DSharpObject**)item;
             }
 
-            return *(DSharpObject**)item;
+            args.Stack.PushStructure(array->ItemsType, new UnmanagedArray<byte>(item, array->ItemSize));
+
+            return null;
         }
-        private static DSharpExternalMethodResult? SetArrayItem(DSharpObject* instance,
-                                                                DSharpRuntimeMethodInfo* methodInfo,
-                                                                UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters,
-                                                                UnmanagedArray<DSharpExecutionLocalVariable> arguments)
+        private static DSharpExternalMethodResult? SetArrayItem(DSharpExternalCallingArgs args)
         {
+            var arguments = args.Arguments;
+
             if (arguments.Length < 2)
             {
                 return null;
@@ -160,37 +193,138 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
             var valueArg = arguments[1];
 
             if (valueArg.Buffer.ValueType != DSharpStackValueType.Reference &&
-                valueArg.Buffer.ValueType != DSharpStackValueType.Structure)
+                valueArg.Buffer.ValueType != DSharpStackValueType.Structure &&
+                valueArg.Buffer.ValueType != DSharpStackValueType.Null)
             {
                 return null;
             }
 
             var index = DSharpObjectConverter.ToInt32((DSharpObject*)indexArg.Buffer.StackPointer);
-            var array = (DSharpArray*)instance;
-            var item = DSharpArray.GetItem<DSharpObject>(array, index);
+            var array = (DSharpArray*)args.Instance;
+            var item = DSharpArray.GetItem(array, index);
+            var value = valueArg.Buffer.ReadAsObject();
 
             if (valueArg.Buffer.ValueType == DSharpStackValueType.Reference)
             {
-                var currentValue = *(DSharpObject**)item;
+                var oldValue = *(DSharpObject**)item;
 
-                if (currentValue != null)
+                if (oldValue != null)
                 {
-                    currentValue->ReferencesCount--;
+                    oldValue->ReferencesCount--;
+                }
+                if (value != null)
+                {
+                    value->ReferencesCount++;
                 }
 
-                var newValue = (DSharpObject*)valueArg.Buffer.ReadReference();
-
-                if (newValue != null)
-                {
-                    newValue->ReferencesCount++;
-                }
-
-                *(DSharpObject**)item = newValue;
+                *(DSharpObject**)item = value;
             }
             else
             {
-                var value = (DSharpObject*)valueArg.Buffer.StackPointer;
-                DSharpObject.Copy(value, item);
+                UnmanagedArray<byte> buffer = new(item, array->ItemSize);
+                DSharpObject.CopyData(value, buffer);
+            }
+
+            return null;
+        }
+
+        #endregion
+
+        #region Span
+
+        private static DSharpExternalMethodResult? GetSpanItem(DSharpExternalCallingArgs args)
+        {
+            var arguments = args.Arguments;
+
+            if (arguments.Length != 2)
+            {
+                return DSharpExternalMethodResult.Null;
+            }
+
+            var itemsArg = arguments[0];
+            var indexArg = arguments[1];
+
+            if (indexArg.Buffer.ValueType != DSharpStackValueType.Structure &&
+                itemsArg.Buffer.ValueType != DSharpStackValueType.Structure)
+            {
+                return DSharpExternalMethodResult.Null;
+            }
+
+            var index = DSharpObjectConverter.ToInt32(indexArg.Buffer.ReadAsObject());
+            var items = (void*)DSharpObjectConverter.ToIntPtr(itemsArg.Buffer.ReadAsObject());
+            var genericParameters = args.Instance->Type->GenericParameters;
+
+            if (genericParameters.Length == 0)
+            {
+                return DSharpExternalMethodResult.Null;
+            }
+
+            var itemsType = genericParameters[0].AsPointer();
+            var itemSize = itemsType->ItemSize;
+            var item = DSharpArray.GetItem(items, itemSize, index);
+
+            if (!itemsType->IsValueType)
+            {
+                return *(DSharpObject**)item;
+            }
+
+            args.Stack.PushStructure(itemsType, new UnmanagedArray<byte>(item, itemSize));
+
+            return null;
+        }
+        private static DSharpExternalMethodResult? SetSpanItem(DSharpExternalCallingArgs args)
+        {
+            var arguments = args.Arguments;
+
+            if (arguments.Length != 3)
+            {
+                return null;
+            }
+
+            var itemsArg = arguments[0];
+            var indexArg = arguments[1];
+            var valueArg = arguments[2];
+
+            if (valueArg.Buffer.ValueType != DSharpStackValueType.Reference &&
+                valueArg.Buffer.ValueType != DSharpStackValueType.Structure &&
+                valueArg.Buffer.ValueType != DSharpStackValueType.Null)
+            {
+                return null;
+            }
+
+            var index = DSharpObjectConverter.ToInt32((DSharpObject*)indexArg.Buffer.StackPointer);
+            var items = (void*)DSharpObjectConverter.ToIntPtr((DSharpObject*)itemsArg.Buffer.StackPointer);
+            var genericParameters = args.Instance->Type->GenericParameters;
+
+            if (genericParameters.Length == 0)
+            {
+                return DSharpExternalMethodResult.Null;
+            }
+
+            var itemsType = genericParameters[0].AsPointer();
+            var itemSize = itemsType->ItemSize;
+            var item = DSharpArray.GetItem(items, itemSize, index);
+            var value = valueArg.Buffer.ReadAsObject();
+
+            if (valueArg.Buffer.ValueType == DSharpStackValueType.Reference)
+            {
+                var oldValue = *(DSharpObject**)item;
+
+                if (oldValue != null)
+                {
+                    oldValue->ReferencesCount--;
+                }
+                if (value != null)
+                {
+                    value->ReferencesCount++;
+                }
+
+                *(DSharpObject**)item = value;
+            }
+            else
+            {
+                UnmanagedArray<byte> buffer = new(item, itemSize);
+                DSharpObject.CopyData(value, buffer);
             }
 
             return null;
@@ -200,57 +334,83 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
 
         #region String
 
-        private static DSharpExternalMethodResult? GetStringValue(DSharpObject* instance,
-                                                                  DSharpRuntimeMethodInfo* methodInfo,
-                                                                  UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters,
-                                                                  UnmanagedArray<DSharpExecutionLocalVariable> arguments)
+        private static DSharpExternalMethodResult? GetStringValue(DSharpExternalCallingArgs args)
         {
+            var arguments = args.Arguments;
+
             if (arguments.Length == 0)
             {
                 return '\0';
             }
 
             var indexArg = arguments[0];
-            var index = DSharpObjectConverter.ToInt32((DSharpObject*)indexArg.Buffer.StackPointer);
-            var data = DSharpObject.GetData<char>(instance);
+            var index = DSharpObjectConverter.ToInt32(indexArg.Buffer.ReadAsObject());
+            var data = DSharpObject.GetData<char>(args.Instance);
 
             return data[index];
         }
-        private DSharpExternalMethodResult? StringCharsCtorValue(DSharpObject* instance,
-                                                                 DSharpRuntimeMethodInfo* methodInfo,
-                                                                 UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters,
-                                                                 UnmanagedArray<DSharpExecutionLocalVariable> arguments)
+        private DSharpExternalMethodResult? StringCharsArrayCtorValue(DSharpExternalCallingArgs args)
         {
+            var arguments = args.Arguments;
+
             if (arguments.Length != 1)
             {
                 return DSharpExternalMethodResult.Null;
             }
 
-            var charsObject = (DSharpObject*)arguments[0].Buffer.ReadReference();
+            var charsObject = arguments[0].Buffer.ReadAsObject();
 
             if (!charsObject->IsArray)
             {
                 return DSharpExternalMethodResult.Null;
             }
 
-            var charsArray = (DSharpArray*)charsObject;
-            char* chars = stackalloc char[charsArray->Length];
-            UnmanagedArray<char> values = new(chars, charsArray->Length);
-            var indexer = DSharpArray.GetIndexer<DSharpObject>(charsArray);
+            return CreateStringFromCharsArray(args, (DSharpArray*)charsObject);
+        }
+        private DSharpExternalMethodResult? StringCharsSpanCtorValue(DSharpExternalCallingArgs args)
+        {
+            var arguments = args.Arguments;
 
-            for (int i = 0; i < charsArray->Length; i++)
+            if (arguments.Length != 1)
             {
-                var item = indexer.GetPointer(i);
-                values[i] = DSharpObjectConverter.ToChar(item);
+                return DSharpExternalMethodResult.Null;
             }
 
-            return _objectsContainer.CreateString(values);
+            var charsObject = arguments[0].Buffer.ReadAsObject();
+
+            if (charsObject == null)
+            {
+                return DSharpExternalMethodResult.Null;
+            }
+
+            if (charsObject->Type->TryGetField("_items", out var itemsField))
+            {
+                int size = itemsField->FieldType->ItemSize;
+                byte* stackBuffer = stackalloc byte[size];
+                UnmanagedArray<byte> buffer = new(stackBuffer, size);
+                var value = itemsField->Read(charsObject, buffer);
+
+                if (value != null)
+                {
+                    return CreateStringFromCharsArray(args, (DSharpArray*)value);
+                }
+            }
+
+            if (charsObject->Type->TryGetField("_itemsPointer", out var itemsPointerField) &&
+                charsObject->Type->TryGetField("_length", out var lengthField))
+            {
+                var itemsPointer = itemsPointerField->Read<nint>(charsObject);
+                var length = lengthField->Read<int>(charsObject);
+
+                return _objectsContainer.CreateString((char*)itemsPointer, length);
+            }
+
+            throw new InvalidOperationException($"Unable to find items pointer and length fields at \"{charsObject->Type->ToString()}\"");
         }
-        private DSharpExternalMethodResult? StringStringsCtorValue(DSharpObject* instance,
-                                                                 DSharpRuntimeMethodInfo* methodInfo,
-                                                                 UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters,
-                                                                 UnmanagedArray<DSharpExecutionLocalVariable> arguments)
+        private DSharpExternalMethodResult? StringStringsCtorValue(DSharpExternalCallingArgs args)
         {
+            var arguments = args.Arguments;
+
             if (arguments.Length != 1)
             {
                 return DSharpExternalMethodResult.Null;
@@ -290,11 +450,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
 
             return newStr;
         }
-        private DSharpExternalMethodResult? String2StringsCtorValue(DSharpObject* instance,
-                                                                    DSharpRuntimeMethodInfo* methodInfo,
-                                                                    UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters,
-                                                                    UnmanagedArray<DSharpExecutionLocalVariable> arguments)
+        private DSharpExternalMethodResult? String2StringsCtorValue(DSharpExternalCallingArgs args)
         {
+            var arguments = args.Arguments;
+
             if (arguments.Length != 2)
             {
                 return DSharpExternalMethodResult.Null;
@@ -303,6 +462,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
             var str1 = (DSharpObject*)arguments[0].Buffer.ReadReference();
             var str2 = (DSharpObject*)arguments[1].Buffer.ReadReference();
 
+            if (str1 == null && str2 != null)
+            {
+                return str2;
+            }
+            else if (str2 == null && str1 !=  null)
+            {
+                return str1;
+            }
+            else if (str1 == null && str2 == null)
+            {
+                return DSharpExternalMethodResult.Null;
+            }
             if (!str1->IsArray || !str2->IsArray)
             {
                 return DSharpExternalMethodResult.Null;
@@ -330,15 +501,80 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
             return newStr;
         }
 
+        private DSharpExternalMethodResult? CreateStringFromCharsArray(DSharpExternalCallingArgs args, DSharpArray* charsArray)
+        {
+            if (charsArray == null)
+            {
+                return DSharpExternalMethodResult.Null;
+            }
+
+            char* chars = stackalloc char[charsArray->Length];
+            UnmanagedArray<char> values = new(chars, charsArray->Length);
+            var indexer = DSharpArray.GetIndexer<char>(charsArray);
+
+            for (int i = 0; i < charsArray->Length; i++)
+            {
+                values[i] = indexer[i];
+            }
+
+            return _objectsContainer.CreateString(values);
+        }
+
+        #endregion
+
+        #region Numbers
+
+        private DSharpExternalMethodResult? NumbersInt64ToString(DSharpExternalCallingArgs args)
+        {
+            var arguments = args.Arguments;
+
+            if (arguments.Length != 1)
+            {
+                return DSharpExternalMethodResult.Null;
+            }
+
+            var value = arguments[0].Buffer.ReadAsObject();
+            var longValue = DSharpObjectConverter.ToObject<long>(value);
+
+            return _objectsContainer.CreateString(longValue.ToString());
+        }
+        private DSharpExternalMethodResult? NumbersUInt64ToString(DSharpExternalCallingArgs args)
+        {
+            var arguments = args.Arguments;
+
+            if (arguments.Length != 1)
+            {
+                return DSharpExternalMethodResult.Null;
+            }
+
+            var value = arguments[0].Buffer.ReadAsObject();
+            var ulongValue = DSharpObjectConverter.ToObject<ulong>(value);
+
+            return _objectsContainer.CreateString(ulongValue.ToString());
+        }
+        private DSharpExternalMethodResult? NumbersDecimalToString(DSharpExternalCallingArgs args)
+        {
+            var arguments = args.Arguments;
+
+            if (arguments.Length != 1)
+            {
+                return DSharpExternalMethodResult.Null;
+            }
+
+            var value = arguments[0].Buffer.ReadAsObject();
+            var decimalValue = DSharpObjectConverter.ToObject<decimal>(value);
+
+            return _objectsContainer.CreateString(decimalValue.ToString());
+        }
+
         #endregion
 
         #region Console
 
-        private static DSharpExternalMethodResult? ConsoleWrite(DSharpObject* instance,
-                                                                DSharpRuntimeMethodInfo* methodInfo,
-                                                                UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters,
-                                                                UnmanagedArray<DSharpExecutionLocalVariable> arguments)
+        private static DSharpExternalMethodResult? ConsoleWrite(DSharpExternalCallingArgs args)
         {
+            var arguments = args.Arguments;
+
             if (arguments.Length == 1)
             {
                 var textArg = arguments[0];
@@ -354,11 +590,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
 
             return null;
         }
-        private static DSharpExternalMethodResult? ConsoleWriteLine(DSharpObject* instance,
-                                                                    DSharpRuntimeMethodInfo* methodInfo,
-                                                                    UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters,
-                                                                    UnmanagedArray<DSharpExecutionLocalVariable> arguments)
+        private static DSharpExternalMethodResult? ConsoleWriteLine(DSharpExternalCallingArgs args)
         {
+            var arguments = args.Arguments;
+
             if (arguments.Length == 0)
             {
                 Console.WriteLine();
@@ -366,30 +601,24 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
             }
             if (arguments[0].ParameterInfo->Type->Name == "Char")
             {
-                return ConsoleWriteLineChar(instance, methodInfo, genericParameters, arguments);
+                return ConsoleWriteLineChar(args);
             }
 
-            ConsoleWrite(instance, methodInfo, genericParameters, arguments);
+            ConsoleWrite(args);
             Console.WriteLine();
 
             return null;
         }
-        private static DSharpExternalMethodResult? ConsoleWriteLineChar(DSharpObject* instance,
-                                                                        DSharpRuntimeMethodInfo* methodInfo,
-                                                                        UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters,
-                                                                        UnmanagedArray<DSharpExecutionLocalVariable> arguments)
+        private static DSharpExternalMethodResult? ConsoleWriteLineChar(DSharpExternalCallingArgs args)
         {
-            var value = (DSharpObject*)arguments[0].Buffer.StackPointer;
+            var value = (DSharpObject*)args.Arguments[0].Buffer.StackPointer;
             var data = *DSharpObject.GetData<char>(value);
 
             Console.WriteLine(data);
 
             return null;
         }
-        private static DSharpExternalMethodResult? ConsoleReadLine(DSharpObject* instance,
-                                                                   DSharpRuntimeMethodInfo* methodInfo,
-                                                                   UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters,
-                                                                   UnmanagedArray<DSharpExecutionLocalVariable> arguments)
+        private static DSharpExternalMethodResult? ConsoleReadLine(DSharpExternalCallingArgs args)
         {
             return Console.ReadLine();
         }

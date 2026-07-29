@@ -1,6 +1,4 @@
-﻿using static System.Net.Mime.MediaTypeNames;
-
-namespace DialogMaker.Core.Scripting.Runtime.Executor
+﻿namespace DialogMaker.Core.Scripting.Runtime.Executor
 {
     /// <summary>
     /// D# external method result

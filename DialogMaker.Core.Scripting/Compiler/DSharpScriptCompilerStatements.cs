@@ -479,6 +479,10 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 throw new ArgumentException($"Constructor should have same name to constructing type: {constructorNode}", nameof(constructorNode));
             }
+            if (constructorNode.IsStatic && constructorNode.Parameters.Count > 0)
+            {
+                throw new ArgumentException($"Static constructors can not have parameters: {constructorNode}", nameof(constructorNode));
+            }
 
             var constructor = declareType.CreateConstructor(constructorNode.IsStatic);
             constructor.Access = constructorNode.Access;

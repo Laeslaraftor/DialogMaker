@@ -4,7 +4,6 @@ using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
-using System.Security.Claims;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -174,7 +173,12 @@ namespace DialogMaker.Core.Scripting.Compiler
                 foreach (var info in initializers)
                 {
                     CompileValueExpression(initializer, info.Value, ref settings, null, context);
-                    code.LoadInstance();
+                    
+                    if (!isStatic)
+                    {
+                        code.LoadInstance();
+                    }
+
                     code.StorePropertyOrField(info.Key);
                     code.PopRepeat(2);
                 }
@@ -1307,24 +1311,41 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     var parameters = context.GetArgumentTypes(newExpression.Parameters);
                     DSharpCompilerContext typeContext = new(context, type);
+                    bool constructorAlreadyCalled = false;
 
-                    try
+                    if (type == method.Assembly.StringType && parameters.Length == 1)
                     {
-                        var constructor = typeContext.FindConstructor(parameters)
-                            ?? throw new ArgumentException($"Unable to find constructor with parameters {newExpression.Parameters.Count} at {type}:{Environment.NewLine} {expression}", nameof(expression));
+                        var stringTypeInfo = method.Assembly.StringTypeInfo;
+                        var firstParameter = parameters[0];
+                        constructorAlreadyCalled = true;
 
-                        if (type == method.Assembly.StringType)
+                        if (stringTypeInfo.CharsArrayConstructor.GetParameters()[0].Type == firstParameter)
                         {
                             code.Call(method.Assembly.StringTypeInfo.CharsArrayConstructor);
                         }
+                        else if (stringTypeInfo.CharsSpanConstructor.GetParameters()[0].Type == firstParameter)
+                        {
+                            code.Call(method.Assembly.StringTypeInfo.CharsSpanConstructor);
+                        }
                         else
                         {
-                            code.New(constructor);
+                            constructorAlreadyCalled = false;
                         }
                     }
-                    catch (Exception error)
+
+                    if (!constructorAlreadyCalled)
                     {
-                        throw new InvalidOperationException($"Unable to find constructor at \"{type}\": {expression}", error);
+                        try
+                        {
+                            var constructor = typeContext.FindConstructor(parameters)
+                                ?? throw new ArgumentException($"Unable to find constructor with parameters {newExpression.Parameters.Count} at {type}:{Environment.NewLine} {expression}", nameof(expression));
+
+                            code.New(constructor);
+                        }
+                        catch (Exception error)
+                        {
+                            throw new InvalidOperationException($"Unable to find constructor at \"{type}\": {expression}", error);
+                        }
                     }
                 }
 
@@ -1408,15 +1429,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     type = Assembly.CreateSpan(type);
                     code.NewStackArray(type);
-                    code.PopOffset(2); // skip span and his buffer
                 }
                 else
                 {
                     type = Assembly.CreateArray(type);
                     code.NewArray(type);
-                    code.PopOffset(1);
                 }
 
+                code.PopOffset(1);
                 var indexer = DSharpArrayType.GetIndexer(type);
 
                 if (context.Scope == null ||

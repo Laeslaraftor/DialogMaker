@@ -553,8 +553,12 @@ namespace DialogMaker.Core.Scripting.Runtime
                     {
                         return -1;
                     }
+                    if (info.Size == -1)
+                    {
+                        return sizeof(nint);
+                    }
 
-                    return info.Size + sizeof(DSharpObject);
+                    return info.Size;
                 }
 
                 int size = 0;

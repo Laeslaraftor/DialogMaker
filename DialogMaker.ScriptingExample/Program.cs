@@ -37,18 +37,28 @@ DSharpThread thread = vm.CreateThread();
 Console.WriteLine($"Starting with \"{entryPoint}\": ");
 Console.WriteLine();
 
-unsafe
+try
 {
-    try
+    unsafe
     {
         thread.Start(null, entryPoint);
     }
-    catch (DSharpException exception)
+
+    while (thread.IsExecuting)
     {
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine(exception);
-        Console.ResetColor();
+        await Task.Delay(50);
     }
+
+    if (thread.LastException != null)
+    {
+        throw thread.LastException;
+    }
+}
+catch (DSharpException exception)
+{
+    Console.ForegroundColor = ConsoleColor.Red;
+    Console.WriteLine(exception);
+    Console.ResetColor();
 }
 
 Console.WriteLine();
