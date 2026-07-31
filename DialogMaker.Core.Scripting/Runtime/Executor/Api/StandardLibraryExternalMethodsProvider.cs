@@ -466,7 +466,7 @@
             {
                 return str2;
             }
-            else if (str2 == null && str1 !=  null)
+            else if (str2 == null && str1 != null)
             {
                 return str1;
             }
@@ -599,7 +599,7 @@
                 Console.WriteLine();
                 return null;
             }
-            if (arguments[0].ParameterInfo->Type->Name == "Char")
+            if (arguments[0].ParameterInfo.Type->Name == "Char")
             {
                 return ConsoleWriteLineChar(args);
             }

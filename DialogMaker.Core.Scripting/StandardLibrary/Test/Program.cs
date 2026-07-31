@@ -20,6 +20,9 @@ public class Program
         TestPlayersArray("zeBlack", 2);
 
         Console.WriteLine("Text: " + "example" + Numbers.Int64ToString(12));
+        Console.WriteLine("Int size: " + GetSize<int>());
+        Console.WriteLine("Long size: " + GetGenericObject<long>().Size);
+
 
         // last exception should be unhandled
         TestExceptionHandling();
@@ -36,6 +39,8 @@ public class Program
             i++;
         }
     }
+    private static int GetSize<T>() => sizeof(T);
+    private static GenericObject<T> GetGenericObject<T>() => new GenericObject<T>();
     private static void TestPlayersArray(string name, int count)
     {
         ValuePlayer[] players = new ValuePlayer[count];
@@ -74,6 +79,15 @@ public class Program
     }
 }
 
+public struct GenericObject<T>
+{
+    public GenericObject()
+    {
+        Size = sizeof(T);
+    }
+
+    public int Size;
+}
 public interface IPlayer
 {
     public string Name { get; }

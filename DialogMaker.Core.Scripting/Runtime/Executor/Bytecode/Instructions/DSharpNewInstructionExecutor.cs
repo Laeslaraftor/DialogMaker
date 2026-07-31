@@ -20,7 +20,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             try
             {
-                member = context.TypesProvider.GetMember(metadataToken);
+                if (metadataToken.Type == DSharpMetadataTokenType.TypeDefinition)
+                {
+                    member = &context.GetType(metadataToken)->MetadataToken;
+                }
+                else
+                {
+                    member = context.TypesProvider.GetMember(metadataToken);
+                }
             }
             catch (Exception error)
             {
@@ -33,6 +40,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             if (member->Type == DSharpMetadataTokenType.TypeDefinition)
             {
                 typeToInstantiate = (DSharpRuntimeTypeInfo*)member;
+
+                for (int i = 0; i < typeToInstantiate->Constructors.Length; i++)
+                {
+                    var typeConstructor = typeToInstantiate->Constructors.GetItemReference(i);
+
+                    if (typeConstructor->ParametersType.Length == 0)
+                    {
+                        constructor = typeConstructor;
+                        break;
+                    }
+                }
             }
             else if (member->Type == DSharpMetadataTokenType.Method)
             {

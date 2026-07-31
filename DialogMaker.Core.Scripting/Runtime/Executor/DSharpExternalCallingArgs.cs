@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     /// </summary>
     public unsafe struct DSharpExternalCallingArgs(DSharpObject* instance, 
                                                             DSharpRuntimeMethodInfo* runtimeMethodInfo,
-                                                            UnmanagedArray<DSharpRuntimeTypeInfo> genericParameter,
+                                                            UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> genericParameter,
                                                             UnmanagedArray<DSharpExecutionLocalVariable> arguments,
                                                             DSharpStack stack,
                                                             IDSharpAssembly assembly)
@@ -23,7 +23,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <summary>
         /// Called method generic parameters
         /// </summary>
-        public UnmanagedArray<DSharpRuntimeTypeInfo> GenericParameter { get; } = genericParameter;
+        public UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> GenericParameter { get; } = genericParameter;
         /// <summary>
         /// Calling arguments
         /// </summary>

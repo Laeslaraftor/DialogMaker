@@ -11,7 +11,17 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             /// Information about calling generic method
             /// </summary>
             public DSharpMethodCallingInfo CallingInfo { get; set; } = callingInfo;
-            public unsafe override int SizeInBytes => base.SizeInBytes + (sizeof(DSharpMetadataToken) * (CallingInfo.GenericParameters.Count + 1));
+            public unsafe override int SizeInBytes
+            {
+                get
+                {
+                    int size = base.SizeInBytes + sizeof(DSharpMetadataToken) + sizeof(int);
+                    var replacedTypes = CallingInfo.Method.GetReplacedTypesByGenericParameters(BytecodeBuilder.Method.Assembly, [.. CallingInfo.GenericParameters.Values]);
+                    size += replacedTypes.Count * 2 * sizeof(DSharpMetadataToken);
+
+                    return size;
+                }
+            }
 
             #region Управление
 
@@ -21,9 +31,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
                 CallingInfo.Method.MetadataToken.Write(stream);
 
-                foreach (var generic in CallingInfo.GenericParameters.Values)
+                var replacedTypes = CallingInfo.Method.GetReplacedTypesByGenericParameters(BytecodeBuilder.Method.Assembly, [.. CallingInfo.GenericParameters.Values]);
+                stream.Write(replacedTypes.Count);
+
+                foreach (var info in replacedTypes)
                 {
-                    generic.MetadataToken.Write(stream);
+                    info.Key.MetadataToken.Write(stream);
+                    info.Value.MetadataToken.Write(stream);
                 }
             }
 

@@ -1,5 +1,6 @@
 using Acly.Commands;
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -29,7 +30,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpCallInstructionExecutor Instance = new();
 
-        internal static unsafe DSharpMethodExecutionCallback Call(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken, bool isInstance, bool isBase)
+        internal static unsafe DSharpMethodExecutionCallback Call(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken, bool isInstance, bool isBase, UnmanagedArray<Pointer<DSharpMetadataToken>>? genericParameters = null)
         {
             var method = context.TypesProvider.GetMethod(metadataToken);
             var parametersCount = method->ParametersType.Length;
@@ -67,38 +68,83 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 }
             }
 
-            var arguments = CreateArguments(context, method, 0);
+            var argumentsInfo = CreateArguments(context, method, genericParameters ?? default, 0);
 
-            return DSharpMethodExecutionCallback.Call(instance, method, arguments);
+            return DSharpMethodExecutionCallback.Call(instance, method, argumentsInfo.GenericParameters, argumentsInfo.Arguments);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static unsafe UnmanagedArray<DSharpExecutionLocalVariable> CreateArguments(DSharpExecutionContext context, DSharpRuntimeMethodInfo* methodInfo, uint offset = 0)
         {
-            if (methodInfo->ParametersType.IsNull)
+            return CreateArguments(context, methodInfo, default, offset).Arguments;
+        }
+        internal static unsafe ArgumentsInfo CreateArguments(DSharpExecutionContext context, DSharpRuntimeMethodInfo* methodInfo, UnmanagedArray<Pointer<DSharpMetadataToken>> genericParameters, uint offset = 0)
+        {
+            var parametersCount = methodInfo->ParametersType.Length;
+            var genericParametersCount = genericParameters.Length;
+            var genericTypes = methodInfo->GenericTypes.Cast<Pointer<DSharpRuntimeTypeInfo>>();
+
+            if (parametersCount == 0 && genericParametersCount == 0)
             {
-                return new(0, 0);
+                return new();
+            }
+            if (genericParametersCount % 2 != 0)
+            {
+                throw new ArgumentException($"Generic parameters count should be even, got {genericParametersCount}");
             }
 
-            var parametersCount = methodInfo->ParametersType.Length;
-            var argsFrame = *context.Stack.Push(DSharpStackValueType.MethodParametersBuffer, sizeof(DSharpExecutionLocalVariable) * parametersCount);
+            genericParametersCount /= 2;
+            var variablesSize = sizeof(DSharpExecutionLocalVariable) * parametersCount;
+            var argsFrame = *context.Stack.Push(DSharpStackValueType.MethodParametersBuffer, variablesSize + 
+                                                                                             sizeof(UnmanagedPair<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>>) * genericParametersCount);
             UnmanagedArray<DSharpExecutionLocalVariable> arguments = new(argsFrame.StackPointer, parametersCount);
+            UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> generics = new(argsFrame.StackPointer + variablesSize, genericParametersCount);
 
             for (int i = 0; i < parametersCount; i++)
             {
                 var peekOffset = (uint)(parametersCount - i) + offset;
                 var frame = context.Stack.Peek(peekOffset);
+                var parameterInfo = methodInfo->ParametersType[i];
+                parameterInfo.Type = context.ReplaceType(parameterInfo.Type);
+
                 arguments[i] = new()
                 {
-                    ParameterInfo = methodInfo->ParametersType.GetItemReference(i),
+                    ParameterInfo = parameterInfo,
                     Buffer = frame
                 };
             }
 
-            return arguments;
+            genericParametersCount *= 2;
+            for (int i = 0; i < genericParametersCount; i += 2)
+            {
+                var genericTypeToken = *genericParameters[i].AsPointer();
+                var replaceTypeToken = *genericParameters[i + 1].AsPointer();
+                var genericType = context.TypesProvider.GetRuntimeInfo(genericTypeToken);
+                var replaceType = context.TypesProvider.GetRuntimeInfo(replaceTypeToken);
+
+                generics.Add(genericType, replaceType);
+            }
+
+            return new()
+            {
+                Arguments = arguments,
+                GenericParameters = generics
+            };
         }
 
         private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
+        }
+
+        #endregion
+
+        #region Structs
+
+        internal struct ArgumentsInfo
+        {
+            public UnmanagedArray<DSharpExecutionLocalVariable> Arguments;
+            public UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> GenericParameters;
         }
 
         #endregion

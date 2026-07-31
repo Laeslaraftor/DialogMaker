@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
 using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
@@ -26,6 +27,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <summary>
         /// Type of method
         /// </summary>
+        /// <summary>
+        /// Member access modifier
+        /// </summary>
+        public DSharpAccessModifier Access;
         public DSharpMethodType MethodType;
         /// <summary>
         /// Is method abstract

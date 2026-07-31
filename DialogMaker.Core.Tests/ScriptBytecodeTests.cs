@@ -42,6 +42,8 @@ namespace DialogMaker.Core.Tests
         [TestCase("Program.TestPlayersArray")]
         [TestCase("Program.TestExceptionHandling")]
         [TestCase("Program.Main")]
+        [TestCase("Program.GetSize")]
+        [TestCase("Program.GetGenericObject")]
         public static void PrintMethodBytecode(string methodName)
         {
             var assembly = ScriptCompilerTests.CompileStandardLibrary();

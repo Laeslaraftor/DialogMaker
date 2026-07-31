@@ -663,6 +663,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         {
             info->MetadataToken = method.MetadataToken;
             info->Name = builder.AllocateString(method.Name);
+            info->Access = method.Access;
             info->IsAbstract = method.IsAbstract;
             info->IsVirtual = method.IsVirtual;
             info->IsStatic = method.IsStatic;
@@ -706,6 +707,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         {
             info->MetadataToken = property.MetadataToken;
             info->Name = builder.AllocateString(property.Name);
+            info->Access = property.Access;
             info->IsAbstract = property.IsAbstract;
             info->IsVirtual = property.IsVirtual;
             info->IsStatic = property.IsStatic;
@@ -727,6 +729,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         {
             info->MetadataToken = field.MetadataToken;
             info->Name = builder.AllocateString(field.Name);
+            info->Access = field.Access;
             info->IsStatic = field.IsStatic;
             info->DeclaringType = type;
             info->FieldType = GetRuntimeInfo(field.FieldType);

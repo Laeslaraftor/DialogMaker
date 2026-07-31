@@ -1,4 +1,6 @@
-﻿using System.Numerics;
+﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
@@ -28,6 +30,50 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             public T* Allocate<T>(DSharpMemoryBlockType type, int extraSize = 0) where T : unmanaged
             {
                 return (T*)memoryManager.Allocate(type, sizeof(T) + extraSize);
+            }
+        }
+        extension<T>(UnmanagedArray<T> array) where T : unmanaged
+        {
+            /// <summary>
+            /// Check array equals
+            /// </summary>
+            /// <param name="other">Other array</param>
+            /// <returns>Is array equals</returns>
+            public bool SequenceEqual(UnmanagedArray<T> other)
+            {
+                if (array.Length != other.Length)
+                {
+                    return false;
+                }
+
+                for (int i = 0; i < array.Length; i++)
+                {
+                    if (!Equals(array[i], other[i]))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        }
+        extension<TValue>(UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, TValue> dictionary) where TValue : unmanaged
+        {
+            public bool TryGetValue(DSharpMetadataToken metadataToken, [NotNullWhen(true)] out TValue? result)
+            {
+                for (int i = 0; i < dictionary.Count; i++)
+                {
+                    var pair = dictionary[i];
+
+                    if (pair.Key.AsPointer()->MetadataToken == metadataToken)
+                    {
+                        result = pair.Value;
+                        return true;
+                    }
+                }
+
+                result = null;
+                return false;
             }
         }
 

@@ -5,7 +5,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
     /// <summary>
     /// Access modifier of object type or it's member
     /// </summary>
-    public enum DSharpAccessModifier
+    public enum DSharpAccessModifier : byte
     {
         /// <summary>
         /// Public access modifier. Object type or member can be accessed without limitations 

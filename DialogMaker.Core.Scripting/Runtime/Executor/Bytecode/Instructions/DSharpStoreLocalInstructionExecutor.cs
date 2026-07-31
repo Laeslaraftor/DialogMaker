@@ -36,7 +36,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             {
                 variable->Buffer.ValueType = DSharpStackValueType.Structure;
             }
-            else if (!variable->ParameterInfo->Type->IsValueType &&
+            else if (!variable->ParameterInfo.Type->IsValueType &&
                      stackValue.ValueType == DSharpStackValueType.Structure)
             {
                 var boxedValue = (nint)context.ObjectsContainer.Box((DSharpObject*)stackValue.StackPointer);

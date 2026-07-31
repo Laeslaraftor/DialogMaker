@@ -39,5 +39,10 @@ namespace DialogMaker.Core.Scripting.Runtime
         {
             throw new NotImplementedException();
         }
+
+        public Dictionary<IDSharpMemberInfo, IDSharpMemberInfo> GetReplacedTypesByGenericParameters(DSharpAssemblyBuilder assemblyBuilder, IDSharpType[] genericParameters)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

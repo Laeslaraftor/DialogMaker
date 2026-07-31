@@ -13,7 +13,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <summary>
         /// Runtime information about parameter that represents current variable
         /// </summary>
-        public DSharpRuntimeParameterInfo* ParameterInfo;
+        public DSharpRuntimeParameterInfo ParameterInfo;
         /// <summary>
         /// Allocated buffer for variable
         /// </summary>
@@ -27,11 +27,11 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <param name="stack">Stack for allocating memory for variable values</param>
         /// <param name="parameterInfo">Information about variable</param>
         /// <returns>Created local variable</returns>
-        public static DSharpExecutionLocalVariable Create(DSharpStack stack, DSharpRuntimeParameterInfo* parameterInfo)
+        public static DSharpExecutionLocalVariable Create(DSharpStack stack, DSharpRuntimeParameterInfo parameterInfo)
         {
-            if (parameterInfo->Type->IsValueType)
+            if (parameterInfo.Type->IsValueType)
             {
-                stack.PushStructure(parameterInfo->Type);
+                stack.PushStructure(parameterInfo.Type);
             }
             else
             {

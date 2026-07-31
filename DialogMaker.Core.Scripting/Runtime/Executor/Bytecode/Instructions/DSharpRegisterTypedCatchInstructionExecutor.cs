@@ -22,7 +22,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             int instructionIndex = *(int*)instruction.Arguments[0];
             var exceptionTypeToken = *(DSharpMetadataToken*)instruction.Arguments[1];
-            var exceptionType = context.TypesProvider.GetRuntimeInfo(exceptionTypeToken);
+            DSharpRuntimeTypeInfo* exceptionType;
+
+            try
+            {
+                exceptionType = context.GetType(exceptionTypeToken);
+            }
+            catch (Exception exception)
+            {
+                return context.ThrowExecutionException(exception);
+            }
 
             if (!context.AddCatchBlock(exceptionType, instructionIndex))
             {

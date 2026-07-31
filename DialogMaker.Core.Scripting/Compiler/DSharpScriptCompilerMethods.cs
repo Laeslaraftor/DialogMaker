@@ -31,6 +31,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             settings.LocalVariables ??= [];
             settings.AlwaysReturnMethods ??= [];
             settings.BannedExpressions ??= [];
+            settings.LastMethodCallingInfo ??= [];
             DSharpCompilerContext context = new(Context)
             {
                 CurrentMember = method,
@@ -173,7 +174,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 foreach (var info in initializers)
                 {
                     CompileValueExpression(initializer, info.Value, ref settings, null, context);
-                    
+
                     if (!isStatic)
                     {
                         code.LoadInstance();
@@ -1054,6 +1055,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     if (!member.IsStatic &&
                         parentExpression is not MemberAccessExpressionNode &&
                         parentExpression is not IdentifierExpressionNode &&
+                        parentExpression is not CallExpressionNode &&
                         ((code.Instructions.Count > 0 &&
                         code.Instructions[^1].Operation != DSharpBytecodeOperation.LoadInstance) ||
                         code.Instructions.Count == 0))
@@ -1187,6 +1189,8 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     code.PopOffset(popOffset);
                 }
+
+                settings.LastMethodCallingInfo?.Add(expression, calledMethodInfo);
 
                 return calledMethod;
             }
@@ -1678,7 +1682,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new InvalidOperationException($"Unable to compile sizeof expression: {expression}", error);
                 }
 
-                if (type.GetSize(true, true) == -1)
+                if (type.IsGeneric || type.GetSize(true, true) == -1)
                 {
                     code.LoadTypeSize(type);
                 }
@@ -2086,8 +2090,53 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
 
                     currentMember = expressionMember;
+                    bool expressionMemberSetted = false;
 
-                    if (expressionMember is not IDSharpType && expressionMember.TryGetReturnType(out var expressionMemberType))
+                    if (settings.LastMethodCallingInfo?.TryGetValue(currentMemberAccess.Target!, out var callingInfo) == true &&
+                        callingInfo.GenericParameters.Count > 0 &&
+                        callingInfo.Method.ReturnType != null)
+                    {
+                        var returnType = callingInfo.Method.ReturnType;
+                        IDSharpType[] genericTypes;
+
+                        if (returnType.GenericTemplate == null)
+                        {
+                            genericTypes = returnType.GetGenericTypes();
+                        }
+                        else
+                        {
+                            genericTypes = returnType.GetGenericParameters();
+                        }
+                        if (genericTypes.Length > 0)
+                        {
+                            IDSharpType[] newParameters = new IDSharpType[genericTypes.Length];
+                            bool isAnyReplaced = false;
+
+                            for (int i = 0; i < genericTypes.Length; i++)
+                            {
+                                var genericType = genericTypes[i];
+
+                                if (callingInfo.GenericParameters.TryGetValue(genericType, out var replacedType))
+                                {
+                                    newParameters[i] = replacedType;
+                                    isAnyReplaced = true;
+                                }
+                                else
+                                {
+                                    newParameters[i] = genericType;
+                                }
+                            }
+
+                            if (isAnyReplaced)
+                            {
+                                expressionMember = Assembly.FillGeneric(returnType, newParameters);
+                                expressionMemberSetted = true;
+                            }
+                        }                        
+                    }
+                    if (!expressionMemberSetted &&
+                        expressionMember is not IDSharpType &&
+                        expressionMember.TryGetReturnType(out var expressionMemberType))
                     {
                         expressionMember = expressionMemberType;
                     }

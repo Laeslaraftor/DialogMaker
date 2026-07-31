@@ -221,6 +221,47 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             return ThrowExecutionException(exception.ToString());
         }
 
+        /// <summary>
+        /// Get type by metadata token. 
+        /// This method automatically replace type that replaced by generic parameter
+        /// </summary>
+        /// <param name="metadataToken">Type metadata token</param>
+        /// <returns>Runtime type info</returns>
+        public DSharpRuntimeTypeInfo* GetType(DSharpMetadataToken metadataToken)
+        {
+            var genericParameters = _executor->GenericParameters;
+
+            if (genericParameters.Count > 0)
+            {
+                for (int i = 0; i < genericParameters.Count; i++)
+                {
+                    var pair = genericParameters[i];
+
+                    if (pair.Key.AsPointer()->MetadataToken == metadataToken)
+                    {
+                        return pair.Value.AsPointer();
+                    }
+                }
+            }            
+
+            return TypesProvider.GetRuntimeInfo(metadataToken);
+        }
+        /// <summary>
+        /// Replace specified type with generic parameter.
+        /// If there no replaced type then it will return specified type back
+        /// </summary>
+        /// <param name="type">Type for replacing</param>
+        /// <returns>Replaced type</returns>
+        public DSharpRuntimeTypeInfo* ReplaceType(DSharpRuntimeTypeInfo* type)
+        {
+            if (_executor->GenericParameters.TryGetValue(type, out var result))
+            {
+                return result.Value;
+            }
+
+            return type;
+        }
+
         #endregion
 
         #region Static

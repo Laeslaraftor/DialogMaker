@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Scripting.Runtime.Executor;
+﻿using DialogMaker.Core.Scripting.Compiler.Builders;
+using DialogMaker.Core.Scripting.Runtime.Executor;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
@@ -57,5 +58,13 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         /// <returns>Array of interfaces method declarations that implemented by current method</returns>
         public IDSharpMethodInfo[] GetImplementedMethods();
+
+        /// <summary>
+        /// Get replaced members by specified generic parameters
+        /// </summary>
+        /// <param name="assemblyBuilder">Assembly builder for creating new generic types if need</param>
+        /// <param name="genericParameters">Calling generic parameters. This array should have same length to method generic parameters</param>
+        /// <returns>Replaced types by specified generic parameters</returns>
+        public Dictionary<IDSharpMemberInfo, IDSharpMemberInfo> GetReplacedTypesByGenericParameters(DSharpAssemblyBuilder assemblyBuilder, IDSharpType[] genericParameters);
     }
 }

@@ -95,6 +95,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             return *(TCast*)GetItemReference(index);
         }
         /// <summary>
+        /// Cast array to specified type
+        /// </summary>
+        /// <typeparam name="TCast">New item type</typeparam>
+        /// <returns>Array with new items type</returns>
+        public UnmanagedArray<TCast> Cast<TCast>() where TCast : unmanaged
+        {
+            return new((TCast*)_items, _length);
+        }
+        /// <summary>
         /// Fill array with specified value
         /// </summary>
         /// <param name="value">Value for filling array</param>
@@ -134,6 +143,29 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             var size = sizeof(T);
             return new((nint)_items + startIndex * size, length * size);
+        }
+        /// <summary>
+        /// Get slice of current unmanaged array
+        /// </summary>
+        /// <param name="startIndex">Start slice index</param>
+        /// <returns>Slice of current unmanaged array</returns>
+        /// <exception cref="IndexOutOfRangeException"></exception>
+        public UnmanagedArray<T> Slice(int startIndex) => Slice(startIndex, _length - startIndex);
+        /// <summary>
+        /// Get slice of current unmanaged array
+        /// </summary>
+        /// <param name="startIndex">Start slice index</param>
+        /// <param name="length">Slice length</param>
+        /// <returns>Slice of current unmanaged array</returns>
+        /// <exception cref="IndexOutOfRangeException"></exception>
+        public UnmanagedArray<T> Slice(int startIndex, int length)
+        {
+            if (0 > startIndex || startIndex + length > _length)
+            {
+                throw new IndexOutOfRangeException();
+            }
+
+            return new(&_items[startIndex], length);
         }
 
         /// <summary>

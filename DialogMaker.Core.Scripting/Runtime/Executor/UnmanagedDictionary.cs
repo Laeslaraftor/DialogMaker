@@ -13,6 +13,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         where TValue : unmanaged
     {
         /// <summary>
+        /// Create new unmanaged dictionary
+        /// </summary>
+        /// <param name="items">Items buffer address</param>
+        /// <param name="capacity">Buffer capacity</param>
+        public UnmanagedDictionary(nint items, int capacity)
+            : this(new(new(items, capacity)))
+        {
+        }
+
+        /// <summary>
         /// Dictionary capacity
         /// </summary>
         public readonly int Capacity => _pairs.Capacity;

@@ -37,7 +37,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             try
             {
-                arrayType = context.TypesProvider.GetRuntimeInfo(metadataToken);
+                arrayType = context.GetType(metadataToken);
             }
             catch (Exception exception)
             {

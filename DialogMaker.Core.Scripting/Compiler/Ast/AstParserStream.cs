@@ -34,7 +34,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
         {
             foreach (var value in Enum.GetValues(typeof(T)))
             {
-                if (Check((DSharpTokenType)value))
+                var numberValue = (int)Convert.ChangeType(value, typeof(int));
+                var typedValue = (DSharpTokenType)Enum.ToObject(typeof(DSharpTokenType), numberValue);
+
+                if (Check(typedValue))
                 {
                     return true;
                 }

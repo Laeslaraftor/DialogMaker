@@ -26,7 +26,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <summary>
         /// Generic parameter for next calling method
         /// </summary>
-        public UnmanagedArray<DSharpRuntimeTypeInfo> CallingGenericParameters;
+        public UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> CallingGenericParameters;
         /// <summary>
         /// Arguments for next calling method
         /// </summary>
@@ -66,7 +66,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             return Call(objectInstance, nextMethod, default, arguments);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpMethodExecutionCallback Call(DSharpObject* objectInstance, DSharpRuntimeMethodInfo* nextMethod, UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments) => new()
+        public static DSharpMethodExecutionCallback Call(DSharpObject* objectInstance, DSharpRuntimeMethodInfo* nextMethod, UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments) => new()
         {
             Type = DSharpMethodExecutionCallbackType.RequiredCallingNextMethod,
             NextMethod = nextMethod,

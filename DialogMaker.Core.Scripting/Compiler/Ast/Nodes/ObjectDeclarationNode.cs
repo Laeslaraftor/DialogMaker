@@ -126,13 +126,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         {
             result = DSharpAccessModifier.Private;
 
-            foreach (var access in Enum.GetValues(typeof(DSharpAccessModifier)))
+            foreach (var accessValue in Enum.GetValues(typeof(DSharpAccessModifier)))
             {
-                var tokenType = (DSharpTokenType)access;
+                var access = (DSharpAccessModifier)accessValue;
+                var tokenType = access.ToToken();
 
                 if (token.Type == tokenType)
                 {
-                    result = (DSharpAccessModifier)access;
+                    result = access;
                     return true;
                 }
             }

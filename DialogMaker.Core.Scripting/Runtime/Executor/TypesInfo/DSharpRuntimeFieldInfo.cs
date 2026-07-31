@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 {
@@ -16,6 +17,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// Field name
         /// </summary>
         public UnmanagedArray<char> Name;
+        /// <summary>
+        /// Member access modifier
+        /// </summary>
+        public DSharpAccessModifier Access;
         /// <summary>
         /// Is field static
         /// </summary>

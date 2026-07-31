@@ -35,6 +35,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
         #region Controls
 
+        public void Start(IDSharpMethodInfo methodInfo) => Start(null, methodInfo);
         public void Start(DSharpObject* instance, IDSharpMethodInfo methodInfo)
         {
             if (methodInfo.IsStatic)
@@ -63,7 +64,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <param name="arguments">Method calling arguments</param>
         /// <param name="methodInfo">Method for executing</param>
         /// <exception cref="InvalidOperationException"></exception>
-        public void Start(DSharpObject* instance, UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments, DSharpRuntimeMethodInfo* methodInfo)
+        public void Start(DSharpObject* instance, UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments, DSharpRuntimeMethodInfo* methodInfo)
         {
             if (IsExecuting)
             {
@@ -94,7 +95,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             thread.Start();
         }
 
-        private void ThreadLoop(DSharpObject* instance, UnmanagedArray<DSharpRuntimeTypeInfo> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments, DSharpRuntimeMethodInfo* methodInfo)
+        private void ThreadLoop(DSharpObject* instance, UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments, DSharpRuntimeMethodInfo* methodInfo)
         {
             var typesProvider = Executor.RuntimeTypesProvider;
             var objectContainer = _objectsContainer;
@@ -211,7 +212,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
                     for (int i = arguments.Length; i < bytecode->Variables.Length; i++)
                     {
-                        newMethodExecutor->LocalVariables[i] = DSharpExecutionLocalVariable.Create(stack, bytecode->Variables.GetItemReference(i));
+                        var variable = bytecode->Variables[i];
+
+                        if (genericParameters.TryGetValue(variable.Type, out var newVariableType))
+                        {
+                            variable.Type = newVariableType.Value;
+                        }
+
+                        newMethodExecutor->LocalVariables[i] = DSharpExecutionLocalVariable.Create(stack, variable);
                     }
                     for (int i = 0; i < arguments.Length; i++)
                     {

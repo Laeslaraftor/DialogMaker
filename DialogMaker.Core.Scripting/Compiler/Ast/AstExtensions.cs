@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Scripting.Runtime;
+﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+using DialogMaker.Core.Scripting.Runtime;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast
 {
@@ -14,6 +15,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
                 }
 
                 return DSharpPropertyAccessor.Getter;
+            }
+        }
+        extension(DSharpAccessModifier access)
+        {
+            public DSharpTokenType ToToken()
+            {
+                return access switch
+                {
+                    DSharpAccessModifier.Public => DSharpTokenType.Public,
+                    DSharpAccessModifier.Protected => DSharpTokenType.Protected,
+                    DSharpAccessModifier.Private => DSharpTokenType.Private,
+                    DSharpAccessModifier.Internal => DSharpTokenType.Internal,
+                    _ => DSharpTokenType.Public,
+                };
             }
         }
     }

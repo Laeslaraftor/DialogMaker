@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Runtime;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
 {
@@ -434,6 +435,136 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         public IDSharpParameterInfo[] GetParameters() => [.. Parameters];
         public IDSharpType[] GetGenericParameters() => [.. GenericParameters.Select(t => (IDSharpType)Assembly.GetType(t))];
         public IDSharpMethodInfo[] GetImplementedMethods() => [.. _implementedMethods];
+        public Dictionary<IDSharpMemberInfo, IDSharpMemberInfo> GetReplacedTypesByGenericParameters(DSharpAssemblyBuilder assemblyBuilder, IDSharpType[] genericParameters)
+        {
+            if (genericParameters.Length != _genericParameters.Count)
+            {
+                throw new ArgumentException($"Generic provided parameters should have same length to \"{this}\" method generic parameters", nameof(genericParameters));
+            }
+
+            Dictionary<IDSharpMemberInfo, IDSharpMemberInfo> result = [];
+
+            for (int i = 0; i < genericParameters.Length; i++)
+            {
+                result.Add(_genericParameters[i], genericParameters[i]);
+            }
+
+            bool TryFillToken(DSharpTypeToken? typeToken, [NotNullWhen(true)] out IDSharpType? type, [NotNullWhen(true)] out IDSharpType? filledType)
+            {
+                if (typeToken == null || Assembly.GetType(typeToken) is not IDSharpType typeMember)
+                {
+                    filledType = null;
+                    type = null;
+                    return false;
+                }
+
+                type = typeMember;
+                return TryFill(typeMember, out filledType);
+            }
+            bool TryFill(IDSharpType type, [NotNullWhen(true)] out IDSharpType? filledType)
+            {
+                IDSharpType[] genericTypes;
+
+                if (type.GenericTemplate == null)
+                {
+                    genericTypes = type.GetGenericTypes();
+                }
+                else
+                {
+                    genericTypes = type.GetGenericParameters();
+                }
+
+                List<IDSharpType> replaced = new(genericTypes.Length);
+                bool isAnyReplaced = false;
+
+                foreach (var genericType in genericTypes)
+                {
+                    if (result.TryGetValue(genericType, out var replacedType))
+                    {
+                        replaced.Add((IDSharpType)replacedType);
+                        isAnyReplaced = true;
+                    }
+                    else
+                    {
+                        replaced.Add(genericType);
+                    }
+                }
+
+                if (!isAnyReplaced)
+                {
+                    filledType = null;
+                    return false;
+                }
+                if (type.GenericTemplate != null)
+                {
+                    type = type.GenericTemplate;
+                }
+
+                filledType = Assembly.FillGeneric(type, replaced);
+                return true;
+            }
+
+            foreach (var genericType in _genericParameters)
+            {
+                if (TryFill(genericType, out var filled))
+                {
+                    result[genericType] = filled;
+                }
+            }
+            if (ReturnType != null && TryFillToken(ReturnType, out var returnType, out var newReturnType))
+            {
+                result.Add(returnType, newReturnType);
+            }
+
+            if (IsDeclaration)
+            {
+                return result;
+            }
+
+            var code = GetBytecodeBuilder();
+
+            foreach (var instruction in code.Instructions)
+            {
+                if (instruction is DSharpBytecodeBuilder.TypeInstruction typeInstruction &&
+                    !result.ContainsKey(typeInstruction.MemberInfo))
+                {
+                    if (typeInstruction.MemberInfo is IDSharpType typeMember)
+                    {
+                        if (TryFill(typeMember, out var filledType))
+                        {
+                            result.Add(typeMember, filledType);
+                            continue;
+                        }
+                    }
+
+                    var member = typeInstruction.MemberInfo.Replace(Assembly, result);
+                    
+                    if (member != typeInstruction.MemberInfo)
+                    {
+                        result.Add(typeInstruction.MemberInfo, member);
+                    }
+                }
+                else if (instruction is DSharpBytecodeBuilder.TypedReferenceInstruction typedReferenceInstruction &&
+                    !result.ContainsKey(typedReferenceInstruction.Type) &&
+                    TryFill(typedReferenceInstruction.Type, out var filledReferenceType))
+                {
+                    result.Add(typedReferenceInstruction.Type, filledReferenceType);
+                }
+                else if (instruction is DSharpBytecodeBuilder.GenericCallingInstruction genericCallingInstruction)
+                {
+                    foreach (var callingGeneric in genericCallingInstruction.CallingInfo.GenericParameters.Values)
+                    {
+                        if (!result.ContainsKey(callingGeneric) &&
+                            TryFill(callingGeneric, out var newCallingGeneric))
+                        {
+                            result.Add(callingGeneric, newCallingGeneric);
+                        }
+                    }
+                }
+            }
+
+            return result;
+        }
 
         public override string ToString() => this.ToString(null);
 

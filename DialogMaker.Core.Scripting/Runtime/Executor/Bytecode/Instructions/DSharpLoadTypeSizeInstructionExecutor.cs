@@ -17,7 +17,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
 
             var token = *(DSharpMetadataToken*)instruction.Arguments[0];
-            var typeInfo = context.TypesProvider.GetRuntimeInfo(token);
+            var typeInfo = context.GetType(token);
 
             context.Stack.Push(typeInfo->Size);
 

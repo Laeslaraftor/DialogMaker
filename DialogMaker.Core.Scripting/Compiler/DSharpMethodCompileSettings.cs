@@ -16,6 +16,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         public bool DoNotCompileEndPointMember { get; set; }
         public bool NextNonVirtualizedAccess { get; set; }
         public bool LastOperationIsReturnsValue { get; set; }
+        public Dictionary<ExpressionNode, DSharpMethodCallingInfo>? LastMethodCallingInfo { get; set; }
 
         public readonly bool BanExpression(ExpressionNode expression) => BannedExpressions?.Add(expression) == true;
         public readonly bool IsExpressionBanned(ExpressionNode? expression)

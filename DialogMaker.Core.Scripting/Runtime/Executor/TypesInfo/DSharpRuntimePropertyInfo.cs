@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+using System.Runtime.InteropServices;
 using System.Xml.Linq;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
@@ -23,6 +24,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// Property name
         /// </summary>
         public UnmanagedArray<char> Name;
+        /// <summary>
+        /// Member access modifier
+        /// </summary>
+        public DSharpAccessModifier Access;
         /// <summary>
         /// Is property abstract
         /// </summary>

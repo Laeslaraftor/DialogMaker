@@ -5,26 +5,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.GenericCallBaseInstance"/> operation
     /// </summary>
-    public class DSharpGenericCallBaseInstanceInstructionExecutor : DSharpInstructionExecutor
+    public class DSharpGenericCallBaseInstanceInstructionExecutor : DSharpGenericCallInstructionExecutorBase
     {
         #region Controls
-
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
-        {
-            throw new NotImplementedException();
-        }
 
         public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
+
+        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken methodToken, UnmanagedArray<Pointer<DSharpMetadataToken>> genericParameters)
         {
-            throw new NotImplementedException();
-        }
-        public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
-        {
-            throw new NotImplementedException();
+            return DSharpCallInstructionExecutor.Call(instruction, ref context, methodToken, true, true, genericParameters);
         }
 
         #endregion
