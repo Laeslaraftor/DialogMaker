@@ -1480,7 +1480,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     throw new InvalidOperationException($"Unable to resolve member for awaiting: {awaitExpression}");
                 }
-                if (awaitMember is not IDSharpMethodInfo methodToAwait)
+                if (awaitMember.MemberInfo is not IDSharpMethodInfo methodToAwait)
                 {
                     throw new ArgumentException($"await appliable only for methods and functions", nameof(expression));
                 }
@@ -1812,7 +1812,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 else
                 {
-                    type = CompileBinaryExpression(method, code, @operator, left.Value, right.Value, ref settings, binaryExpression, context, leftType != null);
+                    bool skipLeftCompiling = leftType != null;
+                    var leftValue = left.Value;
+
+                    if (skipLeftCompiling && left.Parent != null)
+                    {
+                        leftValue = left.Parent;
+                    }
+
+                    type = CompileBinaryExpression(method, code, @operator, leftValue, right.Value, ref settings, binaryExpression, context, skipLeftCompiling);
                 }
 
                 expressionTypes.TryAdd(left.Value, type);
@@ -1863,17 +1871,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 throw new InvalidOperationException($"Unable to compile binary operation. Unable to get type of left expression: {left}");
             }
 
-            var originalTypeResolver = context.TypeResolver;
-            context.TypeResolver = obj =>
-            {
-                if (obj == null || obj == right)
-                {
-                    return leftType;
-                }
-
-                return originalTypeResolver?.Invoke(obj);
-            };
-
             if (right.GetExpressionType(Assembly, context) is not IDSharpType rightType)
             {
                 throw new InvalidOperationException($"Unable to compile binary operation. Unable to get type of right expression: {right}");
@@ -1884,20 +1881,20 @@ namespace DialogMaker.Core.Scripting.Compiler
                 CompileValueExpression(method, expression, ref settings, parentExpression, context);
             }
 
+            DSharpBytecodeBuilder.ReferenceInstruction? skipInstruction = null;
+
             if (!skipLeftCompiling)
             {
                 CompileExpression(left, ref settings);
-            }
 
-            DSharpBytecodeBuilder.ReferenceInstruction? skipInstruction = null;
-
-            if (binaryOperator == DSharpBinaryOperator.LogicalAnd)
-            {
-                skipInstruction = code.JumpIfFalse();
-            }
-            else if (binaryOperator == DSharpBinaryOperator.LogicalOr)
-            {
-                skipInstruction = code.JumpIfTrue();
+                if (binaryOperator == DSharpBinaryOperator.LogicalAnd)
+                {
+                    skipInstruction = code.JumpIfFalse();
+                }
+                else if (binaryOperator == DSharpBinaryOperator.LogicalOr)
+                {
+                    skipInstruction = code.JumpIfTrue();
+                }
             }
 
             CompileExpression(right, ref settings);
@@ -1938,7 +1935,23 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             if (@operator == null)
             {
-                code.BinaryOperation(binaryOperator);
+                if (!leftType.IsValueType() &&
+                    !rightType.IsValueType() &&
+                    (binaryOperator == DSharpBinaryOperator.LogicalEquals ||
+                    binaryOperator == DSharpBinaryOperator.LogicalNotEquals))
+                {
+                    code.Call(Assembly.ObjectTypeInfo.EqualsMethod);
+                    
+                    if (binaryOperator == DSharpBinaryOperator.LogicalNotEquals)
+                    {
+                        code.Not();
+                    }
+                }
+                else
+                {
+                    code.BinaryOperation(binaryOperator);
+                }
+
                 code.PopPreviousTwo();
 
                 if (binaryOperator.IsLogical())
@@ -2132,7 +2145,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                                 expressionMember = Assembly.FillGeneric(returnType, newParameters);
                                 expressionMemberSetted = true;
                             }
-                        }                        
+                        }
                     }
                     if (!expressionMemberSetted &&
                         expressionMember is not IDSharpType &&
@@ -2221,7 +2234,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     {
                         if (c.TryResolveMember(e, out var resolvedMember))
                         {
-                            return resolvedMember;
+                            return resolvedMember.MemberInfo;
                         }
                     }
                     catch (Exception error)

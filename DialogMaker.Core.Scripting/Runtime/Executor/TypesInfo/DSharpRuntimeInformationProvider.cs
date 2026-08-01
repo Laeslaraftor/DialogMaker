@@ -397,7 +397,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             IDSharpType[] interfaces = [.. type.GetInterfaces()];
             IDSharpType? baseType = type.GetBaseTypes().FirstOrDefault(t => t.ObjectType == DSharpObjectType.Class) ?? type.Assembly.ObjectType;
 
-            if (baseType == type.Assembly.ObjectType)
+            if (type == type.Assembly.ObjectType)
             {
                 baseType = null;
             }

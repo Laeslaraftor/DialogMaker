@@ -1,22 +1,35 @@
 namespace System;
 
+using Internal.System.Runtime;
+
 public sealed class Object
 {
-    public virtual bool Equals(object obj) => Equals(this, obj);
+    public virtual bool Equals(object? obj) => ContentEquals(this, obj);
     public virtual int GetHashCode() => GetHashCode(this);
     public virtual string ToString() => GetType().FullName;
-    public extern Type GetType();
-
-    public static bool Equals(object a, object b)
+    public Type GetType()
     {
-        if (a == null && b == null)
+        var typeToken = CompilerServices.GetObjectTypeToken(this);
+        return RuntimeHelper.CreateType(typeToken);
+    }
+
+    public static bool Equals(object? a, object? b)
+    {
+        if (a == null && b == null ||
+            ReferenceEquals(a, b))
         {
             return true;
         }
+        if (a == null && b != null ||
+            a != null && b == null)
+        {
+            return false;
+        }
 
-        return ReferenceEquals(a, b);
+        return a.Equals(b);
     }
-    public static extern bool ReferenceEquals(object a, object b);
+    public static extern bool ReferenceEquals(object? a, object? b);
 
     private static extern int GetHashCode(object obj);
+    private static extern bool ContentEquals(object? a, object? b);
 }

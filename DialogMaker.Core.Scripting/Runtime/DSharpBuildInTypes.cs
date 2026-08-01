@@ -284,6 +284,12 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <returns>Is type information found</returns>
         public static bool TryGetValueTypeByIndex(int index, [NotNullWhen(true)] out DSharpBuildInTypeInfo result)
         {
+            if (index == -1)
+            {
+                result = default;
+                return false;
+            }
+
             int i = 0;
 
             foreach (var info in AllValueTypes.Values)

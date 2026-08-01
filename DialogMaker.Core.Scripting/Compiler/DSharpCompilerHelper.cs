@@ -4,6 +4,7 @@ using DialogMaker.Core.Scripting.Compiler.Lexer;
 using System.Diagnostics.CodeAnalysis;
 using DialogMaker.Core.Scripting.Runtime;
 using DialogMaker.Core.Scripting.Compiler.Builders;
+using DialogMaker.Core.Scripting.Compiler.Scopes;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -568,24 +569,21 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 else if (expression is ThisExpressionNode thisExpression)
                 {
-                    if (context.CurrentMember == null)
+                    var scope = context.Scope;
+
+                    while (scope != null)
                     {
-                        throw new ArgumentException($"Unable to get type of \"this\" because current member not provided: {expression}", nameof(context));
-                    }
-                    if (context.CurrentMember is IDSharpType type)
-                    {
-                        return type;
-                    }
-                    else if (context.CurrentMember.DeclaringType == null)
-                    {
-                        throw new InvalidOperationException($"Unable to get current instance inside global member: {expression}");
-                    }
-                    if (context.CurrentMember.IsStatic)
-                    {
-                        throw new InvalidOperationException($"Unable to get current instance inside static member: {expression}");
+                        if (scope is DSharpCompilerMethodScope methodScope &&
+                                 methodScope.IsRoot &&
+                                 methodScope.Method.DeclaringType != null)
+                        {
+                            return methodScope.Method.DeclaringType;
+                        }
+
+                        scope = scope.Parent;
                     }
 
-                    return context.CurrentMember.DeclaringType;
+                    throw new InvalidOperationException($"Unable to get type of \"this\": {expression}");
                 }
                 else if (expression is BaseExpressionNode baseExpression)
                 {
@@ -635,14 +633,26 @@ namespace DialogMaker.Core.Scripting.Compiler
                     return localMember.Type;
                 }
 
-                if (context.TryResolveMember(expression, out var result))
+                if (context.TryResolveMember(expression, out var resolveResult))
                 {
-                    if (result.TryGetReturnType(out var returnType))
+                    if (resolveResult.MethodCallingInfo != null &&
+                        resolveResult.MethodCallingInfo.Method.ReturnType != null)
+                    {
+                        var methodReturnType = resolveResult.MethodCallingInfo.Method.ReturnType;
+
+                        if (resolveResult.MethodCallingInfo.GenericParameters.TryGetValue(methodReturnType, out var replacedType))
+                        {
+                            return replacedType;
+                        }
+
+                        return methodReturnType;
+                    }
+                    if (resolveResult.MemberInfo.TryGetReturnType(out var returnType))
                     {
                         return returnType;
                     }
 
-                    return result;
+                    return resolveResult.MemberInfo;
                 }
                 else if (expression.TrySimplifyToLiteral(out var literal))
                 {
@@ -1142,7 +1152,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     if (context.TryResolveMember(nameofExpression.Value, out var member))
                     {
-                        return member.Name;
+                        return member.MemberInfo.Name;
                     }
                 }
                 catch

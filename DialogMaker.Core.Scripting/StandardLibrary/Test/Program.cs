@@ -4,6 +4,33 @@ public class Program
 {
     public static void Main()
     {
+        while (true)
+        {
+            Console.Write("> ");
+            var value = Console.ReadLine();
+            
+            if (value == "malinovka")
+            {
+                Console.WriteLine("Малиновка шоколадного кольца");
+            }
+            else if (value == "zeWhite")
+            {
+                Console.WriteLine("zeWhite on the beat");
+            }
+            else if (value == "exit")
+            {
+                break;
+            }
+            else
+            {
+                Console.WriteLine("Неизвестная команда");
+            }
+
+            Console.WriteLine();
+        }
+
+        Console.WriteLine();
+
         IPlayer player = new Enemy("zeWhite");
 
         for (int i = 0; i < 5; i++)
@@ -11,6 +38,7 @@ public class Program
             player.PrintMessage();
         }
 
+        var playerType = player.GetType();
         Console.WriteLine();
 
         TestArray();
@@ -48,7 +76,7 @@ public class Program
         for (int i = 0; i < players.Length; i++)
         {
             players[i] = new(name);
-            players[i].PrintMessage();   
+            players[i].PrintMessage();
         }
     }
     private static void TestExceptionHandling()

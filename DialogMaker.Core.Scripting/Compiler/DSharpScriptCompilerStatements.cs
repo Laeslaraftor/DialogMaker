@@ -928,7 +928,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 var overrideMethod = FindBaseMember(t => t.GetMethod(info.Key.Name), info.Key.DeclaringType, m =>
                 {
                     return m.DeclaringType == info.Key.DeclaringType ||
-                           !m.GetParameters().SequenceEqual(parameters) ||
+                           !m.GetParameters().SequenceEqual(parameters, IDSharpParameterInfo.Comparer.Instance) ||
                            !m.GetGenericParameters().SequenceEqual(genericParameters);
                 });
 

@@ -123,19 +123,33 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                         if (result != null)
                         {
                             popOffset = 1;
-                            var resultValue = result.Value;
 
-                            if (resultValue.IsObject)
+                            if (result != DSharpExternalMethodResult.Stack)
                             {
-                                stack.PushReference(resultValue.AsObject());
-                            }
-                            else if (resultValue.IsLiteralValue)
-                            {
-                                stack.Push(resultValue.AsLiteralValue());
-                            }
-                            else
-                            {
-                                stack.PushNull();
+                                var resultValue = result.Value;
+
+                                if (resultValue.IsObject)
+                                {
+                                    stack.PushReference(resultValue.AsObject());
+                                }
+                                else if (resultValue.IsLiteralValue)
+                                {
+                                    var literalValue = resultValue.AsLiteralValue();
+
+                                    if (literalValue.IsString)
+                                    {
+                                        var strObject = objectContainer.CreateString(literalValue.AsString());
+                                        stack.PushReference(strObject);
+                                    }
+                                    else
+                                    {
+                                        stack.Push(literalValue);
+                                    }
+                                }
+                                else
+                                {
+                                    stack.PushNull();
+                                }
                             }
                         }
                         if (stack.Count > popOffset)
@@ -312,7 +326,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
                         methodExecutor->HaveUnhandledException = false;
                         methodExecutor->InstructionIndex = catchBlock.InstructionIndex;
-                        
+
                         if (!methodExecutor->ContainsFinallyBlock(catchBlock.TryCatchFinallyBlockId))
                         {
                             DSharpExecutionContext.EndTryCatchFinally(methodExecutor);

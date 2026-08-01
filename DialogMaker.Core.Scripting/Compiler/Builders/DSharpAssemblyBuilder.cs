@@ -170,7 +170,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                field ??= GetTypeToken(DSharpBuildInTypes.Object);
+                field ??= GetTypeToken(ObjectTypeInfo.Type);
                 return field;
             }
         }
@@ -371,7 +371,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                field ??= (IDSharpType)GetType(ObjectToken);
+                field ??= ObjectTypeInfo.Type;
                 return field;
             }
         }
@@ -444,6 +444,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             get
             {
                 field ??= DSharpRuntimeHelperType.Create(this);
+                return field;
+            }
+        }
+        public DSharpObjectTypeInfo ObjectTypeInfo
+        {
+            get
+            {
+                field ??= DSharpObjectTypeInfo.Create(this);
                 return field;
             }
         }

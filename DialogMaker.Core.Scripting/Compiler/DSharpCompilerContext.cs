@@ -4,6 +4,7 @@ using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using System.Text;
 
 namespace DialogMaker.Core.Scripting.Compiler
@@ -302,7 +303,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             else if (expression is MemberAccessExpressionNode &&
                      TryResolveMember(expression, out var resolvedMember) &&
-                     resolvedMember.TryGetReturnType(out result))
+                     resolvedMember.MemberInfo.TryGetReturnType(out result))
             {
                 return true;
             }
@@ -333,9 +334,9 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// <param name="typeInfo">Information about type</param>
         /// <param name="result">Resolved type</param>
         /// <returns>Resolve status</returns>
-        public readonly bool TryResolveMember(ExpressionNode expression, [NotNullWhen(true)] out IDSharpMemberInfo? result)
+        public readonly bool TryResolveMember(ExpressionNode expression, [NotNullWhen(true)] out DSharpMemberSearchResult result)
         {
-            result = null;
+            result = default;
 
             if (expression is IdentifierExpressionNode identifier)
             {
@@ -345,23 +346,30 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     if (Scope.TryGetVariable(name, out var variable))
                     {
-                        result = variable.Type;
+                        result = new(variable);
                         return true;
                     }
-                    else if (Scope.TryResolveMember(name, out result))
+                    else if (Scope.TryResolveMember(name, out var resultMember))
                     {
+                        result = new(resultMember);
                         return true;
                     }
                     else if (TryResolveType(identifier, out var typeToken))
                     {
-                        result = Scope.Assembly.GetType(typeToken);
+                        var type = Scope.Assembly.GetType(typeToken);
+                        result = new(type);
                         return true;
                     }
                 }
-                if (result == null && Assembly != null)
+                if (result.IsEmpty && Assembly != null)
                 {
-                    result = Assembly.GlobalVariables.FirstOrDefault(v => v.Name == name);
-                    result ??= Assembly.GlobalFunctions.FirstOrDefault(f => f.Name == name);
+                    IDSharpMemberInfo? globalMember = Assembly.GlobalVariables.FirstOrDefault(v => v.Name == name);
+                    globalMember ??= Assembly.GlobalFunctions.FirstOrDefault(f => f.Name == name);
+
+                    if (globalMember != null)
+                    {
+                        result = new(globalMember);
+                    }
                 }
             }
             else if (expression is ThisExpressionNode thisExpression)
@@ -370,9 +378,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     ThrowThisIsUnavailable(expression);
                 }
+                if (CurrentMember == null)
+                {
+                    return false;
+                }
 
-                result = CurrentMember;
-                return result != null;
+                result = new(CurrentMember);
+                return true;
             }
             else if (expression is BaseExpressionNode baseExpression)
             {
@@ -397,7 +409,9 @@ namespace DialogMaker.Core.Scripting.Compiler
                     ThrowBaseIsUnavailable(expression);
                 }
 
-                result = type.GetBaseTypes().FirstOrDefault(t => t.ObjectType != DSharpObjectType.Interface) ?? Assembly.ObjectType;
+                type = type.GetBaseTypes().FirstOrDefault(t => t.ObjectType != DSharpObjectType.Interface) ?? Assembly.ObjectType;
+
+                result = new(type);
 
                 return true;
             }
@@ -412,11 +426,11 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             else if (expression is CallExpressionNode callExpression)
             {
-                result = FindMethod(callExpression).Method;
+                result = new(FindMethod(callExpression));
             }
             else if (expression is ArrayAccessExpressionNode arrayExpression)
             {
-                result = FindIndexer(arrayExpression);
+                result = new(FindIndexer(arrayExpression));
             }
             else if (expression is MemberAccessExpressionNode memberAccess)
             {
@@ -424,10 +438,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     throw new ArgumentException($"Incomplete expression: {expression}", nameof(expression));
                 }
-                if (!TryResolveMember(memberAccess.Target, out var member))
+                if (!TryResolveMember(memberAccess.Target, out var memberSearchResult))
                 {
                     throw new InvalidOperationException($"Unable to resolve member for expression: {memberAccess.Target}");
                 }
+
+                var member = memberSearchResult.MemberInfo;
+
                 if (member is not IDSharpType)
                 {
                     if (member.TryGetReturnType(out var memberType))
@@ -441,15 +458,23 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 DSharpCompilerContext context = new(this, member);
+
                 return context.TryResolveMember(memberAccess.Member, out result);
             }
 
-            if (result == null && TypeResolver != null)
+            if (result.IsEmpty && TypeResolver != null)
             {
-                result = TypeResolver(expression);
+                var type = TypeResolver(expression);
+
+                if (type == null)
+                {
+                    return false;
+                }
+
+                result = new(type);
             }
 
-            return result != null;
+            return !result.IsEmpty;
         }
         public readonly bool TryResolveMember(string name, [NotNullWhen(true)] out IDSharpMemberInfo? result)
         {

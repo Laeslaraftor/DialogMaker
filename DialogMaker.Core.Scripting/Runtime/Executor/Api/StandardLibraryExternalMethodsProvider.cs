@@ -65,6 +65,21 @@
                         return NumbersDecimalToString;
                     }
                 }
+                else if (methodInfo.DeclaringType.Name == "Object")
+                {
+                    if (methodInfo.Name == "ReferenceEquals")
+                    {
+                        return ObjectReferenceEquals;
+                    }
+                    else if (methodInfo.Name == "ContentEquals")
+                    {
+                        return ObjectContentEquals;
+                    }
+                    else if (methodInfo.Name == "GetHashCode")
+                    {
+                        return ObjectGetHashCode;
+                    }
+                }
                 else if (methodInfo.DeclaringType.FullName == DSharpBuildInTypes.String)
                 {
                     if (methodInfo.Name == "GetLength")
@@ -136,6 +151,30 @@
                     else if (methodInfo.Name == "ReadLine")
                     {
                         return ConsoleReadLine;
+                    }
+                }
+            }
+            else if (methodInfo.DeclaringType.Namespace == "System.Native")
+            {
+                if (methodInfo.DeclaringType.Name == "Pointer")
+                {
+                    if (methodInfo.Name == "Read")
+                    {
+                        return PointerRead;
+                    }
+                    else if (methodInfo.Name == "Write")
+                    {
+                        return PointerWrite;
+                    }
+                }
+            }
+            else if (methodInfo.DeclaringType.Namespace == "Internal.System.Runtime")
+            {
+                if (methodInfo.DeclaringType.Name == "CompilerServices")
+                {
+                    if (methodInfo.Name == "GetObjectAddress")
+                    {
+                        return CompilerServicesGetObjectAddress;
                     }
                 }
             }
@@ -518,6 +557,220 @@
             }
 
             return _objectsContainer.CreateString(values);
+        }
+
+        #endregion
+
+        #region Object
+
+        private static DSharpExternalMethodResult? ObjectReferenceEquals(DSharpExternalCallingArgs args)
+        {
+            var arguments = args.Arguments;
+
+            if (arguments.Length != 2)
+            {
+                return false;
+            }
+
+            var objectArg1 = arguments[0];
+            var objectArg2 = arguments[1];
+
+            if (objectArg1.Buffer.ValueType != DSharpStackValueType.Reference ||
+                objectArg2.Buffer.ValueType != DSharpStackValueType.Reference)
+            {
+                return false;
+            }
+
+            return objectArg1.Buffer.ReadReference() == objectArg2.Buffer.ReadReference();
+        }
+        private static DSharpExternalMethodResult? ObjectContentEquals(DSharpExternalCallingArgs args)
+        {
+            var arguments = args.Arguments;
+
+            if (arguments.Length != 2)
+            {
+                return false;
+            }
+
+            var objectArg1 = arguments[0];
+            var objectArg2 = arguments[1];
+            var a = objectArg1.Buffer.ReadAsObject();
+            var b = objectArg2.Buffer.ReadAsObject();
+
+            if (a == b)
+            {
+                return true;
+            }
+            if (a == null || b == null ||
+                a->Type->Size != b->Type->Size)
+            {
+                return false;
+            }
+
+            var aData = DSharpObject.GetData(a);
+            var bData = DSharpObject.GetData(b);
+
+            for (int i = 0; i < a->Type->Size; i++)
+            {
+                if (aData[i] != bData[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        private static DSharpExternalMethodResult? ObjectGetHashCode(DSharpExternalCallingArgs args)
+        {
+            var arguments = args.Arguments;
+
+            if (arguments.Length != 1)
+            {
+                return 0;
+            }
+
+            var objectArg = arguments[0];
+            DSharpObject* instance = objectArg.Buffer.ReadAsObject();
+
+            return GetHashCode(instance);
+        }
+
+        private static int GetHashCode(DSharpObject* instance)
+        {
+            if (instance == null)
+            {
+                return 0;
+            }
+            if (!instance->Type->IsValueType)
+            {
+                return (int)instance / (int)instance->Type;
+            }
+            if (instance->Type->BuildInValueTypeIndex != -1)
+            {
+                return DSharpObjectConverter.ToObject(instance).GetHashCode();
+            }
+
+            int sum = 0;
+            int currentStackBufferSize = 512;
+            byte* stackBuffer = stackalloc byte[currentStackBufferSize];
+
+            goto SumFields;
+        SumFields:
+            sum = 0;
+
+            for (int i = 0; i < instance->Type->Fields.Length; i++)
+            {
+                var field = instance->Type->Fields[i];
+
+                if (field.IsStatic)
+                {
+                    continue;
+                }
+
+                var size = field.FieldType->ItemSize;
+
+                if (size > currentStackBufferSize)
+                {
+                    currentStackBufferSize = size;
+                    goto IncrementBuffer;
+                }
+
+                UnmanagedArray<byte> buffer = new(stackBuffer, size);
+
+                var value = field.Read(instance, buffer);
+
+                sum += GetHashCode(value);
+            }
+
+            goto Complete;
+        IncrementBuffer:
+            byte* newStackBuffer = stackalloc byte[currentStackBufferSize];
+            stackBuffer = newStackBuffer;
+            goto SumFields;
+
+        Complete:
+            return sum;
+        }
+
+        #endregion
+
+        #region CompilerServices
+
+        private static DSharpExternalMethodResult? CompilerServicesGetObjectAddress(DSharpExternalCallingArgs args)
+        {
+            var arguments = args.Arguments;
+
+            if (arguments.Length != 1)
+            {
+                return IntPtr.Zero;
+            }
+
+            var objectArg = arguments[0];
+
+            return (nint)objectArg.Buffer.ReadAsObject();
+        }
+
+        #endregion
+
+        #region Pointer
+
+        private static DSharpExternalMethodResult? PointerRead(DSharpExternalCallingArgs args)
+        {
+            var arguments = args.Arguments;
+
+            if (arguments.Length != 1 ||
+                args.GenericParameter.Count != 1)
+            {
+                return DSharpExternalMethodResult.Null;
+            }
+
+            var addressArg = arguments[0];
+            var resultType = args.GenericParameter[0].Value.AsPointer();
+            var addressObject = addressArg.Buffer.ReadAsObject();
+
+            if (addressObject == null)
+            {
+                return DSharpExternalMethodResult.Null;
+            }
+
+            nint address = DSharpObjectConverter.ToIntPtr(addressObject);
+            var resultFrame = args.Stack.PushStructure(resultType);
+            var resultObject = resultFrame.ReadAsObject();
+
+            void* objectData = DSharpObject.GetData(resultObject);
+            var size = resultType->Size;
+
+            Buffer.MemoryCopy((void*)address, objectData, size, size);
+
+            return DSharpExternalMethodResult.Stack;
+        }
+        private static DSharpExternalMethodResult? PointerWrite(DSharpExternalCallingArgs args)
+        {
+            var arguments = args.Arguments;
+
+            if (arguments.Length != 2)
+            {
+                return null;
+            }
+
+            var addressArg = arguments[0];
+            var valueArg = arguments[1];
+            var addressObject = addressArg.Buffer.ReadAsObject();
+            var valueObject = valueArg.Buffer.ReadAsObject();
+
+            if (addressObject == null || valueObject == null)
+            {
+                return null;
+            }
+
+            nint address = DSharpObjectConverter.ToIntPtr(addressObject);
+
+            void* objectData = DSharpObject.GetData(valueObject);
+            var size = valueObject->Type->Size;
+
+            Buffer.MemoryCopy(objectData, (void*)address, size, size);
+
+            return null;
         }
 
         #endregion

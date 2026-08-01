@@ -21,11 +21,19 @@
         {
             _object = pointer;
         }
+        private DSharpExternalMethodResult(bool isStack)
+        {
+            IsStack = isStack;
+        }
 
+        /// <summary>
+        /// Is result already added to stack
+        /// </summary>
+        public bool IsStack { get; }
         /// <summary>
         /// Is result null
         /// </summary>
-        public bool IsNull => _object == null && _literalValue == null;
+        public bool IsNull => _object == null && _literalValue == null && !IsStack;
         /// <summary>
         /// Is result contains literal value
         /// </summary>
@@ -54,7 +62,8 @@
         public readonly bool Equals(DSharpExternalMethodResult other)
         {
             return _literalValue == other._literalValue &&
-                   _object == other._object;
+                   _object == other._object &&
+                   IsStack == other.IsStack;
         }
         public readonly override bool Equals(object? obj)
         {
@@ -62,7 +71,7 @@
         }
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine(_literalValue, new Pointer<DSharpObject>(_object));
+            return HashCode.Combine(_literalValue, new Pointer<DSharpObject>(_object), IsStack);
         }
 
         public static implicit operator DSharpExternalMethodResult(DSharpLiteralValue literalValue) => new(literalValue);
@@ -102,6 +111,10 @@
         /// Null result
         /// </summary>
         public static readonly DSharpExternalMethodResult Null = new();
+        /// <summary>
+        /// Stack result. This indicated that result already added to stack
+        /// </summary>
+        public static readonly DSharpExternalMethodResult Stack = new(true);
 
         #endregion
     }

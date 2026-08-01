@@ -102,8 +102,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             for (int i = 0; i < parametersCount; i++)
             {
-                var peekOffset = (uint)(parametersCount - i) + offset;
-                var frame = context.Stack.Peek(peekOffset);
+                var peekOffset = (uint)(parametersCount - 1 - i) + offset;
+                var frame = context.Stack.PeekOnlyValues(peekOffset);
                 var parameterInfo = methodInfo->ParametersType[i];
                 parameterInfo.Type = context.ReplaceType(parameterInfo.Type);
 

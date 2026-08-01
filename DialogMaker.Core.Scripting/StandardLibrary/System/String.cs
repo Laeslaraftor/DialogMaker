@@ -2,7 +2,7 @@ namespace System;
 
 using System.Collections.Generic;
 
-public sealed class String : IEnumerable<char>
+public sealed class String : IEnumerable<char>, IEquatable<T>
 {
     public String()
     {
@@ -18,6 +18,26 @@ public sealed class String : IEnumerable<char>
     public char this[int index] => GetValue(index);
 
     public override string ToString() => this;
+    public bool Equals(string other)
+    {
+        int length = Length;
+
+        if (other == null ||
+            other.Length != length)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < length; i++)
+        {
+            if (this[i] != other[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     public IEnumerator<char> GetEnumerator()
     {

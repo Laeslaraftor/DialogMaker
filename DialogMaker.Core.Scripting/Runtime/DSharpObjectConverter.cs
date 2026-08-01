@@ -1,6 +1,4 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor;
-using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
-using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {

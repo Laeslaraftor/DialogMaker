@@ -39,6 +39,7 @@ namespace DialogMaker.Core.Tests
         [TestCase("System.Array`1.Enumerator.MoveNext")]
         [TestCase("System.Int64.GetString")]
         [TestCase("System.Span`1.get_Length")]
+        [TestCase("System.Object.Equals")]
         [TestCase("Program.TestPlayersArray")]
         [TestCase("Program.TestExceptionHandling")]
         [TestCase("Program.Main")]
@@ -91,15 +92,21 @@ namespace DialogMaker.Core.Tests
         }
         private static void ReadMethod(DSharpTypeBuilder type, string methodName)
         {
-            var method = type.Methods.FirstOrDefault(f => f.Name == methodName);
+            bool isAnyMethodFound = false;
 
-            if (method == null)
+            foreach (var method in type.Methods.Where(f => f.Name == methodName))
             {
-                Debug.Fail($"Unable to find method \"{methodName}\" at \"{type}\"");
-                return;
+                isAnyMethodFound = true;
+
+                Console.WriteLine();
+                Console.WriteLine(method);
+                ReadCode(method);
             }
 
-            ReadCode(method);
+            if (!isAnyMethodFound)
+            {
+                Debug.Fail($"Unable to find method \"{methodName}\" at \"{type}\"");
+            }
         }
         private static void ReadCode(DSharpMethodBuilder method)
         {

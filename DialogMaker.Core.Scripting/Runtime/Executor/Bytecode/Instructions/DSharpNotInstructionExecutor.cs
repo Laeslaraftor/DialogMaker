@@ -1,4 +1,5 @@
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using Newtonsoft.Json.Linq;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -17,13 +18,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
 
             var value = context.Stack.Peek();
+            var obj = value.ReadAsObject();
 
-            if (value.ObjectType != context.TypesProvider.Boolean)
+            if (obj == null || obj->Type != context.TypesProvider.Boolean)
             {
                 return context.ThrowExecutionException($"Unable to invert value because it is not boolean: {value.ValueType}");
             }
 
-            value.Write(!value.ReadAsBoolean());
+            var data = DSharpObject.GetData<bool>(obj);
+            *data = !*data;
 
             return DSharpMethodExecutionCallback.Complete();
         }
