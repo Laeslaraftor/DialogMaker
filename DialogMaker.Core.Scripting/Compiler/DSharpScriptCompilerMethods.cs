@@ -1812,15 +1812,22 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 else
                 {
-                    bool skipLeftCompiling = leftType != null;
-                    var leftValue = left.Value;
-
-                    if (skipLeftCompiling && left.Parent != null)
+                    if (right.Value != null && expressionTypes.ContainsKey(right.Value))
                     {
-                        leftValue = left.Parent;
+                        type = CompileBinaryExpression(method, code, @operator, right.Value, left.Value, ref settings, binaryExpression, context, true);
                     }
+                    else
+                    {
+                        bool skipLeftCompiling = leftType != null;
+                        var leftValue = left.Value;
 
-                    type = CompileBinaryExpression(method, code, @operator, leftValue, right.Value, ref settings, binaryExpression, context, skipLeftCompiling);
+                        if (skipLeftCompiling && left.Parent != null)
+                        {
+                            leftValue = left.Parent;
+                        }
+
+                        type = CompileBinaryExpression(method, code, @operator, leftValue, right.Value, ref settings, binaryExpression, context, skipLeftCompiling);
+                    }
                 }
 
                 expressionTypes.TryAdd(left.Value, type);

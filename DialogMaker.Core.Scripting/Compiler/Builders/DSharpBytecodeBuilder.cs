@@ -219,6 +219,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 {
                     typeInstruction.MemberInfo = ReplaceMember(typeInstruction.MemberInfo);
                 }
+                else if (instruction is GenericCallingInstruction genericCallInstruction)
+                {
+                    genericCallInstruction.CallingInfo = genericCallInstruction.CallingInfo.ReplaceTypes(replacedMembers);
+                }
             }
         }
         /// <summary>

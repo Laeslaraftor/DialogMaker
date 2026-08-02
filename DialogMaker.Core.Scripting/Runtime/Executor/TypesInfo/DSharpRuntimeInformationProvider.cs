@@ -505,9 +505,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
             AddMembers(type);
 
-            int instanceSize = type.GetSize(true, false);
-            int staticSize = type.GetSize(false, false);
-            int infoSize = staticSize +
+            var layout = DSharpTypeLayout.Create(type);
+            int infoSize = layout.StaticSize +
                            generics.Length * sizeof(Pointer<DSharpRuntimeTypeInfo>) +
                            interfaces.Length * sizeof(Pointer<DSharpRuntimeTypeInfo>) +
                            allFields.Count * sizeof(UnmanagedPair<Pointer<DSharpRuntimeFieldInfo>, UnmanagedArray<byte>>) +
@@ -525,7 +524,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
             info->MetadataToken = type.MetadataToken;
             info->ObjectType = type.ObjectType;
-            info->Size = instanceSize;
+            info->Size = layout.InstanceSize;
             info->IsGeneric = type.IsGeneric;
             info->Name = builder.AllocateString(type.Name);
             info->Namespace = builder.AllocateString(type.Namespace);
@@ -536,7 +535,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             info->FieldsOffset = builder.AllocateDictionary<Pointer<DSharpRuntimeFieldInfo>, int>(allFields.Count);
             info->OverridenMethods = builder.AllocateDictionary<Pointer<DSharpRuntimeMethodInfo>, Pointer<DSharpRuntimeMethodInfo>>(overridenMethods.Count);
             info->OverridenProperties = builder.AllocateDictionary<Pointer<DSharpRuntimePropertyInfo>, Pointer<DSharpRuntimePropertyInfo>>(overridenProperties.Count);
-            info->StaticFieldsData = builder.AllocateArray<byte>(staticSize);
+            info->StaticFieldsData = builder.AllocateArray<byte>(layout.StaticSize);
             info->IsStaticInitializerCalled = false;
 
             info->StaticFieldsData.Clear();
@@ -574,7 +573,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             }
 
             int fieldOffset;
-            int staticFieldOffset = 0;
 
             if (type.Namespace == "System" && type.Name == "Array")
             {
@@ -587,20 +585,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
             for (int i = 0; i < fields.Count; i++)
             {
+                var field = fields[i];
                 var fieldInfo = info->Fields.GetItemReference(i);
                 CreateFieldInfo(info, fields[i], fieldInfo, ref builder);
 
-                int fieldSize = fieldInfo->FieldType->ItemSize;
-
                 if (fieldInfo->IsStatic)
                 {
-                    info->FieldsOffset.Add(fieldInfo, staticFieldOffset);
-                    staticFieldOffset += fieldSize;
+                    int offset = layout.StaticFieldOffsets[field];
+                    info->FieldsOffset.Add(fieldInfo, offset);
                 }
                 else
                 {
-                    info->FieldsOffset.Add(fieldInfo, fieldOffset);
-                    fieldOffset += fieldSize;
+                    int offset = fieldOffset + layout.InstanceFieldOffsets[field];
+                    info->FieldsOffset.Add(fieldInfo, offset);
                 }
             }
             for (int i = 0; i < properties.Count; i++)

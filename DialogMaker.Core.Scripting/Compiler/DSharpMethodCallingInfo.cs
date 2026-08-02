@@ -26,9 +26,55 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// </summary>
         public ReadOnlyDictionary<IDSharpType, IDSharpType> GenericParameters { get; } = new(genericParameters);
 
-        private static readonly ReadOnlyDictionary<IDSharpType, IDSharpType> _emptyGenericParameters = new(new Dictionary<IDSharpType, IDSharpType>());
+        #region Controls
+
+        /// <summary>
+        /// Replace types and create new method calling information.
+        /// If no types replaced then it return current instance
+        /// </summary>
+        /// <param name="replacedMembers">Replaced members</param>
+        /// <returns>New method calling information with replaced types or current instance</returns>
+        public DSharpMethodCallingInfo ReplaceTypes(IReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo> replacedMembers)
+        {
+            List<IDSharpType?> parameters = [.. Parameters];
+            Dictionary<IDSharpType, IDSharpType> genericParameters = new(GenericParameters);
+            bool isAnyTypeReplaced = false;
+
+            for (int i = 0; i < parameters.Count; i++)
+            {
+                var parameter = parameters[i];
+
+                if (parameter != null && replacedMembers.TryGetValue(parameter, out var replacedMember) &&
+                    replacedMember is IDSharpType typeMember)
+                {
+                    parameters[i] = typeMember;
+                    isAnyTypeReplaced = true;
+                }
+            }
+
+            foreach (var info in genericParameters)
+            {
+                if (replacedMembers.TryGetValue(info.Value, out var replacedMember) &&
+                    replacedMember is IDSharpType typeMember)
+                {
+                    genericParameters[info.Key] = typeMember;
+                    isAnyTypeReplaced = true;
+                }
+            }
+
+            if (!isAnyTypeReplaced)
+            {
+                return this;
+            }
+
+            return new(Method, parameters, genericParameters);
+        }
+
+        #endregion
 
         #region Resolving
+
+        private static readonly ReadOnlyDictionary<IDSharpType, IDSharpType> _emptyGenericParameters = new(new Dictionary<IDSharpType, IDSharpType>());
 
         /// <summary>
         /// Create method calling information. It automatically detects generic parameter if it possible

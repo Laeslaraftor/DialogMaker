@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
+﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+
+namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
 {
     internal unsafe class StandardLibraryExternalMethodsProvider(DSharpObjectsContainer objectsContainer) : IDSharpExternalMethodsProvider
     {
@@ -158,13 +160,13 @@
             {
                 if (methodInfo.DeclaringType.Name == "Pointer")
                 {
-                    if (methodInfo.Name == "Read")
+                    if (methodInfo.Name == "ReadValue")
                     {
-                        return PointerRead;
+                        return PointerReadValue;
                     }
-                    else if (methodInfo.Name == "Write")
+                    else if (methodInfo.Name == "WriteValue")
                     {
-                        return PointerWrite;
+                        return PointerWriteValue;
                     }
                 }
             }
@@ -601,8 +603,15 @@
             {
                 return true;
             }
-            if (a == null || b == null ||
-                a->Type->Size != b->Type->Size)
+            if (a == null || b == null)
+            {
+                return false;
+            }
+
+            var aLength = DSharpArray.GetLength(a);
+            var bLength = DSharpArray.GetLength(b);
+
+            if (aLength != bLength)
             {
                 return false;
             }
@@ -610,7 +619,7 @@
             var aData = DSharpObject.GetData(a);
             var bData = DSharpObject.GetData(b);
 
-            for (int i = 0; i < a->Type->Size; i++)
+            for (int i = 0; i < aLength; i++)
             {
                 if (aData[i] != bData[i])
                 {
@@ -705,16 +714,16 @@
                 return IntPtr.Zero;
             }
 
-            var objectArg = arguments[0];
+            var objectArg = arguments[0].Buffer.ReadAsObject();
 
-            return (nint)objectArg.Buffer.ReadAsObject();
+            return (nint)objectArg;
         }
 
         #endregion
 
         #region Pointer
 
-        private static DSharpExternalMethodResult? PointerRead(DSharpExternalCallingArgs args)
+        private static DSharpExternalMethodResult? PointerReadValue(DSharpExternalCallingArgs args)
         {
             var arguments = args.Arguments;
 
@@ -739,12 +748,13 @@
 
             void* objectData = DSharpObject.GetData(resultObject);
             var size = resultType->Size;
+            var typeInfo = (DSharpRuntimeTypeInfo*)address;
 
             Buffer.MemoryCopy((void*)address, objectData, size, size);
 
             return DSharpExternalMethodResult.Stack;
         }
-        private static DSharpExternalMethodResult? PointerWrite(DSharpExternalCallingArgs args)
+        private static DSharpExternalMethodResult? PointerWriteValue(DSharpExternalCallingArgs args)
         {
             var arguments = args.Arguments;
 

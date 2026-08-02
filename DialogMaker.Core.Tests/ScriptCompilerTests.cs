@@ -107,6 +107,39 @@ namespace DialogMaker.Core.Tests
 
             Console.WriteLine($"Result: {type}");
         }
+        [TestCase("System.Exception")]
+        [TestCase("System.Boolean")]
+        [TestCase("System.Int32")]
+        [TestCase("System.String")]
+        [TestCase("System.Native.Pointer<System.Char>")]
+        [TestCase("System.Span<System.Char>")]
+        [TestCase("System.Native.NativeArray<System.Char>")]
+        [TestCase("Internal.System.Runtime.RuntimeTypeInfo")]
+        [TestCase("Enemy")]
+        public static void TestTypeLayout(string typeName)
+        {
+            var assembly = CompileStandardLibrary();
+            var type = assembly.GetType(typeName);
+
+            var layout = DSharpTypeLayout.Create(type);
+
+            Console.WriteLine($"Type: {type}");
+            Console.WriteLine($"Instance size: {layout.InstanceSize}");
+            Console.WriteLine($"Static size: {layout.StaticSize}");
+
+            void PrintFields(Dictionary<IDSharpFieldInfo, int> offsets)
+            {
+                foreach (var info in offsets)
+                {
+                    Console.WriteLine($"    {info.Key}: {info.Value}");
+                }
+            }
+
+            Console.WriteLine("Instance field offsets:");
+            PrintFields(layout.InstanceFieldOffsets);
+            Console.WriteLine("Static field offsets:");
+            PrintFields(layout.StaticFieldOffsets);
+        }
 
         public static DSharpAssemblyBuilder CompileScript(string scriptName)
         {

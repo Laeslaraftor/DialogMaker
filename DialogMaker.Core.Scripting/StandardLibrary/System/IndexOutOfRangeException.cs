@@ -2,7 +2,7 @@ namespace System;
 
 public class IndexOutOfRangeException : Exception
 {
-    public IndexOutOfRangeException() : base()
+    public IndexOutOfRangeException() : base("Index is out of range")
     {
     }
     public IndexOutOfRangeException(string message) : base(message)

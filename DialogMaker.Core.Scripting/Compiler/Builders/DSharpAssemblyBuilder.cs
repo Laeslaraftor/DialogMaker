@@ -808,21 +808,34 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                         return implementation.Name == member.Name &&
                                implementation.Access == member.Access;
                     }
+                    bool TypesEquals(IDSharpType oldType, IDSharpType newType)
+                    {
+                        if (oldType.IsGeneric && newType.IsGeneric)
+                        {
+                            return oldType.CanReplaceGenericType(newType);
+                        }
+
+                        return newType.IsAssignableTo(oldType);
+                    }
 
                     if (implementation is IDSharpPropertyInfo property)
                     {
-                        var newProperty = replacedType.GetProperties(p => IsSame(p) &&
+                        var newProperty = replacedType.GetProperties(p => IsSame(p) && TypesEquals(property.PropertyType, p.PropertyType) &&
                                                                           p.GetterAccess == property.GetterAccess &&
-                                                                          p.SetterAccess == property.SetterAccess &&
-                                                                          p.PropertyType.IsAssignableTo(property.PropertyType)).FirstOrDefault() 
-                            ?? throw new InvalidOperationException($"Unable to find new generic property implementation for \"{implementation}\"");
+                                                                          p.SetterAccess == property.SetterAccess).FirstOrDefault();
+
+                        if (newProperty == null)
+                        {
+                            throw new InvalidOperationException($"Unable to find new generic property implementation for \"{implementation}\"");
+                        }
+
                         addImplementation((T)newProperty);
                     }
                     else if (implementation is IDSharpMethodInfo method)
                     {
                         var newMethod = replacedType.GetMethods(m => IsSame(m) &&
                                                                      m.GetParameters().Select(p => p.Type).IsAssignableTo(method.GetParameters().Select(p => p.Type)) &&
-                                                                     m.GetGenericParameters().IsAssignableTo(method.GetGenericParameters())).FirstOrDefault() 
+                                                                     m.GetGenericParameters().IsAssignableTo(method.GetGenericParameters())).FirstOrDefault()
                             ?? throw new InvalidOperationException($"Unable to find new generic method implementation for \"{implementation}\"");
                         addImplementation((T)newMethod);
                     }
@@ -837,6 +850,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 newOperator.OriginalOperator = @operator;
 
                 ProcessMethod(newOperator.Method, @operator.Method);
+
+                foreach (var parameter in @operator.GetParameters())
+                {
+                    var newParameterType = ReplaceGenericParameters(parameter.Type, replacedTypes);
+                    DSharpMethodBuilderParameter newParameter = new(this)
+                    {
+                        Mode = parameter.Mode,
+                        Name = parameter.Name,
+                        Type = GetTypeToken(newParameterType)
+                    };
+                    newOperator.Parameters.Add(newParameter);
+                }
             }
             void SetupProperty(DSharpPropertyBuilder newProperty, IDSharpPropertyInfo property)
             {

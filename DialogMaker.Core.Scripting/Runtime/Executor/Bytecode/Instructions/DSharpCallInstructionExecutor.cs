@@ -30,9 +30,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpCallInstructionExecutor Instance = new();
 
-        internal static unsafe DSharpMethodExecutionCallback Call(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken, bool isInstance, bool isBase, UnmanagedArray<Pointer<DSharpMetadataToken>>? genericParameters = null)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static unsafe DSharpMethodExecutionCallback Call(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken, bool isInstance, bool isBase, UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>>? genericParameters = null)
         {
             var method = context.TypesProvider.GetMethod(metadataToken);
+            return Call(instruction, ref context, method, isInstance, isBase, genericParameters);
+        }
+        internal static unsafe DSharpMethodExecutionCallback Call(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeMethodInfo* method, bool isInstance, bool isBase, UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>>? genericParameters = null)
+        {
             var parametersCount = method->ParametersType.Length;
 
             if (isInstance)
@@ -78,7 +83,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         {
             return CreateArguments(context, methodInfo, default, offset).Arguments;
         }
-        internal static unsafe ArgumentsInfo CreateArguments(DSharpExecutionContext context, DSharpRuntimeMethodInfo* methodInfo, UnmanagedArray<Pointer<DSharpMetadataToken>> genericParameters, uint offset = 0)
+        internal static unsafe ArgumentsInfo CreateArguments(DSharpExecutionContext context, DSharpRuntimeMethodInfo* methodInfo, UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>> genericParameters, uint offset = 0)
         {
             var parametersCount = methodInfo->ParametersType.Length;
             var genericParametersCount = genericParameters.Length;
@@ -117,10 +122,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             genericParametersCount *= 2;
             for (int i = 0; i < genericParametersCount; i += 2)
             {
-                var genericTypeToken = *genericParameters[i].AsPointer();
-                var replaceTypeToken = *genericParameters[i + 1].AsPointer();
-                var genericType = context.TypesProvider.GetRuntimeInfo(genericTypeToken);
-                var replaceType = context.TypesProvider.GetRuntimeInfo(replaceTypeToken);
+                var genericType = genericParameters[i].AsPointer();
+                var replaceType = genericParameters[i + 1].AsPointer();
+                replaceType = context.ReplaceType(replaceType);
 
                 generics.Add(genericType, replaceType);
             }

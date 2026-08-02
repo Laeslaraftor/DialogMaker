@@ -491,14 +491,26 @@ namespace DialogMaker.Core.Scripting.Runtime
                 {
                     throw new ArgumentException($"Current type must be a generic type: {type}");
                 }
-
-                if (type.GenericAttributes.HasFlag(DSharpGenericTypeAttributes.Struct) &&
-                    normalType.ObjectType != DSharpObjectType.Struct &&
-                    normalType.ObjectType != DSharpObjectType.Enum)
+                if (normalType.IsGeneric && type.GenericAttributes != normalType.GenericAttributes)
+                {
+                    foreach (var flag in Enum.GetValues(typeof(DSharpGenericTypeAttributes)).Cast<DSharpGenericTypeAttributes>())
+                    {
+                        if (type.GenericAttributes.HasFlag(flag) &&
+                            !normalType.GenericAttributes.HasFlag(flag))
+                        {
+                            return false;
+                        }
+                    }
+                }
+                else if (!normalType.IsGeneric &&
+                         type.GenericAttributes.HasFlag(DSharpGenericTypeAttributes.Struct) &&
+                         normalType.ObjectType != DSharpObjectType.Struct &&
+                         normalType.ObjectType != DSharpObjectType.Enum)
                 {
                     return false;
                 }
-                if (type.GenericAttributes.HasFlag(DSharpGenericTypeAttributes.EmptyConstructor))
+
+                if (!normalType.IsGeneric && type.GenericAttributes.HasFlag(DSharpGenericTypeAttributes.EmptyConstructor))
                 {
                     var constructors = normalType.GetConstructors();
 
@@ -544,59 +556,35 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// <returns>Size of object</returns>
             public unsafe int GetSize(bool instance, bool failOnDynamicSize)
             {
-                var currentTypeFullName = type.FullName;
-
-                if (DSharpBuildInTypes.TryGetInfo(type, out var info))
+                static bool HasDynamicSize(IDSharpType type)
                 {
-                    if (failOnDynamicSize && (currentTypeFullName == DSharpBuildInTypes.NativeInt ||
-                                              currentTypeFullName == DSharpBuildInTypes.NativeUnsignedInt))
+                    var currentTypeFullName = type.FullName;
+
+                    if (currentTypeFullName == DSharpBuildInTypes.NativeInt ||
+                        currentTypeFullName == DSharpBuildInTypes.NativeUnsignedInt)
                     {
-                        return -1;
-                    }
-                    if (info.Size == -1)
-                    {
-                        return sizeof(nint);
-                    }
-
-                    return info.Size;
-                }
-
-                int size = 0;
-
-                bool AddSize(IDSharpType type)
-                {
-                    if (!type.IsValueType())
-                    {
-                        if (failOnDynamicSize)
-                        {
-                            return false;
-                        }
-
-                        size += sizeof(nint);
                         return true;
                     }
 
-                    var typeFullName = type.FullName;
-                    var typeSize = type.GetSize(true, failOnDynamicSize);
-
-                    if (typeSize == -1)
+                    foreach (var field in type.GetFields())
                     {
-                        return false;
+                        if (HasDynamicSize(field.FieldType))
+                        {
+                            return true;
+                        }
                     }
 
-                    size += typeSize;
-                    return true;
+                    return false;
                 }
 
-                foreach (var field in type.GetAllFields(instance))
+                if (failOnDynamicSize && HasDynamicSize(type))
                 {
-                    if (!AddSize(field.FieldType))
-                    {
-                        return -1;
-                    }
+                    return -1;
                 }
 
-                return size;
+                var layout = DSharpTypeLayout.Create(type);
+
+                return instance ? layout.InstanceSize : layout.StaticSize;
             }
             /// <summary>
             /// Get all interfaces that implements by current type

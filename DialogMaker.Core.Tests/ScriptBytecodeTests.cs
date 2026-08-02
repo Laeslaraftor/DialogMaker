@@ -39,6 +39,7 @@ namespace DialogMaker.Core.Tests
         [TestCase("System.Array`1.Enumerator.MoveNext")]
         [TestCase("System.Int64.GetString")]
         [TestCase("System.Span`1.get_Length")]
+        [TestCase("System.Native.Pointer<Internal.System.Runtime.RuntimeTypeInfo>.get_Item")]
         [TestCase("System.Object.Equals")]
         [TestCase("Program.TestPlayersArray")]
         [TestCase("Program.TestExceptionHandling")]

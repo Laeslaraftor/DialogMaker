@@ -3,6 +3,7 @@ using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
+using System.Reflection.Emit;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -178,6 +179,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             type.Namespace = _currentNamespace;
 
             CreateGenerics(type, declaration.Identifier.GenericParameters);
+            SetupGenericDescription(type, declaration);
 
             foreach (var childType in declaration.Children)
             {
@@ -567,6 +569,33 @@ namespace DialogMaker.Core.Scripting.Compiler
             type.CreateInitializer(isStatic);
         }
 
+        private void SetupGenericDescription(DSharpTypeBuilder type, ObjectDeclarationNode declaration)
+        {
+            foreach (var genericDescription in declaration.GenericDescriptions)
+            {
+                SetupGenericDescription(type, n => type.GenericTypes.FirstOrDefault(t => t.Name == n), genericDescription);
+            }
+        }
+        private void SetupGenericDescription(DSharpMemberInfoBuilder member, Func<string, DSharpTypeBuilder?> typeSelector, WhereNode genericDescription)
+        {
+            if (genericDescription.Type == null)
+            {
+                throw new InvalidOperationException($"Invalid generic description: {genericDescription}");
+            }
+
+            var typeName = genericDescription.Type.Name;
+            var genericType = typeSelector(typeName)
+                ?? throw new InvalidOperationException($"Unable to find generic type with name \"{typeName}\": {genericDescription}");
+
+            genericType.GenericAttributes = genericDescription.Attributes;
+
+            foreach (var baseType in genericDescription.BaseTypes)
+            {
+                var typeToken = ResolveType(member, baseType);
+                genericType.AddBaseType(typeToken);
+            }
+        }
+
         #endregion
 
         #region Resolving types
@@ -686,25 +715,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                     {
                         throw new ArgumentException($"Parameter \"{parameter.Name}\" repeat {namesCount} times. Parameter names should be unique");
                     }
-                }
-            }
-            void SetupGenericDescription(DSharpMemberInfoBuilder member, Func<string, DSharpTypeBuilder?> typeSelector, WhereNode genericDescription)
-            {
-                if (genericDescription.Type == null)
-                {
-                    throw new InvalidOperationException($"Invalid generic description: {genericDescription}");
-                }
-
-                var typeName = genericDescription.Type.Name;
-                var genericType = typeSelector(typeName)
-                    ?? throw new InvalidOperationException($"Unable to find generic type with name \"{typeName}\": {genericDescription}");
-
-                genericType.GenericAttributes = genericDescription.Attributes;
-
-                foreach (var baseType in genericDescription.BaseTypes)
-                {
-                    var typeToken = ResolveType(member, baseType);
-                    genericType.AddBaseType(typeToken);
                 }
             }
 
@@ -872,10 +882,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                         throw;
                     }
                 }
-                foreach (var genericDescription in declaration.GenericDescriptions)
-                {
-                    SetupGenericDescription(typeBuilder, n => typeBuilder.GenericTypes.FirstOrDefault(t => t.Name == n), genericDescription);
-                }
+
+                SetupGenericDescription(typeBuilder, declaration);
             }
 
             foreach (var info in _createdMethods)

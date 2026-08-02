@@ -59,8 +59,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
         }
 
-        private readonly int _length = length;
         private readonly T* _items = items;
+        private readonly int _length = length;
 
         #region Controls
 

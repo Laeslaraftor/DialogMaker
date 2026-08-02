@@ -2,7 +2,7 @@ namespace System;
 
 public class NotImplementedException : Exception
 {
-    public NotImplementedException() : base()
+    public NotImplementedException() : base("Type or member not implemented yet")
     {
     }
     public NotImplementedException(string message) : base(message)

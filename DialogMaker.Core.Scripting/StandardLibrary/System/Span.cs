@@ -6,7 +6,7 @@ public struct Span<T>
     {
         _items = items;
     }
-    public Span(int length, nint items)
+    public Span(nint items, int length)
     {
         _itemsPointer = items;
         _length = length;

@@ -38,8 +38,9 @@ public class Program
             player.PrintMessage();
         }
 
+
         var playerType = player.GetType();
-        Console.WriteLine();
+        Console.WriteLine(playerType.Name);
 
         TestArray();
 

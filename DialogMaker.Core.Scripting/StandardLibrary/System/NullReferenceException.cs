@@ -2,7 +2,7 @@ namespace System;
 
 public class NullReferenceException : Exception
 {
-    public NullReferenceException() : base()
+    public NullReferenceException() : base("Object reference not references to object instance")
     {
     }
     public NullReferenceException(string message) : base(message)

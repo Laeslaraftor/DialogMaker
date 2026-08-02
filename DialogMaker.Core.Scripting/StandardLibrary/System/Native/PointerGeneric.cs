@@ -9,27 +9,27 @@ public struct Pointer<T> where T : struct
 
     public T this[int offset]
     {
-        get => Pointer.Read<T>(_address + sizeof(T) * offset);
-        set => Pointer.Write(_address + sizeof(T) * offset, value);
+        get => Pointer.ReadValue<T>(_address + sizeof(T) * offset);
+        set => Pointer.WriteValue(_address + sizeof(T) * offset, value);
     }
 
     private readonly nint _address;
-
+    
     public TValue Read<TValue>() where TValue : struct
     {
-        return Pointer.Read<TValue>(_address);
+        return Pointer.ReadValue<TValue>(_address);
     }
     public TValue Read<TValue>(int offsetInBytes) where TValue : struct
     {
-        return Pointer.Read<TValue>(_address + offsetInBytes);
+        return Pointer.ReadValue<TValue>(_address + offsetInBytes);
     }
     public void Write<TValue>(TValue value) where TValue : struct
     {
-        Pointer.Write(_address, value);
+        Pointer.WriteValue(_address, value);
     }
     public void Write<TValue>(int offsetInBytes, TValue value) where TValue : struct
     {
-        Pointer.Write(_address + offsetInBytes, value);
+        Pointer.WriteValue(_address + offsetInBytes, value);
     }
 
     public static implicit operator Pointer<T>(nint address) => new Pointer<T>(address);

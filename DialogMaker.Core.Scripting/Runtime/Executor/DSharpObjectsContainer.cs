@@ -397,10 +397,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 RuntimeExtensions.FillZero(objectDataBuffer, sizeForData);
                 return obj;
             }
-
-            var dataBuffer = data.GetItemReference(0);
-
-            Buffer.MemoryCopy(dataBuffer, objectDataBuffer, sizeForData, data.Length);
+            if (data.Length > 0)
+            {
+                var dataBuffer = data.GetItemReference(0);
+                Buffer.MemoryCopy(dataBuffer, objectDataBuffer, sizeForData, data.Length);
+            }
+            else
+            {
+                RuntimeExtensions.FillZero(objectDataBuffer, sizeForData);
+            }
 
             return obj;
         }

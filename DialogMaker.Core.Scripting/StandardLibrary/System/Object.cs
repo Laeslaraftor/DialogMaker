@@ -1,6 +1,7 @@
 namespace System;
 
 using Internal.System.Runtime;
+using System.Native;
 
 public sealed class Object
 {

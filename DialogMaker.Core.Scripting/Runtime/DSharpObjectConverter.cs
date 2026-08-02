@@ -7,6 +7,8 @@ namespace DialogMaker.Core.Scripting.Runtime
     /// </summary>
     public static unsafe class DSharpObjectConverter
     {
+        private static readonly Type _decimalType = typeof(decimal);
+
         /// <summary>
         /// Convert D# string to C# string
         /// </summary>
@@ -181,10 +183,76 @@ namespace DialogMaker.Core.Scripting.Runtime
         {
             var convertedValue = ToObject(obj);
 
-            if (convertedValue is char charValue && typeof(T) == typeof(decimal))
+            if (typeof(T) == _decimalType)
             {
-                decimal d = charValue;
-                convertedValue = d;
+                decimal resultDecimal;
+
+                if (convertedValue is byte byteValue)
+                {
+                    resultDecimal = byteValue;
+                }
+                else if (convertedValue is sbyte sByteValue)
+                {
+                    resultDecimal = sByteValue;
+                }
+                else if (convertedValue is short shortValue)
+                {
+                    resultDecimal = shortValue;
+                }
+                else if (convertedValue is ushort ushortValue)
+                {
+                    resultDecimal = ushortValue;
+                }
+                else if (convertedValue is int intValue)
+                {
+                    resultDecimal = intValue;
+                }
+                else if (convertedValue is uint uintValue)
+                {
+                    resultDecimal = uintValue;
+                }
+                else if (convertedValue is long longValue)
+                {
+                    resultDecimal = longValue;
+                }
+                else if (convertedValue is ulong ulongValue)
+                {
+                    resultDecimal = ulongValue;
+                }
+                else if (convertedValue is nint nintValue)
+                {
+                    resultDecimal = nintValue;
+                }
+                else if (convertedValue is nuint nuintValue)
+                {
+                    resultDecimal = nuintValue;
+                }
+                else if (convertedValue is float floatValue)
+                {
+                    resultDecimal = (decimal)floatValue;
+                }
+                else if (convertedValue is double doubleValue)
+                {
+                    resultDecimal = (decimal)doubleValue;
+                }
+                else if (convertedValue is decimal decimalValue)
+                {
+                    resultDecimal = decimalValue;
+                }
+                else if (convertedValue is char charValue)
+                {
+                    resultDecimal = charValue;
+                }
+                else if (convertedValue is bool boolValue)
+                {
+                    resultDecimal = boolValue ? 1 : 0;
+                }
+                else
+                {
+                    resultDecimal = 0;
+                }
+
+                convertedValue = resultDecimal;
             }
 
             return (T)Convert.ChangeType(convertedValue, typeof(T));
@@ -218,6 +286,12 @@ namespace DialogMaker.Core.Scripting.Runtime
                 UnmanagedArray<byte> buffer = new(fieldBuffer, size);
 
                 var value = field->Read(exception, buffer);
+
+                if (value == null)
+                {
+                    return string.Empty;
+                }
+
                 return ToString(value);
             }
 

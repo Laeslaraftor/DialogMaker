@@ -9,19 +9,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
-            var methodToken = *(DSharpMetadataToken*)instruction.Arguments[0];
-            UnmanagedArray<Pointer<DSharpMetadataToken>> genericParameters;
+            var methodInfo = (DSharpRuntimeMethodInfo*)instruction.Arguments[0];
+            UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>> genericParameters;
 
             if (instruction.Arguments.Length > 1)
             {
-                genericParameters = instruction.Arguments.Slice(1).Cast<Pointer<DSharpMetadataToken>>();
+                genericParameters = instruction.Arguments.Slice(1).Cast<Pointer<DSharpRuntimeTypeInfo>>();
             }
             else
             {
                 genericParameters = default;
             }
 
-            return Execute(instruction, ref context, methodToken, genericParameters);
+            return Execute(instruction, ref context, methodInfo, genericParameters);
         }
 
         public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
@@ -39,17 +39,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         }
         public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
         {
-            var methodToken = stream->ReadSafePointer<DSharpMetadataToken>();
+            var methodToken = stream->Read<DSharpMetadataToken>();
             var replacesCount = stream->Read<int>() * 2;
-            var method = typesProvider.GetMethod(*(DSharpMetadataToken*)methodToken);
-            arguments[0] = methodToken;
+            arguments[0] = (nint)typesProvider.GetMethod(methodToken);
 
             for (int i = 1; i < replacesCount + 1; i++)
             {
-                arguments[i] = stream->ReadSafePointer<DSharpMetadataToken>();
+                var typeToken = stream->Read<DSharpMetadataToken>();
+                arguments[i] = (nint)typesProvider.GetRuntimeInfo(typeToken);
             }
         }
 
-        protected abstract DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken methodToken, UnmanagedArray<Pointer<DSharpMetadataToken>> genericParameters);
+        protected unsafe abstract DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeMethodInfo* methodToken, UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>> genericParameters);
     }
 }
