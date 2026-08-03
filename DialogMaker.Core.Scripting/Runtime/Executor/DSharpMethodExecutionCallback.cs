@@ -35,6 +35,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// Unhandled exception thrown by called method
         /// </summary>
         public DSharpObject* UnhandledException;
+        /// <summary>
+        /// Offset of next calling method scope 
+        /// </summary>
+        public uint ExtraScopeOffset;
 
         #region Operators
 
@@ -66,13 +70,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             return Call(objectInstance, nextMethod, default, arguments);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpMethodExecutionCallback Call(DSharpObject* objectInstance, DSharpRuntimeMethodInfo* nextMethod, UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments) => new()
+        public static DSharpMethodExecutionCallback Call(DSharpObject* objectInstance, DSharpRuntimeMethodInfo* nextMethod, UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments)
+        {
+            return Call(objectInstance, nextMethod, genericParameters, arguments, 0);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpMethodExecutionCallback Call(DSharpObject* objectInstance, DSharpRuntimeMethodInfo* nextMethod, UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments, uint extraScopeOffset) => new()
         {
             Type = DSharpMethodExecutionCallbackType.RequiredCallingNextMethod,
             NextMethod = nextMethod,
             ObjectInstance = objectInstance,
             CallingGenericParameters = genericParameters,
-            CallingArguments = arguments
+            CallingArguments = arguments,
+            ExtraScopeOffset = extraScopeOffset
         };
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DSharpMethodExecutionCallback InitializeObject(DSharpObject* objectInstance, DSharpRuntimeMethodInfo* constructor, UnmanagedArray<DSharpExecutionLocalVariable> arguments) => new()

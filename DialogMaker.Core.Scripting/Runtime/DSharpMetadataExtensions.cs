@@ -463,6 +463,85 @@ namespace DialogMaker.Core.Scripting.Runtime
             }
 
             /// <summary>
+            /// Get nearest common type between two types.
+            /// If types equals then it returns current type.
+            /// If any type is inherited by other then returns base type.
+            /// If types have same base types then returns first common inherited type.
+            /// Otherwise it returns <c>System.Object</c> type
+            /// </summary>
+            /// <param name="other">Type for finding nearest common type</param>
+            /// <returns>Nearest common type</returns>
+            public IDSharpType GetNearestCommonType(IDSharpType other) 
+            {
+                if (type == other)
+                {
+                    return type;
+                }
+                if (other.ContainsBaseType(type))
+                {
+                    return type;
+                }
+                else if (type.ContainsBaseType(other))
+                {
+                    return other;
+                }
+
+                var sameBaseTypes = type.GetSameBaseTypes(other);
+
+                if (sameBaseTypes.Count > 0)
+                {
+                    var objectType = sameBaseTypes.FirstOrDefault(t => t.ObjectType == DSharpObjectType.Class ||
+                                                                       t.ObjectType == DSharpObjectType.Struct);
+
+                    if (objectType != null)
+                    {
+                        return objectType;
+                    }
+
+                    return sameBaseTypes.First(t => t.ObjectType == DSharpObjectType.Interface);
+                }
+
+                return type.Assembly.ObjectType;
+            }
+            /// <summary>
+            /// Get same base types with specified type
+            /// </summary>
+            /// <param name="other">Type to find same base types</param>
+            /// <returns>List of all same base types</returns>
+            public List<IDSharpType> GetSameBaseTypes(IDSharpType other)
+            {
+                var currentBaseTypes = type.GetAllBaseTypes();
+                var otherBaseTypes = other.GetAllBaseTypes();
+                List<IDSharpType> result = [];
+
+                foreach (var currentBaseType in currentBaseTypes)
+                {
+                    if (otherBaseTypes.Contains(currentBaseType))
+                    {
+                        result.Add(currentBaseType);
+                    }
+                }
+
+                return result;
+            }
+            /// <summary>
+            /// Get all inherited types
+            /// </summary>
+            /// <returns>List of all inherited types</returns>
+            public List<IDSharpType> GetAllBaseTypes()
+            {
+                List<IDSharpType> result = [];
+
+                foreach (var baseType in type.GetBaseTypes())
+                {
+                    var baseBaseTypes = baseType.GetBaseTypes();
+                    result.AddRange(baseBaseTypes);
+                    result.Add(baseType);
+                }
+
+                return result;
+            }
+            /// <summary>
             /// Check specified type on containing to base types of current type
             /// </summary>
             /// <param name="baseType">Type to check on containing</param>
@@ -554,7 +633,7 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// <param name="instance">Calculate size for object instance, otherwise it will be size of static members</param>
             /// <param name="failOnDynamicSize">Fail when at least one member type have size that depends on execution platform</param>
             /// <returns>Size of object</returns>
-            public unsafe int GetSize(bool instance, bool failOnDynamicSize)
+            public int GetSize(bool instance, bool failOnDynamicSize)
             {
                 static bool HasDynamicSize(IDSharpType type)
                 {

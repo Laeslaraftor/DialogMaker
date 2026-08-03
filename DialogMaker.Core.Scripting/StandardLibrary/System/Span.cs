@@ -79,5 +79,5 @@ public struct Span<T>
     }
 
     private extern T GetValue(nint items, int index);
-    private extern T SetValue(nint items, int index, T value);
+    private extern void SetValue(nint items, int index, T value);
 }

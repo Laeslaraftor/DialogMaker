@@ -29,7 +29,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpCallInstructionExecutor Instance = new();
 
-        internal static unsafe DSharpMethodExecutionCallback Call(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeMethodInfo* method, bool isInstance, bool isBase, UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>>? genericParameters = null)
+        internal static unsafe DSharpMethodExecutionCallback Call(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeMethodInfo* method, bool isInstance, bool isBase, UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>>? genericParameters = null, uint extraScopeOffset = 0)
         {
             var parametersCount = method->ParametersType.Length;
 
@@ -68,7 +68,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             var argumentsInfo = CreateArguments(context, method, genericParameters ?? default, 0);
 
-            return DSharpMethodExecutionCallback.Call(instance, method, argumentsInfo.GenericParameters, argumentsInfo.Arguments);
+            return DSharpMethodExecutionCallback.Call(instance, method, argumentsInfo.GenericParameters, argumentsInfo.Arguments, extraScopeOffset);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

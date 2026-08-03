@@ -25,6 +25,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             if (lastValue.ValueType == DSharpStackValueType.Null)
             {
+                if (!type->IsValueType)
+                {
+                    return DSharpMethodExecutionCallback.Complete();
+                }
+
                 context.Stack.Pop();
                 context.Stack.PushStructure(type);
             }
@@ -56,7 +61,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
             else
             {
-                return context.ThrowExecutionException($"Unable to cast \"{lastValue.ValueType}\"");
+                return context.ThrowExecutionException($"Unable to cast \"{lastValue.ValueType}\" to \"{type->ToString()}\"");
             }
 
             return DSharpMethodExecutionCallback.Complete();

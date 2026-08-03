@@ -455,6 +455,14 @@ namespace DialogMaker.Core.Scripting.Runtime
         [Executor(typeof(DSharpCastInstructionExecutor))]
         Cast,
         /// <summary>
+        /// Try to cast last value to stack to specified type.
+        /// If cast is unavailable it return null, otherwise casted value
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(1)]
+        [Executor(typeof(DSharpAsInstructionExecutor))]
+        As,
+        /// <summary>
         /// Addition math operation (+).
         /// Result will be added to stack
         /// </summary>

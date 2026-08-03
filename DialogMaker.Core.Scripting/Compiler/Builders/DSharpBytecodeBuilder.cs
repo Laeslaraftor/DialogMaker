@@ -745,22 +745,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         }
 
         /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.StartScope"/>
-        /// </summary>
-        /// <returns></returns>
-        public Instruction StartScope()
-        {
-            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.StartScope);
-        }
-        /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.EndScope"/>
-        /// </summary>
-        /// <returns></returns>
-        public Instruction EndScope()
-        {
-            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.EndScope);
-        }
-        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.Cast"/>
         /// </summary>
         /// <param name="type">Type to cast</param>
@@ -769,6 +753,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             CheckAccess(type);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.Cast, type);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.As"/>
+        /// </summary>
+        /// <param name="type">Type to cast</param>
+        /// <returns></returns>
+        public TypeInstruction As(IDSharpType type)
+        {
+            CheckAccess(type);
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.As, type);
         }
 
         #endregion
@@ -1459,7 +1453,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         private T CreateInstruction<T>(params object?[] parameters)
             where T : Instruction
         {
-            var result = (T)Activator.CreateInstance(typeof(T), parameters);
+            var result = (T)Activator.CreateInstance(typeof(T), parameters)!;
             Instructions.Add(result);
 
             return result;

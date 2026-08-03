@@ -214,6 +214,11 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 CompileStatement(method, statement, blockStatement, depth, code, ref settings, context);
             }
+
+            if (depth == 0 && blockStatement.AllPathReturns(Assembly, context))
+            {
+                settings.AddReturnMethod(method);
+            }
         }
         private void CompileStatement(DSharpMethodBuilder method, StatementNode statement, StatementNode? parentStatement, int depth, DSharpBytecodeBuilder code, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context = default)
         {
@@ -286,50 +291,38 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             else if (statement is ExpressionStatementNode expressionStatement)
             {
-                if (expressionStatement.Expression == null)
-                {
-                    throw new ArgumentException($"Invalid statement: {expressionStatement}");
-                }
+                var expression = expressionStatement.Expression
+                    ?? throw new ArgumentException($"Invalid statement: {expressionStatement}");
 
                 settings.LastOperationIsReturnsValue = false;
                 IDSharpMemberInfo? expressionMember;
 
                 try
                 {
-                    expressionMember = CompileExpression(method, expressionStatement.Expression, ref settings, null, context);
+                    expressionMember = CompileExpression(method, expression, ref settings, null, context);
                 }
                 catch (Exception error)
                 {
                     throw new InvalidOperationException($"Failed to compile: {expressionStatement.Expression}", error);
                 }
 
-                if (depth == 0)
+                if (parentStatement?.Token.Type != DSharpTokenType.Lambda &&
+                    expression is not AssignmentExpressionNode &&
+                    expression is not IncrementExpressionNode &&
+                    expression is not DecrementExpressionNode)
                 {
-                    if (expressionStatement.Expression is ThrowExpressionNode)
+                    try
                     {
-                        settings.AddReturnMethod(method);
+                        var expressionType = expression.GetExpressionType(Assembly, context);
+
+                        if (expressionType != null &&
+                            (expressionType is IDSharpType || expressionType.TryGetReturnType(out _)))
+                        {
+                            code.Pop();
+                        }
                     }
-                    if (parentStatement?.Token.Type == DSharpTokenType.Lambda)
+                    catch
                     {
-                        if (settings.LastOperationIsReturnsValue)
-                        {
-                            settings.AddReturnMethod(method);
-                            return;
-                        }
-
-                        try
-                        {
-                            var expressionType = expressionStatement.Expression.GetExpressionType(Assembly, context);
-
-                            if (expressionType != null &&
-                                (expressionType is IDSharpType || expressionType.TryGetReturnType(out _)))
-                            {
-                                settings.AddReturnMethod(method);
-                            }
-                        }
-                        catch
-                        {
-                        }
                     }
                 }
             }
@@ -356,15 +349,12 @@ namespace DialogMaker.Core.Scripting.Compiler
                         jumpOperation = null;
                     }
 
-                    code.StartScope();
-
                     if (ifStatement.ThenBranch == null)
                     {
                         throw new ArgumentException($"If statement should contains then branch: {statement}", nameof(statement));
                     }
 
                     CompileStatement(method, statements, depth + 1, code, ref settings, context);
-                    code.EndScope();
 
                     if (addSkipNext)
                     {
@@ -419,8 +409,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                     break;
                 }
 
-                // todo: add return statements searching
-
                 AddSkipOperations();
             }
             else if (statement is WhileStatementNode whileStatement)
@@ -431,18 +419,39 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 var expressionStartOperation = code.Empty(true);
-                CompileValueExpression(method, whileStatement.Condition, ref settings, null, context);
+                DSharpBytecodeBuilder.ReferenceInstruction? skipLoop;
+
+                if (whileStatement.Condition.TrySimplifyToLiteral(out var literal) &&
+                    literal.IsBool)
+                {
+                    if (literal.AsBool())
+                    {
+                        skipLoop = null;
+                    }
+                    else
+                    {
+                        // skip compiling loop that never will be executed
+                        return;
+                    }
+                }
+                else
+                {
+                    CompileValueExpression(method, whileStatement.Condition, ref settings, null, context);
+                    skipLoop = code.JumpIfFalse();
+                    code.Pop();
+                }
 
                 int startOperationIndex = code.Instructions.IndexOf(expressionStartOperation);
-                code.Instructions.Remove(expressionStartOperation);
-                expressionStartOperation = code.Instructions[startOperationIndex];
+
+                if (startOperationIndex + 1 < code.Instructions.Count)
+                {
+                    code.Instructions.Remove(expressionStartOperation);
+                    expressionStartOperation = code.Instructions[startOperationIndex];
+                }
+
                 context.CurrentLoopStartInstruction = expressionStartOperation;
 
-                var skipLoop = code.JumpIfFalse();
-                code.Pop();
-
-                context.CurrentLoopEndInstruction = code.Empty();
-                skipLoop.ReferencedInstruction = context.CurrentLoopEndInstruction;
+                context.CurrentLoopEndInstruction = skipLoop != null ? code.SkipNext() : code.Empty(true);
                 code.Instructions.Remove(context.CurrentLoopEndInstruction);
 
                 if (whileStatement.Body != null)
@@ -452,6 +461,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 code.Jump(expressionStartOperation);
                 code.Instructions.Add(context.CurrentLoopEndInstruction);
+                skipLoop?.ReferencedInstruction = code.Pop();
             }
             else if (statement is ForStatementNode forStatement)
             {
@@ -482,24 +492,23 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new ArgumentException($"Condition should return boolean value, but returns \"{conditionType}\": {statement}", nameof(statement));
                 }
 
-                var startExpressionOperation = code.Empty(true);
+                int startExpressionIndex = code.Instructions.Count;
                 CompileValueExpression(method, forStatement.Condition, ref settings, null, context);
                 var skipOperation = code.JumpIfFalse();
                 code.Pop();
 
-                int startExpressionIndex = code.Instructions.IndexOf(startExpressionOperation);
-                code.Instructions.Remove(startExpressionOperation);
-                startExpressionOperation = code.Instructions[startExpressionIndex];
+                var startExpressionOperation = code.Instructions[startExpressionIndex];
 
                 context.CurrentLoopStartInstruction = startExpressionOperation;
-                context.CurrentLoopEndInstruction = code.Empty(true);
-                skipOperation.ReferencedInstruction = context.CurrentLoopEndInstruction;
+                context.CurrentLoopEndInstruction = code.SkipNext();
                 code.Instructions.Remove(context.CurrentLoopEndInstruction);
 
                 CompileStatement(method, forStatement.Body, forStatement, depth + 1, code, ref settings, context);
                 CompileExpression(method, forStatement.Increment, ref settings, null, context);
+
                 code.Jump(startExpressionOperation);
                 code.Instructions.Add(context.CurrentLoopEndInstruction);
+                skipOperation.ReferencedInstruction = code.Pop();
             }
             else if (statement is ForeachStatementNode foreachStatement)
             {
@@ -566,18 +575,18 @@ namespace DialogMaker.Core.Scripting.Compiler
                 code.PopOffset(1);
                 code.StoreLocal(enumeratorVariable);
                 code.CallInstance(enumerator.ResetMethod);
-                var moveNextOperation = code.CallInstance(enumerator.MoveNextMethod);
+                code.SkipNext();
+                var moveNextOperation = code.LoadLocal(enumeratorVariable);
+                code.CallInstance(enumerator.MoveNextMethod);
                 var skipIteration = code.JumpIfFalse();
                 code.Pop();
-                code.StartScope();
                 code.LoadPropertyOrField(enumerator.CurrentProperty);
                 code.StoreLocal(variable);
-                code.Pop();
+                code.PopRepeat(2);
 
-                context.CurrentLoopStartInstruction = code.EndScope();
-                context.CurrentLoopEndInstruction = code.Pop();
+                context.CurrentLoopStartInstruction = moveNextOperation;
+                context.CurrentLoopEndInstruction = code.Empty(true);
 
-                code.Instructions.Remove(context.CurrentLoopStartInstruction);
                 code.Instructions.Remove(context.CurrentLoopEndInstruction);
                 CompileStatement(method, foreachStatement.Body, depth + 1, code, ref settings, context);
 
@@ -585,7 +594,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 code.Jump(moveNextOperation);
 
-                skipIteration.ReferencedInstruction = context.CurrentLoopEndInstruction;
+                skipIteration.ReferencedInstruction = code.PopRepeat(2);
                 code.Instructions.Add(context.CurrentLoopEndInstruction);
             }
             else if (statement is ContinueStatementNode continueStatement)
@@ -709,12 +718,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                 DSharpBytecodeBuilder.Instruction CompileBlock(ref DSharpMethodCompileSettings settings, BlockStatementNode block, DSharpCompilerContext context, Action? extra = null, bool endJump = true, int depthOffset = 1)
                 {
                     int startIndex = code.Instructions.Count;
-                    DSharpBytecodeBuilder.Instruction start = code.StartScope();
+                    DSharpBytecodeBuilder.Instruction start = code.Empty();
 
                     extra?.Invoke();
                     CompileStatement(method, block, depth + depthOffset, code, ref settings, context);
-
-                    code.EndScope();
 
                     if (endJump)
                     {
@@ -1027,7 +1034,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                      expression is NewExpressionNode ||
                      expression is ArrayExpressionNode ||
                      expression is ParenContainedExpressionNode ||
-                     expression is ThisExpressionNode)
+                     expression is ThisExpressionNode ||
+                     expression is ConditionalExpressionNode)
             {
                 return CompileValueExpression(method, expression, ref settings, parentExpression, context);
             }
@@ -1049,6 +1057,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="InvalidOperationException"></exception>
         private IDSharpMemberInfo? CompileValueExpression(DSharpMethodBuilder method, ExpressionNode expression, ref DSharpMethodCompileSettings settings, ExpressionNode? parentExpression = null, DSharpCompilerContext context = default)
+
         {
             var code = method.GetBytecodeBuilder();
 
@@ -1730,6 +1739,106 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 return CompileValueExpression(method, parenContainedExpression.Expression, ref settings, parentExpression, context);
+            }
+            else if (expression is ConditionalExpressionNode conditionalExpression)
+            {
+                if (conditionalExpression.Condition == null)
+                {
+                    throw new ArgumentException($"Conditional expression should contains condition: {expression}", nameof(expression));
+                }
+                if (conditionalExpression.TrueExpression == null)
+                {
+                    throw new ArgumentException($"Conditional expression should contains true expression: {expression}", nameof(expression));
+                }
+                if (conditionalExpression.FalseExpression == null)
+                {
+                    throw new ArgumentException($"Conditional expression should contains false expression: {expression}", nameof(expression));
+                }
+
+                IDSharpType? conditionType;
+
+                try
+                {
+                    var member = conditionalExpression.Condition.GetExpressionType(Assembly, context);
+
+                    if (member is IDSharpType typeMember)
+                    {
+                        conditionType = typeMember;
+                    }
+                    else if (member != null)
+                    {
+                        member.TryGetReturnType(out conditionType);
+                    }
+                    else
+                    {
+                        conditionType = null;
+                    }
+                }
+                catch (Exception error)
+                {
+                    throw new InvalidOperationException($"Unable to get condition type: {conditionalExpression.Condition}", error);
+                }
+
+                if (conditionType == null ||
+                    !conditionType.IsAssignableTo(Assembly.BoolType))
+                {
+                    throw new InvalidOperationException($"Condition should returns boolean value, got \"{conditionType}\": {conditionalExpression.Condition}");
+                }
+
+                CompileValueExpression(method, conditionalExpression.Condition, ref settings, conditionalExpression, context);
+                var jumpToFalse = code.JumpIfFalse();
+                code.Pop();
+                CompileValueExpression(method, conditionalExpression.TrueExpression, ref settings, conditionalExpression, context);
+                var skipFalse = code.Jump();
+                jumpToFalse.ReferencedInstruction = code.Pop();
+                CompileValueExpression(method, conditionalExpression.FalseExpression, ref settings, conditionalExpression, context);
+                skipFalse.ReferencedInstruction = code.Empty();
+
+                return null;
+            }
+            else if (expression is AsExpressionNode asExpression)
+            {
+                if (asExpression.ConvertType == null || asExpression.Expression == null)
+                {
+                    throw new ArgumentException($"Invalid expression: {expression}", nameof(expression));
+                }
+
+                var typeToken = context.ResolveType(asExpression.ConvertType);
+                var type = (IDSharpType)Assembly.GetType(typeToken);
+
+                var expressionMember = asExpression.Expression.GetExpressionType(Assembly, context);
+
+                if (expressionMember == null || !expressionMember.TryGetTypeOrReturnType(out var expressionType))
+                {
+                    throw new InvalidOperationException($"Unable to get expression type: {asExpression.Expression}");
+                }
+
+                var expressionValue = CompileValueExpression(method, asExpression.Expression, ref settings, asExpression, context);
+
+                if (type == expressionType)
+                {
+                    return expressionValue;
+                }
+
+                DSharpBytecodeBuilder.ReferenceInstruction? skipIfNullOperation = null;
+
+                if (!type.IsValueType())
+                {
+                    code.Push(null);
+                    code.Equals();
+                    skipIfNullOperation = code.JumpIfTrue();
+                    code.PopRepeat(2);
+                }
+
+                code.As(type);
+
+                if (skipIfNullOperation != null)
+                {
+                    code.SkipNext();
+                    skipIfNullOperation.ReferencedInstruction = code.PopRepeat(2);
+                }
+
+                return expressionValue;
             }
 
             throw new ArgumentException($"Unable to compile expression: {expression}", nameof(expression));

@@ -69,6 +69,21 @@ namespace DialogMaker.Core.Scripting.Compiler
                 return result != null;
             }
             /// <summary>
+            /// Get get current member as type or member return type
+            /// </summary>
+            /// <param name="result">Current member as type or type that returns by current member</param>
+            /// <returns>Is type successfully got</returns>
+            public bool TryGetTypeOrReturnType([NotNullWhen(true)] out IDSharpType? result)
+            {
+                if (member is IDSharpType typeMember)
+                {
+                    result = typeMember;
+                    return true;
+                }
+
+                return member.TryGetReturnType(out result);
+            }
+            /// <summary>
             /// Try get base of current member. 
             /// If current member is type then will be returned base type that is not interface.
             /// If current member is method or property then will be returned override member,
@@ -86,7 +101,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 if (member is IDSharpType typeMember)
                 {
-                    result = typeMember.GetBaseTypes().FirstOrDefault(t => t.ObjectType != DSharpObjectType.Interface) 
+                    result = typeMember.GetBaseTypes().FirstOrDefault(t => t.ObjectType != DSharpObjectType.Interface)
                         ?? member.Assembly.ObjectType;
                     return true;
                 }
@@ -424,7 +439,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                         yield return member;
                     }
                 }
-                
+
                 if (indexers)
                 {
                     foreach (var member in type.GetIndexers())
@@ -495,6 +510,118 @@ namespace DialogMaker.Core.Scripting.Compiler
                        @operator == DSharpBinaryOperator.LogicalXor;
             }
         }
+        extension(IfStatementNode ifStatement)
+        {
+            /// <summary>
+            /// Check all paths in current if statement for returning values
+            /// </summary>
+            /// <param name="assembly">Assembly builder for finding types</param>
+            /// <param name="context">Compiler context</param>
+            /// <returns>Is all paths returns some value</returns>
+            public bool AllPathReturns(DSharpAssemblyBuilder assembly, DSharpCompilerContext context)
+            {
+                var currentStatement = ifStatement;
+
+                while (true)
+                {
+                    if (currentStatement.ThenBranch?.AllPathReturns(assembly, context) != true ||
+                        currentStatement.ElseBranch == null)
+                    {
+                        return false;
+                    }
+                    if (currentStatement.ElseBranch is IfStatementNode elseStatement)
+                    {
+                        currentStatement = elseStatement;
+                        continue;
+                    }
+                    else if (currentStatement.ElseBranch is BlockStatementNode elseBlockStatement)
+                    {
+                        return elseBlockStatement.AllPathReturns(assembly, context);
+                    }
+
+                    break;
+                }
+
+                return true;
+            }
+        }
+        extension(BlockStatementNode blockStatement)
+        {
+            /// <summary>
+            /// Check block on return values or throw exception on all paths
+            /// </summary>
+            /// <param name="assembly">Assembly builder for finding types</param>
+            /// <param name="context">Compiler context</param>
+            /// <returns>Is block returns value or throw exception on all paths</returns>
+            public bool AllPathReturns(DSharpAssemblyBuilder assembly, DSharpCompilerContext context)
+            {
+                bool ReturnsValue(ExpressionStatementNode expressionStatement, bool asLambda)
+                {
+                    var expression = expressionStatement.Expression;
+
+                    if (expression == null) 
+                    {
+                        return false;
+                    }
+                    if (expression is ThrowExpressionNode)
+                    {
+                        return true;
+                    }
+                    if (asLambda && expression is not AssignmentExpressionNode &&
+                                    expression is not IncrementExpressionNode &&
+                                    expression is not DecrementExpressionNode)
+                    {
+                        IDSharpMemberInfo? expressionType;
+
+                        try
+                        {
+                            expressionType = expression.GetExpressionType(assembly, context);
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+
+                        if (expressionType == null)
+                        {
+                            return false;
+                        }
+
+                        return expressionType is IDSharpType || expressionType.TryGetReturnType(out _);
+                    }
+
+                    return false;
+                }
+
+                if (blockStatement.Token.Type == DSharpTokenType.Lambda)
+                {
+                    if (blockStatement.Statements.Count == 0 ||
+                        blockStatement.Statements[0] is not ExpressionStatementNode firstExpressionStatement)
+                    {
+                        return false;
+                    }
+
+                    return ReturnsValue(firstExpressionStatement, true);
+                }
+
+                foreach (var statement in blockStatement.Statements)
+                {
+                    if (statement is ReturnStatementNode ||
+                        statement is ExpressionStatementNode expressionStatement &&
+                        ReturnsValue(expressionStatement, false))
+                    {
+                        return true;
+                    }
+                    else if (statement is IfStatementNode ifStatement &&
+                             ifStatement.AllPathReturns(assembly, context))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
         extension(ExpressionNode expression)
         {
             /// <summary>
@@ -514,6 +641,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             /// Get result type of expression
             /// </summary>
             /// <param name="assembly">Assembly builder for finding types</param>
+            /// <param name="context">Compiler context</param>
             /// <returns>Result type of expression</returns>
             /// <exception cref="InvalidOperationException"></exception>
             /// <exception cref="ArgumentException"></exception>
@@ -524,7 +652,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     if (literalExpression.Type == DSharpLiteralType.Null)
                     {
                         var resolvedType = context.TypeResolver?.Invoke(expression);
-                        
+
                         if (resolvedType != null)
                         {
                             return resolvedType;
@@ -809,7 +937,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     var typeToken = context.ResolveType(castExpression.Type);
                     var type = (IDSharpType)assembly.GetType(typeToken);
-                    
+
                     if (castExpression.Expression.GetExpressionType(assembly, context) is not IDSharpType expressionType)
                     {
                         throw new InvalidOperationException($"Unable to get type of expression: {castExpression.Expression}");
@@ -820,6 +948,40 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
 
                     return type;
+                }
+                else if (expression is ConditionalExpressionNode conditionalExpression)
+                {
+                    if (conditionalExpression.TrueExpression == null || conditionalExpression.FalseExpression == null)
+                    {
+                        throw new ArgumentException($"Invalid conditional expression: {expression}", nameof(expression));
+                    }
+
+                    var trueValueType = conditionalExpression.TrueExpression.GetExpressionType(assembly, context);
+                    var falseValueType = conditionalExpression.FalseExpression.GetExpressionType(assembly, context);
+
+                    if (trueValueType == null ||
+                        !trueValueType.TryGetTypeOrReturnType(out var trueType))
+                    {
+                        throw new InvalidOperationException($"Unable to get true expression type: {conditionalExpression.TrueExpression}");
+                    }
+                    if (falseValueType == null ||
+                        !falseValueType.TryGetTypeOrReturnType(out var falseType))
+                    {
+                        throw new InvalidOperationException($"Unable to get false expression type: {conditionalExpression.FalseExpression}");
+                    }
+
+                    return trueType.GetNearestCommonType(falseType);
+                }
+                else if (expression is AsExpressionNode asExpression)
+                {
+                    if (asExpression.ConvertType == null)
+                    {
+                        throw new InvalidOperationException($"Type for converting not specified: {asExpression}");
+                    }
+
+                    var typeToken = context.ResolveType(asExpression.ConvertType);
+
+                    return (IDSharpType)typeToken;
                 }
 
                 throw new ArgumentException($"Unable to get type of expression: {expression}", nameof(expression));
@@ -1121,7 +1283,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             public bool TryGetLocalMember(DSharpCompilerContext context, [NotNullWhen(true)] out IDSharpParameterInfo? result)
             {
                 var identifier = identifierExpression.GetName(false);
-                return context.TryResolveVariable(identifier, out result);  
+                return context.TryResolveVariable(identifier, out result);
             }
         }
         extension(NameOfExpressionNode nameofExpression)

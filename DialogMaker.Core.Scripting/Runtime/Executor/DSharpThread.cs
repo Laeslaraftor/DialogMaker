@@ -184,6 +184,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
                 if (!continueExecuting)
                 {
+                    DSharpMethodExecutionCallback lastCallback = default;
+
+                    if (methodExecutor != null)
+                    {
+                        lastCallback = methodExecutor->LastCallback.GetValueOrDefault();
+                    }
+
                     var bytecode = typesProvider.GetRuntimeBytecode(methodInfo);
                     int variablesCount = bytecode->Variables.Length;
                     uint catchFinallyCount = bytecode->CatchBlocksCount + bytecode->FinallyBlocksCount;
@@ -191,7 +198,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                                     (int)bytecode->ScopesCount * sizeof(DSharpStack.Scope) +
                                     (int)catchFinallyCount * sizeof(DSharpTryCatchFinallyDescription) +
                                     (int)bytecode->FinallyBlocksCount * sizeof(uint);
-                    var newMethodExecutor = stack.PushMethodExecutor(methodInfo, extraSize);
+
+
+                    var newMethodExecutor = stack.PushMethodExecutor(methodInfo, extraSize, lastCallback.ExtraScopeOffset);
                     MemoryBuilder builder = new((nint)newMethodExecutor + sizeof(DSharpMethodExecutor), extraSize);
 
                     if (arguments.Length > 0)

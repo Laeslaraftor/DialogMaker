@@ -46,7 +46,12 @@ public class Program
             break;
         }
 
-        Console.WriteLine("Program ended with " + exceptions.Count + " exceptions");
+        Console.WriteLine("Program ended with " + exceptions.Count + " exceptions:");
+
+        foreach (var exception in exceptions)
+        {
+            Console.WriteLine(exception.Message);
+        }
     }
     private static void MainImpl()
     {

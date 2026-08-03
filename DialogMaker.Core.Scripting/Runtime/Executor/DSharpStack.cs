@@ -318,11 +318,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             return *AllocateValue(DSharpStackValueType.Reference, (nint)value);
         }
-        public DSharpMethodExecutor* PushMethodExecutor(DSharpRuntimeMethodInfo* methodInfo, int reservedSize = 0)
+        public DSharpMethodExecutor* PushMethodExecutor(DSharpRuntimeMethodInfo* methodInfo, int reservedSize = 0, uint scopeOffset = 0)
         {
             var scope = StartScope();
             var frame = AllocateSized(DSharpStackValueType.MethodCallingInfo, sizeof(DSharpMethodExecutor) + reservedSize);
             var executor = (DSharpMethodExecutor*)frame->StackPointer;
+            scope.StackCount -= scopeOffset;
             executor->Scope = scope;
             executor->MethodInfo = methodInfo;
 

@@ -68,19 +68,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 root = IdentifierExpressionNode.Parse(stream, parseGenerics);
             }
 
-            /*
-            MemberAccess 
-            {
-                Left = identifier,
-                Right = MemberAccess
-                {
-                    Left = identifier,
-                    Right = identifier/MemberAccess
-                }
-            }
-
-             */
-
             return ParseMemberAccess(stream, root);
         }
         /// <summary>
@@ -208,7 +195,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             bool previousIsMemberAccess = stream.Check(DSharpTokenType.Dot, -1);
             var left = BinaryExpressionNode.ParseLogicalOr(stream);
 
-            if (previousIsMemberAccess)
+            if (previousIsMemberAccess || stream.Check(DSharpTokenType.Colon))
             {
                 return left;
             }
@@ -218,7 +205,21 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 assignment.Left = left;
                 return assignment;
             }
-            if (stream.Check(DSharpTokenType.Increment))
+            if (stream.Check(DSharpTokenType.Question))
+            {
+                var conditionalExpression = ConditionalExpressionNode.Parse(stream);
+                conditionalExpression.Condition = left;
+
+                return conditionalExpression;
+            }
+            else if (stream.Check(DSharpTokenType.As))
+            {
+                var asExpression = AsExpressionNode.Parse(stream);
+                asExpression.Expression = left;
+
+                return asExpression;
+            }
+            else if (stream.Check(DSharpTokenType.Increment))
             {
                 var incrementToken = stream.Eat(DSharpTokenType.Increment);
                 return new IncrementExpressionNode(incrementToken)
@@ -226,7 +227,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     Expression = left
                 };
             }
-            if (stream.Check(DSharpTokenType.Decrement))
+            else if (stream.Check(DSharpTokenType.Decrement))
             {
                 var decrementToken = stream.Eat(DSharpTokenType.Decrement);
                 return new DecrementExpressionNode(decrementToken)

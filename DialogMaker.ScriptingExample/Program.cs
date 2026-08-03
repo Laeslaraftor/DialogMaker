@@ -4,7 +4,7 @@ using DialogMaker.Core.Scripting.Runtime;
 using DialogMaker.Core.Scripting.Runtime.Executor;
 using DialogMaker.ScriptingExample;
 
-DSharpAssemblyBuilder assembly = Projects.CompileStandardLibrary(false);
+DSharpAssemblyBuilder assembly = Projects.CompileStandardLibrary(true);
 IDSharpType entryType;
 
 try
