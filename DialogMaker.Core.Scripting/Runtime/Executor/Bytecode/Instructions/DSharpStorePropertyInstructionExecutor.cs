@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.StoreProperty"/> operation
     /// </summary>
-    public class DSharpStorePropertyInstructionExecutor : DSharpMetadataTokenInstructionExecutor
+    public class DSharpStorePropertyInstructionExecutor : DSharpPropertyInstructionExecutor
     {
         #region Controls
 
@@ -15,9 +15,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return &InstanceExecute;
         }
 
-        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
+        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimePropertyInfo* runtimeInfo)
         {
-            return Store(instruction, ref context, metadataToken, false, false);
+            return Store(instruction, ref context, runtimeInfo, false, false);
         }
 
         #endregion
@@ -30,9 +30,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         public static readonly DSharpStorePropertyInstructionExecutor Instance = new();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static DSharpMethodExecutionCallback Store(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken, bool isInstance, bool isBase)
+        internal static unsafe DSharpMethodExecutionCallback Store(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimePropertyInfo* property, bool isInstance, bool isBase)
         {
-            return CallAccessor(instruction, ref context, metadataToken, DSharpPropertyAccessor.Setter, isInstance, isBase);
+            return CallAccessor(instruction, ref context, property, DSharpPropertyAccessor.Setter, isInstance, isBase);
         }
 
         private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)

@@ -21,17 +21,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
 
             int instructionIndex = *(int*)instruction.Arguments[0];
-            var exceptionTypeToken = *(DSharpMetadataToken*)instruction.Arguments[1];
-            DSharpRuntimeTypeInfo* exceptionType;
-
-            try
-            {
-                exceptionType = context.GetType(exceptionTypeToken);
-            }
-            catch (Exception exception)
-            {
-                return context.ThrowExecutionException(exception);
-            }
+            var exceptionType = (DSharpRuntimeTypeInfo*)instruction.Arguments[1];
+            exceptionType = context.ReplaceType(exceptionType);
 
             if (!context.AddCatchBlock(exceptionType, instructionIndex))
             {
@@ -54,7 +45,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
         {
             arguments[0] = stream->ReadSafePointer<int>();
-            arguments[1] = stream->ReadSafePointer<DSharpMetadataToken>();
+            var typeToken = stream->Read<DSharpMetadataToken>();
+
+            arguments[1] = (nint)typesProvider.GetRuntimeInfo(typeToken);
         }
 
         #endregion

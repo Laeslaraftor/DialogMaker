@@ -5,46 +5,20 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.LoadTypeInformation"/> operation
     /// </summary>
-    public class DSharpLoadTypeInformationInstructionExecutor : DSharpInstructionExecutor
+    public class DSharpLoadTypeInformationInstructionExecutor : DSharpTypeInstructionExecutor
     {
         #region Controls
 
-        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
-        {
-            if (CheckArguments(instruction, context, 1, out var error))
-            {
-                return error;
-            }
-
-            var token = *(DSharpMetadataToken*)instruction.Arguments[0];
-            DSharpRuntimeTypeInfo* typeInfo;
-
-            try
-            {
-                typeInfo = context.GetType(token);
-            }
-            catch (Exception exception)
-            {
-                return context.ThrowExecutionException(exception);
-            }
-
-            context.Stack.Push(typeInfo);
-
-            return DSharpMethodExecutionCallback.Complete();
-        }
 
         public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
+
+        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* runtimeInfo)
         {
-            stream->Read<DSharpMetadataToken>();
-            return 1;
-        }
-        public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
-        {
-            arguments[0] = stream->ReadSafePointer<DSharpMetadataToken>();
+            context.Stack.Push(runtimeInfo);
+            return DSharpMethodExecutionCallback.Complete();
         }
 
         #endregion

@@ -5,7 +5,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.Cast"/> operation
     /// </summary>
-    public class DSharpCastInstructionExecutor : DSharpMetadataTokenInstructionExecutor
+    public class DSharpCastInstructionExecutor : DSharpTypeInstructionExecutor
     {
         #region Controls
 
@@ -14,22 +14,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return &InstanceExecute;
         }
 
-        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
+        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* type)
         {
             if (CheckStackValues(instruction, context, 1, out var error))
             {
                 return error;
-            }
-
-            DSharpRuntimeTypeInfo* type;
-
-            try
-            {
-                type = context.GetType(metadataToken);
-            }
-            catch (Exception exception)
-            {
-                return context.ThrowExecutionException(exception);
             }
 
             var lastValue = context.Stack.Peek();

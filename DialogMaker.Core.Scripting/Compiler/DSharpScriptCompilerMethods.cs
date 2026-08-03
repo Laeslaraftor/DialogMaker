@@ -335,64 +335,93 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             else if (statement is IfStatementNode ifStatement)
             {
-                if (ifStatement.Condition == null)
-                {
-                    throw new ArgumentException($"If statement should contains condition: {statement}", nameof(statement));
-                }
-
-
                 var boolType = Assembly.BoolType;
+                DSharpBytecodeBuilder.ReferenceInstruction? jumpOperation = null;
+                List<DSharpBytecodeBuilder.ReferenceInstruction> skipOperations = [];
 
-                CompileExpressionValueWithRequestedType(method, boolType, code, ifStatement.Condition, ref settings, null, context);
-                var jumpOperation = code.JumpIfFalse();
-                code.Pop();
-                code.StartScope();
-
-                if (ifStatement.ThenBranch == null)
+                void Compile(ref DSharpMethodCompileSettings settings, ExpressionNode? condition, BlockStatementNode statements, bool addSkipNext)
                 {
-                    throw new ArgumentException($"If statement should contains then branch: {statement}", nameof(statement));
-                }
+                    jumpOperation?.ReferencedInstruction = code.Empty();
 
-                CompileStatement(method, ifStatement.ThenBranch, ifStatement, depth + 1, code, ref settings, context);
-                code.EndScope();
-
-                DSharpBytecodeBuilder.ReferenceInstruction? skipOtherOperation = null;
-
-                if (ifStatement.ElseBranch != null)
-                {
-                    skipOtherOperation = code.Jump();
-                }
-                else
-                {
-                    code.SkipNext();
-                }
-
-                jumpOperation.ReferencedInstruction = code.Pop();
-
-                if (ifStatement.ElseBranch != null)
-                {
-                    if (ifStatement.ElseBranch is not BlockStatementNode &&
-                        ifStatement.ElseBranch is not IfStatementNode)
+                    if (condition != null)
                     {
-                        throw new ArgumentException($"Invalid else branch: {ifStatement.ElseBranch}", nameof(statement));
+                        CompileExpressionValueWithRequestedType(method, boolType, code, condition, ref settings, null, context);
+                        var skipSkipping = code.JumpIfTrue();
+                        code.Pop();
+                        jumpOperation = code.Jump();
+                        skipSkipping.ReferencedInstruction = code.Pop();
                     }
-                    if (depth == 0 && ifStatement.ElseBranch is BlockStatementNode elseBlock)
+                    else
                     {
-                        var containsReturn = elseBlock.Statements.Any(s => s is ReturnStatementNode);
-
-                        if (containsReturn)
-                        {
-                            settings.AddReturnMethod(method);
-                        }
+                        jumpOperation = null;
                     }
 
                     code.StartScope();
-                    CompileStatement(method, ifStatement.ElseBranch, ifStatement, depth + 1, code, ref settings, context);
+
+                    if (ifStatement.ThenBranch == null)
+                    {
+                        throw new ArgumentException($"If statement should contains then branch: {statement}", nameof(statement));
+                    }
+
+                    CompileStatement(method, statements, depth + 1, code, ref settings, context);
                     code.EndScope();
-                    code.SkipNext();
+
+                    if (addSkipNext)
+                    {
+                        var skipOperation = code.Jump();
+                        skipOperations.Add(skipOperation);
+                    }
+                    else if (condition != null)
+                    {
+                        jumpOperation?.ReferencedInstruction = code.Empty();
+                    }
+                }
+                void AddSkipOperations()
+                {
+                    if (skipOperations.Count > 0)
+                    {
+                        var endOperation = code.Empty();
+
+                        foreach (var operation in skipOperations)
+                        {
+                            operation.ReferencedInstruction = endOperation;
+                        }
+                    }
                 }
 
-                skipOtherOperation?.ReferencedInstruction = code.Empty();
+                while (true)
+                {
+                    if (ifStatement.Condition == null)
+                    {
+                        throw new ArgumentException($"If statement should contains condition: {statement}", nameof(statement));
+                    }
+                    if (ifStatement.ThenBranch == null)
+                    {
+                        throw new ArgumentException($"If statement should contains then branch: {statement}", nameof(statement));
+                    }
+
+                    Compile(ref settings, ifStatement.Condition, ifStatement.ThenBranch, ifStatement.ElseBranch != null);
+
+                    if (ifStatement.ElseBranch is IfStatementNode elseStatement)
+                    {
+                        ifStatement = elseStatement;
+                        continue;
+                    }
+                    else if (ifStatement.ElseBranch is BlockStatementNode elseBlock)
+                    {
+                        Compile(ref settings, null, elseBlock, false);
+                    }
+                    else if (ifStatement.ElseBranch != null)
+                    {
+                        throw new InvalidOperationException($"Invalid else branch: {ifStatement.ElseBranch}");
+                    }
+
+                    break;
+                }
+
+                // todo: add return statements searching
+
+                AddSkipOperations();
             }
             else if (statement is WhileStatementNode whileStatement)
             {
@@ -1948,7 +1977,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     binaryOperator == DSharpBinaryOperator.LogicalNotEquals))
                 {
                     code.Call(Assembly.ObjectTypeInfo.EqualsMethod);
-                    
+
                     if (binaryOperator == DSharpBinaryOperator.LogicalNotEquals)
                     {
                         code.Not();

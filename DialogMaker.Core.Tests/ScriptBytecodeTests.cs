@@ -41,9 +41,12 @@ namespace DialogMaker.Core.Tests
         [TestCase("System.Span`1.get_Length")]
         [TestCase("System.Native.Pointer<Internal.System.Runtime.RuntimeTypeInfo>.get_Item")]
         [TestCase("System.Object.Equals")]
+        [TestCase("System.Collections.Generic.List`1.get_Capacity")]
+        [TestCase("System.Collections.Generic.List<System.Exception>.ctor")]
         [TestCase("Program.TestPlayersArray")]
         [TestCase("Program.TestExceptionHandling")]
         [TestCase("Program.Main")]
+        [TestCase("Program.MainImpl")]
         [TestCase("Program.GetSize")]
         [TestCase("Program.GetGenericObject")]
         public static void PrintMethodBytecode(string methodName)
@@ -95,7 +98,7 @@ namespace DialogMaker.Core.Tests
         {
             bool isAnyMethodFound = false;
 
-            foreach (var method in type.Methods.Where(f => f.Name == methodName))
+            foreach (var method in type.Methods.Union(type.Constructors).Where(f => f.Name == methodName))
             {
                 isAnyMethodFound = true;
 

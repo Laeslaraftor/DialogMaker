@@ -53,7 +53,7 @@ public sealed class String : IEnumerable<char>, IEquatable<T>
 
     public static readonly string Empty = "";
 
-    public static bool IsNullOrEmpty(string str) => str == null || str == Empty;
+    public static bool IsNullOrEmpty(string str) => str == null || str.Length == 0;
 
     private static string Ctor() => Empty;
     private static extern string Ctor(char[] chars);

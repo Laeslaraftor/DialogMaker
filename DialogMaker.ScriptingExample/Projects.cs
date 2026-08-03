@@ -9,7 +9,7 @@ namespace DialogMaker.ScriptingExample
     {
         public const string DSharpProjectPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Scripting\StandardLibrary";
 
-        public static DSharpAssemblyBuilder CompileStandardLibrary()
+        public static DSharpAssemblyBuilder CompileStandardLibrary(bool optimize = false)
         {
             List<DSharpScript> scripts = [];
             DSharpAssemblyBuilder assembly = new("StandardLibrary", []);
@@ -52,6 +52,11 @@ namespace DialogMaker.ScriptingExample
 
             DSharpCompiler compiler = new(assembly);
             compiler.CompileTrees(scripts);
+
+            if (optimize)
+            {
+                DSharpBytecodeOptimizer.Optimize(assembly);
+            }
 
             return assembly;
         }

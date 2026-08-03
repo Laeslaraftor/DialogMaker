@@ -1,14 +1,64 @@
 using System;
+using System.Collections.Generic;
 
 public class Program
 {
     public static void Main()
+    {
+        List<Exception> exceptions = new();
+
+        while (true)
+        {
+            try
+            {
+                MainImpl();
+            }
+            catch (Exception error)
+            {
+                exceptions.Add(error);
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("Restart?");
+            bool restart = false;
+            
+            while (true)
+            {
+                Console.Write("y/n > ");
+                var value = Console.ReadLine();
+
+                if (value == "y")
+                {
+                    restart = true;
+                    break;
+                }
+                else if (value == "n")
+                {
+                    break;
+                }
+            }
+
+            if (restart)
+            {
+                continue;
+            }
+
+            break;
+        }
+
+        Console.WriteLine("Program ended with " + exceptions.Count + " exceptions");
+    }
+    private static void MainImpl()
     {
         while (true)
         {
             Console.Write("> ");
             var value = Console.ReadLine();
             
+            if (string.IsNullOrEmpty(value))
+            {
+                continue;
+            }
             if (value == "malinovka")
             {
                 Console.WriteLine("Малиновка шоколадного кольца");
@@ -16,6 +66,10 @@ public class Program
             else if (value == "zeWhite")
             {
                 Console.WriteLine("zeWhite on the beat");
+            }
+            else if (value == "clear")
+            {
+                Console.Clear();
             }
             else if (value == "exit")
             {

@@ -7,4 +7,5 @@ public static class Console
     public static extern void WriteLine(char text);
     public static extern void WriteLine();
     public static extern string ReadLine();
+    public static extern void Clear();
 }

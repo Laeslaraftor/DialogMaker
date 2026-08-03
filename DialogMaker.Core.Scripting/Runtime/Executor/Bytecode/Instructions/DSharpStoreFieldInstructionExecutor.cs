@@ -5,7 +5,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.StoreField"/> operation
     /// </summary>
-    public class DSharpStoreFieldInstructionExecutor : DSharpMetadataTokenInstructionExecutor
+    public class DSharpStoreFieldInstructionExecutor : DSharpFieldInstructionExecutor
     {
         #region Controls
 
@@ -14,9 +14,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return &InstanceExecute;
         }
 
-        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
+        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeFieldInfo* runtimeInfo)
         {
-            return Store(instruction, ref context, metadataToken, false);
+            return Store(instruction, ref context, runtimeInfo, false);
         }
 
         #endregion
@@ -28,7 +28,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpStoreFieldInstructionExecutor Instance = new();
 
-        internal static unsafe DSharpMethodExecutionCallback Store(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken, bool isInstance)
+        internal static unsafe DSharpMethodExecutionCallback Store(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeFieldInfo* field, bool isInstance)
         {
             int stackValuesCount = isInstance ? 2 : 1;
 
@@ -51,7 +51,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             try
             {
-                var field = context.TypesProvider.GetField(metadataToken);
                 field->Write(context.ObjectsContainer, instance, context.Stack, (uint)stackValuesCount - 1);
             }
             catch (Exception exception)

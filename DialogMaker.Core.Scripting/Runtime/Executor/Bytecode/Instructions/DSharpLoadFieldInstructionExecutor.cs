@@ -1,9 +1,11 @@
+using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.LoadField"/> operation
     /// </summary>
-    public class DSharpLoadFieldInstructionExecutor : DSharpMetadataTokenInstructionExecutor
+    public class DSharpLoadFieldInstructionExecutor : DSharpFieldInstructionExecutor
     {
         #region Controls
 
@@ -12,9 +14,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return &InstanceExecute;
         }
 
-        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
+        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeFieldInfo* runtimeInfo)
         {
-            return Load(instruction, ref context, metadataToken, false);
+            return Load(instruction, ref context, runtimeInfo, false);
         }
 
         #endregion
@@ -26,7 +28,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpLoadFieldInstructionExecutor Instance = new();
 
-        internal static unsafe DSharpMethodExecutionCallback Load(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken, bool isInstance)
+        internal static unsafe DSharpMethodExecutionCallback Load(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeFieldInfo* field, bool isInstance)
         {
             DSharpObject* instance = null;
 
@@ -47,7 +49,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             try
             {
-                var field = context.TypesProvider.GetField(metadataToken);
                 field->Read(instance, context.Stack);
             }
             catch (Exception exception)

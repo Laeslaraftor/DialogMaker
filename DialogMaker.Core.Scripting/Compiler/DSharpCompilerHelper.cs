@@ -182,7 +182,16 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 List<IDSharpType> declaringTypes = [];
-                var declaringType = member.DeclaringType;
+                IDSharpType? declaringType;
+
+                if (member is IDSharpType typeMember)
+                {
+                    declaringType = typeMember;
+                }
+                else
+                {
+                    declaringType = member.DeclaringType;
+                }
 
                 while (declaringType != null)
                 {
@@ -266,7 +275,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                                                          ?? throw new InvalidOperationException($"Unable to find method \"{method}\" in \"{declaringType}\"");
                 }
 
-                return member;
+                return declaringType;
             }
         }
         extension(IDSharpType type)

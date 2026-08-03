@@ -1,3 +1,4 @@
+using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
 using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
@@ -5,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.LoadProperty"/> operation
     /// </summary>
-    public class DSharpLoadPropertyInstructionExecutor : DSharpMetadataTokenInstructionExecutor
+    public class DSharpLoadPropertyInstructionExecutor : DSharpPropertyInstructionExecutor
     {
         #region Controls
 
@@ -14,9 +15,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return &InstanceExecute;
         }
 
-        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
+        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimePropertyInfo* runtimeInfo)
         {
-            return Load(instruction, ref context, metadataToken, false, false);
+            return Load(instruction, ref context, runtimeInfo, false, false);
         }
 
         #endregion
@@ -29,9 +30,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         public static readonly DSharpLoadPropertyInstructionExecutor Instance = new();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static DSharpMethodExecutionCallback Load(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken, bool isInstance, bool isBase)
+        internal static unsafe DSharpMethodExecutionCallback Load(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimePropertyInfo* property, bool isInstance, bool isBase)
         {
-            return CallAccessor(instruction, ref context, metadataToken, DSharpPropertyAccessor.Getter, isInstance, isBase);
+            return CallAccessor(instruction, ref context, property, DSharpPropertyAccessor.Getter, isInstance, isBase);
         }
 
         private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)

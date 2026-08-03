@@ -1,9 +1,11 @@
+using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.LoadIndexer"/> operation
     /// </summary>
-    public class DSharpLoadIndexerInstructionExecutor : DSharpMetadataTokenInstructionExecutor
+    public class DSharpLoadIndexerInstructionExecutor : DSharpPropertyInstructionExecutor
     {
         #region Controls
 
@@ -12,9 +14,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return &InstanceExecute;
         }
 
-        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
+        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimePropertyInfo* runtimeInfo)
         {
-            return DSharpLoadPropertyInstructionExecutor.Load(instruction, ref context, metadataToken, true, false);
+            return DSharpLoadPropertyInstructionExecutor.Load(instruction, ref context, runtimeInfo, true, false);
         }
 
         #endregion

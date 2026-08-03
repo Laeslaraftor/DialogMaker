@@ -5,7 +5,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.New"/> operation
     /// </summary>
-    public class DSharpNewInstructionExecutor : DSharpMetadataTokenInstructionExecutor
+    public class DSharpNewInstructionExecutor : DSharpMetadataTokenInstructionExecutor<DSharpMetadataToken>
     {
         #region Controls
 
@@ -14,26 +14,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return &InstanceExecute;
         }
 
-        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
+        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken* member)
         {
-            DSharpMetadataToken* member;
-
-            try
-            {
-                if (metadataToken.Type == DSharpMetadataTokenType.TypeDefinition)
-                {
-                    member = &context.GetType(metadataToken)->MetadataToken;
-                }
-                else
-                {
-                    member = context.TypesProvider.GetMember(metadataToken);
-                }
-            }
-            catch (Exception error)
-            {
-                return context.ThrowExecutionException(error);
-            }
-
             DSharpRuntimeTypeInfo* typeToInstantiate;
             DSharpRuntimeMethodInfo* constructor = null;
 
@@ -93,6 +75,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             newInstance->IsInitialized = true;
 
             return DSharpMethodExecutionCallback.Complete();
+        }
+
+        protected override unsafe DSharpMetadataToken* GetRuntimeInformation(DSharpRuntimeInformationProvider typesProvider, DSharpMetadataToken metadataToken)
+        {
+            return typesProvider.GetMember(metadataToken);
+        }
+
+        protected override unsafe DSharpMetadataToken* RuntimeInformationHandler(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken* runtimeInfo)
+        {
+            if (runtimeInfo->Type == DSharpMetadataTokenType.TypeDefinition)
+            {
+                return (DSharpMetadataToken*)context.GetType(*runtimeInfo);
+            }
+
+            return runtimeInfo;
         }
 
         #endregion

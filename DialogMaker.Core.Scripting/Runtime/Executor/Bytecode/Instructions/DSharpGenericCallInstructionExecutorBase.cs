@@ -26,8 +26,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
         public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
-            var methodToken = stream->Read<DSharpMetadataToken>();
-            var method = typesProvider.GetMethod(methodToken);
+            stream->Read<DSharpMetadataToken>();
             int replacesCount = stream->Read<int>() * 2;
 
             for (int i = 0; i < replacesCount; i++)

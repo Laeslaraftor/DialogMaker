@@ -6,7 +6,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Base executor for instruction that requires metadata token in arguments
     /// </summary>
-    public abstract class DSharpMetadataTokenInstructionExecutor : DSharpInstructionExecutor
+    public abstract class DSharpMetadataTokenInstructionExecutor<T> : DSharpInstructionExecutor
+        where T : unmanaged
     {
         public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
@@ -15,9 +16,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 return error;
             }
 
-            var metadataToken = *(DSharpMetadataToken*)instruction.Arguments[0];
+            var runtimeInfo = (T*)instruction.Arguments[0];
+            runtimeInfo = RuntimeInformationHandler(instruction, ref context, runtimeInfo);
 
-            return Execute(instruction, ref context, metadataToken);
+            return Execute(instruction, ref context, runtimeInfo);
         }
 
         public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
@@ -27,7 +29,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         }
         public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
         {
-            arguments[0] = stream->ReadSafePointer<DSharpMetadataToken>();
+            var metadataToken = stream->Read<DSharpMetadataToken>();
+            arguments[0] = (nint)GetRuntimeInformation(typesProvider, metadataToken);
         }
 
         /// <summary>
@@ -35,27 +38,37 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         /// <param name="instruction">Executing instruction information</param>
         /// <param name="context">Execution context</param>
-        /// <param name="metadataToken">Metadata token from instruction arguments</param>
+        /// <param name="runtimeInfo">Runtime information with metadata token from instruction arguments</param>
         /// <returns>Is successfully executed</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected abstract DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken);
+        protected abstract unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, T* runtimeInfo);
+        /// <summary>
+        /// Get runtime information with specified metadata token
+        /// </summary>
+        /// <param name="typesProvider">Runtime types provider for finding parameter type by metadata token</param>
+        /// <param name="metadataToken">Metadata token for getting runtime information</param>
+        /// <returns>Runtime information with specified metadata token</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected abstract unsafe T* GetRuntimeInformation(DSharpRuntimeInformationProvider typesProvider, DSharpMetadataToken metadataToken);
+
+        /// <summary>
+        /// Runtime information handler
+        /// </summary>
+        /// <param name="instruction">Executing instruction information</param>
+        /// <param name="context">Execution context</param>
+        /// <param name="runtimeInfo"></param>
+        /// <returns>New runtime information</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected virtual unsafe T* RuntimeInformationHandler(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, T* runtimeInfo)
+        {
+            return runtimeInfo;
+        }
 
         #region Static
 
-        internal static unsafe DSharpMethodExecutionCallback CallAccessor(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken, DSharpPropertyAccessor accessorType, bool isInstance, bool isBase)
+        internal static unsafe DSharpMethodExecutionCallback CallAccessor(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimePropertyInfo* property, DSharpPropertyAccessor accessorType, bool isInstance, bool isBase)
         {
             DSharpObject* instance = null;
-            DSharpRuntimePropertyInfo* property;
-
-            try
-            {
-                property = context.TypesProvider.GetProperty(metadataToken);
-            }
-            catch (Exception exception)
-            {
-                return context.ThrowExecutionException(exception);
-            }
-
             DSharpRuntimeMethodInfo* accessor = GetAccessor(property, accessorType);
 
             uint parametersOffset = 0;

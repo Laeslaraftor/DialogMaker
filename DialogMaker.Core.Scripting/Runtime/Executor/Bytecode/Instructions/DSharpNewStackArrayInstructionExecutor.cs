@@ -5,7 +5,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.NewStackArray"/> operation
     /// </summary>
-    public class DSharpNewStackArrayInstructionExecutor : DSharpMetadataTokenInstructionExecutor
+    public class DSharpNewStackArrayInstructionExecutor : DSharpTypeInstructionExecutor
     {
         #region Controls
 
@@ -13,39 +13,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         {
             return &InstanceExecute;
         }
-
-        protected unsafe override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
+        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* runtimeInfo)
         {
-            if (CheckStackValues(instruction, context, 1, out var error))
-            {
-                return error;
-            }
-
-            int length;
-
-            try
-            {
-                var lastValue = context.Stack.Peek();
-                length = (int)lastValue.ReadAsDecimal().GetValueOrDefault();
-            }
-            catch (Exception exception)
-            {
-                return context.ThrowExecutionException($"Unable to get array length: {exception}");
-            }
-
-            DSharpRuntimeTypeInfo* arrayType;
-
-            try
-            {
-                arrayType = context.GetType(metadataToken);
-                context.ObjectsContainer.CreateArray(arrayType, length, context.Stack);
-            }
-            catch (Exception exception)
-            {
-                return context.ThrowExecutionException(exception);
-            }
-
-            return DSharpMethodExecutionCallback.Complete();
+            return DSharpNewArrayInstructionExecutor.Create(instruction, ref context, runtimeInfo, true);
         }
 
         #endregion

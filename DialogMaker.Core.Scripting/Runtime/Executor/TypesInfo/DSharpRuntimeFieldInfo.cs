@@ -135,7 +135,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         public void Write(DSharpObjectsContainer objectsContainer, DSharpObject* instance, DSharpObject* value)
         {
             byte* pointer = GetDataPointer(instance);
-            bool valueIsNull = DSharpObject.IsNullOrEmpty(value);
             bool isReferenceTypeField = !FieldType->IsValueType;
 
             if (isReferenceTypeField)
@@ -146,34 +145,27 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 {
                     currentValue->ReferencesCount--;
                 }
-            }
-            if (valueIsNull)
-            {
-                if (isReferenceTypeField)
-                {
-                    *(DSharpObject**)pointer = DSharpObject.Null;
-                }
-                else
-                {
-                    RuntimeExtensions.FillZero(pointer, FieldType->ItemSize);
-                }
-            }
-            else
-            {
-                if (isReferenceTypeField)
+                if (value != null)
                 {
                     if (value->Placement == DSharpObjectPlacement.Buffer)
                     {
                         value = objectsContainer.Box(value);
                     }
 
-                    *(DSharpObject**)pointer = value;
                     value->ReferencesCount++;
+                }
+
+                *(DSharpObject**)pointer = value;
+            }
+            else
+            {
+                if (DSharpObject.IsNullOrEmpty(value))
+                {
+                    RuntimeExtensions.FillZero(pointer, FieldType->ItemSize);
                 }
                 else
                 {
                     DSharpObject.CopyData(value, pointer, FieldType->ItemSize);
-                    //DSharpObject.Copy(value, (DSharpObject*)pointer);
                 }
             }
         }
@@ -186,7 +178,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <param name="offset">Stack peek offset</param>
         public void Write(DSharpObjectsContainer objectsContainer, DSharpObject* instance, DSharpStack stack, uint offset)
         {
-            var frame = stack.Peek(offset);
+            var frame = stack.PeekOnlyValues(offset);
 
             if (frame.ValueType == DSharpStackValueType.Structure)
             {

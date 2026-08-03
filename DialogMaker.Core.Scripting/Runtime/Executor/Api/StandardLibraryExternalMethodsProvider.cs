@@ -140,7 +140,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                         }
                     }
                 }
-                else if (methodInfo.DeclaringType.FullName == "System.Console")
+                else if (methodInfo.DeclaringType.Name == "Console")
                 {
                     if (methodInfo.Name == "WriteLine")
                     {
@@ -153,6 +153,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                     else if (methodInfo.Name == "ReadLine")
                     {
                         return ConsoleReadLine;
+                    }
+                    else if (methodInfo.Name == "Clear")
+                    {
+                        return ConsoleClear;
                     }
                 }
             }
@@ -884,6 +888,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
         private static DSharpExternalMethodResult? ConsoleReadLine(DSharpExternalCallingArgs args)
         {
             return Console.ReadLine();
+        }
+        private static DSharpExternalMethodResult? ConsoleClear(DSharpExternalCallingArgs args)
+        {
+            Console.Clear();
+            return null;
         }
 
         #endregion

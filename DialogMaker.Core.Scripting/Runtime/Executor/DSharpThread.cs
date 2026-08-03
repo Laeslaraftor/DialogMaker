@@ -249,7 +249,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
                     if (methodExecutor->HaveUnhandledException && !methodExecutor->NowClosingTryCatchFinallyBlock)
                     {
-                        HandleException(methodExecutor->UnhandledException);
+                        if (!HandleException(methodExecutor->UnhandledException))
+                        {
+                            continue;
+                        }
                     }
 
                     var lastCallback = methodExecutor->LastCallback;
@@ -296,8 +299,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                     methodExecutor->HaveUnhandledException = true;
                     methodExecutor->UnhandledException = exception;
                 }
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                void HandleException(DSharpObject* exception)
+                bool HandleException(DSharpObject* exception)
                 {
                     if (methodExecutor->NowClosingTryCatchFinallyBlock)
                     {
@@ -312,7 +314,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                             methodExecutor->NowClosingTryCatchFinallyBlock = true;
                             methodExecutor->InstructionIndex = catchBlock.InstructionIndex;
                             continueExecuting = true;
-                            return;
+                            return true;
                         }
                         if (exception != null)
                         {
@@ -334,11 +336,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                         }
 
                         continueExecuting = true;
+
+                        return true;
                     }
                     else if (methodExecutor->PreviousExecutor != null)
                     {
                         SetException(exception);
                         Unwind();
+
+                        return false;
                     }
                     else
                     {
@@ -358,6 +364,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                     instance = callback.ObjectInstance;
                     arguments = callback.CallingArguments;
                     genericParameters = callback.CallingGenericParameters;
+                    continueExecuting = false;
                 }
 
                 if (callback.Type == DSharpMethodExecutionCallbackType.ExecutionComplete)

@@ -1,11 +1,12 @@
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.NewArray"/> operation
     /// </summary>
-    public class DSharpNewArrayInstructionExecutor : DSharpMetadataTokenInstructionExecutor
+    public class DSharpNewArrayInstructionExecutor : DSharpTypeInstructionExecutor
     {
         #region Controls
 
@@ -14,7 +15,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return &InstanceExecute;
         }
 
-        protected unsafe override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
+        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* runtimeInfo)
+        {
+            return Create(instruction, ref context, runtimeInfo, false);
+        }
+
+        #endregion
+
+        #region Static
+
+        /// <summary>
+        /// Global instance of <see cref="DSharpBytecodeOperation.NewArray"/> operation executor
+        /// </summary>
+        public static readonly DSharpNewArrayInstructionExecutor Instance = new();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static unsafe DSharpMethodExecutionCallback Create(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* arrayType, bool isStackAlloc)
         {
             if (CheckStackValues(instruction, context, 1, out var error))
             {
@@ -33,31 +49,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 return context.ThrowExecutionException($"Unable to get array length: {exception}");
             }
 
-            DSharpRuntimeTypeInfo* arrayType;
+            DSharpObject* arrayInstance;
 
             try
             {
-                arrayType = context.GetType(metadataToken);
-            }
+                arrayInstance = context.ObjectsContainer.CreateArray(arrayType, length, isStackAlloc ? context.Stack : null);
+            }   
             catch (Exception exception)
             {
                 return context.ThrowExecutionException(exception);
             }
 
-            var arrayInstance = context.ObjectsContainer.CreateArray(arrayType, length, null);
-            context.Stack.PushReference(arrayInstance);
+            if (!isStackAlloc)
+            {
+                context.Stack.PushReference(arrayInstance);
+            }
 
             return DSharpMethodExecutionCallback.Complete();
+
         }
-
-        #endregion
-
-        #region Static
-
-        /// <summary>
-        /// Global instance of <see cref="DSharpBytecodeOperation.NewArray"/> operation executor
-        /// </summary>
-        public static readonly DSharpNewArrayInstructionExecutor Instance = new();
 
         private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {

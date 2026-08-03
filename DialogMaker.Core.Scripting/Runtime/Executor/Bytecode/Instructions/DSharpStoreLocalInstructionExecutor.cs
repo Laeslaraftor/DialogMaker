@@ -26,7 +26,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
 
             var variable = variables->GetItemReference((int)variableIndex);
-            var stackValue = context.Stack.Peek();
+            var stackValue = context.Stack.PeekOnlyValues();
             var objectReference = (DSharpObject*)stackValue.ReadReference();
 
             // Unboxing references to stack

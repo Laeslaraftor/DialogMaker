@@ -15,11 +15,21 @@ namespace DialogMaker.Core.Scripting.Compiler
         ]);
         private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _storeMemberOperations = new([
             DSharpBytecodeOperation.StoreField,
-            DSharpBytecodeOperation.StoreInstanceField
+            DSharpBytecodeOperation.StoreInstanceField,
+            DSharpBytecodeOperation.StoreProperty,
+            DSharpBytecodeOperation.StoreInstanceProperty,
+            DSharpBytecodeOperation.StoreBaseInstanceProperty,
+            DSharpBytecodeOperation.StoreIndexer,
+            DSharpBytecodeOperation.StoreBaseIndexer
         ]);
         private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _loadMemberOperations = new([
             DSharpBytecodeOperation.LoadField,
-            DSharpBytecodeOperation.LoadInstanceField
+            DSharpBytecodeOperation.LoadInstanceField,
+            DSharpBytecodeOperation.LoadProperty,
+            DSharpBytecodeOperation.LoadInstanceProperty,
+            DSharpBytecodeOperation.LoadBaseInstanceProperty,
+            DSharpBytecodeOperation.LoadIndexer,
+            DSharpBytecodeOperation.LoadBaseIndexer
         ]);
         private static readonly Range _uselessPopCombinationsRange = new(0, 5);
         private static readonly ReadOnlyCollection<UselessCombination> _uselessCombinations = new([
@@ -99,6 +109,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                     new(DSharpBytecodeOperation.PopOffsetRepeat, typeof(OffsetCountInstruction), 1, 2)
                 ],
                 UselessCombinationRemovePopOffset12
+            ),
+            new(
+                [
+                    new(DSharpBytecodeOperation.StartScope),
+                    new(DSharpBytecodeOperation.Jump, typeof(ReferenceInstruction)),
+                    new(DSharpBytecodeOperation.EndScope),
+                ],
+                UselessCombinationRemoveJumpScope
             ),
         ]);
         private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _finalUselessOperations = new([
@@ -184,6 +202,13 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         #region Дополнительно
 
+        private static int UselessCombinationRemoveJumpScope(UselessCombination uselessCombination, DSharpBytecodeBuilder builder, int startIndex)
+        {
+            ReplaceInstructionReferences(builder, startIndex);
+            ReplaceInstructionReferences(builder, startIndex + 1);
+
+            return 2;
+        }
         private static int UselessCombinationRemovePopOffset12(UselessCombination uselessCombination, DSharpBytecodeBuilder builder, int startIndex)
         {
             var currentInstruction = builder.Instructions[startIndex];

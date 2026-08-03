@@ -1,9 +1,11 @@
+using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.CallInstance"/> operation
     /// </summary>
-    public class DSharpCallInstanceInstructionExecutor : DSharpMetadataTokenInstructionExecutor
+    public class DSharpCallInstanceInstructionExecutor : DSharpMethodInstructionExecutor
     {
         #region Controls
 
@@ -12,9 +14,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return &InstanceExecute;
         }
 
-        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
+        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeMethodInfo* runtimeInfo)
         {
-            return DSharpCallInstructionExecutor.Call(instruction, ref context, metadataToken, true, false);
+            return DSharpCallInstructionExecutor.Call(instruction, ref context, runtimeInfo, true, false);
         }
 
         #endregion

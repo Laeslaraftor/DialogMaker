@@ -1,4 +1,3 @@
-using Acly.Commands;
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
 using System.Runtime.CompilerServices;
 
@@ -7,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.Call"/> operation
     /// </summary>
-    public class DSharpCallInstructionExecutor : DSharpMetadataTokenInstructionExecutor
+    public class DSharpCallInstructionExecutor : DSharpMethodInstructionExecutor
     {
         #region Controls
 
@@ -16,9 +15,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return &InstanceExecute;
         }
 
-        protected unsafe override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken)
+        protected unsafe override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeMethodInfo* runtimeInfo)
         {
-            return Call(instruction, ref context, metadataToken, false, false);
+            return Call(instruction, ref context, runtimeInfo, false, false);
         }
 
         #endregion
@@ -30,12 +29,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpCallInstructionExecutor Instance = new();
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe DSharpMethodExecutionCallback Call(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken metadataToken, bool isInstance, bool isBase, UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>>? genericParameters = null)
-        {
-            var method = context.TypesProvider.GetMethod(metadataToken);
-            return Call(instruction, ref context, method, isInstance, isBase, genericParameters);
-        }
         internal static unsafe DSharpMethodExecutionCallback Call(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeMethodInfo* method, bool isInstance, bool isBase, UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>>? genericParameters = null)
         {
             var parametersCount = method->ParametersType.Length;

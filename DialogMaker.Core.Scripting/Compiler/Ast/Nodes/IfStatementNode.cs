@@ -16,7 +16,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <summary>
         /// Branch that executes when condition is true
         /// </summary>
-        public StatementNode? ThenBranch { get; set; }
+        public BlockStatementNode? ThenBranch { get; set; }
         /// <summary>
         /// Branch that executes then condition is false
         /// </summary>
@@ -69,12 +69,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             stream.Eat(DSharpTokenType.RightParen);
 
-            statement.ThenBranch = ParseStatement(stream);
+            statement.ThenBranch = BlockStatementNode.Parse(stream);
 
             if (stream.Check(DSharpTokenType.Else))
             {
                 stream.Eat(DSharpTokenType.Else);
-                statement.ElseBranch = ParseStatement(stream);
+
+                if (stream.Check(DSharpTokenType.If))
+                {
+                    statement.ElseBranch = Parse(stream);
+                }
+                else
+                {
+                    statement.ElseBranch = BlockStatementNode.Parse(stream);
+                }
             }
 
             return statement;
