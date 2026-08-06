@@ -16,7 +16,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
         {
             var position = Position + offset;
 
-            if (position >= _lexer.Tokens.Count)
+            if (0 > position || position >= _lexer.Tokens.Count)
             {
                 return null;
             }

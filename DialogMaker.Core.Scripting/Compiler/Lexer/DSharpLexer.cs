@@ -94,7 +94,17 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         private bool IsEndOfFile() => _position >= _source.Length;
         private char Peek() => IsEndOfFile() ? '\0' : _source[_position];
         private char PeekNext() => _position + 1 >= _source.Length ? '\0' : _source[_position + 1];
-        private char PeekPrevious() => _position - 1 >= 0 ? '\0' : _source[_position - 1];
+        private char PeekPrevious()
+        {
+            var index = _position - 1;
+
+            if (0 > index)
+            {
+                return '\0';
+            }
+
+            return _source[_position - 1];
+        }
         private char GetNext()
         {
             char value = Peek();
