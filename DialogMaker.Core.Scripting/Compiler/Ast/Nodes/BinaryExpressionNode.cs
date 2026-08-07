@@ -103,32 +103,83 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         public static ExpressionNode ParseMultiplicative(AstParserStream stream)
         {
             return ParseOperation(stream, ParseShift, DSharpTokenType.Multiply, 
-                                                                     DSharpTokenType.Divide, 
-                                                                     DSharpTokenType.Mod);
+                                                      DSharpTokenType.Divide, 
+                                                      DSharpTokenType.Mod);
         }
         public static ExpressionNode ParseShift(AstParserStream stream)
         {
-            return ParseOperation(stream, UnaryExpressionNode.Parse, DSharpTokenType.ShiftLeft, 
-                                                                     DSharpTokenType.ShiftRight);
+            return ParseOperation(stream, UnaryExpressionNode.Parse, 2, DSharpTokenType.Less, 
+                                                                        DSharpTokenType.Greater);
         }
 
         private static ExpressionNode ParseOperation(AstParserStream stream, Func<AstParserStream, ExpressionNode> parser, params DSharpTokenType[] tokens)
         {
+            return ParseOperation(stream, parser, 1, tokens);
+        }
+        private static ExpressionNode ParseOperation(AstParserStream stream, Func<AstParserStream, ExpressionNode> parser, int repeatTokenCount, params DSharpTokenType[] tokens)
+        {
             var left = parser(stream);
 
-            while (stream.Check(tokens))
+            bool Check()
+            {
+                foreach (var token in tokens)
+                {
+                    bool skip = false;
+
+                    for (int i = 0; i < repeatTokenCount; i++)
+                    {
+                        if (!stream.Check(token, i))
+                        {
+                            skip = true;
+                            break;
+                        }
+                    }
+
+                    if (!skip)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+            DSharpBinaryOperator GetOperator()
+            {
+                var lastTokenType = stream.Peek(-1)!.Type;
+
+                if (repeatTokenCount == 1)
+                {
+                    return (DSharpBinaryOperator)lastTokenType;
+                }
+                if (lastTokenType == DSharpTokenType.Less)
+                {
+                    return DSharpBinaryOperator.ShiftLeft;
+                }
+
+                return DSharpBinaryOperator.ShiftRight;
+            }
+
+            while (Check())
             {
                 if (stream.Current == null)
                 {
                     break;
                 }
 
-                var op = stream.Eat(stream.Current.Type);
+               var operatorToken = stream.Eat(stream.Current.Type);
+
+                for (int i = 1; i < repeatTokenCount; i++)
+                {
+                    stream.Eat(stream.Current.Type);
+                }
+
+                var @operator = GetOperator();
+
                 var right = parser(stream);
-                left = new BinaryExpressionNode(op)
+                left = new BinaryExpressionNode(operatorToken)
                 {
                     Left = left,
-                    Operator = (DSharpBinaryOperator)op.Type,
+                    Operator = @operator,
                     Right = right,
                 };
             }

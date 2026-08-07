@@ -145,11 +145,8 @@ namespace DialogMaker.Core.Tests
         {
             var scriptPath = string.Format(ScriptLexerTests.ScriptPathTemplate, scriptName);
             var script = File.ReadAllText(scriptPath);
-            DSharpLexer lexer = new(script);
-            lexer.Tokenize();
-            AstParser parser = new(lexer);
 
-            var parsedScript = parser.Parse("SimpleScript");
+            var parsedScript = DSharpAstParser.ParseScript("SimpleScript", script);
             DSharpAssemblyBuilder assembly = new("SimpleScript", []);
             DSharpCompiler compiler = new(assembly);
 
@@ -174,13 +171,8 @@ namespace DialogMaker.Core.Tests
                     try
                     {
                         var script = File.ReadAllText(filePath);
-                        DSharpLexer lexer = new(script);
-
-                        lexer.Tokenize();
-
-                        AstParser parser = new(lexer);
                         string fileName = filePath.Replace('\\', '/').Split('/')[^1][..^3];
-                        var parsedScript = parser.Parse(fileName);
+                        var parsedScript = DSharpAstParser.ParseScript(fileName, script);
                         parsedScript.FilePath = filePath;
 
                         scripts.Add(parsedScript);
@@ -207,10 +199,7 @@ namespace DialogMaker.Core.Tests
         private static DSharpScript ParseScript(string filePath, string name)
         {
             var script = File.ReadAllText(filePath);
-            DSharpLexer lexer = new(script);
-            lexer.Tokenize();
-            AstParser parser = new(lexer);
-            return parser.Parse(name);
+            return DSharpAstParser.ParseScript(name, script);
         }
         private static void PrintAssembly(DSharpAssemblyBuilder assembly)
         {

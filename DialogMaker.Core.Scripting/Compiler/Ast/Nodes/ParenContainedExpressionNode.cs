@@ -13,7 +13,33 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public ExpressionNode? Expression { get; set; }
 
-        #region Статика
+        #region Controls
+
+        /// <summary>
+        /// Get content of paren contained expression
+        /// </summary>
+        /// <returns>Content of current expression</returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public ExpressionNode GetContent()
+        {
+            var expression = Expression;
+
+            while (expression is ParenContainedExpressionNode parenContained)
+            {
+                expression = parenContained.Expression;
+            }
+
+            if (expression == null)
+            {
+                throw new InvalidOperationException($"Incomplete expression: {this}");
+            }
+
+            return expression;
+        }
+
+        #endregion
+
+        #region Static
 
         /// <summary>
         /// Parse paren contained expression starts with current token

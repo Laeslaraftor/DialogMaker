@@ -15,9 +15,9 @@ namespace DialogMaker.Core.Tests
         [TestCase("a == null && b == null || ReferenceEquals(a, b)")]
         public static void TestBinaryExpressionCompiling(string expression)
         {
-            DSharpLexer lexer = new(expression);
+            DSharpLexer lexer = new();
+            lexer.Tokenize(expression);
             AstParserStream tokensStream = new(lexer);
-            lexer.Tokenize();
 
             var parsedExpression = ExpressionNode.ParseExpression(tokensStream);
 

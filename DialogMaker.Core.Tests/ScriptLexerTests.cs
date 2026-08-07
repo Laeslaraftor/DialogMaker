@@ -16,7 +16,6 @@ namespace DialogMaker.Core.Tests
         public static void Tokenize()
         {
             var lexer = GetLexer();
-            lexer.Tokenize();
 
             foreach (var token in lexer.Tokens)
             {
@@ -27,9 +26,7 @@ namespace DialogMaker.Core.Tests
         public static void ParseProgram()
         {
             var lexer = GetLexer();
-            lexer.Tokenize();
-            AstParser parser = new(lexer);
-            var program = parser.Parse("Example");
+            var program = DSharpAstParser.ParseScript("Example", lexer);
 
             Console.WriteLine(program.ToString());
             Console.WriteLine();
@@ -48,7 +45,10 @@ namespace DialogMaker.Core.Tests
         private static DSharpLexer GetLexer()
         {
             var script = File.ReadAllText(MathScriptPath);
-            return new(script);
+            DSharpLexer lexer = new();
+            lexer.Tokenize(script);
+
+            return lexer;
         }
     }
 }

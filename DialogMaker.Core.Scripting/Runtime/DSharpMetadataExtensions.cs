@@ -225,10 +225,18 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// Check is current type available to assign variable with destination type
             /// </summary>
             /// <param name="destination">Destination type</param>
+            /// <param name="strict">Use strict check</param>
             /// <returns>Is type assignable to destination type</returns>
-            public bool IsAssignableTo(IDSharpType destination)
+            public bool IsAssignableTo(IDSharpType destination, bool strict = true)
             {
-                return type.CanCastTo(destination) != DSharpCastAvailability.No;
+                var canCast = type.CanCastTo(destination);
+
+                if (strict)
+                {
+                    return canCast == DSharpCastAvailability.Implicit;
+                }
+
+                return canCast != DSharpCastAvailability.No;
             }
             /// <summary>
             /// Check is type can be null

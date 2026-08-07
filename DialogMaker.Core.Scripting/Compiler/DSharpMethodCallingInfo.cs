@@ -70,6 +70,30 @@ namespace DialogMaker.Core.Scripting.Compiler
             return new(Method, parameters, genericParameters);
         }
 
+        /// <summary>
+        /// Get parameter types with replacing generics
+        /// </summary>
+        /// <returns>Array of parameter types with replaced generics</returns>
+        public IDSharpType[] GetCallingParameterTypes()
+        {
+            IDSharpType[] parameters = [.. Method.GetParameters().Select(p => p.Type)];
+
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (GenericParameters.TryGetValue(parameters[i], out var replacedType))
+                {
+                    parameters[i] = replacedType;
+                }
+            }
+
+            return parameters;
+        }
+
+        public override string ToString()
+        {
+            return Method.ToString() ?? string.Empty;
+        }
+
         #endregion
 
         #region Resolving
@@ -102,7 +126,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 if (genericParameters.Length != genericTypes.Length)
                 {
                     throw new InvalidOperationException($"Generic parameters amount not matching. Method \"{method}\" have {genericTypes.Length} generic parameters, but got {genericParameters.Length}");
-                }               
+                }
 
                 for (int i = 0; i < genericTypes.Length; i++)
                 {
@@ -141,7 +165,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                             continue;
                         }
 
-                        var parameter = parameters[i] 
+                        var parameter = parameters[i]
                             ?? throw new InvalidOperationException($"Unable to detect \"{methodParameter.Name}\" parameter type for replacing generic \"{genericType}\" at \"{method}\"");
 
                         if (!methodParameter.Type.CanReplaceGenericType(parameter))
@@ -178,6 +202,79 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             return new(method, parameters, replacedTypes);
+        }
+        /// <summary>
+        /// Get most suitable method calling 
+        /// </summary>
+        /// <param name="callingInfos">List of method calling infos for selecting most suitable calling among them</param>
+        /// <param name="parameters">Calling parameters</param>
+        /// <returns>Most suitable calling info</returns>
+        public static DSharpMethodCallingInfo GetMostSuitable(List<DSharpMethodCallingInfo> callingInfos, IDSharpType?[] parameters)
+        {
+            if (callingInfos.Count == 0)
+            {
+                throw new ArgumentException($"Empty calling infos", nameof(callingInfos));
+            }
+            if (callingInfos.Count == 1)
+            {
+                return callingInfos[0];
+            }
+
+            KeyValuePair<DSharpMethodCallingInfo?, int> minMethodCallingCasts = new(null, int.MaxValue);
+
+            foreach (var callingInfo in callingInfos)
+            {
+                var callingTypes = callingInfo.GetCallingParameterTypes();
+
+                if (callingTypes.Length != parameters.Length)
+                {
+                    throw new InvalidOperationException($"Calling parameter length don't match with provided parameters length: {callingInfo}");
+                }
+
+                int castsCount = 0;
+
+                for (int i = 0; i < callingTypes.Length; i++)
+                {
+                    var callingType = callingTypes[i];
+                    var parameter = parameters[i];
+
+                    if (callingType == parameter)
+                    {
+                        continue;
+                    }
+                    if (parameter == null)
+                    {
+                        castsCount++;
+                        continue;
+                    }
+
+                    var canCast = parameter.CanCastTo(callingType);
+
+                    if (canCast == DSharpCastAvailability.Implicit)
+                    {
+                        continue;
+                    }
+
+                    castsCount++;
+                }
+
+                if (castsCount == 0)
+                {
+                    return callingInfo;
+                }
+
+                if (minMethodCallingCasts.Value > castsCount)
+                {
+                    minMethodCallingCasts = new(callingInfo, castsCount);
+                }
+            }
+
+            if (minMethodCallingCasts.Key == null)
+            {
+                throw new InvalidOperationException("Unable to find most suitable calling");
+            }
+
+            return minMethodCallingCasts.Key;
         }
 
         #endregion

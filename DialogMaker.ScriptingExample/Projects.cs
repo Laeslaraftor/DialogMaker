@@ -26,13 +26,8 @@ namespace DialogMaker.ScriptingExample
                     try
                     {
                         var script = File.ReadAllText(filePath);
-                        DSharpLexer lexer = new(script);
-
-                        lexer.Tokenize();
-
-                        AstParser parser = new(lexer);
                         string fileName = filePath.Replace('\\', '/').Split('/')[^1][..^3];
-                        var parsedScript = parser.Parse(fileName);
+                        var parsedScript = DSharpAstParser.ParseScript(fileName, script);
                         parsedScript.FilePath = filePath;
 
                         scripts.Add(parsedScript);

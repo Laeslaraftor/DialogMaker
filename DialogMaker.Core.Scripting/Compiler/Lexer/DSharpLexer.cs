@@ -7,8 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
     /// <summary>
     /// D# lexer
     /// </summary>
-    /// <param name="source"></param>
-    public class DSharpLexer(string source) : IEnumerable<DSharpToken>
+    public class DSharpLexer : IEnumerable<DSharpToken>
     {
         /// <summary>
         /// List of script tokens
@@ -25,21 +24,49 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// Tab size in symbols
         /// </summary>
         public int TabSize { get; set; } = 4;
+        /// <summary>
+        /// Is lexer tokenizing now
+        /// </summary>
+        public bool IsBusy { get; private set; }
 
-        private readonly string _source = source;
+        private readonly List<DSharpToken> _tokens = [];
+        private string _source = string.Empty;
         private int _position = 0;
         private int _line = 1;
         private int _column = 1;
-        private readonly List<DSharpToken> _tokens = [];
 
         #region Управление
 
         /// <summary>
-        /// Parse script source to tokens
+        /// Parse specified source code to tokens
         /// </summary>
-        public void Tokenize()
+        public void Tokenize(string sourceCode)
         {
+            if (IsBusy)
+            {
+                throw new InvalidOperationException("Lexer is busy now");
+            }
+
+            IsBusy = true;
             _tokens.Clear();
+
+            try
+            {
+                TokenizeImplementation(sourceCode);
+            }
+            catch
+            {
+                throw;
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        private void TokenizeImplementation(string sourceCode)
+        {
+            _source = sourceCode;
 
             while (!IsEndOfFile())
             {
@@ -92,19 +119,19 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         #region Чтение кода
 
         private bool IsEndOfFile() => _position >= _source.Length;
-        private char Peek() => IsEndOfFile() ? '\0' : _source[_position];
-        private char PeekNext() => _position + 1 >= _source.Length ? '\0' : _source[_position + 1];
-        private char PeekPrevious()
+        private char Peek(int offset = 0)
         {
-            var index = _position - 1;
+            var index = _position + offset;
 
-            if (0 > index)
+            if (0 > index || index >= _source.Length)
             {
                 return '\0';
             }
 
-            return _source[_position - 1];
+            return _source[index];
         }
+        private char PeekNext() => Peek(1);
+        private char PeekPrevious() => Peek(-1);
         private char GetNext()
         {
             char value = Peek();

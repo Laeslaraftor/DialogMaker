@@ -393,10 +393,11 @@ namespace DialogMaker.Core.Scripting.Runtime
                 return DSharpCastAvailability.No;
             }
             if (IsPointFloating(target) && !IsPointFloating(destination) ||
-                !IsPointFloating(target) && IsPointFloating(destination) ||
-                IsUnsigned(target) && !IsUnsigned(destination) ||
-                !IsUnsigned(target) && IsUnsigned(destination) ||
-                destination.Size > target.Size)
+                target == Char || destination == Char ||
+                target.Size > destination.Size ||
+                (target.Size >= destination.Size &&
+                 (IsUnsigned(target) && !IsUnsigned(destination) ||
+                  !IsUnsigned(target) && IsUnsigned(destination))))
             {
                 return DSharpCastAvailability.Explicit;
             }

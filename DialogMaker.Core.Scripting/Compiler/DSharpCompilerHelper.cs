@@ -942,7 +942,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     {
                         throw new InvalidOperationException($"Unable to get type of expression: {castExpression.Expression}");
                     }
-                    if (!expressionType.IsAssignableTo(type))
+                    if (!expressionType.IsAssignableTo(type, false))
                     {
                         throw new InvalidOperationException($"Unable to cast \"{expressionType}\" to \"{type}\"");
                     }
@@ -1022,11 +1022,11 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     if (rightTypeInfo.Size > leftTypeInfo.Size)
                     {
-                        return rightType;
+                        return leftType;
                     }
                     else
                     {
-                        return leftType;
+                        return rightType;
                     }
                 }
 

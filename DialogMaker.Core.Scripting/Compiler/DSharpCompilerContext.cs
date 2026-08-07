@@ -338,6 +338,11 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             result = default;
 
+            if (expression is ParenContainedExpressionNode parentContained)
+            {
+                expression = parentContained.GetContent();
+            }
+
             if (expression is IdentifierExpressionNode identifier)
             {
                 var name = identifier.GetName(true);
@@ -371,6 +376,18 @@ namespace DialogMaker.Core.Scripting.Compiler
                         result = new(globalMember);
                     }
                 }
+            }
+            else if (expression.TrySimplifyToLiteral(out var simplifiedLiteral))
+            {
+                if (Assembly == null)
+                {
+                    throw new InvalidOperationException($"Unable to get literal type when assembly not provided");
+                }
+
+                var type = Assembly.GetType(simplifiedLiteral.Type);
+                result = new(type);
+
+                return true;
             }
             else if (expression is ThisExpressionNode thisExpression)
             {
@@ -804,6 +821,11 @@ namespace DialogMaker.Core.Scripting.Compiler
             ExpressionNode callee = callExpression.Callee;
             var context = this;
 
+            while (callee is ParenContainedExpressionNode parenContainedExpression)
+            {
+                callee = parenContainedExpression.GetContent();
+            }
+
             if (callExpression.Callee is MemberAccessExpressionNode memberAccess)
             {
                 if (Assembly == null)
@@ -979,8 +1001,38 @@ namespace DialogMaker.Core.Scripting.Compiler
                                                          method.MethodType == DSharpMethodType.Default);
             }
 
-            DSharpMethodCallingInfo? methodCallingInfo = null;
+            List<DSharpMethodCallingInfo> callingInfos = [];
             List<Exception> callingExceptions = [];
+
+            bool IsOverriden(IDSharpMethodInfo method)
+            {
+                foreach (var methodCallingInfo in callingInfos)
+                {
+                    if (methodCallingInfo.Method.OverrideMethod != null)
+                    {
+                        var currentOverride = methodCallingInfo.Method.OverrideMethod;
+                        bool skipMethod = false;
+
+                        while (currentOverride != null)
+                        {
+                            if (currentOverride == method)
+                            {
+                                skipMethod = true;
+                                break;
+                            }
+
+                            currentOverride = currentOverride.OverrideMethod;
+                        }
+
+                        if (skipMethod)
+                        {
+                            return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
 
             foreach (var member in members)
             {
@@ -1001,34 +1053,12 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     var callingInfo = DSharpMethodCallingInfo.Create(method, parameters, genericParameters);
 
-                    if (methodCallingInfo != null && methodCallingInfo.Method.DeclaringType.ObjectType != DSharpObjectType.Interface)
+                    if (callingInfos.Count > 0 && IsOverriden(method))
                     {
-                        if (methodCallingInfo.Method.OverrideMethod != null)
-                        {
-                            var currentOverride = methodCallingInfo.Method.OverrideMethod;
-                            bool skipMethod = false;
-
-                            while (currentOverride != null)
-                            {
-                                if (currentOverride == method)
-                                {
-                                    skipMethod = true;
-                                    break;
-                                }
-
-                                currentOverride = currentOverride.OverrideMethod;
-                            }
-
-                            if (skipMethod)
-                            {
-                                continue;
-                            }
-                        }
-
-                        throw new InvalidOperationException($"Multiple methods \"{name}\" with same parameters was found at \"{membersSource}\"");
+                        continue;
                     }
 
-                    methodCallingInfo = callingInfo;
+                    callingInfos.Add(callingInfo);
                 }
                 catch (Exception error)
                 {
@@ -1036,9 +1066,9 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
             }
 
-            if (methodCallingInfo != null)
+            if (callingInfos.Count > 0)
             {
-                return methodCallingInfo;
+                return DSharpMethodCallingInfo.GetMostSuitable(callingInfos, parameters);
             }
 
             if (callingExceptions.Count == 1)
