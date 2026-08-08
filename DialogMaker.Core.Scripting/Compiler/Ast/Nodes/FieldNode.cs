@@ -183,7 +183,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             else if (stream.Check(DSharpTokenType.Lambda))
             {
                 node.CanWrite = false;
-                node.Getter = BlockStatementNode.Parse(stream, DSharpTokenType.Semicolon, DSharpTokenType.Lambda);
+                node.Getter = BlockStatementNode.Parse(stream, DSharpStatementType.Code, DSharpTokenType.Semicolon, DSharpTokenType.Lambda);
                 node.CustomGetterSetter = true;
 
                 return true;
@@ -216,12 +216,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
             else if (stream.Check(DSharpTokenType.Lambda))
             {
-                result = BlockStatementNode.Parse(stream, DSharpTokenType.Semicolon, DSharpTokenType.Lambda);
+                result = BlockStatementNode.Parse(stream, DSharpStatementType.Code, DSharpTokenType.Semicolon, DSharpTokenType.Lambda);
                 return true;
             }
             else if (stream.Check(DSharpTokenType.LeftBrace))
             {
-                result = BlockStatementNode.Parse(stream);
+                result = BlockStatementNode.Parse(stream, DSharpStatementType.Code);
                 return true;
             }
             else

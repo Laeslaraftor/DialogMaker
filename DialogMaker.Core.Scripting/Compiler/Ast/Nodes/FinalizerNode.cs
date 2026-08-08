@@ -31,7 +31,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             };
 
             ParseParameters(stream, finalizer.Parameters);
-            finalizer.Body = BlockStatementNode.Parse(stream);
+            finalizer.Body = BlockStatementNode.Parse(stream, DSharpStatementType.Code);
 
             return finalizer;
         }

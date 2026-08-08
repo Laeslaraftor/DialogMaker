@@ -51,6 +51,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 if (customAccessor != null)
                 {
+                    settings.IdentifiersAsField ??= [];
+                    settings.PropertyFieldProvider = GetValueField;
                     _propertiesWithCustomAccessors.Add(property);
                     CompileMethod(accessorMethod, customAccessor, settings);
                 }

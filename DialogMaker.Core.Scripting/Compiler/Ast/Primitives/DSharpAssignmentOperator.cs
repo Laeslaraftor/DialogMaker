@@ -5,6 +5,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
     public enum DSharpAssignmentOperator
     {
         Assign = DSharpTokenType.Assign,
+        AssignIfNull = DSharpTokenType.AssignIfNull,
         PlusAssign = DSharpTokenType.PlusAssign,
         MinusAssign = DSharpTokenType.MinusAssign,
         DivideAssign = DSharpTokenType.DivideAssign,

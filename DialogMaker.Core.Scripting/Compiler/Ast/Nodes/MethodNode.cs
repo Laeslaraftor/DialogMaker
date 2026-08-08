@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+using DialogMaker.Core.Scripting.Runtime;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
@@ -75,11 +76,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             if (stream.Check(DSharpTokenType.Lambda))
             {
-                method.Body = BlockStatementNode.Parse(stream, DSharpTokenType.Semicolon, DSharpTokenType.Lambda);
+                method.Body = BlockStatementNode.Parse(stream, DSharpStatementType.Code, DSharpTokenType.Semicolon, DSharpTokenType.Lambda);
             }
             else if (stream.Check(DSharpTokenType.LeftBrace))
             {
-                method.Body = BlockStatementNode.Parse(stream);
+                method.Body = BlockStatementNode.Parse(stream, DSharpStatementType.Code);
             }
             else
             {

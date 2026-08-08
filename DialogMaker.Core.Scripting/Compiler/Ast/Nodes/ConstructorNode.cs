@@ -75,7 +75,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             if (stream.Check(DSharpTokenType.LeftBrace))
             {
-                constructor.Body = BlockStatementNode.Parse(stream);
+                constructor.Body = BlockStatementNode.Parse(stream, DSharpStatementType.Code);
             }
             else
             {

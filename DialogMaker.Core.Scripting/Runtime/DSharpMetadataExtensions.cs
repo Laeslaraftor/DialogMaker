@@ -341,6 +341,38 @@ namespace DialogMaker.Core.Scripting.Runtime
                     return DSharpCastAvailability.Explicit;
                 }
 
+                if (type.GenericTemplate != null && type.GenericTemplate == destination.GenericTemplate)
+                {
+                    var typeGenerics = type.GetGenericParameters();
+                    var destinationGenerics = destination.GetGenericParameters();
+
+                    if (typeGenerics.Length == 0)
+                    {
+                        typeGenerics = type.GetGenericTypes();
+                    }
+                    if (destinationGenerics.Length == 0)
+                    {
+                        destinationGenerics = destination.GetGenericTypes();
+                    }
+
+                    bool canCast = true;
+
+                    for (int i = 0; i < typeGenerics.Length; i++)
+                    {
+                        if (!typeGenerics[i].IsAssignableTo(destinationGenerics[i]))
+                        {
+                            canCast = false;
+                            break;
+                        }
+                    }
+
+                    if (canCast)
+                    {
+                        castOperator = null;
+                        return DSharpCastAvailability.Implicit;
+                    }
+                }
+
                 foreach (var @operator in type.GetCastOperators().Union(destination.GetCastOperators()))
                 {
                     if (@operator.ReturnType != destination)

@@ -855,10 +855,22 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                         if (genericParameters.Count > 0)
                         {
-                            baseTypeInfo.GenericParameters = [];
+                            //baseTypeInfo.GenericParameters = [];
                         }
 
-                        var setupTypeToken = ResolveType(typeBuilder, baseTypeInfo);
+                        DSharpTypeToken setupTypeToken;
+
+                        try
+                        {
+                            setupTypeToken = ResolveType(typeBuilder, baseTypeInfo);
+                        }
+                        catch
+                        {
+                            typeBuilder.ClearBaseTypes();
+                            typesToSetupBases.Add(type, declaration);
+                            throw;
+                        }
+
                         var baseType = Assembly.GetType(setupTypeToken);
 
                         if (baseType is DSharpTypeBuilder baseTypeBuilder &&

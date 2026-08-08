@@ -10,6 +10,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         public Dictionary<string, DSharpFieldBuilder>? IdentifiersAsField { get; set; }
         public Dictionary<string, DSharpPropertyBuilder>? IdentifiersAsProperties { get; set; }
         public Dictionary<string, DSharpMethodBuilderParameter>? LocalVariables { get; set; }
+        public Dictionary<IDSharpParameterInfo, IDSharpMethodInfo>? UsingVariables { get; set; }
         public HashSet<DSharpMethodBuilder>? AlwaysReturnMethods { get; set; }
         public HashSet<IDSharpMethodInfo>? CallingsToAwait { get; set; }
         public HashSet<ExpressionNode>? BannedExpressions { get; set; }
@@ -17,6 +18,8 @@ namespace DialogMaker.Core.Scripting.Compiler
         public bool NextNonVirtualizedAccess { get; set; }
         public bool LastOperationIsReturnsValue { get; set; }
         public Dictionary<ExpressionNode, DSharpMethodCallingInfo>? LastMethodCallingInfo { get; set; }
+        public bool SetupNextContextAsInsideTryBlockWithFinally { get; set; }
+        public Func<DSharpFieldBuilder>? PropertyFieldProvider { get; set; }
 
         public readonly bool BanExpression(ExpressionNode expression) => BannedExpressions?.Add(expression) == true;
         public readonly bool IsExpressionBanned(ExpressionNode? expression)

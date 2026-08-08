@@ -43,7 +43,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             stream.Eat(DSharpTokenType.RightParen);
 
-            result.Body = BlockStatementNode.Parse(stream);
+            result.Body = BlockStatementNode.Parse(stream, DSharpStatementType.Code);
 
             return result;
         }

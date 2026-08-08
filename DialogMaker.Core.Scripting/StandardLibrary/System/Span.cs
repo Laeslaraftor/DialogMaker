@@ -77,7 +77,13 @@ public struct Span<T>
 
         return result;
     }
+    public Span<char> Slice(int startIndex, int length)
+    {
+        return new(_itemsPointer + sizeof(T) * startIndex, length);
+    }
 
     private extern T GetValue(nint items, int index);
     private extern void SetValue(nint items, int index, T value);
+
+    public static implicit operator Span<T>(T[] items) => new Span<T>(items);
 }

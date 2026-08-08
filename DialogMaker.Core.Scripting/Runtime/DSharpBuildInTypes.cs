@@ -32,6 +32,10 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// </summary>
             public static readonly DSharpBuildInTypeInfo Exception = new("System.Exception");
             /// <summary>
+            /// IDisposable interface
+            /// </summary>
+            public static readonly DSharpBuildInTypeInfo IDisposable = new("System.IDisposable");
+            /// <summary>
             /// Standard enumerator interface
             /// </summary>
             public static readonly DSharpBuildInTypeInfo IEnumerator = new("System.Collections.IEnumerator");

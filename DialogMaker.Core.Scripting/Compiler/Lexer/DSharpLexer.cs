@@ -102,7 +102,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                     ReadNumber();
                     continue;
                 }
-                if (char.IsLetter(current) || current == '_')
+                if (char.IsLetter(current) || current == '_' || current == '@')
                 {
                     ReadIdentifierOrKeyword();
                     continue;
@@ -322,7 +322,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
             int startCol = _column;
             StringBuilder builder = new();
 
-            while (!IsEndOfFile() && (char.IsLetterOrDigit(Peek()) || Peek() == '_'))
+            while (!IsEndOfFile() && (char.IsLetterOrDigit(Peek()) || Peek() == '_' || Peek() == '@'))
             {
                 builder.Append(GetNext());
             }
@@ -536,10 +536,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                 case ':':
                     AddToken(DSharpTokenType.Colon, ":", startLine, startColumn);
                     break;
-                case '@':
-                    AddToken(DSharpTokenType.At, "@", startLine, startColumn);
-                    break;
                 case '?':
+                    if (next == '?' && PeekNext() == '=')
+                    {
+                        GetNext();
+                        GetNext();
+                        AddToken(DSharpTokenType.AssignIfNull, "??=", startLine, startColumn);
+                        break;
+                    }
+
                     AddToken(DSharpTokenType.Question, "?", startLine, startColumn);
                     break;
                 case '~':

@@ -65,7 +65,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             return new NamespaceBlockStatementBlock(namespaceKeyword)
             {
                 Identifier = identifier,
-                Block = BlockStatementNode.Parse(stream)
+                Block = BlockStatementNode.Parse(stream, DSharpStatementType.Declaration)
             };
         }
 

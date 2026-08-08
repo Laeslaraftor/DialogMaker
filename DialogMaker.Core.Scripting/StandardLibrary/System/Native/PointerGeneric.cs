@@ -13,6 +13,8 @@ public struct Pointer<T> where T : struct
         set => Pointer.WriteValue(_address + sizeof(T) * offset, value);
     }
 
+    public bool IsNull => _address == 0;
+
     private readonly nint _address;
     
     public TValue Read<TValue>() where TValue : struct

@@ -1,6 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
 
-namespace DialogMaker.Core.Scripting.Compiler.Ast
+namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
     /// Access modifier of object type or it's member

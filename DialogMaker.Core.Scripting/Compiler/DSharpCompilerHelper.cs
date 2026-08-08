@@ -545,6 +545,53 @@ namespace DialogMaker.Core.Scripting.Compiler
                 return true;
             }
         }
+        extension(TryStatementNode tryStatement)
+        {
+            /// <summary>
+            /// Check all paths in current if statement for returning values
+            /// </summary>
+            /// <param name="assembly">Assembly builder for finding types</param>
+            /// <param name="context">Compiler context</param>
+            /// <returns>Is all paths returns some value</returns>
+            public bool AllPathReturns(DSharpAssemblyBuilder assembly, DSharpCompilerContext context)
+            {
+                if (tryStatement.TryBlock == null ||
+                    !tryStatement.TryBlock.AllPathReturns(assembly, context))
+                {
+                    return false;
+                }
+
+                foreach (var catchBlock in tryStatement.CatchBlocks)
+                {
+                    if (catchBlock.Statements == null)
+                    {
+                        continue;
+                    }
+                    if (catchBlock.ExceptionType == null)
+                    {
+                        return catchBlock.Statements.AllPathReturns(assembly, context);
+                    }
+
+                    IDSharpType exceptionType;
+
+                    try
+                    {
+                        exceptionType = (IDSharpType)assembly.GetType(context.ResolveType(catchBlock.ExceptionType));
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+
+                    if (exceptionType == assembly.ExceptionType)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
         extension(BlockStatementNode blockStatement)
         {
             /// <summary>
@@ -559,7 +606,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     var expression = expressionStatement.Expression;
 
-                    if (expression == null) 
+                    if (expression == null)
                     {
                         return false;
                     }
@@ -614,6 +661,22 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                     else if (statement is IfStatementNode ifStatement &&
                              ifStatement.AllPathReturns(assembly, context))
+                    {
+                        return true;
+                    }
+                    else if (statement is TryStatementNode tryStatement &&
+                             tryStatement.AllPathReturns(assembly, context))
+                    {
+                        return true;
+                    }
+                    else if (statement is UsingVariableStatementNode usingVariableStatement &&
+                             usingVariableStatement.Body != null &&
+                             usingVariableStatement.Body.AllPathReturns(assembly, context))
+                    {
+                        return true;
+                    }
+                    else if (statement is BlockStatementNode otherBlockStatement &&
+                             otherBlockStatement.AllPathReturns(assembly, context))
                     {
                         return true;
                     }
@@ -981,7 +1044,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     var typeToken = context.ResolveType(asExpression.ConvertType);
 
-                    return (IDSharpType)typeToken;
+                    return (IDSharpType)assembly.GetType(typeToken);
                 }
 
                 throw new ArgumentException($"Unable to get type of expression: {expression}", nameof(expression));

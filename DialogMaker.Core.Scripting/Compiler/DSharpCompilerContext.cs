@@ -4,6 +4,7 @@ using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics.CodeAnalysis;
+using System.Dynamic;
 using System.Net;
 using System.Text;
 
@@ -30,6 +31,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             ParentExpression = context.ParentExpression;
             CurrentLoopStartInstruction = context.CurrentLoopStartInstruction;
             CurrentLoopEndInstruction = context.CurrentLoopEndInstruction;
+            HasFinally = context.HasFinally;
             NowInCatchBlock = context.NowInCatchBlock;
             NowInFinallyBlock = context.NowInFinallyBlock;
 
@@ -60,6 +62,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         public ExpressionNode? ParentExpression { get; set; }
         public DSharpBytecodeBuilder.Instruction? CurrentLoopStartInstruction { get; set; }
         public DSharpBytecodeBuilder.Instruction? CurrentLoopEndInstruction { get; set; }
+        public bool HasFinally { get; set; }
         public bool NowInCatchBlock { get; set; }
         public bool NowInFinallyBlock { get; set; }
         public DSharpCompilerScope? Scope { get; set; }
@@ -374,6 +377,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                     if (globalMember != null)
                     {
                         result = new(globalMember);
+                    }
+                    else if (MemberResolver != null)
+                    {
+                        var member = MemberResolver(this, expression);
+
+                        if (member != null)
+                        {
+                            result = new(member);
+                        }
                     }
                 }
             }

@@ -39,16 +39,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             ForStatementNode statement = new(forToken)
             {
-                Initializer = ParseStatement(stream)
+                Initializer = ParseCode(stream),
+                Condition = ExpressionNode.ParseExpression(stream)
             };
 
-            //stream.Eat(DSharpTokenType.Semicolon);
-
-            statement.Condition = ExpressionNode.ParseExpression(stream);
             stream.Eat(DSharpTokenType.Semicolon);
             statement.Increment = ExpressionNode.ParseExpression(stream);
             stream.Eat(DSharpTokenType.RightParen);
-            statement.Body = ParseStatement(stream);
+            statement.Body = ParseCode(stream);
 
             return statement;
         }

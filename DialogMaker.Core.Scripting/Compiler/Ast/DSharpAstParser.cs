@@ -67,7 +67,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
         private static DSharpScript Parse(string scriptName, AstParserStream stream)
         {
             DSharpScript script = new(scriptName);
-            BlockStatementNode.ParseBody(stream, script.Statements);
+            BlockStatementNode.ParseBody(stream, DSharpStatementType.Any, script.Statements);
 
             return script;
         }

@@ -38,7 +38,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             
             if (!stream.Check(DSharpTokenType.Semicolon))
             {
-                statement.Body = ParseStatement(stream);
+                statement.Body = ParseCode(stream);
             }
             else
             {

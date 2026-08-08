@@ -238,11 +238,19 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
-        public DSharpTypeToken SpanTypeToken
+        public DSharpTypeToken SpanToken
         {
             get
             {
                 field ??= GetTypeToken(SpanType);
+                return field;
+            }
+        }
+        public DSharpTypeToken IDisposableToken
+        {
+            get
+            {
+                field ??= GetTypeToken(IDisposableType);
                 return field;
             }
         }
@@ -423,6 +431,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
+        public IDSharpType IDisposableType
+        {
+            get
+            {
+                field ??= IDisposableTypeInfo.Type;
+                return field;
+            }
+        }
         public DSharpArrayType ArrayBaseType
         {
             get
@@ -468,6 +484,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             get
             {
                 field ??= DSharpSpanType.Create(this);
+                return field;
+            }
+        }
+        public DSharpIDisposableType IDisposableTypeInfo
+        {
+            get
+            {
+                field ??= DSharpIDisposableType.Create(this);
                 return field;
             }
         }
@@ -818,7 +842,21 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                         return newType.IsAssignableTo(oldType);
                     }
 
-                    if (implementation is IDSharpPropertyInfo property)
+                    if (implementation is IDSharpIndexerInfo indexer)
+                    {
+                        var newIndexer = replacedType.GetIndexers(i => IsSame(i) && TypesEquals(indexer.PropertyType, i.PropertyType) &&
+                                                                       i.GetterAccess == indexer.GetterAccess &&
+                                                                       i.SetterAccess == indexer.SetterAccess &&
+                                                                       i.GetParameters().Select(p => p.Type).IsAssignableTo(indexer.GetParameters().Select(p => p.Type))).FirstOrDefault();
+
+                        if (newIndexer == null)
+                        {
+                            throw new InvalidOperationException($"Unable to find new generic indexer implementation for \"{implementation}\"");
+                        }
+
+                        addImplementation((T)newIndexer);
+                    }
+                    else if (implementation is IDSharpPropertyInfo property)
                     {
                         var newProperty = replacedType.GetProperties(p => IsSame(p) && TypesEquals(property.PropertyType, p.PropertyType) &&
                                                                           p.GetterAccess == property.GetterAccess &&

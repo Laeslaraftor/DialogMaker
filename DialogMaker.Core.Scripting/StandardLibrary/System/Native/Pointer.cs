@@ -7,6 +7,8 @@ public struct Pointer
         _address = address;
     }
 
+    public bool IsNull => _address == 0;
+
     private readonly nint _address;
 
     public T Read<T>() where T : struct

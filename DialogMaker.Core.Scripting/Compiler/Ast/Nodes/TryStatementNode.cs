@@ -33,7 +33,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             var token = stream.Eat(DSharpTokenType.Try);
             TryStatementNode result = new(token)
             {
-                TryBlock = BlockStatementNode.Parse(stream)
+                TryBlock = BlockStatementNode.Parse(stream, DSharpStatementType.Code)
             };
 
             while (stream.Check(DSharpTokenType.Catch))
@@ -55,14 +55,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     stream.Eat(DSharpTokenType.RightParen);
                 }
 
-                block.Statements = BlockStatementNode.Parse(stream);
+                block.Statements = BlockStatementNode.Parse(stream, DSharpStatementType.Code);
                 result.CatchBlocks.Add(block);
             }
 
             if (stream.Check(DSharpTokenType.Finally))
             {
                 stream.Eat(DSharpTokenType.Finally);
-                result.FinallyBlock = BlockStatementNode.Parse(stream);
+                result.FinallyBlock = BlockStatementNode.Parse(stream, DSharpStatementType.Code);
             }
 
             return result;

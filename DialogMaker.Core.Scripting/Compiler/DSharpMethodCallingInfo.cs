@@ -252,10 +252,11 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     if (canCast == DSharpCastAvailability.Implicit)
                     {
+                        castsCount++;
                         continue;
                     }
 
-                    castsCount++;
+                    castsCount += 2;
                 }
 
                 if (castsCount == 0)

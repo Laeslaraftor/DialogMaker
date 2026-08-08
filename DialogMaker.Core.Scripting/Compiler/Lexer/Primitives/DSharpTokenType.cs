@@ -384,6 +384,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// </summary>
         Assign,
         /// <summary>
+        /// Assign if null operator (??=)
+        /// </summary>
+        AssignIfNull,
+        /// <summary>
         /// Plus operator (+)
         /// </summary>
         Plus, 

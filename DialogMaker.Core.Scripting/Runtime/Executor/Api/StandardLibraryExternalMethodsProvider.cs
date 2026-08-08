@@ -845,7 +845,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
             if (arguments.Length == 1)
             {
                 var textArg = arguments[0];
-                var stringInstance = *(DSharpObject**)textArg.Buffer.StackPointer;
+                var stringInstance = textArg.Buffer.ReadAsObject();
+
+                if (stringInstance == null)
+                {
+                    return DSharpExternalMethodResult.Null;
+                }
+
                 char* chars = DSharpObject.GetData<char>(stringInstance);
                 var length = DSharpArray.GetLength(stringInstance);
 

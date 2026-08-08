@@ -47,6 +47,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 {
                     return context.ThrowExecutionException($"Cast available only for value types, got: {obj->Type->ToString()}");
                 }
+                if (obj->Type == type)
+                {
+                    if (type->IsValueType && obj->IsReferenceObject)
+                    {
+                        context.Stack.Pop();
+                        context.Stack.PushStructure(obj, true);
+                    }
+
+                    return DSharpMethodExecutionCallback.Complete();
+                }
                 if (obj->Type == context.TypesProvider.Boolean)
                 {
                     decimalValue = lastValue.ReadAsBoolean() ? 1 : 0;

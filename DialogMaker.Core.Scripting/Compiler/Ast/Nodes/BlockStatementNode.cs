@@ -14,12 +14,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public List<StatementNode> Statements { get; set; } = [];
 
-        #region Управление
+        #region Controls
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             if (Statements.Count == 0)
@@ -40,20 +36,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #endregion
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse block start with current token
         /// </summary>
         /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="type">Statements type</param>
+        /// <param name="startWith">Token that indicate start of statements block</param>
         /// <param name="endWith">Token that indicate end of statements block</param>
         /// <returns>Parsed block of statements</returns>
-        public static BlockStatementNode Parse(AstParserStream stream, DSharpTokenType endWith = DSharpTokenType.RightBrace, DSharpTokenType startWith = DSharpTokenType.LeftBrace)
+        public static BlockStatementNode Parse(AstParserStream stream, DSharpStatementType type, DSharpTokenType endWith = DSharpTokenType.RightBrace, DSharpTokenType startWith = DSharpTokenType.LeftBrace)
         {
             var blockStartToken = stream.Eat(startWith);
             BlockStatementNode block = new(blockStartToken);
 
-            ParseBody(stream, block.Statements, endWith);
+            ParseBody(stream, type, block.Statements, endWith);
 
             if (endWith != DSharpTokenType.Semicolon)
             {
@@ -66,9 +64,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Parse all statements and add them to buffer
         /// </summary>
         /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="type">Statements type</param>
         /// <param name="buffer">Buffer of statements</param>
         /// <param name="endWith">Token that indicate end of statements block</param>
-        public static void ParseBody(AstParserStream stream, List<StatementNode> buffer, DSharpTokenType endWith = DSharpTokenType.RightBrace)
+        public static void ParseBody(AstParserStream stream, DSharpStatementType type, List<StatementNode> buffer, DSharpTokenType endWith = DSharpTokenType.RightBrace)
         {
             while (!stream.Check(endWith) && !stream.IsEndOfFile())
             {
@@ -79,7 +78,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     continue;
                 }
 
-                buffer.Add(ParseStatement(stream));
+                buffer.Add(ParseStatement(stream, type));
 
                 if (endWith == DSharpTokenType.Semicolon)
                 {
@@ -91,12 +90,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Parse all statements
         /// </summary>
         /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="type">Statements type</param>
         /// <param name="endWith">Token that indicate end of statements block</param>
         /// <returns>List of parsed statements</returns>
-        public static List<StatementNode> ParseBody(AstParserStream stream, DSharpTokenType endWith = DSharpTokenType.RightBrace)
+        public static List<StatementNode> ParseBody(AstParserStream stream, DSharpStatementType type, DSharpTokenType endWith = DSharpTokenType.RightBrace)
         {
             List<StatementNode> buffer = [];
-            ParseBody(stream, buffer, endWith);
+            ParseBody(stream, type, buffer, endWith);
 
             return buffer;
         }

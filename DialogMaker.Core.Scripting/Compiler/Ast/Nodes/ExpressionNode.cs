@@ -160,9 +160,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                         Arguments = args
                     };
                 }
-                //else if (stream.Check(DSharpTokenType.As, DSharpTokenType.Is))
-                //{
-                //}
                 else
                 {
                     break;

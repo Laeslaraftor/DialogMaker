@@ -46,6 +46,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 PushNullOrEmpty(context.Stack, type);
                 return DSharpMethodExecutionCallback.Complete();
             }
+            else if (obj->Type == type)
+            {
+                if (type->IsValueType && obj->IsReferenceObject)
+                {
+                    context.Stack.Pop();
+                    context.Stack.PushStructure(obj, true);
+                }
+
+                return DSharpMethodExecutionCallback.Complete();
+            }
             else if (obj->Type->IsValueType &&
                      obj->Type->BuildInValueTypeIndex != -1 &&
                      type->BuildInValueTypeIndex != -1)

@@ -76,6 +76,46 @@ public class Program
             {
                 Console.Clear();
             }
+            else if (value == "using")
+            {
+                using (DisposableObject disposable = new("first disposable"))
+                {
+                    Console.WriteLine("Now inside disposable block");
+                }
+
+                Console.WriteLine();
+                using DisposableObject disposable2 = new("second disposable");
+                throw new InvalidOperationException("Exception after creating disposable");
+            }
+            else if (value == "split")
+            {
+                Console.Write("Enter value: ");
+                var valueToSplit = Console.ReadLine();
+                Console.Write("Enter separator: ");
+                var separator = Console.ReadLine();
+                var parts = valueToSplit.Split(separator[0]);
+
+                Console.WriteLine();
+                Console.WriteLine("Parts:");
+
+                foreach (var part in parts)
+                {
+                    Console.WriteLine(part);
+                }
+            }
+            else if (value == "replace")
+            {
+                Console.Write("Enter value: ");
+                var valueToTestReplacing = Console.ReadLine();
+                Console.Write("Enter value that need to replace: ");
+                var oldValue = Console.ReadLine();
+                Console.Write("Enter new value: ");
+                var newValue = Console.ReadLine();
+                valueToTestReplacing = valueToTestReplacing.Replace(oldValue, newValue);
+
+                Console.WriteLine();
+                Console.WriteLine("New value: " + valueToTestReplacing);
+            }
             else if (value == "exit")
             {
                 break;
@@ -167,6 +207,21 @@ public class Program
     }
 }
 
+public class DisposableObject : IDisposable
+{
+    public DisposableObject(string name)
+    {
+        _name = name;
+        Console.WriteLine("Disposable object \"" + name + "\" created");
+    }
+
+    private readonly string _name;
+
+    public void Dispose()
+    {
+        Console.WriteLine("Object \"" + _name + "\" was successfully disposed!");
+    }
+}
 public struct GenericObject<T>
 {
     public GenericObject()

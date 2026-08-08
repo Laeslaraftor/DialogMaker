@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+﻿using Acly.Execution;
+using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
@@ -29,6 +30,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             var code = method.GetBytecodeBuilder();
             settings.LocalVariables ??= [];
+            settings.UsingVariables ??= [];
             settings.AlwaysReturnMethods ??= [];
             settings.BannedExpressions ??= [];
             settings.LastMethodCallingInfo ??= [];
@@ -38,6 +40,38 @@ namespace DialogMaker.Core.Scripting.Compiler
                 TypeResolver = code.ExpressionTypeResolver,
                 MemberResolver = code.ExpressionMemberResolver,
             };
+
+            if (settings.IdentifiersAsField != null)
+            {
+                context.MemberResolver = (context, obj) =>
+                {
+                    string? name = null;
+
+                    if (obj is string str)
+                    {
+                        name = str;
+                    }
+                    else if (obj is IdentifierExpressionNode node)
+                    {
+                        name = node.Name;
+                    }
+
+                    if (name == FieldKeyword)
+                    {
+                        if (settings.IdentifiersAsField.TryGetValue(FieldKeyword, out var field))
+                        {
+                            return field;
+                        }
+                        else if (settings.PropertyFieldProvider != null)
+                        {
+                            return settings.PropertyFieldProvider();
+                        }
+                    }
+
+                    return code.ExpressionMemberResolver(context, obj);
+                };
+            }
+
             context.Scope = GetScope(method);
 
             if (method.MethodType == DSharpMethodType.Constructor &&
@@ -210,9 +244,60 @@ namespace DialogMaker.Core.Scripting.Compiler
                 context.Scope = new DSharpCompilerMethodScope(method, context.Scope);
             }
 
+            int startInstructionsCount = code.Instructions.Count;
+
             foreach (var statement in blockStatement.Statements)
             {
                 CompileStatement(method, statement, blockStatement, depth, code, ref settings, context);
+
+                if (settings.SetupNextContextAsInsideTryBlockWithFinally)
+                {
+                    settings.SetupNextContextAsInsideTryBlockWithFinally = false;
+                    context.HasFinally = true;
+                }
+            }
+
+            if (settings.UsingVariables != null && settings.UsingVariables.Count > 0)
+            {
+                List<DSharpBytecodeBuilder.Instruction> instructions = [];
+
+                while (code.Instructions.Count > startInstructionsCount)
+                {
+                    int lastIndex = code.Instructions.Count - 1;
+                    instructions.Add(code.Instructions[lastIndex]);
+                    code.Instructions.RemoveAt(lastIndex);
+                }
+
+                instructions.Reverse();
+
+                code.StartTrying();
+                var catchReference = code.RegisterTypedCatch(Assembly.ExceptionType);
+                var finallyReference = code.RegisterFinally();
+
+                code.Instructions.AddRange(instructions);
+                code.Finally();
+                var skipCatchInstruction = code.Jump();
+                catchReference?.ReferencedInstruction = code.Finally();
+                code.Throw();
+                finallyReference?.ReferencedInstruction = code.Empty();
+                
+                foreach (var info in settings.UsingVariables)
+                {
+                    code.LoadLocal(info.Key);
+                    code.Push(null);
+                    code.Equals();
+                    var skipCallingInstruction = code.JumpIfTrue();
+                    code.PopRepeat(2);
+                    code.CallInstance(info.Value);
+                    code.Pop();
+                    code.SkipNext();
+                    skipCallingInstruction.ReferencedInstruction = code.PopRepeat(3);
+                }
+
+                code.Return();
+                skipCatchInstruction.ReferencedInstruction = code.Empty();
+
+                settings.UsingVariables.Clear();
             }
 
             if (depth == 0 && blockStatement.AllPathReturns(Assembly, context))
@@ -239,30 +324,20 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 return CreateVariable(method, node.Name, node.Type, node.Initializer, ref settings, context);
             }
-
-            if (statement is BlockStatementNode blockStatement)
+            IDSharpParameterInfo CompileVariable(VariableNode variableNode, ref DSharpMethodCompileSettings settings)
             {
-                CompileStatement(method, blockStatement, depth + 1, code, ref settings, context);
-            }
-            else if (statement is VariableStatementNode variableStatement)
-            {
-                if (variableStatement.Variable == null)
-                {
-                    throw new ArgumentException($"Invalid statement: {variableStatement}");
-                }
-
-                var variableName = variableStatement.Variable.Name;
+                var variableName = variableNode.Name;
 
                 if (method.Parameters.FirstOrDefault(p => p.Name == variableName) != null)
                 {
-                    throw new ArgumentException($"Unable to declare local variable because current scope contains parameter with such name ({variableName}): {variableStatement}");
+                    throw new ArgumentException($"Unable to declare local variable because current scope contains parameter with such name ({variableName}): {variableNode}");
                 }
 
                 IDSharpParameterInfo variable;
 
                 try
                 {
-                    variable = GetVariable(variableStatement.Variable, ref settings);
+                    variable = GetVariable(variableNode, ref settings);
                 }
                 catch (Exception error)
                 {
@@ -270,7 +345,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 var originalTypeResolver = context.TypeResolver;
-                var initializer = variableStatement.Variable.Initializer;
+                var initializer = variableNode.Initializer;
                 context.TypeResolver = obj =>
                 {
                     if ((obj == null || obj is NewExpressionNode newExpression && newExpression.Type == null) &&
@@ -288,6 +363,75 @@ namespace DialogMaker.Core.Scripting.Compiler
                     code.StoreLocal(variable);
                     code.Pop();
                 }
+
+                return variable;
+            }
+
+            if (statement is BlockStatementNode blockStatement)
+            {
+                CompileStatement(method, blockStatement, depth + 1, code, ref settings, context);
+            }
+            else if (statement is VariableStatementNode variableStatement)
+            {
+                if (variableStatement.Variable == null)
+                {
+                    throw new ArgumentException($"Invalid statement: {variableStatement}");
+                }
+
+                CompileVariable(variableStatement.Variable, ref settings);
+            }
+            else if (statement is UsingVariableStatementNode usingStatement)
+            {
+                if (usingStatement.Variable == null)
+                {
+                    throw new InvalidOperationException($"Using statement should contains variable: {statement}");
+                }
+
+                DSharpBytecodeBuilder.ReferenceInstruction? catchReference = null;
+                DSharpBytecodeBuilder.ReferenceInstruction? finallyReference = null;
+
+                if (usingStatement.Body != null)
+                {
+                    code.StartTrying();
+                    catchReference = code.RegisterTypedCatch(Assembly.ExceptionType);
+                    finallyReference = code.RegisterFinally();
+                }
+
+                var variable = CompileVariable(usingStatement.Variable, ref settings);
+                IDSharpMethodInfo disposeMethod;
+
+                try
+                {
+                    disposeMethod = DSharpIDisposableType.GetDisposeMethod(variable.Type);
+                }
+                catch (Exception error)
+                {
+                    throw new InvalidOperationException($"Unable to find dispose method at {variable.Type}", error);
+                }
+
+                if (usingStatement.Body == null)
+                {
+                    settings.UsingVariables?.Add(variable, disposeMethod);
+                    return;
+                }
+
+                context.HasFinally = true;
+                CompileStatement(method, usingStatement.Body, depth + 1, code, ref settings, context);
+                code.Finally();
+                var skipCatchInstruction = code.Jump();
+                catchReference?.ReferencedInstruction = code.Finally();
+                code.Throw();
+                finallyReference?.ReferencedInstruction = code.LoadLocal(variable);
+                code.Push(null);
+                code.Equals();
+                var skipCallingInstruction = code.JumpIfTrue();
+                code.PopRepeat(2);
+                code.CallInstance(disposeMethod);
+                code.Pop();
+                code.SkipNext();
+                skipCallingInstruction.ReferencedInstruction = code.PopRepeat(3);
+                code.Return();
+                skipCatchInstruction.ReferencedInstruction = code.Empty();
             }
             else if (statement is ExpressionStatementNode expressionStatement)
             {
@@ -482,6 +626,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new ArgumentException($"For statement should contains body: {statement}", nameof(statement));
                 }
 
+                context.Scope = new DSharpCompilerMethodScope(method, context.Scope);
+
                 CompileStatement(method, forStatement.Initializer, forStatement, depth + 1, code, ref settings, context);
 
                 var conditionType = forStatement.Condition.GetExpressionType(Assembly, context) as IDSharpType
@@ -498,12 +644,18 @@ namespace DialogMaker.Core.Scripting.Compiler
                 code.Pop();
 
                 var startExpressionOperation = code.Instructions[startExpressionIndex];
+                var startIncrementOperation = code.Empty(true);
 
-                context.CurrentLoopStartInstruction = startExpressionOperation;
+                code.Instructions.Remove(startIncrementOperation);
+
+                context.CurrentLoopStartInstruction = startIncrementOperation;
                 context.CurrentLoopEndInstruction = code.SkipNext();
                 code.Instructions.Remove(context.CurrentLoopEndInstruction);
 
                 CompileStatement(method, forStatement.Body, forStatement, depth + 1, code, ref settings, context);
+
+                code.Instructions.Add(startIncrementOperation);
+
                 CompileExpression(method, forStatement.Increment, ref settings, null, context);
 
                 code.Jump(startExpressionOperation);
@@ -519,6 +671,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new ArgumentException($"Incomplete foreach statement: {statement}", nameof(statement));
                 }
 
+                context.Scope = new DSharpCompilerMethodScope(method, context.Scope);
                 var expressionReturnType = foreachStatement.EnumeratorExpression.GetExpressionType(Assembly, context) as IDSharpType;
                 var expressionResult = CompileValueExpression(method, foreachStatement.EnumeratorExpression, ref settings, null, context);
 
@@ -596,6 +749,17 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 skipIteration.ReferencedInstruction = code.PopRepeat(2);
                 code.Instructions.Add(context.CurrentLoopEndInstruction);
+
+                if (DSharpIDisposableType.TryGetDisposeMethod(enumeratorVariable.Type, out var disposeMethod))
+                {
+                    code.LoadLocal(enumeratorVariable);
+                    code.CallInstance(disposeMethod);
+                    code.Pop();
+                }
+
+                code.Push(null);
+                code.StoreLocal(enumeratorVariable);
+                code.Pop();
             }
             else if (statement is ContinueStatementNode continueStatement)
             {
@@ -620,6 +784,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                 if (context.NowInFinallyBlock)
                 {
                     throw new InvalidOperationException($"Returning is unavailable in finally block: {statement}");
+                }
+                if (context.HasFinally)
+                {
+                    code.Finally();
                 }
 
                 IDSharpType? methodReturnType = null;
@@ -797,7 +965,12 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 if (tryStatement.FinallyBlock != null)
                 {
+                    context.HasFinally = true;
                     finallyRegisterInstruction = code.RegisterFinally();
+                }
+                else
+                {
+                    context.HasFinally = false;
                 }
 
                 CompileBlock(ref settings, tryStatement.TryBlock, context);
@@ -873,6 +1046,8 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         #region Expressions
 
+        private delegate T? AssignSettingRefHandler<T>(ref DSharpMethodCompileSettings settings);
+
         private IDSharpMemberInfo? CompileExpression(DSharpMethodBuilder method, ExpressionNode expression, ref DSharpMethodCompileSettings settings, ExpressionNode? parentExpression = null, DSharpCompilerContext context = default)
         {
             var code = method.GetBytecodeBuilder();
@@ -903,18 +1078,36 @@ namespace DialogMaker.Core.Scripting.Compiler
                         _ => throw new InvalidOperationException()
                     };
                 }
-                void CompileExpression(IDSharpType type, ref DSharpMethodCompileSettings settings)
+                T? CompileExpression<T>(IDSharpType type, AssignSettingRefHandler<T> compileAssign, ref DSharpMethodCompileSettings settings)
                 {
+                    if (assignExpression.Operator == DSharpAssignmentOperator.AssignIfNull)
+                    {
+                        CompileValueExpression(method, assignExpression.Left!, ref settings, assignExpression, context);
+                        code.Push(null);
+                        code.Equals();
+                        var skipInstruction = code.JumpIfFalse();
+                        code.PopRepeat(3);
+
+                        CompileRight(type, ref settings);
+                        var result = compileAssign(ref settings);
+
+                        code.SkipNext();
+                        skipInstruction.ReferencedInstruction = code.PopRepeat(3);
+
+                        return result;
+                    }
                     if (assignExpression.Operator == DSharpAssignmentOperator.Assign)
                     {
                         CompileRight(type, ref settings);
-                        return;
+
+                        return compileAssign(ref settings);
                     }
 
                     var binaryOperator = GetBinaryOperator();
                     var resultType = CompileBinaryExpression(method, code, binaryOperator, assignExpression.Left!, assignExpression.Right!, ref settings, assignExpression, context);
 
                     CastTypes(method, resultType, type, code, assignExpression, context);
+                    return compileAssign(ref settings);
                 }
 
                 if (assignExpression.Left is IdentifierExpressionNode identifier)
@@ -923,10 +1116,12 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     if (context.TryResolveVariable(localName, out var variable))
                     {
-                        CompileExpression(variable.Type, ref settings);
-
-                        code.StoreLocal(variable);
-                        code.Pop();
+                        CompileExpression<object>(variable.Type, (ref s) =>
+                        {
+                            code.StoreLocal(variable);
+                            code.Pop();
+                            return null;
+                        }, ref settings);
                         return null;
                     }
                 }
@@ -948,19 +1143,21 @@ namespace DialogMaker.Core.Scripting.Compiler
                     var indexerSetterParameters = indexer.Setter.GetParameters();
                     var valueType = indexerSetterParameters[0].Type;
 
-                    CompileExpression(indexer.PropertyType, ref settings);
-
-                    for (int i = 0; i < arrayAccess.Arguments.Count; i++)
+                    CompileExpression<object>(indexer.PropertyType, (ref settings) =>
                     {
-                        var requestedType = indexerSetterParameters[i + 1].Type;
-                        var arg = arrayAccess.Arguments[i];
-                        CompileExpressionValueWithRequestedType(method, requestedType, code, arg, ref settings, arrayAccess, context);
-                    }
+                        for (int i = 0; i < arrayAccess.Arguments.Count; i++)
+                        {
+                            var requestedType = indexerSetterParameters[i + 1].Type;
+                            var arg = arrayAccess.Arguments[i];
+                            CompileExpressionValueWithRequestedType(method, requestedType, code, arg, ref settings, arrayAccess, context);
+                        }
 
-                    CompileValueExpression(method, arrayAccess.Array, ref settings, arrayAccess, context);
+                        CompileValueExpression(method, arrayAccess.Array, ref settings, arrayAccess, context);
 
-                    code.StorePropertyOrField(indexer, settings.NextNonVirtualizedAccess);
-                    code.PopRepeat(arrayAccess.Arguments.Count + 2);
+                        code.StorePropertyOrField(indexer, settings.NextNonVirtualizedAccess);
+                        code.PopRepeat(arrayAccess.Arguments.Count + 2);
+                        return null;
+                    }, ref settings);
                 }
                 else
                 {
@@ -971,42 +1168,43 @@ namespace DialogMaker.Core.Scripting.Compiler
                         throw new InvalidOperationException($"Unable to get value type of left expression: {expression}");
                     }
 
-                    CompileExpression(leftSideType, ref settings);
-
-                    IDSharpMemberInfo? member = CompileEndPointMember(method, code, assignExpression.Left, assignExpression, ref settings, context)
+                    return CompileExpression(leftSideType, (ref settings) =>
+                    {
+                        IDSharpMemberInfo? member = CompileEndPointMember(method, code, assignExpression.Left, assignExpression, ref settings, context)
                         ?? throw new ArgumentException($"Unable to find member: {assignExpression.Left}", nameof(expression));
 
-                    if (!member.TryGetReturnType(out var returnType))
-                    {
-                        throw new InvalidOperationException($"Unable to get value type of \"{member}\": {expression}");
-                    }
-
-                    if (method.MethodType == DSharpMethodType.Constructor &&
-                        member is IDSharpPropertyInfo property && !property.CanWrite)
-                    {
-                        if (property.DeclaringType == null)
+                        if (!member.TryGetReturnType(out var returnType))
                         {
-                            throw new InvalidOperationException($"Property must contains declaring type {property}: {expression}");
+                            throw new InvalidOperationException($"Unable to get value type of \"{member}\": {expression}");
                         }
 
-                        var propertyField = property.DeclaringType.GetFieldOrDefault($"{property.Name}{ValueFieldNameSuffix}")
-                            ?? throw new ArgumentException($"Unable to write value to property \"{property}\" because it have not setter: {expression}", nameof(expression));
-                        member = propertyField;
-                    }
+                        if (method.MethodType == DSharpMethodType.Constructor &&
+                            member is IDSharpPropertyInfo property && !property.CanWrite)
+                        {
+                            if (property.DeclaringType == null)
+                            {
+                                throw new InvalidOperationException($"Property must contains declaring type {property}: {expression}");
+                            }
 
-                    code.StorePropertyOrField(member, settings.NextNonVirtualizedAccess);
-                    settings.NextNonVirtualizedAccess = false;
+                            var propertyField = property.DeclaringType.GetFieldOrDefault($"{property.Name}{ValueFieldNameSuffix}")
+                                ?? throw new ArgumentException($"Unable to write value to property \"{property}\" because it have not setter: {expression}", nameof(expression));
+                            member = propertyField;
+                        }
 
-                    if (!member.IsStatic)
-                    {
-                        code.PopRepeat(2);
-                    }
-                    else
-                    {
-                        code.Pop();
-                    }
+                        code.StorePropertyOrField(member, settings.NextNonVirtualizedAccess);
+                        settings.NextNonVirtualizedAccess = false;
 
-                    return member;
+                        if (!member.IsStatic)
+                        {
+                            code.PopRepeat(2);
+                        }
+                        else
+                        {
+                            code.Pop();
+                        }
+
+                        return member;
+                    }, ref settings);
                 }
             }
             else if (expression is IncrementExpressionNode incrementExpression)
@@ -1621,6 +1819,11 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 var throwValue = throwExpression.ValueExpression;
                 DSharpCompilerContext throwContext = context;
+
+                if (context.HasFinally)
+                {
+                    code.Finally();
+                }
 
                 if (throwValue != null)
                 {

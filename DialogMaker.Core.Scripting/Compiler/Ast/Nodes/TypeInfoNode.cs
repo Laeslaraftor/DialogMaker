@@ -124,6 +124,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             IsGenericParameters(stream, offset + 1, out endOffset);
 
+            if (endOffset == -1)
+            {
+                endOffset = offset + 1;
+            }
+
             return true;
         }
         /// <summary>
@@ -229,30 +234,59 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Is type parse available</returns>
         public static bool CanParse(AstParserStream stream, int offset = 1)
         {
+            return CanParse(stream, offset, out _);
+        }
+        /// <summary>
+        /// Check is type parse availability
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="offset">Check token offset</param>
+        /// <param name="endOffset">Offset of type ending</param>
+        /// <returns>Is type parse available</returns>
+        public static bool CanParse(AstParserStream stream, int offset, out int endOffset)
+        {
             int typesCount = 0;
             bool previousIsDot = false;
+            bool identifierParsed = false;
+            endOffset = -1;
 
             while (true)
             {
-                if (stream.Check(DSharpTokenType.Dot, offset))
+                if (identifierParsed)
                 {
-                    if (previousIsDot)
+                    while (stream.Check(DSharpTokenType.LeftBracket, offset))
                     {
-                        return false;
-                    }
+                        offset++;
 
-                    offset++;
-                    previousIsDot = true;
+                        if (!stream.Check(DSharpTokenType.RightBracket, offset))
+                        {
+                            return false;
+                        }
+
+                        offset++;
+                    }
+                    if (stream.Check(DSharpTokenType.Dot, offset))
+                    {
+                        if (previousIsDot)
+                        {
+                            return false;
+                        }
+
+                        offset++;
+                        previousIsDot = true;
+                        identifierParsed = false;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
-                if (CanParseIdentifier(stream, offset))
-                {
-                    if (stream.Check(DSharpTokenType.Less, offset) && !IsGenericParameters(stream, offset + 1))
-                    {
-                        return false;
-                    }
 
-                    offset++;
+                if (CanParseIdentifier(stream, offset, out var identifiedEndOffset))
+                {
+                    offset = identifiedEndOffset;
                     typesCount++;
+                    identifierParsed = true;
                 }
                 else
                 {
@@ -260,6 +294,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
             }
 
+            endOffset = offset;
             return typesCount > 0;
         }
         /// <summary>

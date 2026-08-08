@@ -68,7 +68,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Is variable definition</returns>
         public static bool IsVariable(AstParserStream stream)
         {
-            if (!TypeInfoNode.CanParseIdentifier(stream, 0, out var endOffset))
+            if (!TypeInfoNode.CanParse(stream, 0, out var endOffset))
             {
                 return false;
             }

@@ -108,11 +108,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             if (stream.Check(DSharpTokenType.LeftBrace))
             {
-                result.Body = BlockStatementNode.Parse(stream);
+                result.Body = BlockStatementNode.Parse(stream, DSharpStatementType.Code);
             }
             else if (stream.Check(DSharpTokenType.Lambda))
             {
-                result.Body = BlockStatementNode.Parse(stream, DSharpTokenType.Semicolon, DSharpTokenType.Lambda);
+                result.Body = BlockStatementNode.Parse(stream, DSharpStatementType.Code, DSharpTokenType.Semicolon, DSharpTokenType.Lambda);
             }
             else
             {
