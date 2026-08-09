@@ -9,7 +9,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
             if (CheckStackValues(instruction, context, 2, out var error))
             {
@@ -18,7 +18,24 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             var left = context.Stack.Peek(1);
             var right = context.Stack.Peek();
-            bool result = DSharpStack.FrameInfo.ValueEquals(left, right);
+            var leftType = left.ObjectType;
+            var rightType = right.ObjectType;
+
+            bool result;
+
+            if (leftType != rightType &&
+                leftType != null && rightType != null &&
+                leftType->Converter != null && rightType->Converter != null)
+            {
+                var leftDecimal = left.ReadAsDecimal();
+                var rightDecimal = right.ReadAsDecimal();
+
+                result = leftDecimal == rightDecimal;
+            }
+            else
+            {
+                result = DSharpStack.FrameInfo.ValueEquals(left, right);
+            }
 
             context.Stack.Push(result);
 

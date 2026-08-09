@@ -3,7 +3,6 @@ using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
-using System.Reflection.Emit;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -30,8 +29,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         private readonly Dictionary<DSharpIndexerBuilder, IndexerNode> _createdIndexers = [];
         private readonly Dictionary<DSharpOperatorBuilder, OperatorNode> _createdOperators = [];
         private readonly Dictionary<DSharpMethodBuilder, ConstructorNode> _createdConstructors = [];
-        private readonly Dictionary<DSharpTypeBuilder, ObjectDeclarationNode> _enumTypes = [];
-        private readonly Dictionary<DSharpFieldBuilder, LiteralExpressionNode> _enumValues = [];
+        private readonly List<DSharpCompilerEnumDescription> _enumTypes = [];
         private readonly List<DSharpTypeBuilder> _types = [];
         private Dictionary<IDSharpType, ObjectDeclarationNode>? _typesToSetupBases;
         private string? _currentNamespace = null;
@@ -77,13 +75,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 CreateType(null, declarationNode.ObjectDeclaration);
-            }
-            else if (statement is EnumStatementNode enumStatement)
-            {
-                if (enumStatement.Enum == null)
-                {
-                    throw new ArgumentException($"Enum declaration is null at: {enumStatement}", nameof(statement));
-                }
             }
             else if (statement is UsingStatementNode usingStatement)
             {
@@ -169,6 +160,37 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 throw new ArgumentException($"Objects in namespace only can be public or internal: {declaration}", nameof(declaration));
             }
+            if (declaration.Type == DSharpObjectType.Enum)
+            {
+                if (declaration.IsAbstract)
+                {
+                    throw new DSharpCompilerException($"Enum can not be abstract", declaration);
+                }
+                if (declaration.Methods.Count > 0)
+                {
+                    throw new DSharpCompilerException($"Enum can not contains methods", declaration);
+                }
+                if (declaration.Finalizers.Count > 0)
+                {
+                    throw new DSharpCompilerException($"Enum can not contains finalizer", declaration);
+                }
+                if (declaration.Constructors.Count > 0)
+                {
+                    throw new DSharpCompilerException($"Enum can not contains constructors", declaration);
+                }
+                if (declaration.Indexers.Count > 0)
+                {
+                    throw new DSharpCompilerException($"Enum can not contains indexers", declaration);
+                }
+                if (declaration.Operators.Count > 0)
+                {
+                    throw new DSharpCompilerException($"Enum can not contains operators", declaration);
+                }
+                if (declaration.Children.Count > 0)
+                {
+                    throw new DSharpCompilerException($"Enum can not contains children", declaration);
+                }
+            }
 
             var type = Assembly.CreateType(declaration.Identifier.Name, parent);
             type.IsStatic = declaration.IsStatic;
@@ -178,40 +200,45 @@ namespace DialogMaker.Core.Scripting.Compiler
             type.IsSealed = declaration.IsSealed;
             type.Namespace = _currentNamespace;
 
-            CreateGenerics(type, declaration.Identifier.GenericParameters);
-            SetupGenericDescription(type, declaration);
+            if (declaration.Type == DSharpObjectType.Enum)
+            {
+                DSharpCompilerEnumDescription description = new(type, declaration);
+                _enumTypes.Add(description);
+                CreateEnumFields(description);
+            }
+            else
+            {
+                CreateGenerics(type, declaration.Identifier.GenericParameters);
+                SetupGenericDescription(type, declaration);
 
-            foreach (var childType in declaration.Children)
-            {
-                CreateType(type, childType);
-            }
-            foreach (var childEnum in declaration.ChildrenEnums)
-            {
-                CreateEnum(type, childEnum);
-            }
-            foreach (var field in declaration.Fields)
-            {
-                CreateFieldOrProperty(type, field);
-            }
-            foreach (var indexer in declaration.Indexers)
-            {
-                CreateIndexer(type, indexer);
-            }
-            foreach (var method in declaration.Methods)
-            {
-                CreateMethod(type, method);
-            }
-            foreach (var finalizer in declaration.Finalizers)
-            {
-                CreateFinalizer(type, finalizer);
-            }
-            foreach (var @operator in declaration.Operators)
-            {
-                CreateOperator(type, @operator);
-            }
-            foreach (var constructor in declaration.Constructors)
-            {
-                CreateConstructor(type, constructor);
+                foreach (var childType in declaration.Children)
+                {
+                    CreateType(type, childType);
+                }
+                foreach (var field in declaration.Fields)
+                {
+                    CreateFieldOrProperty(type, field);
+                }
+                foreach (var indexer in declaration.Indexers)
+                {
+                    CreateIndexer(type, indexer);
+                }
+                foreach (var method in declaration.Methods)
+                {
+                    CreateMethod(type, method);
+                }
+                foreach (var finalizer in declaration.Finalizers)
+                {
+                    CreateFinalizer(type, finalizer);
+                }
+                foreach (var @operator in declaration.Operators)
+                {
+                    CreateOperator(type, @operator);
+                }
+                foreach (var constructor in declaration.Constructors)
+                {
+                    CreateConstructor(type, constructor);
+                }
             }
 
             type.SetupHandler = () =>
@@ -490,24 +517,27 @@ namespace DialogMaker.Core.Scripting.Compiler
             constructor.Access = constructorNode.Access;
             _createdConstructors.Add(constructor, constructorNode);
         }
-        private void CreateEnum(DSharpTypeBuilder? parent, EnumNode enumNode)
+        private void CreateEnumFields(DSharpCompilerEnumDescription description)
         {
-            var type = Assembly.CreateType(enumNode.Name, parent);
-            type.ObjectType = DSharpObjectType.Struct;
-            type.Name = enumNode.Name;
-            type.Namespace = _currentNamespace;
-
-            foreach (var enumValue in enumNode.Members)
+            if (description.DeclarationNode.Fields.Count > 0)
             {
-                var field = type.CreateField(enumValue.Name);
+                description.ValueFields ??= [];
+            }
 
-                if (!enumValue.Value.IsNumber)
+            var type = description.TypeBuilder;
+
+            foreach (var fieldDeclaration in description.DeclarationNode.Fields)
+            {
+                if (fieldDeclaration.Identifier == null)
                 {
-                    throw new InvalidDataException($"Enum value must be a number, got: {enumValue.Value}");
+                    throw new DSharpCompilerException($"Invalid enum field", fieldDeclaration);
                 }
 
+                var field = type.CreateField(fieldDeclaration.Identifier.Name);
                 field.IsReadOnly = true;
-                field.RawValue = enumValue.Value;
+                field.IsStatic = true;
+                field.FieldType = type;
+                description.ValueFields!.Add(field, fieldDeclaration);
             }
         }
         private void CreateGenerics(DSharpTypeBuilder builder, IEnumerable<TypeInfoNode> types)
@@ -721,10 +751,6 @@ namespace DialogMaker.Core.Scripting.Compiler
             _typesToSetupBases ??= new(_createdTypes.Select(p => new KeyValuePair<IDSharpType, ObjectDeclarationNode>(p.Key, p.Value)));
             var typesToSetupBases = _typesToSetupBases;
 
-            foreach (var enumValue in _enumValues.Keys)
-            {
-                enumValue.FieldType = Assembly.Int32Token;
-            }
             foreach (var info in _createdGlobalVariables)
             {
                 if (info.Value.Type != null)
@@ -809,10 +835,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 ValidateInvokableNodeParameters(info.Value);
                 ResolveParameters(info.Value.Parameters, info.Key.Parameters, context);
             }
-            foreach (var enumType in _enumTypes.Keys)
-            {
-                enumType.AddBaseType(Assembly.EnumType);
-            }
 
             bool TryGetBaseTypeToSetup(TypeInfoNode typeInfo, out KeyValuePair<IDSharpType, ObjectDeclarationNode> result)
             {
@@ -851,13 +873,6 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     if (!setupCompleted)
                     {
-                        var genericParameters = baseTypeInfo.GenericParameters;
-
-                        if (genericParameters.Count > 0)
-                        {
-                            //baseTypeInfo.GenericParameters = [];
-                        }
-
                         DSharpTypeToken setupTypeToken;
 
                         try
@@ -878,8 +893,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                         {
                             TypeToSetupRequested?.Invoke(this, new(baseTypeBuilder));
                         }
-
-                        baseTypeInfo.GenericParameters = genericParameters;
                     }
 
                     var typeToken = ResolveType(typeBuilder, baseTypeInfo);
@@ -962,6 +975,11 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 info.Key.OverrideMethod = overrideMethod;
+            }
+
+            foreach (var description in _enumTypes)
+            {
+                SetupEnum(description);
             }
         }
         public partial void ValidateTypes()

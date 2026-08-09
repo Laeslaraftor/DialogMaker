@@ -92,7 +92,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 memberAccess = new(accessOperation)
                 {
                     Target = target,
-                    Member = ParseExpression(stream)
+                    Member = ParseExpression(stream, true)
                 };
 
                 target = memberAccess;
@@ -187,10 +187,19 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         /// <param name="stream">Abstract syntax tree parser stream</param>
         /// <returns>Parsed expression</returns>
-        public static ExpressionNode ParseExpression(AstParserStream stream)
+        public static ExpressionNode ParseExpression(AstParserStream stream, bool ignoreBinaryExpression = false)
         {
             bool previousIsMemberAccess = stream.Check(DSharpTokenType.Dot, -1);
-            var left = BinaryExpressionNode.ParseLogicalOr(stream);
+            ExpressionNode left;
+
+            if (ignoreBinaryExpression)
+            {
+                left = UnaryExpressionNode.Parse(stream);
+            }
+            else
+            {
+                left = BinaryExpressionNode.Parse(stream);
+            }
 
             if (previousIsMemberAccess || stream.Check(DSharpTokenType.Colon))
             {
@@ -279,7 +288,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
             if (stream.Check(DSharpTokenType.LeftParen))
             {
-                if (TypeInfoNode.CanParse(stream))
+                if (CastExpressionNode.IsCast(stream))
                 {
                     return CastExpressionNode.Parse(stream);
                 }

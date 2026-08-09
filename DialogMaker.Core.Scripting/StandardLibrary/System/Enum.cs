@@ -1,6 +1,6 @@
 namespace System;
 
-public class Enum
+public abstract class Enum
 {
     public static T[] GetValues<T>() where T : Enum
     {

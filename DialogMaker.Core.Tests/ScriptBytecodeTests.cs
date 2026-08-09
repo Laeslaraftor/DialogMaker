@@ -37,13 +37,14 @@ namespace DialogMaker.Core.Tests
             ReadFunctionOrMethod(assembly, functionName);
         }
         [TestCase("System.Array`1.Enumerator.MoveNext")]
-        [TestCase("System.Int64.GetString")]
         [TestCase("System.Span`1.get_Length")]
         [TestCase("System.Native.Pointer<Internal.System.Runtime.RuntimeTypeInfo>.get_Item")]
+        [TestCase("System.Native.Pointer<Internal.System.Runtime.RuntimeTypeInfo>.get_IsNull")]
         [TestCase("System.Object.Equals")]
         [TestCase("System.String.Equals")]
         [TestCase("System.String.Split")]
         [TestCase("System.Type.get_Name")]
+        [TestCase("System.Type.get_DeclaringType")]
         [TestCase("System.Collections.Generic.List`1.get_Capacity")]
         [TestCase("System.Collections.Generic.List<System.Exception>.ctor")]
         [TestCase("Program.TestPlayersArray")]
@@ -52,6 +53,8 @@ namespace DialogMaker.Core.Tests
         [TestCase("Program.MainImpl")]
         [TestCase("Program.GetSize")]
         [TestCase("Program.GetGenericObject")]
+        [TestCase("System.Reflection.MetadataTokenType.ctor")]
+        [TestCase("System.Reflection.MetadataTokenType.init")]
         public static void PrintMethodBytecode(string methodName)
         {
             var assembly = ScriptCompilerTests.CompileStandardLibrary();

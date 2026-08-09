@@ -58,10 +58,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public List<ObjectDeclarationNode> Children { get; set; } = [];
         /// <summary>
-        /// Children enums of object
-        /// </summary>
-        public List<EnumNode> ChildrenEnums { get; set; } = [];
-        /// <summary>
         /// Children of object
         /// </summary>
         public List<AttributeNode>? Attributes { get; set; }
@@ -342,8 +338,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
                 else
                 {
-                    if (stream.Check(DSharpTokenType.Identifier) && 
-                        (IsDefinitionEnded(1) || TypeInfoNode.IsGenericParameters(stream, 1, out var endOfGenerics) && 
+                    if (stream.Check(DSharpTokenType.Identifier) &&
+                        (IsDefinitionEnded(1) || TypeInfoNode.IsGenericParameters(stream, 1, out var endOfGenerics) &&
                                                  IsDefinitionEnded(endOfGenerics)))
                     {
                         memberInfo.Identifier = IdentifierExpressionNode.Parse(stream);
@@ -543,7 +539,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 stream.Eat(DSharpTokenType.Class);
             }
 
-            var identifier = IdentifierExpressionNode.Parse(stream);
+            var identifier = IdentifierExpressionNode.Parse(stream, objectType != DSharpObjectType.Enum);
             ObjectDeclarationNode node = new(identifier.Token)
             {
                 Identifier = identifier,
@@ -582,6 +578,19 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 {
                     stream.Eat(stream.Current!.Type);
                     continue;
+                }
+                if (objectType == DSharpObjectType.Enum)
+                {
+                    var enumField = FieldNode.ParseEnumField(stream);
+                    node.Fields.Add(enumField);
+
+                    if (stream.Check(DSharpTokenType.Comma))
+                    {
+                        stream.Eat(DSharpTokenType.Comma);
+                        continue;
+                    }
+
+                    break;
                 }
                 if (IsObjectDeclaration(stream))
                 {

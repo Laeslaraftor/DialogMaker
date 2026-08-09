@@ -13,6 +13,8 @@ namespace DialogMaker.Core.Tests
         [TestCase("(1 + 1) * 2")]
         [TestCase("isOpen || isShowed")]
         [TestCase("a == null && b == null || ReferenceEquals(a, b)")]
+        [TestCase("value == obj.Value && other == obj.OtherValue")]
+        [TestCase("field == null && !DeclaringType.IsNull")]
         public static void TestBinaryExpressionCompiling(string expression)
         {
             DSharpLexer lexer = new();

@@ -516,15 +516,16 @@ namespace DialogMaker.Core.Scripting.Compiler
             /// Check all paths in current if statement for returning values
             /// </summary>
             /// <param name="assembly">Assembly builder for finding types</param>
+            /// <param name="returnTypes">Buffer for writing types that returns</param>
             /// <param name="context">Compiler context</param>
             /// <returns>Is all paths returns some value</returns>
-            public bool AllPathReturns(DSharpAssemblyBuilder assembly, DSharpCompilerContext context)
+            public bool AllPathReturns(DSharpAssemblyBuilder assembly, Dictionary<ExpressionNode, IDSharpType> returnTypes, DSharpCompilerContext context)
             {
                 var currentStatement = ifStatement;
 
                 while (true)
                 {
-                    if (currentStatement.ThenBranch?.AllPathReturns(assembly, context) != true ||
+                    if (currentStatement.ThenBranch?.AllPathReturns(assembly, returnTypes, context) != true ||
                         currentStatement.ElseBranch == null)
                     {
                         return false;
@@ -536,7 +537,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                     else if (currentStatement.ElseBranch is BlockStatementNode elseBlockStatement)
                     {
-                        return elseBlockStatement.AllPathReturns(assembly, context);
+                        return elseBlockStatement.AllPathReturns(assembly, returnTypes, context);
                     }
 
                     break;
@@ -551,12 +552,13 @@ namespace DialogMaker.Core.Scripting.Compiler
             /// Check all paths in current if statement for returning values
             /// </summary>
             /// <param name="assembly">Assembly builder for finding types</param>
+            /// <param name="returnTypes">Buffer for writing types that returns</param>
             /// <param name="context">Compiler context</param>
             /// <returns>Is all paths returns some value</returns>
-            public bool AllPathReturns(DSharpAssemblyBuilder assembly, DSharpCompilerContext context)
+            public bool AllPathReturns(DSharpAssemblyBuilder assembly, Dictionary<ExpressionNode, IDSharpType> returnTypes, DSharpCompilerContext context)
             {
                 if (tryStatement.TryBlock == null ||
-                    !tryStatement.TryBlock.AllPathReturns(assembly, context))
+                    !tryStatement.TryBlock.AllPathReturns(assembly, returnTypes, context))
                 {
                     return false;
                 }
@@ -569,7 +571,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                     if (catchBlock.ExceptionType == null)
                     {
-                        return catchBlock.Statements.AllPathReturns(assembly, context);
+                        return catchBlock.Statements.AllPathReturns(assembly, returnTypes, context);
                     }
 
                     IDSharpType exceptionType;
@@ -598,9 +600,10 @@ namespace DialogMaker.Core.Scripting.Compiler
             /// Check block on return values or throw exception on all paths
             /// </summary>
             /// <param name="assembly">Assembly builder for finding types</param>
+            /// <param name="returnTypes">Buffer for writing types that returns</param>
             /// <param name="context">Compiler context</param>
             /// <returns>Is block returns value or throw exception on all paths</returns>
-            public bool AllPathReturns(DSharpAssemblyBuilder assembly, DSharpCompilerContext context)
+            public bool AllPathReturns(DSharpAssemblyBuilder assembly, Dictionary<ExpressionNode, IDSharpType> returnTypes, DSharpCompilerContext context)
             {
                 bool ReturnsValue(ExpressionStatementNode expressionStatement, bool asLambda)
                 {
@@ -629,12 +632,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                             return false;
                         }
 
-                        if (expressionType == null)
+                        if (expressionType == null || !expressionType.TryGetTypeOrReturnType(out var returnType))
                         {
                             return false;
                         }
 
-                        return expressionType is IDSharpType || expressionType.TryGetReturnType(out _);
+                        returnTypes.Add(expression, returnType);
+
+                        return true;
                     }
 
                     return false;
@@ -660,23 +665,23 @@ namespace DialogMaker.Core.Scripting.Compiler
                         return true;
                     }
                     else if (statement is IfStatementNode ifStatement &&
-                             ifStatement.AllPathReturns(assembly, context))
+                             ifStatement.AllPathReturns(assembly, returnTypes, context))
                     {
                         return true;
                     }
                     else if (statement is TryStatementNode tryStatement &&
-                             tryStatement.AllPathReturns(assembly, context))
+                             tryStatement.AllPathReturns(assembly, returnTypes, context))
                     {
                         return true;
                     }
                     else if (statement is UsingVariableStatementNode usingVariableStatement &&
                              usingVariableStatement.Body != null &&
-                             usingVariableStatement.Body.AllPathReturns(assembly, context))
+                             usingVariableStatement.Body.AllPathReturns(assembly, returnTypes, context))
                     {
                         return true;
                     }
                     else if (statement is BlockStatementNode otherBlockStatement &&
-                             otherBlockStatement.AllPathReturns(assembly, context))
+                             otherBlockStatement.AllPathReturns(assembly, returnTypes, context))
                     {
                         return true;
                     }

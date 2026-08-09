@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
-using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Runtime;
 
@@ -14,6 +13,19 @@ namespace DialogMaker.Core.Scripting.Compiler
         private readonly Dictionary<DSharpPropertyBuilder, DSharpFieldBuilder> _propertyFields = [];
         private readonly HashSet<DSharpPropertyBuilder> _propertiesWithCustomAccessors = [];
 
+        private DSharpFieldBuilder GetValueFieldForProperty(DSharpPropertyBuilder property)
+        {
+            if (!_propertyFields.TryGetValue(property, out var field))
+            {
+                field = property.DeclaringType.CreateField(property.Name + ValueFieldNameSuffix);
+                field.FieldType = property.PropertyType;
+                field.Access = DSharpAccessModifier.Private;
+                _propertyFields.Add(property, field);
+            }
+
+            return field;
+        }
+
         private void CompileProperty(DSharpPropertyBuilder property, FieldNode node)
         {
             DSharpMethodCompileSettings settings = new();
@@ -23,12 +35,9 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 if (valueField == null)
                 {
-                    valueField = property.DeclaringType.CreateField(property.Name + ValueFieldNameSuffix);
-                    valueField.FieldType = property.PropertyType;
-                    valueField.Access = DSharpAccessModifier.Private;
+                    valueField = GetValueFieldForProperty(property);
                     settings.IdentifiersAsField ??= [];
                     settings.IdentifiersAsField.Add(FieldKeyword, valueField);
-                    _propertyFields.Add(property, valueField);
                 }
 
                 return valueField;

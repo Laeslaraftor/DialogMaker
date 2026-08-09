@@ -104,6 +104,54 @@
             return new(type, instanceSize, staticSize, instanceFieldOffsets, staticFieldOffsets);
         }
 
+        public static int GetInstanceSize(IDSharpType type, int pack = 0)
+        {
+            if (DSharpBuildInTypes.TryGetInfo(type, out var buildInTypeInfo) &&
+                buildInTypeInfo.Size != -1)
+            {
+                return buildInTypeInfo.Size;
+            }
+            if (pack <= 0)
+            {
+                pack = int.MaxValue;
+            }
+
+            var fields = type.GetAllFields(true);
+            int currentOffset = 0;
+            int maxFieldAlignment = 0;
+            int structAlignment = 0;
+
+            foreach (var field in fields)
+            {
+                int fieldSize = GetFieldSize(field, pack);
+                int fieldAlignment = GetFieldAlignment(field, pack);
+
+                if (fieldAlignment > structAlignment)
+                {
+                    structAlignment = fieldAlignment;
+                }
+            }
+
+            structAlignment = Math.Min(structAlignment, pack);
+
+            foreach (var field in fields)
+            {
+                int fieldSize = GetFieldSize(field, pack);
+                int fieldAlignment = GetFieldAlignment(field, pack);
+                int effectiveAlignment = Math.Min(fieldAlignment, pack);
+
+                currentOffset = Align(currentOffset, effectiveAlignment);
+                currentOffset += fieldSize;
+
+                if (effectiveAlignment > maxFieldAlignment)
+                {
+                    maxFieldAlignment = effectiveAlignment;
+                }
+            }
+
+            return Align(currentOffset, structAlignment);
+        }
+
         private static int GetFieldSize(IDSharpFieldInfo field, int pack)
         {
             var fieldType = field.FieldType;
@@ -116,7 +164,7 @@
                     return typeInfo.Size;
                 }
 
-                return Create(fieldType, pack).InstanceSize;
+                return GetInstanceSize(fieldType, pack);
             }
 
             return DSharpBuildInTypes.NativeInt.Size;

@@ -404,7 +404,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
 
             var totalSize = buffer->Size + sizeof(Buffer);
-            
+
             if (buffer->NextBuffer != null)
             {
                 var currentBuffer = buffer->NextBuffer;
@@ -506,6 +506,77 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
 
             _allocatedStackSize = size;
+        }
+        public void Move(uint offset, int moveOffset)
+        {
+            if (IsDisposed)
+            {
+                throw new ObjectDisposedException(nameof(DSharpStack), "Stack has been disposed");
+            }
+            if (0 > (int)offset + moveOffset)
+            {
+                throw new IndexOutOfRangeException();
+            }
+            if (moveOffset == 0)
+            {
+                return;
+            }
+
+            int index = (int)(_frameIndex - offset);
+            FrameInfo* frame = &_frames[index];
+            int frameSize = frame->Size;
+            byte* tempBuffer = stackalloc byte[frameSize + sizeof(FrameInfo)];
+            FrameInfo* tempFrame = (FrameInfo*)tempBuffer;
+
+            *tempFrame = *frame;
+
+            if (frameSize > 0)
+            {
+                System.Buffer.MemoryCopy((void*)frame->StackPointer, tempBuffer + sizeof(FrameInfo), frameSize, frameSize);
+            }
+
+            int endPointIndex = index - moveOffset;
+            int moveCount = Math.Abs(moveOffset);
+            int sizeToMove = sizeof(FrameInfo) * moveCount;
+            int sourceOffset = moveOffset > 0 ? -1 : 1;
+
+            System.Buffer.MemoryCopy(&_frames[index + sourceOffset], frame, sizeToMove, sizeToMove);
+
+            FrameInfo* endPointFrame = &_frames[endPointIndex];
+            *endPointFrame = *tempFrame;
+
+            if (endPointFrame->HasBuffer)
+            {
+                endPointFrame->Buffer->FrameInfo = endPointFrame;
+            }
+
+            int stackOffset = frameSize;
+            int totalSize = 0;
+            FrameInfo* lastFrame = null;
+
+            for (int i = 0; i < moveCount; i++)
+            {
+                FrameInfo* movedFrame = &_frames[index + i];
+                totalSize += movedFrame->Size;
+
+                if (movedFrame->HasBuffer)
+                {
+                    movedFrame->Buffer->FrameInfo = movedFrame;
+                }
+                if (movedFrame->StackPointer != 0)
+                {
+                    movedFrame->StackPointer += frameSize * moveOffset;
+                }
+
+                lastFrame = movedFrame;
+            }
+
+            if (lastFrame != null)
+            {
+                System.Buffer.MemoryCopy((void*)(frame->StackPointer + frameSize * -moveOffset), (void*)frame->StackPointer, totalSize, totalSize);
+                endPointFrame->StackPointer = lastFrame->StackPointer + lastFrame->Size;
+                System.Buffer.MemoryCopy((tempBuffer + sizeof(FrameInfo)), (void*)endPointFrame->StackPointer, frameSize, frameSize);
+            }
         }
 
         public Scope StartScope()

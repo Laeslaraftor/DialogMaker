@@ -7,8 +7,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
     /// <summary>
     /// D# lexer
     /// </summary>
-    public class DSharpLexer : IEnumerable<DSharpToken>
+    public class DSharpLexer() : IEnumerable<DSharpToken>
     {
+        public DSharpLexer(List<DSharpToken> tokens) : this()
+        {
+            _tokens = [.. tokens];
+        }
+
         /// <summary>
         /// List of script tokens
         /// </summary>
@@ -301,7 +306,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
             var previous = PeekPrevious().ToString();
 
             while (!IsEndOfFile() &&
-                   ((char.IsDigit(Peek()) || (Peek() == '.' && !hasDot))) ||
+                   (char.IsDigit(Peek()) || char.IsHexLetter(Peek()) || (Peek() == '.' && !hasDot)) ||
                    NumberIdentifiers.Contains(previous + current) ||
                    NumberIdentifiers.Contains(current + next) ||
                    NumberIdentifiers.Contains(current))

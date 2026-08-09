@@ -574,6 +574,19 @@ namespace DialogMaker.Core.Scripting.Runtime
         {
             numberLiteral = numberLiteral.Replace("_", string.Empty).Trim();
 
+            if (numberLiteral.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            {
+                return ParseHex(numberLiteral[2..]);
+            }
+            if (numberLiteral.StartsWith("0b", StringComparison.OrdinalIgnoreCase))
+            {
+                return ParseBinary(numberLiteral[2..]);
+            }
+            if (numberLiteral.StartsWith("0o", StringComparison.OrdinalIgnoreCase))
+            {
+                return ParseOctal(numberLiteral[2..]);
+            }
+
             if (numberLiteral.EndsWith("UL", StringComparison.OrdinalIgnoreCase))
             {
                 return ParseUnsignedLong(numberLiteral[..^2]);
@@ -601,19 +614,6 @@ namespace DialogMaker.Core.Scripting.Runtime
             if (numberLiteral.EndsWith("M", StringComparison.OrdinalIgnoreCase))
             {
                 return ParseDecimal(numberLiteral[..^1]);
-            }
-
-            if (numberLiteral.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-            {
-                return ParseHex(numberLiteral[2..]);
-            }
-            if (numberLiteral.StartsWith("0b", StringComparison.OrdinalIgnoreCase))
-            {
-                return ParseBinary(numberLiteral[2..]);
-            }
-            if (numberLiteral.StartsWith("0o", StringComparison.OrdinalIgnoreCase))
-            {
-                return ParseOctal(numberLiteral[2..]);
             }
 
             return ParseDecimalAuto(numberLiteral);

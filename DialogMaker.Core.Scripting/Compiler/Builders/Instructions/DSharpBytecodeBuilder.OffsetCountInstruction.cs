@@ -4,10 +4,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 {
     public partial class DSharpBytecodeBuilder
     {
-        public class OffsetCountInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation, int offset, int count)
+        public class OffsetCountInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation, uint offset, int count)
             : Instruction(builder, operation)
         {
-            public int Offset { get; set; } = offset;
+            public uint Offset { get; set; } = offset;
             public int Count { get; set; } = count;
             public override int SizeInBytes => base.SizeInBytes + sizeof(int) * 2;
 

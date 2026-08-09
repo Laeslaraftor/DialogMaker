@@ -5,12 +5,39 @@ using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
+using System.Linq.Expressions;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
     public partial class DSharpScriptCompiler
     {
         #region Methods
+
+        private DSharpMethodCompileSettings CreateSettings()
+        {
+            return new()
+            {
+                LocalVariables = [],
+                UsingVariables = [],
+                AlwaysReturnMethods = [],
+                BannedExpressions = [],
+                LastMethodCallingInfo = []
+            };
+        }
+        private DSharpCompilerContext CreateContext(DSharpMethodBuilder method)
+        {
+            var code = method.GetBytecodeBuilder();
+
+            DSharpCompilerContext context = new(Context)
+            {
+                CurrentMember = method,
+                TypeResolver = code.ExpressionTypeResolver,
+                MemberResolver = code.ExpressionMemberResolver,
+            };
+            context.Scope = GetScope(method);
+
+            return context;
+        }
 
         private void CompileMethod(DSharpMethodBuilder method, InvokableNode invokableNode, DSharpMethodCompileSettings settings = default)
         {
@@ -280,7 +307,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 catchReference?.ReferencedInstruction = code.Finally();
                 code.Throw();
                 finallyReference?.ReferencedInstruction = code.Empty();
-                
+
                 foreach (var info in settings.UsingVariables)
                 {
                     code.LoadLocal(info.Key);
@@ -300,10 +327,29 @@ namespace DialogMaker.Core.Scripting.Compiler
                 settings.UsingVariables.Clear();
             }
 
-            if (depth == 0 && blockStatement.AllPathReturns(Assembly, context))
+            if (depth != 0 || method.ReturnType == null)
             {
-                settings.AddReturnMethod(method);
+                return;
             }
+
+            Dictionary<ExpressionNode, IDSharpType> returnTypes = [];
+
+            if (!blockStatement.AllPathReturns(Assembly, returnTypes, context))
+            {
+                return;
+            }
+
+            var methodReturnType = (IDSharpType)Assembly.GetType(method.ReturnType);
+
+            foreach (var info in returnTypes)
+            {
+                if (!info.Value.IsAssignableTo(methodReturnType))
+                {
+                    throw new DSharpCompilerException($"Returning value must be with the same type with current method or function. Type that returns: {info.Key}, but required: {methodReturnType}.{Environment.NewLine}", info.Key);
+                }
+            }
+
+            settings.AddReturnMethod(method);
         }
         private void CompileStatement(DSharpMethodBuilder method, StatementNode statement, StatementNode? parentStatement, int depth, DSharpBytecodeBuilder code, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context = default)
         {
@@ -1241,7 +1287,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                      expression is ArrayExpressionNode ||
                      expression is ParenContainedExpressionNode ||
                      expression is ThisExpressionNode ||
-                     expression is ConditionalExpressionNode)
+                     expression is ConditionalExpressionNode ||
+                     expression is CastExpressionNode ||
+                     expression is AsExpressionNode ||
+                     expression is DelegateExpressionNode)
             {
                 return CompileValueExpression(method, expression, ref settings, parentExpression, context);
             }
@@ -1305,7 +1354,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                         code.Instructions.Count == 0))
                     {
                         code.LoadInstance();
-
                         instanceLoaded = true;
                     }
 
@@ -1376,7 +1424,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 foreach (var arg in callExpression.Arguments)
                 {
-                    CompileValueExpression(method, arg, ref settings, callExpression, context);
+                    CompileValueExpression(method, arg, ref settings, null, context);
                 }
 
                 context.CurrentMember = startCurrentMember;
@@ -1450,12 +1498,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new ArgumentException($"Array index must be specified: {arrayExpression}", nameof(expression));
                 }
 
+                IDSharpMemberInfo? array = CompileValueExpression(method, arrayExpression.Array, ref settings, parentExpression, context);
+
                 foreach (var arg in arrayExpression.Arguments)
                 {
                     CompileValueExpression(method, arg, ref settings, arrayExpression, context);
                 }
 
-                var array = CompileValueExpression(method, arrayExpression.Array, ref settings, arrayExpression, context);
+                code.StackMove((uint)arrayExpression.Arguments.Count, -arrayExpression.Arguments.Count);
+
                 IDSharpIndexerInfo indexer;
 
                 try
@@ -2557,6 +2608,11 @@ namespace DialogMaker.Core.Scripting.Compiler
                         expressionMember.DeclaringType != context.CurrentMember)
                     {
                         throw new InvalidOperationException($"Unable to find \"{currentMemberAccess.Target}\" at \"{context.CurrentMember}\"");
+                    }
+
+                    if (previousTarget != null)
+                    {
+                        code.PopOffset(1);
                     }
 
                     currentMember = expressionMember;

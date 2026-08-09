@@ -747,6 +747,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
             }
 
             nint address = DSharpObjectConverter.ToIntPtr(addressObject);
+
             var resultFrame = args.Stack.PushStructure(resultType);
             var resultObject = resultFrame.ReadAsObject();
 
@@ -754,7 +755,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
             var size = resultType->Size;
             var typeInfo = (DSharpRuntimeTypeInfo*)address;
 
-            Buffer.MemoryCopy((void*)address, objectData, size, size);
+            if (address != 0)
+            {
+                Buffer.MemoryCopy((void*)address, objectData, size, size);
+            }
+
 
             return DSharpExternalMethodResult.Stack;
         }
@@ -801,7 +806,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
             }
 
             var value = arguments[0].Buffer.ReadAsObject();
-            var longValue = DSharpObjectConverter.ToObject<long>(value);
+            var longValue = decimal.ToInt64(DSharpObjectConverter.ToObject<decimal>(value));
 
             return _objectsContainer.CreateString(longValue.ToString());
         }

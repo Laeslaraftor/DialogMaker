@@ -17,7 +17,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public ExpressionNode? Expression { get; set; }
 
-        #region Статика
+        #region Static
+
+        /// <summary>
+        /// Is cast expression now
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <returns>Return true if now cast expression</returns>
+        public static bool IsCast(AstParserStream stream)
+        {
+            if (!TypeInfoNode.CanParse(stream, 1, out var endOffset))
+            {
+                return false;
+            }
+
+            return stream.Check(DSharpTokenType.RightParen, endOffset);
+        }
 
         /// <summary>
         /// Parse cast expression starts with current token

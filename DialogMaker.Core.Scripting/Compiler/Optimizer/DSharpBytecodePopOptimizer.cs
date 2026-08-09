@@ -49,7 +49,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     builder.Instructions.RemoveAt(popRange.StartIndex);
                 }
 
-                OffsetCountInstruction newInstruction = new(builder, DSharpBytecodeOperation.PopOffsetRepeat, index, popRange.Length);
+                OffsetCountInstruction newInstruction = new(builder, DSharpBytecodeOperation.PopOffsetRepeat, (uint)index, popRange.Length);
                 builder.Instructions.Insert(popRange.StartIndex, newInstruction);
             }
         }

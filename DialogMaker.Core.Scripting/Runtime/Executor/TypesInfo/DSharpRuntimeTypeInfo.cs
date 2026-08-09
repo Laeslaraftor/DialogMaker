@@ -69,6 +69,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// </summary>
         public DSharpRuntimeTypeInfo* BaseType;
         /// <summary>
+        /// Type that contains current type
+        /// </summary>
+        public DSharpRuntimeTypeInfo* DeclaringType;
+        /// <summary>
         /// Array of generic parameters
         /// </summary>
         public UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>> GenericParameters;
@@ -297,7 +301,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
             string name = new((ReadOnlySpan<char>)Name);
 
-            if (Namespace.Length > 0)
+            if (DeclaringType != null)
+            {
+                name = DeclaringType->ToString() + "." + name;
+            }
+            else if (Namespace.Length > 0)
             {
                 name = new string((ReadOnlySpan<char>)Namespace) + "." + name;
             }

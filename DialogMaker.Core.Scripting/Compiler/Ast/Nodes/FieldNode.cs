@@ -191,6 +191,31 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             return false;
         }
+        /// <summary>
+        /// Parse enum field starts with current token
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <returns>Parsed enum field</returns>
+        public static FieldNode ParseEnumField(AstParserStream stream)
+        {
+            var identifier = IdentifierExpressionNode.Parse(stream, false);
+            FieldNode field = new(identifier.Token)
+            {
+                Identifier = identifier,
+                IsReadOnly = true,
+                IsStatic = true,
+                Access = DSharpAccessModifier.Public,
+                CanRead = true
+            };
+
+            if (stream.Check(DSharpTokenType.Assign))
+            {
+                stream.Eat(DSharpTokenType.Assign);
+                field.Initializer = ExpressionNode.ParseExpression(stream);
+            }
+
+            return field;
+        }
 
         private static bool TryParseAccessor(AstParserStream stream, DSharpPropertyAccessor accessor, out BlockStatementNode? result)
         {

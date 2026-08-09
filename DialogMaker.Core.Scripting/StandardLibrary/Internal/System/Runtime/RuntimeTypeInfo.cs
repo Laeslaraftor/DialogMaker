@@ -4,10 +4,10 @@ using System.Native;
 using System;
 using System.Reflection;
 
-public struct RuntimeTypeInfo
+internal struct RuntimeTypeInfo
 {
-    public TypeToken MetadataToken;
-    public int ObjectType;
+    public MetadataToken MetadataToken;
+    public ObjectType ObjectType;
     public int Size;
     public int BuildInValueTypeIndex;
     public nint Converter;
@@ -15,6 +15,7 @@ public struct RuntimeTypeInfo
     public NativeArray<char> Name;
     public NativeArray<char> Namespace;
     public Pointer<RuntimeTypeInfo> BaseType;
+    public Pointer<RuntimeTypeInfo> DeclaringType;
     public NativeArray<Pointer<RuntimeTypeInfo>> GenericParameters;
     public NativeArray<Pointer<RuntimeTypeInfo>> Intefaces;
     public NativeArray<nint> Constructors;

@@ -6,13 +6,9 @@
     public enum DSharpMetadataTokenType
     {
         /// <summary>
-        /// Module metadata
+        /// Empty token
         /// </summary>
-        Module = 0x00000000,
-        /// <summary>
-        /// Reference type metadata
-        /// </summary>
-        TypeReference = 0x01000000,
+        None = 0x00000000,
         /// <summary>
         /// Type definition metadata
         /// </summary>
@@ -29,10 +25,6 @@
         /// Property metadata
         /// </summary>
         Property = 0x17000000,
-        /// <summary>
-        /// Parameter metadata
-        /// </summary>
-        Parameter = 0x08000000,
         /// <summary>
         /// Generic parameter metadata
         /// </summary>

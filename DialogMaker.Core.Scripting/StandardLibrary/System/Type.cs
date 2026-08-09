@@ -1,6 +1,5 @@
 namespace System;
 
-using System.Linq.Expressions;
 using Internal.System.Runtime;
 
 public class Type : IEquatable<Type>
@@ -56,8 +55,28 @@ public class Type : IEquatable<Type>
             return field;
         }
     }
-    public bool IsValueType { get; }
-    public Type? DeclaringType { get; }
+    public bool IsValueType
+    {
+        get
+        {
+            var objectType = _typeInfo.ObjectType;
+
+            return objectType == ObjectType.Enum ||
+                   objectType == ObjectType.Struct;
+        }
+    }
+    public Type? DeclaringType
+    {
+        get
+        {
+            if (field == null && !_typeInfo.DeclaringType.IsNull)
+            {
+                field = new(_typeInfo.DeclaringType[0]);
+            }
+
+            return field;
+        }
+    }
 
     private readonly RuntimeTypeInfo _typeInfo;
 

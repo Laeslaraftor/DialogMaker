@@ -3,6 +3,12 @@ using System.Collections.Generic;
 
 public class Program
 {
+    public enum ProgramType
+    {
+        Default,
+        MegaGovno
+    }
+
     public static void Main()
     {
         List<Exception> exceptions = new();
@@ -139,7 +145,11 @@ public class Program
 
 
         var playerType = player.GetType();
-        Console.WriteLine(playerType.Name);
+        Console.WriteLine(playerType.ToString());
+        var enumType = typeof(ProgramType);
+        Console.WriteLine(enumType.ToString());
+
+        Console.WriteLine();
 
         TestArray();
 

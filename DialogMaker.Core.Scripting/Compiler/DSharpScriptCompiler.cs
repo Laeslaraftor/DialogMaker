@@ -65,7 +65,6 @@ namespace DialogMaker.Core.Scripting.Compiler
             _createdProperties.Clear();
             _createdMethods.Clear();
             _enumTypes.Clear();
-            _enumValues.Clear();
             _createdFinalizers.Clear();
             _createdIndexers.Clear();
             _createdOperators.Clear();
@@ -137,6 +136,10 @@ namespace DialogMaker.Core.Scripting.Compiler
             foreach (var info in _createdFinalizers)
             {
                 CompileMethod(info.Key, info.Value);
+            }
+            foreach (var description in _enumTypes)
+            {
+                CompileEnum(description);
             }
         }
         /// <summary>

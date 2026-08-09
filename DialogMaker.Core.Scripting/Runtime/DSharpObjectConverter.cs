@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {

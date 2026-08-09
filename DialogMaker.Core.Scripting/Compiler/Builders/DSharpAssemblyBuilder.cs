@@ -178,7 +178,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                field ??= GetTypeToken(DSharpBuildInTypes.Extra.Enum);
+                field ??= GetTypeToken(EnumType);
                 return field;
             }
         }
@@ -387,7 +387,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                field ??= (IDSharpType)GetType(EnumToken);
+                field ??= EnumTypeInfo.Type;
                 return field;
             }
         }
@@ -492,6 +492,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             get
             {
                 field ??= DSharpIDisposableType.Create(this);
+                return field;
+            }
+        }
+        public DSharpEnumType EnumTypeInfo
+        {
+            get
+            {
+                field ??= DSharpEnumType.Create(this);
                 return field;
             }
         }

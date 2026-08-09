@@ -50,6 +50,14 @@ namespace DialogMaker.Core.Scripting.Runtime
         [Executor(typeof(DSharpPopPreviousTwoInstructionExecutor))]
         PopPreviousTwo,
         /// <summary>
+        /// Move value on specified amount of indexes that placed on specified offset.
+        /// StackMove(int offset, int moveOffset)
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(1)]
+        [Executor(typeof(DSharpPopStackMoveInstructionExecutor))]
+        StackMove,
+        /// <summary>
         /// Load value from local variable to stack
         /// </summary>
         [ArgsCount(1)]

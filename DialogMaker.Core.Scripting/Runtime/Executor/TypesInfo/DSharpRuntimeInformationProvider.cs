@@ -544,6 +544,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
             info->GenericParameters = builder.AllocateArray(runtimeGenericParameters);
             info->BaseType = baseType != null ? GetRuntimeInfo(baseType) : null;
+            info->DeclaringType = type.DeclaringType != null ? GetRuntimeInfo(type.DeclaringType) : null;
             info->Interfaces = builder.AllocateArray(runtimeInterfaces);
 
             if (DSharpBuildInTypes.TryGetValueTypeIndex(type, out var valueTypeIndex))

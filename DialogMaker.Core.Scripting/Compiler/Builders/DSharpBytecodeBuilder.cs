@@ -371,9 +371,19 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <param name="offset">Popped item offset</param>
         /// <param name="count">Repeat count</param>
         /// <returns></returns>
-        public OffsetCountInstruction PopOffsetRepeat(int offset, int count)
+        public OffsetCountInstruction PopOffsetRepeat(uint offset, int count)
         {
             return CreateInstruction<OffsetCountInstruction>(this, DSharpBytecodeOperation.PopOffsetRepeat, offset, count);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.StackMove"/>
+        /// </summary>
+        /// <param name="offset">Popped item offset</param>
+        /// <param name="moveOffset">Move offset</param>
+        /// <returns></returns>
+        public OffsetCountInstruction StackMove(uint offset, int moveOffset)
+        {
+            return CreateInstruction<OffsetCountInstruction>(this, DSharpBytecodeOperation.StackMove, offset, moveOffset);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.New"/>
@@ -1364,6 +1374,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 DSharpBinaryOperator.Mod => Mod(),
                 DSharpBinaryOperator.ShiftLeft => ShiftLeft(),
                 DSharpBinaryOperator.ShiftRight => ShiftRight(),
+                DSharpBinaryOperator.And => And(),
+                DSharpBinaryOperator.Or => Or(),
                 DSharpBinaryOperator.LogicalAnd => And(),
                 DSharpBinaryOperator.LogicalOr => Or(),
                 DSharpBinaryOperator.LogicalLess => Less(),
