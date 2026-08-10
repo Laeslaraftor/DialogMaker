@@ -41,7 +41,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             if (isInstance)
             {
-                instance = GetInstance(context, 0, out error);
+                instance = GetInstance(context, (uint)stackValuesCount - 1, out error);
 
                 if (instance == null)
                 {
@@ -51,7 +51,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             try
             {
-                field->Write(context.ObjectsContainer, instance, context.Stack, (uint)stackValuesCount - 1);
+                field->Write(context.ObjectsContainer, instance, context.Stack, 0);
             }
             catch (Exception exception)
             {

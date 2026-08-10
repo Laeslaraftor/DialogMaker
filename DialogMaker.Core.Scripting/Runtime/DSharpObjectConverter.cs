@@ -1,5 +1,4 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor;
-using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
@@ -19,7 +18,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         {
             CheckType(obj, DSharpBuildInTypes.String, false);
             char* chars = DSharpObject.GetData<char>(obj);
-            var size = DSharpObject.GetSize(obj);
+            var size = DSharpArray.GetLength(obj);
 
             return new(chars, 0, size);
         }

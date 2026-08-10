@@ -13,6 +13,8 @@ namespace DialogMaker.Core.Scripting.Compiler
         private readonly Dictionary<DSharpPropertyBuilder, DSharpFieldBuilder> _propertyFields = [];
         private readonly HashSet<DSharpPropertyBuilder> _propertiesWithCustomAccessors = [];
 
+        #region Properties
+
         private DSharpFieldBuilder GetValueFieldForProperty(DSharpPropertyBuilder property)
         {
             if (!_propertyFields.TryGetValue(property, out var field))
@@ -94,7 +96,52 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
         }
 
-        #region Константы
+        #endregion
+
+        #region Accessors
+
+        private void CompileGetterMethod(DSharpMethodBuilder method, DSharpMethodCompileSettings settings = default)
+        {
+            if (settings.IdentifiersAsField == null || !settings.IdentifiersAsField.TryGetValue(FieldKeyword, out var field))
+            {
+                throw new ArgumentException($"Field for store value must be provided", nameof(settings));
+            }
+
+            var code = method.GetBytecodeBuilder();
+
+            if (method.IsStatic)
+            {
+                code.LoadField(field);
+            }
+            else
+            {
+                code.LoadInstance();
+                code.LoadInstanceField(field);
+            }
+
+            code.Return();
+        }
+        private void CompileSetterMethod(DSharpMethodBuilder method, DSharpMethodCompileSettings settings = default)
+        {
+            if (settings.IdentifiersAsField == null || !settings.IdentifiersAsField.TryGetValue(FieldKeyword, out var field))
+            {
+                throw new ArgumentException($"Field for store value must be provided", nameof(settings));
+            }
+
+            var code = method.GetBytecodeBuilder();
+
+            if (!method.IsStatic)
+            {
+                code.LoadInstance();
+            }
+
+            code.LoadLocal(method.Parameters[0]);
+            code.StorePropertyOrField(field);
+        }
+
+        #endregion
+
+        #region Constants
 
         private const string ValueFieldNameSuffix = "__value";
         private const string FieldKeyword = "field";

@@ -54,6 +54,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                         context.Stack.Pop();
                         context.Stack.PushStructure(obj, true);
                     }
+                    else if (obj->Type->IsValueType && !obj->IsReferenceObject && !type->IsValueType)
+                    {
+                        var boxed = context.ObjectsContainer.Box(obj);
+                        context.Stack.Pop();
+                        context.Stack.PushReference(boxed, true);
+                    }
 
                     return DSharpMethodExecutionCallback.Complete();
                 }

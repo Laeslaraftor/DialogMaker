@@ -542,11 +542,19 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                     AddToken(DSharpTokenType.Colon, ":", startLine, startColumn);
                     break;
                 case '?':
-                    if (next == '?' && PeekNext() == '=')
+                    if (next == '?')
                     {
-                        GetNext();
-                        GetNext();
-                        AddToken(DSharpTokenType.AssignIfNull, "??=", startLine, startColumn);
+                        if (PeekNext() == '=')
+                        {
+                            GetNext();
+                            AddToken(DSharpTokenType.AssignIfNull, "??=", startLine, startColumn);
+                        }
+                        else
+                        {
+                            AddToken(DSharpTokenType.IfNull, "??", startLine, startColumn);
+                        }
+
+                        GetNext();                        
                         break;
                     }
 
@@ -568,12 +576,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
 
         #endregion
 
-        #region Перечисление
+        #region IEnumerator
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public IEnumerator<DSharpToken> GetEnumerator()
         {
             return _tokens.GetEnumerator();
@@ -585,7 +589,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
 
         #endregion
 
-        #region Статика
+        #region Static
 
         private static ReadOnlyDictionary<string, DSharpTokenType> Keywords
         {

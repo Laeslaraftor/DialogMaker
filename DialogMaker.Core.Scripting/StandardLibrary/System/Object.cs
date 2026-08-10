@@ -27,7 +27,7 @@ public sealed class Object
             return false;
         }
 
-        return a.Equals(b);
+        return a.Equals(b) || b.Equals(a);
     }
     public static extern bool ReferenceEquals(object? a, object? b);
 

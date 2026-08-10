@@ -71,6 +71,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// Interfaces declarations that implemented by current property
         /// </summary>
         public UnmanagedArray<Pointer<DSharpRuntimePropertyInfo>> ImplementedProperties;
+        /// <summary>
+        /// Amount of getter parameters
+        /// </summary>
+        public uint GetterParametersCount;
+        /// <summary>
+        /// Amount of setter parameters
+        /// </summary>
+        public uint SetterParametersCount;
 
         public readonly override string ToString()
         {

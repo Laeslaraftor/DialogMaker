@@ -1,10 +1,11 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
-using DialogMaker.Core.Scripting.Compiler.Lexer;
-using System.Diagnostics.CodeAnalysis;
-using DialogMaker.Core.Scripting.Runtime;
 using DialogMaker.Core.Scripting.Compiler.Builders;
+using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
+using DialogMaker.Core.Scripting.Runtime;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -693,6 +694,33 @@ namespace DialogMaker.Core.Scripting.Compiler
         extension(ExpressionNode expression)
         {
             /// <summary>
+            /// Get nearest common type between two expressions
+            /// </summary>
+            /// <param name="assembly">Assembly builder for finding types</param>
+            /// <param name="context">Compiler context</param>
+            /// <param name="other">Other expression for finding nearest common type with current expression</param>
+            /// <returns>Nearest common type between two expressions</returns>
+            /// <exception cref="InvalidOperationException">Unable to get expression type</exception>
+            public IDSharpType GetNearestCommonTypeWith(DSharpAssemblyBuilder assembly, DSharpCompilerContext context, ExpressionNode other)
+            {
+                var trueValueType = expression.GetExpressionType(assembly, context);
+                var falseValueType = other.GetExpressionType(assembly, context);
+
+                if (trueValueType == null ||
+                    !trueValueType.TryGetTypeOrReturnType(out var trueType))
+                {
+                    throw new InvalidOperationException($"Unable to get expression type: {expression}");
+                }
+                if (falseValueType == null ||
+                    !falseValueType.TryGetTypeOrReturnType(out var falseType))
+                {
+                    throw new InvalidOperationException($"Unable to get expression type: {other}");
+                }
+
+                return trueType.GetNearestCommonType(falseType);
+            }
+
+            /// <summary>
             /// Get is current expression null
             /// </summary>
             /// <returns>Is current expression null</returns>
@@ -1028,21 +1056,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                         throw new ArgumentException($"Invalid conditional expression: {expression}", nameof(expression));
                     }
 
-                    var trueValueType = conditionalExpression.TrueExpression.GetExpressionType(assembly, context);
-                    var falseValueType = conditionalExpression.FalseExpression.GetExpressionType(assembly, context);
-
-                    if (trueValueType == null ||
-                        !trueValueType.TryGetTypeOrReturnType(out var trueType))
-                    {
-                        throw new InvalidOperationException($"Unable to get true expression type: {conditionalExpression.TrueExpression}");
-                    }
-                    if (falseValueType == null ||
-                        !falseValueType.TryGetTypeOrReturnType(out var falseType))
-                    {
-                        throw new InvalidOperationException($"Unable to get false expression type: {conditionalExpression.FalseExpression}");
-                    }
-
-                    return trueType.GetNearestCommonType(falseType);
+                    return conditionalExpression.TrueExpression.GetNearestCommonTypeWith(assembly, context, conditionalExpression.FalseExpression);
                 }
                 else if (expression is AsExpressionNode asExpression)
                 {
@@ -1054,6 +1068,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                     var typeToken = context.ResolveType(asExpression.ConvertType);
 
                     return (IDSharpType)assembly.GetType(typeToken);
+                }
+                else if (expression is SelectNotNullExpressionNode selectNotNullExpression)
+                {
+                    if (selectNotNullExpression.Left == null || selectNotNullExpression.Right == null)
+                    {
+                        throw new ArgumentException($"Invalid expression: {expression}", nameof(expression));
+                    }
+
+                    return selectNotNullExpression.Left.GetNearestCommonTypeWith(assembly, context, selectNotNullExpression.Right);
                 }
 
                 throw new ArgumentException($"Unable to get type of expression: {expression}", nameof(expression));

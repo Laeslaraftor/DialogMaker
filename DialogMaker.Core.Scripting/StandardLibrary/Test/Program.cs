@@ -163,6 +163,9 @@ public class Program
             Console.WriteLine("player is not value player");
         }
 
+        Console.WriteLine("Selection 1: " + Selector<Enemy>(player, "Гавёшка"));
+        Console.WriteLine("Selection 2: " + Selector<IPlayer>(player, "Гавёшка"));
+
         Console.WriteLine();
 
         TestArray();
@@ -180,6 +183,10 @@ public class Program
         TestExceptionHandling();
     }
 
+    private static object Selector<T>(object? value1, object value2)
+    {
+        return (value1 as T) ?? value2;
+    }
     private static void TestArray()
     {
         string[] values = new string[] { "value", "value" };
@@ -271,6 +278,11 @@ public struct ValuePlayer : IPlayer
     public string Name { get; }
 
     public void PrintMessage() => Console.WriteLine(Name);
+
+    public override string ToString()
+    {
+        return Name;
+    }
 }
 public class Player : IPlayer
 {
@@ -284,6 +296,10 @@ public class Player : IPlayer
     public virtual void PrintMessage()
     {
         Console.WriteLine(Name);
+    }
+    public override string ToString()
+    {
+        return Name;
     }
 }
 public class Enemy : Player

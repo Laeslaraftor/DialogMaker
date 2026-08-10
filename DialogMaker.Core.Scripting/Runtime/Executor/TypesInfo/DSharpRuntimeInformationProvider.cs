@@ -715,10 +715,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             if (property.Getter != null && type->TryGetMethod(property.Getter.MetadataToken, out var getter))
             {
                 info->Getter = getter;
+                info->GetterParametersCount = (uint)property.Getter.GetParameters().Length;
             }
             if (property.Setter != null && type->TryGetMethod(property.Setter.MetadataToken, out var setter))
             {
                 info->Setter = setter;
+                info->SetterParametersCount = (uint)property.Setter.GetParameters().Length;
             }
 
             _properties.Add(property.MetadataToken, info);

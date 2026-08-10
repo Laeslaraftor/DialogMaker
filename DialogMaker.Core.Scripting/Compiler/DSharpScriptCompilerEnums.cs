@@ -189,8 +189,8 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             var code = description.ValueConstructor.GetBytecodeBuilder();
-            code.LoadLocal(description.ValueConstructor.Parameters[0]);
             code.LoadInstance();
+            code.LoadLocal(description.ValueConstructor.Parameters[0]);
             code.StoreInstanceField(description.InstanceValueField);
         }
         private void CompileEnumExplicitEnumToValueOperator(DSharpCompilerEnumDescription description)

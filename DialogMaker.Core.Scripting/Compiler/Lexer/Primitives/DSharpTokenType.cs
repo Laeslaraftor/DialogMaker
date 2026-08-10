@@ -393,6 +393,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// </summary>
         AssignIfNull,
         /// <summary>
+        /// Execute right expression if left is null (??)
+        /// </summary>
+        IfNull,
+        /// <summary>
         /// Plus operator (+)
         /// </summary>
         Plus, 

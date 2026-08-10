@@ -118,11 +118,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         public static ExpressionNode ParseShift(AstParserStream stream)
         {
             return ParseOperation(stream, ParseIs, 2, DSharpTokenType.Less,
-                                          DSharpTokenType.Greater);
+                                                      DSharpTokenType.Greater);
         }
         public static ExpressionNode ParseIs(AstParserStream stream)
         {
-            return ParseOperation(stream, UnaryExpressionNode.Parse, DSharpTokenType.Is);
+            return ParseOperation(stream, UnaryExpressionNode.Parse, DSharpTokenType.Is, 
+                                                                     DSharpTokenType.IfNull);
         }
 
         private static ExpressionNode ParseOperation(AstParserStream stream, Func<AstParserStream, ExpressionNode> parser, params DSharpTokenType[] tokens)
@@ -181,6 +182,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 if (stream.Current.Type == DSharpTokenType.Is)
                 {
                     return IsExpressionNode.Parse(stream, left);
+                }
+                else if (stream.Current.Type == DSharpTokenType.IfNull)
+                {
+                    return SelectNotNullExpressionNode.Parse(stream, left);
                 }
 
                 var operatorToken = stream.Eat(stream.Current.Type);
