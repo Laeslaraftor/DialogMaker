@@ -15,6 +15,7 @@ namespace DialogMaker.Core.Tests
         [TestCase("a == null && b == null || ReferenceEquals(a, b)")]
         [TestCase("value == obj.Value && other == obj.OtherValue")]
         [TestCase("field == null && !DeclaringType.IsNull")]
+        [TestCase("field is Type type { Name: \"String\" }")]
         public static void TestBinaryExpressionCompiling(string expression)
         {
             DSharpLexer lexer = new();
@@ -23,6 +24,12 @@ namespace DialogMaker.Core.Tests
 
             var parsedExpression = ExpressionNode.ParseExpression(tokensStream);
 
+            if (parsedExpression is IsExpressionNode)
+            {
+                Console.WriteLine("Is expression:");
+                Console.WriteLine(parsedExpression);
+                return;
+            }
             if (parsedExpression is not BinaryExpressionNode binaryExpression)
             {
                 Debug.Fail($"Parsed expression is not binary: {parsedExpression}");

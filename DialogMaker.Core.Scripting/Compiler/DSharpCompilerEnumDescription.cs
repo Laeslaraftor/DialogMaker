@@ -21,13 +21,9 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// </summary>
         public Dictionary<DSharpFieldBuilder, FieldNode>? ValueFields { get; set; }
         /// <summary>
-        /// Property that contains value name
+        /// Method that override <c>ToString</c> and return name of current value
         /// </summary>
-        public DSharpPropertyBuilder? NameProperty { get; set; }
-        /// <summary>
-        /// Field that contains value for name property
-        /// </summary>
-        public DSharpFieldBuilder? NamePropertyValueField { get; set; }
+        public DSharpMethodBuilder? ToStringMethod { get; set; }
         /// <summary>
         /// Constructor for initializing enum value
         /// </summary>

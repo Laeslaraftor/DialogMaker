@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Internal.System.Runtime;
 
 public class Program
 {
@@ -136,7 +137,7 @@ public class Program
 
         Console.WriteLine();
 
-        IPlayer player = new Enemy("zeWhite");
+        IPlayer player = new ValuePlayer("zeWhite");
 
         for (int i = 0; i < 5; i++)
         {
@@ -148,6 +149,19 @@ public class Program
         Console.WriteLine(playerType.ToString());
         var enumType = typeof(ProgramType);
         Console.WriteLine(enumType.ToString());
+        Console.WriteLine(ObjectType.Class);
+        Console.WriteLine(ObjectType.Class == ObjectType.Class);
+        Console.WriteLine(ObjectType.Class == ObjectType.Enum);
+        Console.WriteLine();
+
+        if (player is ValuePlayer valuePlayer)
+        {
+            Console.WriteLine("player is value player: " + valuePlayer.Name);
+        }
+        else
+        {
+            Console.WriteLine("player is not value player");
+        }
 
         Console.WriteLine();
 

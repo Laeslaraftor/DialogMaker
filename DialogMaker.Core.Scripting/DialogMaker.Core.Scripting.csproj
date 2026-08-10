@@ -10,6 +10,8 @@
 
   <ItemGroup>
     <Compile Remove="StandardLibrary\**" />
+    <EmbeddedResource Remove="StandardLibrary\**" />
+    <None Remove="StandardLibrary\**" />
   </ItemGroup>
 
   <ItemGroup>

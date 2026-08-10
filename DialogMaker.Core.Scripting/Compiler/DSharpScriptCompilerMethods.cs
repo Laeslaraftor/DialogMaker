@@ -1290,7 +1290,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                      expression is ConditionalExpressionNode ||
                      expression is CastExpressionNode ||
                      expression is AsExpressionNode ||
-                     expression is DelegateExpressionNode)
+                     expression is DelegateExpressionNode ||
+                     expression is IsExpressionNode)
             {
                 return CompileValueExpression(method, expression, ref settings, parentExpression, context);
             }
@@ -2103,6 +2104,227 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 return expressionValue;
             }
+            else if (expression is IsLiteralValueExpressionNode isLiteralExpression)
+            {
+                if (isLiteralExpression.CheckExpression == null)
+                {
+                    throw new DSharpCompilerException("Check expression can not be null", expression);
+                }
+                if (isLiteralExpression.LiteralExpression == null)
+                {
+                    throw new DSharpCompilerException("Literal expression can not be null", expression);
+                }
+
+                bool isNegative = isLiteralExpression.IsNegative;
+                var literalValue = isLiteralExpression.LiteralExpression.Value;
+
+                void Compare()
+                {
+                    if (isNegative)
+                    {
+                        code.NotEquals();
+                        return;
+                    }
+
+                    code.Equals();
+                }
+
+                var expressionMember = isLiteralExpression.CheckExpression.GetExpressionType(Assembly, context);
+                var literalType = Assembly.GetType(literalValue.Type);
+
+                if (expressionMember == null || !expressionMember.TryGetTypeOrReturnType(out var expressionType))
+                {
+                    throw new DSharpCompilerException("Unable to find expression type", isLiteralExpression.CheckExpression);
+                }
+
+                if (literalValue.Type == DSharpLiteralType.Null && expressionType.IsValueType())
+                {
+                    AddWarning($"This comparison always return \"{!isNegative}\". Do not compare value types with \"null\"", expression);
+                    code.Push(!isNegative);
+                    return null;
+                }
+
+                CompileValueExpression(method, isLiteralExpression.CheckExpression, ref settings, expression, context);
+
+                if (literalValue.Type == DSharpLiteralType.Null)
+                {
+                    code.Push(null);
+                }
+                else
+                {
+                    if (!expressionType.IsAssignableTo(literalType))
+                    {
+                        code.As(literalType);
+                    }
+
+                    code.Push(literalValue);
+                }
+
+                Compare();
+                code.PopPreviousTwo();
+                return null;
+            }
+            else if (expression is IsTypeExpressionNode isTypeExpressionNode)
+            {
+                if (isTypeExpressionNode.CheckExpression == null)
+                {
+                    throw new DSharpCompilerException("Check expression can not be null", expression);
+                }
+                if (isTypeExpressionNode.DestinationType == null &&
+                    isTypeExpressionNode.DestinationIdentifier == null &&
+                    isTypeExpressionNode.DestinationObjectValues == null)
+                {
+                    throw new DSharpCompilerException("Empty comparison. At least type should be specified", expression);
+                }
+
+                bool isNegative = isTypeExpressionNode.IsNegative;
+                var expressionMember = isTypeExpressionNode.CheckExpression.GetExpressionType(Assembly, context);
+
+                if (expressionMember == null || !expressionMember.TryGetTypeOrReturnType(out var expressionType))
+                {
+                    throw new DSharpCompilerException("Unable to find expression type", isTypeExpressionNode.CheckExpression);
+                }
+
+                CompileValueExpression(method, isTypeExpressionNode.CheckExpression, ref settings, expression, context);
+
+                var expressionTypeIsValue = expressionType.IsValueType();
+                IDSharpType? destinationType = null;
+
+                if (isTypeExpressionNode.DestinationType != null)
+                {
+                    var variableIdentifier = isTypeExpressionNode.DestinationIdentifier;
+                    IDSharpParameterInfo? variable = null;
+                    DSharpTypeToken typeToken;
+
+                    try
+                    {
+                        typeToken = context.ResolveType(isTypeExpressionNode.DestinationType);
+                    }
+                    catch (Exception error)
+                    {
+                        throw new DSharpCompilerException("Unable to resolve type", isTypeExpressionNode.DestinationType, error);
+                    }
+
+                    destinationType = (IDSharpType)Assembly.GetType(typeToken);
+
+                    if (variableIdentifier != null)
+                    {
+                        try
+                        {
+                            variable = CreateVariable(method, variableIdentifier.Name, destinationType, null, ref settings, context);
+                        }
+                        catch (Exception error)
+                        {
+                            throw new DSharpCompilerException($"Unable to create variable \"{variableIdentifier.Name}\" in current scope", variableIdentifier, error);
+                        }
+                    }
+
+                    if (destinationType == expressionType)
+                    {
+                        AddWarning($"This expression always return \"{!isNegative}\"", expression);
+                        code.Push(!isNegative);
+                    }
+                    else if (destinationType != Assembly.ObjectType &&
+                             ((expressionTypeIsValue && destinationType.CanCastTo(expressionType) == DSharpCastAvailability.No && 
+                                                        !destinationType.ContainsBaseType(expressionType)) ||
+                             (!expressionTypeIsValue && !destinationType.ContainsBaseType(expressionType))))
+                    {
+                        AddWarning($"This expression always return \"{isNegative}\"", expression);
+                        code.Push(isNegative);
+                    }
+                    else
+                    {
+                        code.As(destinationType);
+                        code.Push(null);
+
+                        if (isNegative)
+                        {
+                            code.Equals();
+                        }
+                        else
+                        {
+                            code.NotEquals();
+                        }
+
+                        var skipInstruction = code.JumpIfFalse();
+                        code.PopRepeat(2);
+
+                        if (variable != null)
+                        {
+                            code.StoreLocal(variable);
+                        }
+
+                        if (isTypeExpressionNode.DestinationObjectValues == null)
+                        {
+                            code.Pop();
+                            code.Push(true);
+
+                            var skipEndInstructions = code.Jump();
+
+                            skipInstruction.ReferencedInstruction = code.PopRepeat(3);
+                            code.Push(false);
+
+                            skipEndInstructions.ReferencedInstruction = code.Empty();
+                        }
+                        else
+                        {
+                            code.SkipNext();
+                            skipInstruction.ReferencedInstruction = code.PopRepeat(2);
+                        }
+
+                    }
+                }
+                else if (isTypeExpressionNode.DestinationIdentifier != null)
+                {
+                    throw new DSharpCompilerException("Output identifier requires output type before it", isTypeExpressionNode.DestinationIdentifier);
+                }
+                if (isTypeExpressionNode.DestinationObjectValues != null)
+                {
+                    var valueType = destinationType ?? expressionType;
+                    DSharpCompilerContext valueContext = new(Context, valueType);
+                    List<DSharpBytecodeBuilder.ReferenceInstruction> skipInstructions = [];
+
+                    foreach (var info in isTypeExpressionNode.DestinationObjectValues.Values)
+                    {
+                        if (!valueContext.TryResolveMember(info.Key, out var memberInfo))
+                        {
+                            throw new DSharpCompilerException($"Unable to resolve member \"{info.Key.Name}\"", info.Key);
+                        }
+                        if (memberInfo.MemberInfo is not IDSharpPropertyInfo &&
+                            memberInfo.MemberInfo is not IDSharpFieldInfo)
+                        {
+                            throw new DSharpCompilerException($"Invalid member \"{info.Key.Name}\". Only fields and properties allowed", info.Key);
+                        }
+
+                        code.LoadPropertyOrField(memberInfo.MemberInfo);
+
+                        CompileValueExpression(method, info.Value, ref settings, expression, context);
+                        code.Call(Assembly.ObjectTypeInfo.EqualsMethod);
+                        skipInstructions.Add(code.JumpIfFalse());
+                        code.PopRepeat(3);
+                    }
+
+                    code.Pop();
+                    code.Push(!isNegative);
+
+                    if (skipInstructions.Count > 0)
+                    {
+                        var skipEndingInstruction = code.Jump();
+                        var endInstruction = code.PopRepeat(4);
+
+                        foreach (var instruction in skipInstructions)
+                        {
+                            instruction.ReferencedInstruction = endInstruction;
+                        }
+
+                        code.Push(isNegative);
+                        skipEndingInstruction.ReferencedInstruction = code.Empty();
+                    }
+                }
+
+                return null;
+            }
+            
 
             throw new ArgumentException($"Unable to compile expression: {expression}", nameof(expression));
         }

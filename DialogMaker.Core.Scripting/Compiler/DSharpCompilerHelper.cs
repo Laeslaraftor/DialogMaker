@@ -757,6 +757,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     return assembly.Int32Type;
                 }
+                else if (expression is IsExpressionNode)
+                {
+                    return assembly.BoolType;
+                }
                 else if (expression is CallExpressionNode callExpression)
                 {
                     var callingInfo = context.FindMethod(callExpression);

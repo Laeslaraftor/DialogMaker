@@ -945,6 +945,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 {
                     return StackValueEquals(left, right);
                 }
+                else if (left.ValueType == DSharpStackValueType.Null && right.Size > 0)
+                {
+                    return RuntimeExtensions.IsEmpty((void*)right.StackPointer, right.Size);
+                }
+                else if (right.ValueType == DSharpStackValueType.Null && left.Size > 0)
+                {
+                    return RuntimeExtensions.IsEmpty((void*)left.StackPointer, left.Size);
+                }
                 else if (left.IsNumber && right.IsNumber)
                 {
                     return left.ReadAsDecimal().GetValueOrDefault() == right.ReadAsDecimal().GetValueOrDefault();

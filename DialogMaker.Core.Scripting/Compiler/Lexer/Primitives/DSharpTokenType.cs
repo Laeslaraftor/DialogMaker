@@ -378,6 +378,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// </summary>
         [Keyword("finally")]
         Finally,
+        /// <summary>
+        /// Not keyword
+        /// </summary>
+        [Keyword("not")]
+        NotKeyword,
 
         /// <summary>
         /// Assign operator (=)

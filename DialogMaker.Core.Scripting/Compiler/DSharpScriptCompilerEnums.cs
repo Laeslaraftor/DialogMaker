@@ -155,6 +155,11 @@ namespace DialogMaker.Core.Scripting.Compiler
             description.ValueConstructor ??= type.CreateConstructor();
             SetupParameters(description.ValueConstructor.Parameters, ("value", valueTypeToken));
 
+            description.ToStringMethod ??= type.CreateMethod(nameof(ToString));
+            description.ToStringMethod.Access = DSharpAccessModifier.Public;
+            description.ToStringMethod.ReturnType = Assembly.StringToken;
+            description.ToStringMethod.OverrideMethod = Assembly.ObjectTypeInfo.ToStringMethod;
+
             description.ExplicitEnumToValueOperator = type.CreateExplicitOperator();
             description.ExplicitEnumToValueOperator.ReturnType = type;
             SetupParameters(description.ExplicitEnumToValueOperator.Parameters, ("value", valueTypeToken));
@@ -169,6 +174,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             CompileEnumExplicitEnumToValueOperator(description);
             CompileEnumExplicitValueToEnumOperator(description);
             CompileEnumValues(description);
+            CompileEnumToString(description);
         }
 
         private void CompileEnumValueConstructor(DSharpCompilerEnumDescription description)
@@ -282,6 +288,58 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 valueIndex++;
             }
+        }
+        private void CompileEnumToString(DSharpCompilerEnumDescription description)
+        {
+            if (description.InstanceValueField == null)
+            {
+                throw new DSharpCompilerException("Enum instance value not found", description.DeclarationNode);
+            }
+            if (description.InstanceValueField.FieldType == null)
+            {
+                throw new DSharpCompilerException("Enum instance value type not specified", description.DeclarationNode);
+            }
+            if (description.ToStringMethod == null)
+            {
+                throw new DSharpCompilerException("Enum to string method not found", description.DeclarationNode);
+            }
+
+            var valueType = (IDSharpType)Assembly.GetType(description.InstanceValueField.FieldType);
+            var code = description.ToStringMethod.GetBytecodeBuilder();
+            bool isNumber = DSharpBuildInTypes.IsNumber(valueType);
+
+            if (description.ValueFields == null)
+            {
+                code.LoadInstance();
+                code.CallBaseInstance(Assembly.ObjectTypeInfo.ToStringMethod);
+                return;
+            }
+
+            foreach (var field in description.ValueFields.Keys)
+            {
+                code.LoadInstance();
+                code.LoadInstanceField(description.InstanceValueField);
+                code.LoadField(field);
+                code.LoadInstanceField(description.InstanceValueField);
+                code.PopOffset(1);
+                
+                if (isNumber)
+                {
+                    code.Equals();
+                }
+                else
+                {
+                    code.Call(Assembly.ObjectTypeInfo.EqualsMethod);
+                }
+
+                var skipInstruction = code.JumpIfFalse();
+                code.Push(field.Name);
+                code.Return();
+                skipInstruction.ReferencedInstruction = code.PopRepeat(4);
+            }
+
+            code.Push(description.TypeBuilder.FullName);
+            code.Return();
         }
     }
 }

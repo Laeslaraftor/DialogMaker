@@ -163,6 +163,11 @@ namespace DialogMaker.Core.Scripting.Compiler
             return Script?.ToString() ?? base.ToString();
         }
 
+        [Obsolete("Not implemented yet")]
+        private void AddWarning(string message, AstNode node)
+        {
+        }
+
         #endregion
 
         #region Scopes

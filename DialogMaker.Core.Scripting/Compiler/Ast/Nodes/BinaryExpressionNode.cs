@@ -85,6 +85,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         }
 
         public static ExpressionNode Parse(AstParserStream stream) => ParseLogical(stream);
+        public static ExpressionNode ParseLogical(AstParserStream stream)
+        {
+            return ParseOperation(stream, ParseEquality, DSharpTokenType.LogicalOr,
+                                                         DSharpTokenType.LogicalAnd);
+        }
         public static ExpressionNode ParseEquality(AstParserStream stream)
         {
             return ParseOperation(stream, ParseComparison, DSharpTokenType.Equal,
@@ -104,21 +109,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         }
         public static ExpressionNode ParseMultiplicative(AstParserStream stream)
         {
-            return ParseOperation(stream, ParseShift, DSharpTokenType.Multiply, 
-                                                      DSharpTokenType.Divide, 
-                                                      DSharpTokenType.And, 
-                                                      DSharpTokenType.Or, 
+            return ParseOperation(stream, ParseShift, DSharpTokenType.Multiply,
+                                                      DSharpTokenType.Divide,
+                                                      DSharpTokenType.And,
+                                                      DSharpTokenType.Or,
                                                       DSharpTokenType.Mod);
         }
         public static ExpressionNode ParseShift(AstParserStream stream)
         {
-            return ParseOperation(stream, UnaryExpressionNode.Parse, 2, DSharpTokenType.Less, 
+            return ParseOperation(stream, ParseIs, 2, DSharpTokenType.Less,
                                           DSharpTokenType.Greater);
         }
-        public static ExpressionNode ParseLogical(AstParserStream stream)
+        public static ExpressionNode ParseIs(AstParserStream stream)
         {
-            return ParseOperation(stream, ParseEquality, DSharpTokenType.LogicalOr,
-                                                         DSharpTokenType.LogicalAnd);
+            return ParseOperation(stream, UnaryExpressionNode.Parse, DSharpTokenType.Is);
         }
 
         private static ExpressionNode ParseOperation(AstParserStream stream, Func<AstParserStream, ExpressionNode> parser, params DSharpTokenType[] tokens)
@@ -174,8 +178,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 {
                     break;
                 }
+                if (stream.Current.Type == DSharpTokenType.Is)
+                {
+                    return IsExpressionNode.Parse(stream, left);
+                }
 
-               var operatorToken = stream.Eat(stream.Current.Type);
+                var operatorToken = stream.Eat(stream.Current.Type);
 
                 for (int i = 1; i < repeatTokenCount; i++)
                 {

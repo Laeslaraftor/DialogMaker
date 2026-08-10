@@ -280,7 +280,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                         if (baseType == destination ||
                             baseType.GenericTemplate == destination ||
                             baseType == destination.GenericTemplate ||
-                            baseType.GenericTemplate == destination.GenericTemplate ||
+                            (baseType.GenericTemplate != null && baseType.GenericTemplate == destination.GenericTemplate) ||
                             ContainsInBaseType(baseType))
                         {
                             return true;
