@@ -21,6 +21,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Expression of default value
         /// </summary>
         public ExpressionNode? DefaultValueExpression { get; set; }
+        /// <summary>
+        /// Parameter attributes
+        /// </summary>
+        public List<AttributeNode> Attributes { get; set; } = [];
 
         #region Статика
 
@@ -30,20 +34,36 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <param name="stream">Abstract syntax tree parser stream</param>
         /// <param name="allowType">Allow parameter type definition</param>
         /// <param name="allowDefaultValue">Allow default value definition</param>
+        /// <param name="allowModes">Allow diffierent parameter modes (this, ref, out)</param>
         /// <returns>Parsed parameter expression</returns>
-        public static ParameterExpressionNode Parse(AstParserStream stream, bool allowType = true, bool allowDefaultValue = true)
+        public static ParameterExpressionNode Parse(AstParserStream stream, bool allowType = true, bool allowDefaultValue = true, bool allowModes = true)
         {
+            var attributes = AttributeNode.Parse(stream);
+
             DSharpMethodParameterMode mode = DSharpMethodParameterMode.Default;
 
-            if (stream.Check(DSharpTokenType.Ref))
+            if (allowModes)
             {
-                mode = DSharpMethodParameterMode.Ref;
-                stream.Eat(DSharpTokenType.Ref);
-            }
-            else if (stream.Check(DSharpTokenType.Out))
-            {
-                mode = DSharpMethodParameterMode.Out;
-                stream.Eat(DSharpTokenType.Out);
+                if (stream.Check(DSharpTokenType.Ref))
+                {
+                    mode = DSharpMethodParameterMode.Ref;
+                    stream.Eat(DSharpTokenType.Ref);
+                }
+                else if (stream.Check(DSharpTokenType.This))
+                {
+                    mode = DSharpMethodParameterMode.This;
+                    stream.Eat(DSharpTokenType.This);
+                }
+                else if (stream.Check(DSharpTokenType.Out))
+                {
+                    mode = DSharpMethodParameterMode.Out;
+                    stream.Eat(DSharpTokenType.Out);
+                }
+                else if (stream.Check(DSharpTokenType.Params))
+                {
+                    mode = DSharpMethodParameterMode.Params;
+                    stream.Eat(DSharpTokenType.Params);
+                }
             }
 
             TypeInfoNode? typeInfo = null;
@@ -58,7 +78,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             ParameterExpressionNode result = new(identifier)
             {
                 Mode = mode,
-                Type = typeInfo
+                Type = typeInfo,
+                Attributes = attributes
             };
 
             if (stream.Check(DSharpTokenType.Assign))

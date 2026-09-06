@@ -10,7 +10,7 @@
         /// </summary>
         Default,
         /// <summary>
-        /// Method extension parameter
+        /// Method extension parameter.
         /// </summary>
         This,
         /// <summary>
@@ -22,6 +22,10 @@
         /// Output parameter. 
         /// This parameter provides value after executing method or function
         /// </summary>
-        Out
+        Out,
+        /// <summary>
+        /// Parameters sequence
+        /// </summary>
+        Params,
     }
 }

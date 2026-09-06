@@ -80,7 +80,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 }
                 catch (Exception error)
                 {
+#if DEBUG
                     Console.WriteLine(error);
+#endif
                     LastException = error;
                 }
                 finally

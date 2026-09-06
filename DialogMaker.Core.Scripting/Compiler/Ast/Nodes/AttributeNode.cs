@@ -104,6 +104,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             return true;
         }
+        /// <summary>
+        /// Parse attributes starts with current token
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <returns>List of parsed attributes</returns>
+        public static List<AttributeNode> Parse(AstParserStream stream)
+        {
+            if (TryParse(stream, out var attributes))
+            {
+                return attributes;
+            }
+
+            return [];
+        }
 
         #endregion
     }

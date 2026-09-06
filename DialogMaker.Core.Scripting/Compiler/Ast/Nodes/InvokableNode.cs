@@ -20,7 +20,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <summary>
         /// Parameter to invoke or call this node
         /// </summary>
-        public List<VariableNode> Parameters { get; set; } = [];
+        public List<ParameterExpressionNode> Parameters { get; set; } = [];
         /// <summary>
         /// Body of this node
         /// </summary>
@@ -72,15 +72,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         /// <param name="stream">Abstract syntax tree parser stream</param>
         /// <param name="buffer">Buffer for parsed parameters</param>
-        public static void ParseParameters(AstParserStream stream, List<VariableNode> buffer, DSharpTokenType openToken = DSharpTokenType.LeftParen, DSharpTokenType closeToken = DSharpTokenType.RightParen)
+        public static void ParseParameters(AstParserStream stream, List<ParameterExpressionNode> buffer, DSharpTokenType openToken = DSharpTokenType.LeftParen, DSharpTokenType closeToken = DSharpTokenType.RightParen, bool allowModes = true)
         {
             stream.Eat(openToken);
 
             while (!stream.Check(closeToken))
             {
-                AttributeNode.TryParse(stream, out var attributes);
-                var variable = VariableNode.ParseVariable(stream, attributes, false);
-                buffer.Add(variable);
+                var parameter = ParameterExpressionNode.Parse(stream, allowDefaultValue: false, allowModes: allowModes);
+                buffer.Add(parameter);
 
                 if (!ArrayExpressionNode.CheckTokenAfterComma(stream, closeToken))
                 {
@@ -95,9 +94,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         /// <param name="stream">Abstract syntax tree parser stream</param>
         /// <returns>List of parsed parameters</returns>
-        public static List<VariableNode> ParseParameters(AstParserStream stream)
+        public static List<ParameterExpressionNode> ParseParameters(AstParserStream stream)
         {
-            List<VariableNode> buffer = [];
+            List<ParameterExpressionNode> buffer = [];
             ParseParameters(stream, buffer);
 
             return buffer;

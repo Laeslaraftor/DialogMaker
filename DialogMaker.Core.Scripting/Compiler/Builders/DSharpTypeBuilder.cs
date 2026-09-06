@@ -25,7 +25,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         public override DSharpTypeBuilder? DeclaringType { get; } = declaringType;
         public override DSharpAccessModifier Access { get; set; } = DSharpAccessModifier.Public;
         public DSharpObjectType ObjectType { get; set; } = DSharpObjectType.Class;
-        public string? Namespace { get; set; }
+        public string? Namespace
+        {
+            get => DeclaringType != null ? DeclaringType.Namespace : field;
+            set;
+        }
         public string FullName
         {
             get

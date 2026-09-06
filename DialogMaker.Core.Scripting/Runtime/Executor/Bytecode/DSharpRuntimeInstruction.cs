@@ -32,12 +32,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <returns>Instruction execution callback</returns>
         public readonly DSharpMethodExecutionCallback Execute(ref DSharpExecutionContext context)
         {
+#if DEBUG
             if (Executor == null)
             {
-                throw new InvalidOperationException("Executor not specified");
+                throw new InvalidOperationException($"Executor not specified for \"{Operation}\"");
             }
+#endif
 
-           //Console.WriteLine($"{context.CurrentMethod->ToString()}: {Operation}:{context.InstructionIndex}");
+            //Console.WriteLine($"{context.CurrentMethod->ToString()}: {Operation}:{context.InstructionIndex}");
 
             return Executor(this, ref context);
         }

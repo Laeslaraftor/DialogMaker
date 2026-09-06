@@ -1,6 +1,7 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics.CodeAnalysis;
+using System.Xml.Linq;
 
 namespace DialogMaker.Core.Scripting.Compiler.Scopes
 {
@@ -70,7 +71,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
                         return false;
                     }
 
-                    return genericParameters.SequenceEqual(genericTypes);
+                    return genericParameters.SequenceEqual(genericTypes!);
                 }
 
                 var typeGenerics = type.GetGenericTypes();
@@ -83,7 +84,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
                 {
                     return false;
                 }
-                if (typeGenerics.SequenceEqual(genericTypes))
+                if (typeGenerics.SequenceEqual(genericTypes!))
                 {
                     return true;
                 }
@@ -456,7 +457,25 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
 
             throw new ArgumentException(message, nameof(name));
         }
+        public List<IDSharpType> ResolveAllTypes()
+        {
+            List<IDSharpType> result = [];
 
+            RecursiveCheck(scope =>
+            {
+                var types = scope.GetTypes();
+                result.AddRange(types);
+                return false;
+            });
+
+            return result;
+        }
+
+        /// <summary>
+        /// Get all available types in current score
+        /// </summary>
+        /// <returns>Enumeration of all available types in current scope</returns>
+        protected abstract IEnumerable<IDSharpType> GetTypes();
         /// <summary>
         /// Get all types in current scope with specified name
         /// </summary>

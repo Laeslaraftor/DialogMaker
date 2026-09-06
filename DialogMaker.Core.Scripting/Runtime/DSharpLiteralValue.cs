@@ -235,7 +235,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         public readonly void Write(DSharpStream stream)
         {
             stream.WriteByte((byte)Type);
-            
+
             if (Parsers.TryGetValue(Type, out var parser))
             {
                 parser.Write(stream, this);
@@ -629,7 +629,7 @@ namespace DialogMaker.Core.Scripting.Runtime
 
             if (typeValue == -1)
             {
-                throw new InvalidOperationException($"Unable to read literal type");
+                throw new InvalidOperationException("Unable to read literal type");
             }
 
             var type = (DSharpLiteralType)Enum.ToObject(typeof(DSharpLiteralType), typeValue);
@@ -640,6 +640,84 @@ namespace DialogMaker.Core.Scripting.Runtime
             }
 
             throw new InvalidOperationException($"Unknown literal type: {type}");
+        }
+        /// <summary>
+        /// Create literal value from object
+        /// </summary>
+        /// <param name="obj">Object for creating literal value</param>
+        /// <returns>Literal value for specified object</returns>
+        public static DSharpLiteralValue FromObject(object? obj)
+        {
+            if (obj == null)
+            {
+                return Null;
+            }
+            if (obj is sbyte sByteValue)
+            {
+                return sByteValue;
+            }
+            else if (obj is byte byteValue)
+            {
+                return byteValue;
+            }
+            else if (obj is char charValue)
+            {
+                return charValue;
+            }
+            else if (obj is short shortValue)
+            {
+                return shortValue;
+            }
+            else if (obj is ushort ushortValue)
+            {
+                return ushortValue;
+            }
+            else if (obj is int intValue)
+            {
+                return intValue;
+            }
+            else if (obj is uint uintValue)
+            {
+                return uintValue;
+            }
+            else if (obj is long longValue)
+            {
+                return longValue;
+            }
+            else if (obj is ulong ulongValue)
+            {
+                return ulongValue;
+            }
+            else if (obj is nint nintValue)
+            {
+                return nintValue;
+            }
+            else if (obj is nuint nuintValue)
+            {
+                return nuintValue;
+            }
+            else if (obj is float floatValue)
+            {
+                return floatValue;
+            }
+            else if (obj is double doubleValue)
+            {
+                return doubleValue;
+            }
+            else if (obj is decimal decimalValue)
+            {
+                return decimalValue;
+            }
+            else if (obj is bool boolValue)
+            {
+                return boolValue;
+            }
+            else if (obj is string stringValue)
+            {
+                return stringValue;
+            }
+
+            throw new ArgumentException($"Invalid object for creating literal value: {obj}");
         }
 
         private static DSharpLiteralValue ParseUnsignedLong(string value)

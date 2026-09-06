@@ -160,6 +160,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// </summary>
         [Keyword("out")]
         Out,
+        /// <summary>
+        /// Params keyword
+        /// </summary>
+        [Keyword("params")]
+        Params,
 
         /// <summary>
         /// Function or method

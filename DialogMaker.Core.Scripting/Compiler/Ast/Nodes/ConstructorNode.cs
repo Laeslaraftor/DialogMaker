@@ -50,7 +50,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 IsStatic = memberInfo.IsStatic
             };
 
-            ParseParameters(stream, constructor.Parameters);
+            ParseParameters(stream, constructor.Parameters, allowModes: false);
 
             if (stream.Check(DSharpTokenType.Colon))
             {

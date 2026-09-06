@@ -108,6 +108,7 @@ namespace DialogMaker.Core.Tests
         }
         [TestCase("System.Exception")]
         [TestCase("System.Boolean")]
+        [TestCase("System.Byte")]
         [TestCase("System.Int32")]
         [TestCase("System.String")]
         [TestCase("System.Native.Pointer<System.Char>")]

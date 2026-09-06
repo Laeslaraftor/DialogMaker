@@ -5,14 +5,13 @@ using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq.Expressions;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
     /// <summary>
     /// Class with extension methods for expressions
     /// </summary>
-    public static class DSharpCompilerExpressionExtensions
+    public static class DSharpCompilerHelper
     {
         extension(TypeNameEqualityType type)
         {
@@ -1430,6 +1429,38 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 throw new InvalidOperationException($"Unable to resolve name of expression: {nameofExpression.Value}");
+            }
+        }
+        extension(DSharpLiteralValue literal)
+        {
+            public bool TryCastTo(IDSharpType numberType, out DSharpLiteralValue result)
+            {
+                if (!literal.IsNumber || !DSharpBuildInTypes.TryGetInfo(numberType, out var requiredInfo) ||
+                    !requiredInfo.IsNumber() || !DSharpBuildInTypes.TryGetTypeInfo(literal.Type, out var currentInfo) ||
+                    (currentInfo.IsPointFloating() && !requiredInfo.IsPointFloating()) ||
+                    requiredInfo.MinMax == null)
+                {
+                    result = DSharpLiteralValue.Null;
+                    return false;
+                }
+                if (currentInfo == requiredInfo)
+                {
+                    result = literal;
+                    return true;
+                }
+
+                double currentNumber = literal.AsNumber<double>();
+                var requiredMinMax = requiredInfo.MinMax.Value;
+
+                if (requiredMinMax.Min > currentNumber ||
+                    currentNumber > requiredMinMax.Max)
+                {
+                    result = DSharpLiteralValue.Null;
+                    return false;
+                }
+
+                result = DSharpLiteralValue.FromObject(Convert.ChangeType(currentNumber, requiredMinMax.Type));
+                return true;
             }
         }
     }

@@ -671,7 +671,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 return member;
             }
-            void ResolveParameters(List<VariableNode> variables, IList<DSharpMethodBuilderParameter> parameters, DSharpCompilerContext context)
+            void ResolveParameters(List<ParameterExpressionNode> variables, IList<DSharpMethodBuilderParameter> parameters, DSharpCompilerContext context)
             {
                 parameters.Clear();
 
@@ -685,6 +685,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     parameters.Add(new(Assembly)
                     {
                         Name = parameter.Name,
+                        Mode = parameter.Mode,
                         TypeGetter = () => context.ResolveType(parameter.Type)
                     });
                 }
@@ -720,13 +721,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new ArgumentException($"Invalid parameters at: {invokable}", error);
                 }
             }
-            void ValidateParameters(List<VariableNode> variables)
+            void ValidateParameters(List<ParameterExpressionNode> parameters)
             {
                 int CountNames(string name)
                 {
                     int count = 0;
 
-                    foreach (var parameter in variables)
+                    foreach (var parameter in parameters)
                     {
                         if (parameter.Name == name)
                         {
@@ -737,14 +738,37 @@ namespace DialogMaker.Core.Scripting.Compiler
                     return count;
                 }
 
-                foreach (var parameter in variables)
+                int index = 0;
+                bool hasThis = false;
+
+                foreach (var parameter in parameters)
                 {
+                    if (parameter.Mode == DSharpMethodParameterMode.This)
+                    {
+                        if (hasThis)
+                        {
+                            throw new DSharpCompilerException($"Multiple \"this\" parameters now allowed", parameter);
+                        }
+                        if (index != 0)
+                        {
+                            throw new DSharpCompilerException($"\"this\" parameter should be first", parameter);
+                        }
+
+                        hasThis = true;
+                    }
+                    else if (parameter.Mode == DSharpMethodParameterMode.Params && index != parameters.Count - 1)
+                    {
+                        throw new DSharpCompilerException($"Parameter with \"params\" should be last", parameter);
+                    }
+
                     int namesCount = CountNames(parameter.Name);
 
                     if (namesCount > 1)
                     {
-                        throw new ArgumentException($"Parameter \"{parameter.Name}\" repeat {namesCount} times. Parameter names should be unique");
+                        throw new DSharpCompilerException($"Parameter \"{parameter.Name}\" repeat {namesCount} times. Parameter names should be unique", parameter);
                     }
+
+                    index++;
                 }
             }
 

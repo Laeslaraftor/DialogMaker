@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions;
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Diagnostics;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
 {
@@ -218,6 +219,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <param name="exception">Exception for throwing</param>
         public DSharpMethodExecutionCallback ThrowExecutionException(Exception exception)
         {
+#if DEBUG
+            Debug.WriteLine(exception);
+#endif
             return ThrowExecutionException(exception.ToString());
         }
 

@@ -28,6 +28,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// </summary>
         public bool IsRoot { get; set; }
 
+        protected override IEnumerable<IDSharpType> GetTypes()
+        {
+            return Method.GetGenericParameters();
+        }
         protected override IEnumerable<IDSharpType> GetTypes(string name)
         {
             foreach (var genericType in Method.GetGenericParameters().Where(t => t.Name == name))
@@ -79,7 +83,5 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
 
             return variable;
         }
-
-        
     }
 }

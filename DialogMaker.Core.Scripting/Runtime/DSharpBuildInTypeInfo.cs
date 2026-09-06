@@ -50,6 +50,18 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         /// <param name="fullName">Full name of type</param>
         /// <param name="size">Size of type in bytes</param>
+        /// <param name="token">Token that represents type</param>
+        /// <param name="minMax">Minimal and maximal value of current type</param>
+        public DSharpBuildInTypeInfo(string fullName, int size, DSharpTokenType token, delegate*<DSharpObject*, object> converter, MinMaxValues minMax)
+            : this(fullName, size, token, token.ToString().ToLower(), converter)
+        {
+            MinMax = minMax;
+        }
+        /// <summary>
+        /// Create information about build-in type
+        /// </summary>
+        /// <param name="fullName">Full name of type</param>
+        /// <param name="size">Size of type in bytes</param>
         public DSharpBuildInTypeInfo(string fullName, int size)
             : this(fullName, size, null, null, null)
         {
@@ -91,6 +103,10 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// D# object converter to C# object
         /// </summary>
         public delegate*<DSharpObject*, object> Converter { get; }
+        /// <summary>
+        /// Minimal and maximal value of current type
+        /// </summary>
+        public MinMaxValues? MinMax { get; }
 
         #region Operators
 
@@ -145,11 +161,6 @@ namespace DialogMaker.Core.Scripting.Runtime
             return Converter(obj);
         }
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="other"><inheritdoc/></param>
-        /// <returns><inheritdoc/></returns>
         public bool Equals(DSharpBuildInTypeInfo other)
         {
             return FullName == other.FullName &&
@@ -157,31 +168,24 @@ namespace DialogMaker.Core.Scripting.Runtime
                    Size == other.Size &&
                    Token == other.Token;
         }
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="obj"><inheritdoc/></param>
-        /// <returns><inheritdoc/></returns>
         public override bool Equals(object? obj)
         {
             return obj is DSharpBuildInTypeInfo other && Equals(other);
         }
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override int GetHashCode()
         {
             return HashCode.Combine(FullName, Size);
         }
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             return FullName;
         }
+
+        #endregion
+
+        #region Structs
+
+        public record struct MinMaxValues(double Min, double Max, Type Type);
 
         #endregion
     }

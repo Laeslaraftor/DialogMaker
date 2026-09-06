@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Runtime;
+using System.Xml.Linq;
 
 namespace DialogMaker.Core.Scripting.Compiler.Scopes
 {
@@ -19,6 +20,39 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         protected override IEnumerable<IDSharpMemberInfo> GetMembers()
         {
             return Assembly.GlobalVariables.Cast<IDSharpMemberInfo>().Union(Assembly.GlobalFunctions);
+        }
+        protected override IEnumerable<IDSharpType> GetTypes()
+        {
+            bool IsValid(IDSharpType type)
+            {
+                if (type.IsGeneric)
+                {
+                    return false;
+                }
+
+                var @namespace = type.Namespace;
+
+                return @namespace == null ||
+                       @namespace != null && Namespaces.Contains(@namespace);
+            }
+
+            foreach (var type in Assembly.Types)
+            {
+                if (IsValid(type))
+                {
+                    yield return type;
+                }
+            }
+            foreach (var reference in Assembly.References)
+            {
+                foreach (var type in reference.Types)
+                {
+                    if (IsValid(type))
+                    {
+                        yield return type;
+                    }
+                }
+            }
         }
         protected override IEnumerable<IDSharpType> GetTypes(string name)
         {

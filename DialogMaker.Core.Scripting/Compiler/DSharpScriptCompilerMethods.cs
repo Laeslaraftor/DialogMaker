@@ -232,7 +232,12 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 foreach (var info in initializers)
                 {
-                    CompileValueExpression(initializer, info.Value, ref settings, null, context);
+                    if (!info.Key.TryGetReturnType(out var returnType))
+                    {
+                        throw new DSharpCompilerException($"Failed to compile initializer for \"{info.Key}\"", info.Value);
+                    }
+
+                    CompileExpressionValueWithRequestedType(initializer, returnType, code, info.Value, ref settings, null, context);
 
                     if (!isStatic)
                     {
@@ -240,7 +245,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
 
                     code.StorePropertyOrField(info.Key);
-                    code.PopRepeat(2);
+                    
+                    if (isStatic)
+                    {
+                        code.Pop();
+                    }
+                    else
+                    {
+                        code.PopRepeat(2);
+                    }
                 }
             }
 
@@ -2738,7 +2751,19 @@ namespace DialogMaker.Core.Scripting.Compiler
                 throw new InvalidOperationException($"Unable to get type of expression: {expression}");
             }
 
-            var result = CompileValueExpression(method, expression, ref settings, parentExpression, context);
+            IDSharpMemberInfo? result = null;
+
+            if (requestedType.IsNumber() &&
+                expression.TrySimplifyToLiteral(out var literalExpression) &&
+                literalExpression.TryCastTo(requestedType, out var castedValue))
+            {
+                code.Push(castedValue);
+                return null;
+            }
+            else
+            {
+                result = CompileValueExpression(method, expression, ref settings, parentExpression, context);
+            }
 
             try
             {

@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
-using DialogMaker.Core.Scripting.Compiler.Builders;
+﻿using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Runtime;
 
 namespace DialogMaker.Core.Scripting.Compiler.Scopes
@@ -17,6 +16,23 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// </summary>
         public IDSharpType Type { get; } = type;
 
+        protected override IEnumerable<IDSharpType> GetTypes()
+        {
+            var declaringType = Type;
+
+            while (declaringType != null)
+            {
+                foreach (var child in declaringType.GetChildrenTypes())
+                {
+                    if (!child.IsGeneric)
+                    {
+                        yield return child;
+                    }
+                }
+
+                declaringType = declaringType.DeclaringType;
+            }
+        }
         protected override IEnumerable<IDSharpType> GetTypes(string name)
         {
             var typeFullName = DSharpCompilerFileScope.GetTypeFullName(Type);

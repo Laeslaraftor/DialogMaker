@@ -11,7 +11,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <summary>
         /// Parameters of indexer
         /// </summary>
-        public List<VariableNode> Parameters { get; set; } = [];
+        public List<ParameterExpressionNode> Parameters { get; set; } = [];
 
         #region Статика
 
@@ -44,7 +44,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 Type = memberInfo.Type
             };
 
-            InvokableNode.ParseParameters(stream, indexer.Parameters, DSharpTokenType.LeftBracket, DSharpTokenType.RightBracket);
+            InvokableNode.ParseParameters(stream, indexer.Parameters, DSharpTokenType.LeftBracket, DSharpTokenType.RightBracket, false);
 
             if (!ParseGetterAndSetter(stream, indexer))
             {
