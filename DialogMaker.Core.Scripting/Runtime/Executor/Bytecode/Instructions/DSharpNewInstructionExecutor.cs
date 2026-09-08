@@ -21,7 +21,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             if (member->Type == DSharpMetadataTokenType.TypeDefinition)
             {
-                typeToInstantiate = (DSharpRuntimeTypeInfo*)member;
+                typeToInstantiate = context.ReplaceType((DSharpRuntimeTypeInfo*)member);
 
                 for (int i = 0; i < typeToInstantiate->Constructors.Length; i++)
                 {
@@ -36,7 +36,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
             else if (member->Type == DSharpMetadataTokenType.Method)
             {
-                constructor = (DSharpRuntimeMethodInfo*)member;
+                constructor = context.ReplaceMethod((DSharpRuntimeMethodInfo*)member);
                 typeToInstantiate = constructor->DeclaringType;
             }
             else

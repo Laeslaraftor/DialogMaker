@@ -1,5 +1,7 @@
-﻿using DialogMaker.Core.Scripting.Runtime;
+﻿using DialogMaker.Core.Scripting.Compiler.Builders;
+using DialogMaker.Core.Scripting.Runtime;
 using System.Collections.ObjectModel;
+using System.Reflection;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -88,6 +90,30 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             return parameters;
         }
+        /// <summary>
+        /// Get type of method returning value
+        /// </summary>
+        /// <param name="assemblyBuilder">Assembly builder for filling generics</param>
+        /// <returns>Type of method returning value</returns>
+        public IDSharpType? GetReturnType(DSharpAssemblyBuilder assemblyBuilder)
+        {
+            var returnType = Method.ReturnType;
+
+            if (returnType == null)
+            {
+                return null;
+            }
+            if (GenericParameters.TryGetValue(returnType, out var replacedType))
+            {
+                return replacedType;
+            }
+            if (returnType.TryFillRecursive(assemblyBuilder, GenericParameters, out var filledType))
+            {
+                return filledType;
+            }
+
+            return returnType;
+        }
 
         public override string ToString()
         {
@@ -151,37 +177,9 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             else if (genericParameters == null && genericTypes.Length > 0)
             {
-                int detectedGenericParameters = 0;
-                int genericIndex = 0;
+                replacedTypes = DetectReplacedGenerics(method, parameters, parametersType);
 
-                foreach (var genericType in genericTypes)
-                {
-                    for (int i = 0; i < methodParameters.Length; i++)
-                    {
-                        var methodParameter = methodParameters[i];
-
-                        if (methodParameter.Type != genericType)
-                        {
-                            continue;
-                        }
-
-                        var parameter = parameters[i]
-                            ?? throw new InvalidOperationException($"Unable to detect \"{methodParameter.Name}\" parameter type for replacing generic \"{genericType}\" at \"{method}\"");
-
-                        if (!methodParameter.Type.CanReplaceGenericType(parameter))
-                        {
-                            throw new InvalidOperationException($"Type \"{parameter}\" in specified parameter (index: {i}) can not replace generic \"{genericType}\" (index: {genericIndex}) at \"{method}\"");
-                        }
-
-                        detectedGenericParameters++;
-                        parametersType[methodParameter] = parameter;
-                        replacedTypes.Add(methodParameter.Type, parameter);
-                    }
-
-                    genericIndex++;
-                }
-
-                if (genericTypes.Length != detectedGenericParameters)
+                if (genericTypes.Length != replacedTypes.Count)
                 {
                     throw new InvalidOperationException($"Unable to automatically detect types for replacing generic types at \"{method}\"");
                 }
@@ -191,9 +189,26 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             foreach (var parameterInfo in parametersType)
             {
+                IDSharpType typeForAssignment = parameterInfo.Value;
+
+                if (parameterInfo.Key.Mode == DSharpMethodParameterMode.Params)
+                {
+                    if (index >= parameters.Length)
+                    {
+                        break;
+                    }
+
+                    var parameterTypeGenericParameters = parameterInfo.Value.GetGenericParameters();
+
+                    if (parameterTypeGenericParameters.Length == 1)
+                    {
+                        typeForAssignment = parameterTypeGenericParameters[0];
+                    }
+                }
+
                 var parameter = parameters[index];
 
-                if (!parameter!.IsAssignableTo(parameterInfo.Value))
+                if (!parameter!.IsAssignableTo(typeForAssignment))
                 {
                     throw new InvalidOperationException($"Invalid parameter for \"{parameterInfo.Key.Name}\". Required value with \"{parameterInfo.Value}\", got \"{parameter}\" at \"{method}\"");
                 }
@@ -204,12 +219,95 @@ namespace DialogMaker.Core.Scripting.Compiler
             return new(method, parameters, replacedTypes);
         }
         /// <summary>
+        /// Find generic types replaces in calling parameter types
+        /// </summary>
+        /// <param name="method">Calling method</param>
+        /// <param name="parameters">Calling parameters</param>
+        /// <param name="parameterTypes"></param>
+        /// <returns>Detected generic replaces</returns>
+        /// <exception cref="InvalidOperationException">Unable to detect parameter type for replacing generic</exception>
+        public static Dictionary<IDSharpType, IDSharpType> DetectReplacedGenerics(IDSharpMethodInfo method, IDSharpType?[] parameters, Dictionary<IDSharpParameterInfo, IDSharpType>? parameterTypes = null)
+        {
+            Dictionary<IDSharpType, IDSharpType> result = [];
+            var methodParameters = method.GetParameters();
+
+            if (methodParameters.Length == 0)
+            {
+                return result;
+            }
+
+            var methodGenerics = method.GetGenericParameters();
+
+            if (methodGenerics.Length == 0)
+            {
+                return result;
+            }
+
+            int minParametersLength = Math.Min(parameters.Length, methodParameters.Length);
+            int genericIndex = 0;
+
+            bool TryAdd(IDSharpParameterInfo parameter, IDSharpType genericType, IDSharpType replacedType, IDSharpType newParameterType)
+            {
+                if (!result.TryAdd(genericType, replacedType))
+                {
+                    return false;
+                }
+                if (parameterTypes != null)
+                {
+                    if (!parameterTypes.TryAdd(parameter, newParameterType))
+                    {
+                        parameterTypes[parameter] = newParameterType;
+                    }
+                }
+
+                return true;
+            }
+
+            foreach (var generic in methodGenerics)
+            {
+                for (int i = 0; i < minParametersLength; i++)
+                {
+                    var methodParameter = methodParameters[i];
+                    var parameter = parameters[i]
+                            ?? throw new InvalidOperationException($"Unable to detect \"{methodParameter.Name}\" parameter type for replacing generic \"{generic}\" at \"{method}\"");
+
+                    if (!generic.CanReplaceGenericType(parameter))
+                    {
+                        continue;
+                    }
+
+                    if (methodParameter.Type == generic)
+                    {
+                        if (!TryAdd(methodParameter, generic, parameter, parameter))
+                        {
+                            goto End;
+                        }
+
+                        continue;
+                    }
+                    if (methodParameter.Type.TryFindTypeWithGeneric(generic, out var typeWithGenericInMethodParameter, out var methodParameterGenericIndex) &&
+                        parameter.TryFindTypeWithGeneric(generic, methodParameterGenericIndex, false, out var parameterTypeWithGeneric, out var replacedGeneric, out _))
+                    {
+                        if (!TryAdd(methodParameter, generic, replacedGeneric, parameter))
+                        {
+                            goto End;
+                        }
+                    }
+                }
+
+                genericIndex++;
+            }
+
+        End:
+            return result;
+        }
+        /// <summary>
         /// Get most suitable method calling 
         /// </summary>
         /// <param name="callingInfos">List of method calling infos for selecting most suitable calling among them</param>
         /// <param name="parameters">Calling parameters</param>
         /// <returns>Most suitable calling info</returns>
-        public static DSharpMethodCallingInfo GetMostSuitable(List<DSharpMethodCallingInfo> callingInfos, IDSharpType?[] parameters)
+        public static DSharpMethodCallingInfo GetMostSuitable(Dictionary<DSharpMethodCallingInfo, IDSharpType?[]> callingInfos)
         {
             if (callingInfos.Count == 0)
             {
@@ -217,21 +315,26 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             if (callingInfos.Count == 1)
             {
-                return callingInfos[0];
+                return callingInfos.First().Key;
             }
 
             KeyValuePair<DSharpMethodCallingInfo?, int> minMethodCallingCasts = new(null, int.MaxValue);
 
-            foreach (var callingInfo in callingInfos)
+            foreach (var info in callingInfos)
             {
+                var callingInfo = info.Key;
+                var parameters = info.Value;
                 var callingTypes = callingInfo.GetCallingParameterTypes();
+                var hasParams = info.Key.Method.HasParams;
 
-                if (callingTypes.Length != parameters.Length)
+                if ((!hasParams && callingTypes.Length != parameters.Length) ||
+                    (hasParams && parameters.Length - 1 > callingTypes.Length))
                 {
                     throw new InvalidOperationException($"Calling parameter length don't match with provided parameters length: {callingInfo}");
                 }
 
                 int castsCount = 0;
+                IDSharpType?[]? callingParams = hasParams ? GetCallingParams(info.Key.Method, parameters) : null;
 
                 for (int i = 0; i < callingTypes.Length; i++)
                 {
@@ -241,6 +344,28 @@ namespace DialogMaker.Core.Scripting.Compiler
                     if (callingType == parameter)
                     {
                         continue;
+                    }
+                    else if (i == callingTypes.Length - 1 && callingParams != null)
+                    {
+                        var commonType = callingParams!.GetNearestCommonType();
+                        var parameterGenericParameters = callingType.GetGenericParameters();
+
+                        if (parameterGenericParameters.Length == 1)
+                        {
+                            var genericParameter = parameterGenericParameters[0];
+
+                            if (genericParameter == commonType)
+                            {
+                                continue;
+                            }
+                            else if (commonType.IsAssignableTo(genericParameter, true))
+                            {
+                                castsCount++;
+                                continue;
+                            }
+                        }
+
+                        parameter = commonType;
                     }
                     if (parameter == null)
                     {
@@ -276,6 +401,59 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             return minMethodCallingCasts.Key;
+        }
+        public static IDSharpType?[]? GetCallingParams(IDSharpMethodInfo method, IEnumerable<IDSharpType?> callingParameters)
+        {
+            var methodParameters = method.GetParameters();
+
+            if (methodParameters.Length == 0)
+            {
+                return null;
+            }
+
+            int normalParameters = methodParameters.Length - 1;
+            int delta = callingParameters.Count() - normalParameters;
+
+            if (0 > delta)
+            {
+                throw new ArgumentException("Not enough calling parameters", nameof(callingParameters));
+            }
+            if (delta == 0)
+            {
+                return null;
+            }
+            else if (delta == 1)
+            {
+                var lastCallingParameter = callingParameters.LastOrDefault();
+
+                if (lastCallingParameter == methodParameters[^1].Type)
+                {
+                    return [];
+                }
+            }
+
+            IDSharpType?[] result = new IDSharpType[delta];
+
+            int i = 0;
+            int index = 0;
+
+            foreach (var callParameter in callingParameters)
+            {
+                if (i >= normalParameters)
+                {
+                    if (index >= delta)
+                    {
+                        break;
+                    }
+
+                    result[index] = callParameter;
+                    index++;
+                }
+
+                i++;
+            }
+
+            return result;
         }
 
         #endregion

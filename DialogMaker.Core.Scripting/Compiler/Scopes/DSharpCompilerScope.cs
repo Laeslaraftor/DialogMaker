@@ -461,11 +461,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         {
             List<IDSharpType> result = [];
 
-            RecursiveCheck(scope =>
+            RecursiveCheck<object>(scope =>
             {
                 var types = scope.GetTypes();
                 result.AddRange(types);
-                return false;
+                return null;
             });
 
             return result;

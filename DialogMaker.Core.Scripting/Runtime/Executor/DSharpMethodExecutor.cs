@@ -42,7 +42,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <summary>
         /// Execution generic parameter
         /// </summary>
-        public UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> GenericParameters;
+        public UnmanagedDictionary<Pointer<DSharpMetadataToken>, Pointer<DSharpMetadataToken>> GenericParameters;
         /// <summary>
         /// List of try-catch-finally blocks descriptions
         /// </summary>

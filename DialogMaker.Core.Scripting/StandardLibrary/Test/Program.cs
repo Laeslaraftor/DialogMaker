@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Internal.System.Runtime;
 
 public class Program
@@ -171,6 +172,8 @@ public class Program
         TestArray();
 
         Console.WriteLine();
+        Activator.CreateInstance(typeof(Program));
+        Console.WriteLine();
 
         TestPlayersArray("zeBlack", 2);
 
@@ -190,12 +193,31 @@ public class Program
     private static void TestArray()
     {
         string[] values = new string[] { "value", "value" };
+        string[] values2 = new string[] { "clay", "sand" };
         int i = 0;
 
         foreach (var value in values)
         {
             Console.WriteLine(value + i);
             i++;
+        }
+
+        var firstValue = values.FirstOrDefault();
+
+        if (firstValue != null)
+        {
+            Console.WriteLine("first value: " + firstValue);
+        }
+        else
+        {
+            Console.WriteLine("first value not found");
+        }
+
+        Console.WriteLine("Union:");
+
+        foreach (var unionValue in values.Union(values2))
+        {
+            Console.WriteLine(unionValue);
         }
     }
     private static int GetSize<T>() => sizeof(T);

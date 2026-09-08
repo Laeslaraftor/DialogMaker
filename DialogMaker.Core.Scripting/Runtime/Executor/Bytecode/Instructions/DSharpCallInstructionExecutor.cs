@@ -29,8 +29,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpCallInstructionExecutor Instance = new();
 
-        internal static unsafe DSharpMethodExecutionCallback Call(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeMethodInfo* method, bool isInstance, bool isBase, UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>>? genericParameters = null, uint extraScopeOffset = 0)
+        internal static unsafe DSharpMethodExecutionCallback Call(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeMethodInfo* method, bool isInstance, bool isBase, UnmanagedArray<Pointer<DSharpMetadataToken>>? genericParameters = null, uint extraScopeOffset = 0)
         {
+            method = context.ReplaceMethod(method);
             var parametersCount = method->ParametersType.Length;
 
             if (isInstance)
@@ -76,7 +77,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         {
             return CreateArguments(context, methodInfo, default, offset).Arguments;
         }
-        internal static unsafe ArgumentsInfo CreateArguments(DSharpExecutionContext context, DSharpRuntimeMethodInfo* methodInfo, UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>> genericParameters, uint offset = 0)
+        internal static unsafe ArgumentsInfo CreateArguments(DSharpExecutionContext context, DSharpRuntimeMethodInfo* methodInfo, UnmanagedArray<Pointer<DSharpMetadataToken>> genericParameters, uint offset = 0)
         {
             var parametersCount = methodInfo->ParametersType.Length;
             var genericParametersCount = genericParameters.Length;
@@ -96,7 +97,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             var argsFrame = *context.Stack.Push(DSharpStackValueType.MethodParametersBuffer, variablesSize + 
                                                                                              sizeof(UnmanagedPair<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>>) * genericParametersCount);
             UnmanagedArray<DSharpExecutionLocalVariable> arguments = new(argsFrame.StackPointer, parametersCount);
-            UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> generics = new(argsFrame.StackPointer + variablesSize, genericParametersCount);
+            UnmanagedDictionary<Pointer<DSharpMetadataToken>, Pointer<DSharpMetadataToken>> generics = new(argsFrame.StackPointer + variablesSize, genericParametersCount);
 
             for (int i = 0; i < parametersCount; i++)
             {
@@ -117,7 +118,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             {
                 var genericType = genericParameters[i].AsPointer();
                 var replaceType = genericParameters[i + 1].AsPointer();
-                replaceType = context.ReplaceType(replaceType);
+                replaceType = context.ReplaceMember(replaceType);
 
                 generics.Add(genericType, replaceType);
             }
@@ -141,7 +142,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         internal struct ArgumentsInfo
         {
             public UnmanagedArray<DSharpExecutionLocalVariable> Arguments;
-            public UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> GenericParameters;
+            public UnmanagedDictionary<Pointer<DSharpMetadataToken>, Pointer<DSharpMetadataToken>> GenericParameters;
         }
 
         #endregion

@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
-using DialogMaker.Core.Scripting.Runtime;
+﻿using DialogMaker.Core.Scripting.Runtime;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
 {
@@ -63,7 +62,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         public abstract bool IsDeclaration { get; }
 
         DSharpMetadataToken IDSharpMemberInfo.MetadataToken => MetadataToken;
-        IDSharpType? IDSharpMemberInfo.DeclaringType => DeclaringType;
+        IDSharpType IDSharpMemberInfo.DeclaringType => DeclaringType;
         IDSharpAssembly IDSharpMemberInfo.Assembly => Assembly;
 
 

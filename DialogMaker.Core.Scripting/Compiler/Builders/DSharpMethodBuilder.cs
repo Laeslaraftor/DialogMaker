@@ -463,45 +463,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
             bool TryFill(IDSharpType type, [NotNullWhen(true)] out IDSharpType? filledType)
             {
-                IDSharpType[] genericTypes;
-
-                if (type.GenericTemplate == null)
+                return type.TryFillRecursive(Assembly, result, out filledType);
+            }
+            void Add(IDSharpMemberInfo oldMember, IDSharpMemberInfo newMember)
+            {
+                if (!result.TryAdd(oldMember, newMember) && result[oldMember] != newMember)
                 {
-                    genericTypes = type.GetGenericTypes();
+                    throw new InvalidOperationException("Different places detected!");
                 }
-                else
-                {
-                    genericTypes = type.GetGenericParameters();
-                }
-
-                List<IDSharpType> replaced = new(genericTypes.Length);
-                bool isAnyReplaced = false;
-
-                foreach (var genericType in genericTypes)
-                {
-                    if (result.TryGetValue(genericType, out var replacedType))
-                    {
-                        replaced.Add((IDSharpType)replacedType);
-                        isAnyReplaced = true;
-                    }
-                    else
-                    {
-                        replaced.Add(genericType);
-                    }
-                }
-
-                if (!isAnyReplaced)
-                {
-                    filledType = null;
-                    return false;
-                }
-                if (type.GenericTemplate != null)
-                {
-                    type = type.GenericTemplate;
-                }
-
-                filledType = Assembly.FillGeneric(type, replaced);
-                return true;
             }
 
             foreach (var genericType in _genericParameters)
@@ -511,9 +480,21 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                     result[genericType] = filled;
                 }
             }
+            foreach (var parameter in Parameters)
+            {
+                if (parameter.Type == null)
+                {
+                    continue;
+                }
+                
+                if (TryFillToken(parameter.Type, out var parameterType, out var filled))
+                {
+                    Add(parameterType, filled);
+                }
+            }
             if (ReturnType != null && TryFillToken(ReturnType, out var returnType, out var newReturnType))
             {
-                result.Add(returnType, newReturnType);
+                Add(returnType, newReturnType);
             }
 
             if (IsDeclaration)
@@ -532,7 +513,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                     {
                         if (TryFill(typeMember, out var filledType))
                         {
-                            result.Add(typeMember, filledType);
+                            Add(typeMember, filledType);
                             continue;
                         }
                     }
@@ -541,14 +522,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                     
                     if (member != typeInstruction.MemberInfo)
                     {
-                        result.Add(typeInstruction.MemberInfo, member);
+                        Add(typeInstruction.MemberInfo, member);
                     }
                 }
                 else if (instruction is DSharpBytecodeBuilder.TypedReferenceInstruction typedReferenceInstruction &&
-                    !result.ContainsKey(typedReferenceInstruction.Type) &&
-                    TryFill(typedReferenceInstruction.Type, out var filledReferenceType))
+                         !result.ContainsKey(typedReferenceInstruction.Type) &&
+                         TryFill(typedReferenceInstruction.Type, out var filledReferenceType))
                 {
-                    result.Add(typedReferenceInstruction.Type, filledReferenceType);
+                    Add(typedReferenceInstruction.Type, filledReferenceType);
                 }
                 else if (instruction is DSharpBytecodeBuilder.GenericCallingInstruction genericCallingInstruction)
                 {
@@ -557,7 +538,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                         if (!result.ContainsKey(callingGeneric) &&
                             TryFill(callingGeneric, out var newCallingGeneric))
                         {
-                            result.Add(callingGeneric, newCallingGeneric);
+                            Add(callingGeneric, newCallingGeneric);
                         }
                     }
                 }

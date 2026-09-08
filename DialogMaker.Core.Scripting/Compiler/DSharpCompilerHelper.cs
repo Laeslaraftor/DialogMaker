@@ -5,6 +5,7 @@ using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -490,6 +491,76 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                 }
             }
+
+            public bool TryFillRecursive(DSharpAssemblyBuilder assemblyBuilder, IDictionary<IDSharpType, IDSharpType> replacedTypes, [NotNullWhen(true)] out IDSharpType? filledType)
+            {
+                Dictionary<IDSharpMemberInfo, IDSharpMemberInfo> replacedMembers = new(replacedTypes.Count);
+
+                foreach (var info in replacedTypes)
+                {
+                    replacedMembers.Add(info.Key, info.Value);
+                }
+
+                return type.TryFillRecursive(assemblyBuilder, replacedMembers, out filledType);
+            }
+            public bool TryFillRecursive(DSharpAssemblyBuilder assemblyBuilder, IDictionary<IDSharpMemberInfo, IDSharpMemberInfo> replacedMembers, [NotNullWhen(true)] out IDSharpType? filledType)
+            {
+                if (type.IsGeneric)
+                {
+                    filledType = null;
+                    return false;
+                }
+
+                IDSharpType[] genericTypes;
+
+                if (type.GenericTemplate == null)
+                {
+                    genericTypes = type.GetGenericTypes();
+                }
+                else
+                {
+                    genericTypes = type.GetGenericParameters();
+                }
+
+                List<IDSharpType> replaced = new(genericTypes.Length);
+                bool isAnyReplaced = false;
+
+                for (int i = 0; i < genericTypes.Length; i++)
+                {
+                    if (genericTypes[i].TryFillRecursive(assemblyBuilder, replacedMembers, out var filledGenericType))
+                    {
+                        genericTypes[i] = filledGenericType;
+                        isAnyReplaced = true;
+                    }
+                }
+
+                foreach (var genericType in genericTypes)
+                {
+                    if (replacedMembers.TryGetValue(genericType, out var replacedMember) &&
+                        replacedMember is IDSharpType replacedType)
+                    {
+                        replaced.Add(replacedType);
+                        isAnyReplaced = true;
+                    }
+                    else
+                    {
+                        replaced.Add(genericType);
+                    }
+                }
+
+                if (!isAnyReplaced)
+                {
+                    filledType = null;
+                    return false;
+                }
+                if (type.GenericTemplate != null)
+                {
+                    type = type.GenericTemplate;
+                }
+
+                filledType = assemblyBuilder.FillGeneric(type, replaced);
+                return true;
+            }
         }
         extension(DSharpBinaryOperator @operator)
         {
@@ -791,17 +862,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 else if (expression is CallExpressionNode callExpression)
                 {
                     var callingInfo = context.FindMethod(callExpression);
-
-                    if (callingInfo.Method.ReturnType == null)
-                    {
-                        return null;
-                    }
-                    if (callingInfo.GenericParameters.TryGetValue(callingInfo.Method.ReturnType, out var newReturnType))
-                    {
-                        return newReturnType;
-                    }
-
-                    return callingInfo.Method.ReturnType;
+                    return callingInfo.GetReturnType(assembly);
                 }
                 else if (expression is ThisExpressionNode thisExpression)
                 {
@@ -874,14 +935,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     if (resolveResult.MethodCallingInfo != null &&
                         resolveResult.MethodCallingInfo.Method.ReturnType != null)
                     {
-                        var methodReturnType = resolveResult.MethodCallingInfo.Method.ReturnType;
-
-                        if (resolveResult.MethodCallingInfo.GenericParameters.TryGetValue(methodReturnType, out var replacedType))
-                        {
-                            return replacedType;
-                        }
-
-                        return methodReturnType;
+                        return resolveResult.MethodCallingInfo.GetReturnType(assembly);
                     }
                     if (resolveResult.MemberInfo.TryGetReturnType(out var returnType))
                     {

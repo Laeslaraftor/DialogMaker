@@ -50,6 +50,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 {
                     return $"{Operation} '{Value}'";
                 }
+                if (Value.IsNull)
+                {
+                    return $"{Operation} {Value}";
+                }
 
                 return $"{Operation} {Value.Type}:{Value}";
             }

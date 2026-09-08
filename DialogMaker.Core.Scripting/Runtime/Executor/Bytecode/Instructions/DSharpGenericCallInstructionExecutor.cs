@@ -14,7 +14,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return &InstanceExecute;
         }
 
-        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeMethodInfo* methodToken, UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>> genericParameters)
+        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeMethodInfo* methodToken, UnmanagedArray<Pointer<DSharpMetadataToken>> genericParameters)
         {
             return DSharpCallInstructionExecutor.Call(instruction, ref context, methodToken, false, false, genericParameters);
         }

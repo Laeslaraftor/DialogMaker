@@ -26,7 +26,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <summary>
         /// Generic parameter for next calling method
         /// </summary>
-        public UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> CallingGenericParameters;
+        public UnmanagedDictionary<Pointer<DSharpMetadataToken>, Pointer<DSharpMetadataToken>> CallingGenericParameters;
         /// <summary>
         /// Arguments for next calling method
         /// </summary>
@@ -70,12 +70,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             return Call(objectInstance, nextMethod, default, arguments);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpMethodExecutionCallback Call(DSharpObject* objectInstance, DSharpRuntimeMethodInfo* nextMethod, UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments)
+        public static DSharpMethodExecutionCallback Call(DSharpObject* objectInstance, DSharpRuntimeMethodInfo* nextMethod, UnmanagedDictionary<Pointer<DSharpMetadataToken>, Pointer<DSharpMetadataToken>> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments)
         {
             return Call(objectInstance, nextMethod, genericParameters, arguments, 0);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpMethodExecutionCallback Call(DSharpObject* objectInstance, DSharpRuntimeMethodInfo* nextMethod, UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments, uint extraScopeOffset) => new()
+        public static DSharpMethodExecutionCallback Call(DSharpObject* objectInstance, DSharpRuntimeMethodInfo* nextMethod, UnmanagedDictionary<Pointer<DSharpMetadataToken>, Pointer<DSharpMetadataToken>> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments, uint extraScopeOffset) => new()
         {
             Type = DSharpMethodExecutionCallbackType.RequiredCallingNextMethod,
             NextMethod = nextMethod,

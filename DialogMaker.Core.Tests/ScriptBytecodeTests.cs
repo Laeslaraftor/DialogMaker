@@ -9,66 +9,70 @@ namespace DialogMaker.Core.Tests
     internal class ScriptBytecodeTests
     {
         [Test]
-        [TestCase(ScriptCompilerTests.SimpleScript, "repeat")]
-        [TestCase(ScriptCompilerTests.SimpleScript, "sum")]
-        [TestCase(ScriptCompilerTests.SimpleScript, "getTextColor")]
-        [TestCase(ScriptCompilerTests.SimpleScript, "getGenericValue")]
-        [TestCase(ScriptCompilerTests.SimpleScript, "getLines")]
-        [TestCase(ScriptCompilerTests.SimpleScript, "foreachTest")]
-        [TestCase(ScriptCompilerTests.SimpleScript, "System.Threading.Thread.Increment")]
-        [TestCase(ScriptCompilerTests.SimpleScript, "System.Double.GetSquared")]
-        [TestCase(ScriptCompilerTests.SimpleScript, "System.List`1.Add")]
-        [TestCase(ScriptCompilerTests.SimpleScript, "System.List`1.Remove")]
-        [TestCase(ScriptCompilerTests.SimpleScript, "System.List`1.Expand")]
-        [TestCase(ScriptCompilerTests.TypeScript, "System.String.GetFirstSymbol")]
-        [TestCase(ScriptCompilerTests.TypeScript, "Character.PrintName")]
-        [TestCase(ScriptCompilerTests.TypeScript, "Player.ToString")]
-        [TestCase(ScriptCompilerTests.TypeScript, "Player.SetValues")]
-        [TestCase(ScriptCompilerTests.TypeScript, "Player.GetValues")]
-        [TestCase(ScriptCompilerTests.MathScript, "globalFunction")]
-        [TestCase(ScriptCompilerTests.OperatorsScript, "castTypes")]
-        [TestCase(ScriptCompilerTests.OperatorsScript, "sumTypes")]
-        [TestCase(ScriptCompilerTests.OperatorsScript, "unaryTest")]
-        [TestCase(ScriptCompilerTests.OperatorsScript, "customBinaryOperatorWithAssignment")]
-        [TestCase(ScriptCompilerTests.GenericMethodsScript, "GetHudoeName")]
-        [TestCase(ScriptCompilerTests.GenericMethodsScript, "MegaClass.CreateInstance")]
-        [TestCase(ScriptCompilerTests.TryCatchFinallyScript, "CatchException")]
-        public static void PrintSimpleFunctionBytecode(string scriptName, string functionName)
+        [TestCase(ScriptCompilerTests.SimpleScript, null, "repeat")]
+        [TestCase(ScriptCompilerTests.SimpleScript, null, "sum")]
+        [TestCase(ScriptCompilerTests.SimpleScript, null, "getTextColor")]
+        [TestCase(ScriptCompilerTests.SimpleScript, null, "getGenericValue")]
+        [TestCase(ScriptCompilerTests.SimpleScript, null, "getLines")]
+        [TestCase(ScriptCompilerTests.SimpleScript, null, "foreachTest")]
+        [TestCase(ScriptCompilerTests.SimpleScript, "System.Threading.Thread", "Increment")]
+        [TestCase(ScriptCompilerTests.SimpleScript, "System.Double", "GetSquared")]
+        [TestCase(ScriptCompilerTests.SimpleScript, "System.List`1", "Add")]
+        [TestCase(ScriptCompilerTests.SimpleScript, "System.List`1", "Remove")]
+        [TestCase(ScriptCompilerTests.SimpleScript, "System.List`1", "Expand")]
+        [TestCase(ScriptCompilerTests.TypeScript, "System.String", "GetFirstSymbol")]
+        [TestCase(ScriptCompilerTests.TypeScript, "Character", "PrintName")]
+        [TestCase(ScriptCompilerTests.TypeScript, "Player", "ToString")]
+        [TestCase(ScriptCompilerTests.TypeScript, "Player", "SetValues")]
+        [TestCase(ScriptCompilerTests.TypeScript, "Player", "GetValues")]
+        [TestCase(ScriptCompilerTests.MathScript, null, "globalFunction")]
+        [TestCase(ScriptCompilerTests.OperatorsScript, null, "castTypes")]
+        [TestCase(ScriptCompilerTests.OperatorsScript, null, "sumTypes")]
+        [TestCase(ScriptCompilerTests.OperatorsScript, null, "unaryTest")]
+        [TestCase(ScriptCompilerTests.OperatorsScript, null, "customBinaryOperatorWithAssignment")]
+        [TestCase(ScriptCompilerTests.GenericMethodsScript, null, "GetHudoeName")]
+        [TestCase(ScriptCompilerTests.GenericMethodsScript, "MegaClass", "CreateInstance")]
+        [TestCase(ScriptCompilerTests.TryCatchFinallyScript, null, "CatchException")]
+        public static void PrintSimpleFunctionBytecode(string scriptName, string? typeName, string functionName)
         {
             var assembly = ScriptCompilerTests.CompileScript(scriptName);
-            ReadFunctionOrMethod(assembly, functionName);
+            ReadFunctionOrMethod(assembly, typeName, functionName);
         }
-        [TestCase("System.Array`1.Enumerator.MoveNext")]
-        [TestCase("System.Span`1.get_Length")]
-        [TestCase("System.Native.Pointer<Internal.System.Runtime.RuntimeTypeInfo>.get_Item")]
-        [TestCase("System.Native.Pointer<Internal.System.Runtime.RuntimeTypeInfo>.get_IsNull")]
-        [TestCase("System.Object.Equals")]
-        [TestCase("System.Byte.init")]
-        [TestCase("System.String.Equals")]
-        [TestCase("System.String.Split")]
-        [TestCase("System.String.IsNullOrEmpty")]
-        [TestCase("System.Type.get_Name")]
-        [TestCase("System.Type.get_FullName")]
-        [TestCase("System.Type.get_Namespace")]
-        [TestCase("System.Type.get_DeclaringType")]
-        [TestCase("System.Collections.Generic.List`1.Add")]
-        [TestCase("System.Collections.Generic.List`1.set_Count")]
-        [TestCase("System.Collections.Generic.List`1.get_Capacity")]
-        [TestCase("System.Collections.Generic.List<System.Exception>.ctor")]
-        [TestCase("Program.TestPlayersArray")]
-        [TestCase("Program.TestExceptionHandling")]
-        [TestCase("Program.Main")]
-        [TestCase("Program.MainImpl")]
-        [TestCase("Program.GetSize")]
-        [TestCase("Program.GetGenericObject")]
-        [TestCase("System.Reflection.MetadataTokenType.ctor")]
-        [TestCase("System.Reflection.MetadataTokenType.init")]
-        [TestCase("ValuePlayer.PrintMessage")]
-        [TestCase("ValuePlayer.ctor")]
-        public static void PrintMethodBytecode(string methodName)
+        [TestCase("System.Array`1.Enumerator", "MoveNext")]
+        [TestCase("System.Array<System.String>", "init")]
+        [TestCase("System.Array<System.String>.Enumerator", "init")]
+        [TestCase("System.Span`1", "get_Length")]
+        [TestCase("System.Native.Pointer<Internal.System.Runtime.RuntimeTypeInfo>", "get_Item")]
+        [TestCase("System.Native.Pointer<Internal.System.Runtime.RuntimeTypeInfo>", "get_IsNull")]
+        [TestCase("System.Object", "Equals")]
+        [TestCase("System.Byte", "init")]
+        [TestCase("System.String", "Equals")]
+        [TestCase("System.String", "Split")]
+        [TestCase("System.String", "IsNullOrEmpty")]
+        [TestCase("System.Type", "get_Name")]
+        [TestCase("System.Type", "get_FullName")]
+        [TestCase("System.Type", "get_Namespace")]
+        [TestCase("System.Type", "get_DeclaringType")]
+        [TestCase("System.Collections.Generic.List`1", "Add")]
+        [TestCase("System.Collections.Generic.List`1", "set_Count")]
+        [TestCase("System.Collections.Generic.List`1", "get_Capacity")]
+        [TestCase("System.Collections.Generic.List<System.Exception>", "ctor")]
+        [TestCase("System.Linq.EnumeratorExtensions", "Union")]
+        [TestCase("Program", "TestPlayersArray")]
+        [TestCase("Program", "TestExceptionHandling")]
+        [TestCase("Program", "Main")]
+        [TestCase("Program", "MainImpl")]
+        [TestCase("Program", "TestArray")]
+        [TestCase("Program", "GetSize")]
+        [TestCase("Program", "GetGenericObject")]
+        [TestCase("System.Reflection.MetadataTokenType", "ctor")]
+        [TestCase("System.Reflection.MetadataTokenType", "init")]
+        [TestCase("ValuePlayer", "PrintMessage")]
+        [TestCase("ValuePlayer", "ctor")]
+        public static void PrintMethodBytecode(string? typeName, string methodName)
         {
             var assembly = ScriptCompilerTests.CompileStandardLibrary();
-            ReadFunctionOrMethod(assembly, methodName);
+            ReadFunctionOrMethod(assembly, typeName, methodName);
         }
         [TestCase("System.Array`1.Enumerator.MoveNext")]
         public static void TestStackValues(string methodName)
@@ -90,31 +94,24 @@ namespace DialogMaker.Core.Tests
 
         #region Поиск методов и чтение кода
 
-        private static void ReadFunctionOrMethod(DSharpAssemblyBuilder assembly, string fullName)
+        private static void ReadFunctionOrMethod(DSharpAssemblyBuilder assembly, string? typeName, string methodName)
         {
-            string[] parts = fullName.Split('.');
-
-            if (parts.Length == 1)
+            if (typeName == null)
             {
-                ReadFunction(assembly, parts[0]);
+                ReadFunction(assembly, methodName);
             }
-            else if (parts.Length > 1)
+            else
             {
-                var typeName = fullName.Replace("." + parts[^1], string.Empty);
                 var type = assembly.GetType(typeName);
 
                 if (type is DSharpTypeBuilder builder)
                 {
-                    ReadMethod(builder, parts[^1]);
+                    ReadMethod(builder, methodName);
                 }
                 else
                 {
                     Debug.Fail($"Type \"{type}\" is not builder");
                 }
-            }
-            else
-            {
-                Debug.Fail($"Invalid function or method name \"{fullName}\"");
             }
         }
         private static void ReadFunction(DSharpAssemblyBuilder assembly, string functionName)

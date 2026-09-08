@@ -738,7 +738,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
             }
 
             var addressArg = arguments[0];
-            var resultType = args.GenericParameter[0].Value.AsPointer();
+            var resultType = (DSharpRuntimeTypeInfo*)args.GenericParameter[0].Value.AsPointer();
             var addressObject = addressArg.Buffer.ReadAsObject();
 
             if (addressObject == null)

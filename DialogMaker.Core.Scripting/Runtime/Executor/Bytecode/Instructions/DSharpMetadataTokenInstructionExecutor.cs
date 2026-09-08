@@ -68,6 +68,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
         internal static unsafe DSharpMethodExecutionCallback CallAccessor(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimePropertyInfo* property, DSharpPropertyAccessor accessorType, bool isInstance, bool isBase)
         {
+            property = context.ReplaceProperty(property);
             DSharpObject* instance = null;
             DSharpRuntimeMethodInfo* accessor = GetAccessor(property, accessorType);
             uint parametersCount = property->GetterParametersCount;
@@ -95,7 +96,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                     else if (property->DeclaringType->ObjectType == DSharpObjectType.Interface ||
                              property->IsAbstract)
                     {
-                        return context.ThrowExecutionException($"Unable to find end-point method for \"{property->ToString()}\"");
+                        return context.ThrowExecutionException($"Unable to find end-point property for \"{property->ToString()}\"");
                     }
                 }
             }

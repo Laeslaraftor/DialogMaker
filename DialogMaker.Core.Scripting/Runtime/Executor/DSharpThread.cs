@@ -64,7 +64,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <param name="arguments">Method calling arguments</param>
         /// <param name="methodInfo">Method for executing</param>
         /// <exception cref="InvalidOperationException"></exception>
-        public void Start(DSharpObject* instance, UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments, DSharpRuntimeMethodInfo* methodInfo)
+        public void Start(DSharpObject* instance, UnmanagedDictionary<Pointer<DSharpMetadataToken>, Pointer<DSharpMetadataToken>> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments, DSharpRuntimeMethodInfo* methodInfo)
         {
             if (IsExecuting)
             {
@@ -98,7 +98,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             thread.Start();
         }
 
-        private void ThreadLoop(DSharpObject* instance, UnmanagedDictionary<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments, DSharpRuntimeMethodInfo* methodInfo)
+        private void ThreadLoop(DSharpObject* instance, UnmanagedDictionary<Pointer<DSharpMetadataToken>, Pointer<DSharpMetadataToken>> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments, DSharpRuntimeMethodInfo* methodInfo)
         {
             var typesProvider = Executor.RuntimeTypesProvider;
             var objectContainer = _objectsContainer;
@@ -242,7 +242,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
                         if (genericParameters.TryGetValue(variable.Type, out var newVariableType))
                         {
-                            variable.Type = newVariableType.Value;
+                            variable.Type = (DSharpRuntimeTypeInfo*)newVariableType.Value.AsPointer();
                         }
 
                         newMethodExecutor->LocalVariables[i] = DSharpExecutionLocalVariable.Create(stack, variable);

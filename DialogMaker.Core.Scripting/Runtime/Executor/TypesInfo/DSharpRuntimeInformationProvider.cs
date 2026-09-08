@@ -269,7 +269,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <exception cref="ObjectDisposedException"></exception>
         public DSharpRuntimeTypeInfo* GetRuntimeInfo(DSharpMetadataToken metadataToken)
         {
-            var type = (IDSharpType)Assembly.GetType(metadataToken);
+            var member = Assembly.GetType(metadataToken);
+
+            if (member is not IDSharpType type)
+            {
+                throw new InvalidOperationException($"Assembly \"{Assembly}\" return unexpected member \"{member}\" with token \"{metadataToken}\" when was required type");
+            }
+
             return GetRuntimeInfo(type);
         }
         /// <summary>

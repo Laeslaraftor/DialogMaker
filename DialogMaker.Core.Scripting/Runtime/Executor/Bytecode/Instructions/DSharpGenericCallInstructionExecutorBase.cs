@@ -10,11 +10,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
             var methodInfo = (DSharpRuntimeMethodInfo*)instruction.Arguments[0];
-            UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>> genericParameters;
+            UnmanagedArray<Pointer<DSharpMetadataToken>> genericParameters;
 
             if (instruction.Arguments.Length > 1)
             {
-                genericParameters = instruction.Arguments.Slice(1).Cast<Pointer<DSharpRuntimeTypeInfo>>();
+                genericParameters = instruction.Arguments.Slice(1).Cast<Pointer<DSharpMetadataToken>>();
             }
             else
             {
@@ -45,10 +45,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             for (int i = 1; i < replacesCount + 1; i++)
             {
                 var typeToken = stream->Read<DSharpMetadataToken>();
-                arguments[i] = (nint)typesProvider.GetRuntimeInfo(typeToken);
+                arguments[i] = (nint)typesProvider.GetMember(typeToken);
             }
         }
 
-        protected unsafe abstract DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeMethodInfo* methodToken, UnmanagedArray<Pointer<DSharpRuntimeTypeInfo>> genericParameters);
+        protected unsafe abstract DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeMethodInfo* methodToken, UnmanagedArray<Pointer<DSharpMetadataToken>> genericParameters);
     }
 }

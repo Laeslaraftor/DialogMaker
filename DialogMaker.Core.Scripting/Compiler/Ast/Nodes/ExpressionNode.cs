@@ -270,6 +270,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 return ThrowExpressionNode.Parse(stream);
             }
+            if (stream.Check(DSharpTokenType.Out))
+            {
+                return OutExpressionNode.Parse(stream);
+            }
             if (DelegateExpressionNode.IsDelegate(stream))
             {
                 return DelegateExpressionNode.Parse(stream);

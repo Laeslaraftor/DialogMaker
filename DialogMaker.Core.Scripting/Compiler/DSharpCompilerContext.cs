@@ -79,7 +79,9 @@ namespace DialogMaker.Core.Scripting.Compiler
             // true - contains, false - not contains, null - contains with no access
             bool? ContainsInType(IDSharpType type, bool includeDeclaringType, bool allowProtected)
             {
-                if (type.GetAllLocalMembers().Contains(member))
+                if (type.GetAllLocalMembers().Any(m => m == member || 
+                                                       (m is IDSharpType typeMember && (typeMember.GenericTemplate == member || 
+                                                                                        member is IDSharpType checkTypeMember && checkTypeMember.GenericTemplate == typeMember))))
                 {
                     return true;
                 }
@@ -986,10 +988,11 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             throw new InvalidOperationException($"Can not find indexer in \"{currentType}\" with {parameters.Length} parameters");
         }
-        public readonly DSharpMethodCallingInfo FindMethod(string name, IDSharpType?[] parameters, IDSharpType[]? genericParameters = null)
+        public readonly DSharpMethodCallingInfo FindMethod(string name, IDSharpType?[] parameters, IDSharpType[]? genericParameters = null, List<int>? outParametersIndex = null)
         {
             IDSharpType? currentType = CurrentMember as IDSharpType ?? CurrentMember?.DeclaringType;
             IEnumerable<IDSharpMemberInfo> members;
+            IDSharpType?[]? callingExtensionParameters = null;
             object membersSource;
 
             if (currentType == null)
@@ -1008,14 +1011,22 @@ namespace DialogMaker.Core.Scripting.Compiler
                 members = currentType.GetAllMembers(m => m.Name == name &&
                                                          m is IDSharpMethodInfo method &&
                                                          method.MethodType == DSharpMethodType.Default);
+
+                if (Scope != null)
+                {
+                    var extensionMethods = Scope.ResolveAllTypes().Where(t => t.IsStatic)
+                                                                  .SelectMany(t => t.GetMethods().Where(m => m.Name == name &&
+                                                                                                             m.IsExtension));
+                    members = members.Union(extensionMethods);
+                }
             }
 
-            List<DSharpMethodCallingInfo> callingInfos = [];
+            Dictionary<DSharpMethodCallingInfo, IDSharpType?[]> callingInfosParameters = [];
             List<Exception> callingExceptions = [];
 
             bool IsOverriden(IDSharpMethodInfo method)
             {
-                foreach (var methodCallingInfo in callingInfos)
+                foreach (var methodCallingInfo in callingInfosParameters.Keys)
                 {
                     if (methodCallingInfo.Method.OverrideMethod != null)
                     {
@@ -1052,22 +1063,31 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 var methodParameters = method.GetParameters();
                 var methodGenericParameters = method.GetGenericParameters();
+                var callingParameters = parameters;
+                bool isExtensionCalling = method.IsExtension && currentType != null;
+                bool hasParams = method.HasParams;
 
-                if (methodParameters.Length != parameters.Length)
+                if (isExtensionCalling)
+                {
+                    callingExtensionParameters ??= [.. parameters.Append(currentType)];
+                    callingParameters = callingExtensionParameters;
+                }
+                if ((!hasParams && methodParameters.Length != callingParameters.Length) ||
+                    (hasParams && methodParameters.Length - 1 > callingParameters.Length))
                 {
                     continue;
                 }
 
                 try
                 {
-                    var callingInfo = DSharpMethodCallingInfo.Create(method, parameters, genericParameters);
+                    var callingInfo = DSharpMethodCallingInfo.Create(method, callingParameters, genericParameters);
 
-                    if (callingInfos.Count > 0 && IsOverriden(method))
+                    if (callingInfosParameters.Count > 0 && IsOverriden(method))
                     {
                         continue;
                     }
 
-                    callingInfos.Add(callingInfo);
+                    callingInfosParameters.Add(callingInfo, callingParameters);
                 }
                 catch (Exception error)
                 {
@@ -1075,9 +1095,9 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
             }
 
-            if (callingInfos.Count > 0)
+            if (callingInfosParameters.Count > 0)
             {
-                return DSharpMethodCallingInfo.GetMostSuitable(callingInfos, parameters);
+                return DSharpMethodCallingInfo.GetMostSuitable(callingInfosParameters);
             }
 
             if (callingExceptions.Count == 1)

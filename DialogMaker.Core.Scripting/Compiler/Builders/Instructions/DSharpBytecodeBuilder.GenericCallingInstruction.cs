@@ -32,6 +32,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 CallingInfo.Method.MetadataToken.Write(stream);
 
                 var replacedTypes = CallingInfo.Method.GetReplacedTypesByGenericParameters(BytecodeBuilder.Method.Assembly, [.. CallingInfo.GenericParameters.Values]);
+
                 stream.Write(replacedTypes.Count);
 
                 foreach (var info in replacedTypes)

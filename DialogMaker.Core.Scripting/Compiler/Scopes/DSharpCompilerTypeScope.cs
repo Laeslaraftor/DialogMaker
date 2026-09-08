@@ -55,6 +55,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
             {
                 yield return child;
             }
+            foreach (var child in GetChildTypes(Type, name))
+            {
+                yield return child;
+            }
 
             while (declaringType != null)
             {
@@ -83,11 +87,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
 
                 previousDeclaringType = declaringType;
                 declaringType = declaringType.DeclaringType;
-            }
-
-            foreach (var child in GetChildTypes(Type, name))
-            {
-                yield return child;
             }
         }
         protected override IEnumerable<IDSharpMemberInfo> GetMembers()

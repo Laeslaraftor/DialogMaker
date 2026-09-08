@@ -820,6 +820,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 var newFinalizer = newType.CreateFinalizer();
                 ProcessMethod(newFinalizer, genericType.Finalizer);
             }
+            if (genericType.Initializer != null)
+            {
+                var newInitializer = newType.CreateInitializer(false);
+                ProcessMethod(newInitializer, genericType.Initializer);
+            }
+            if (genericType.StaticInitializer != null)
+            {
+                var newStaticInitializer = newType.CreateInitializer(true);
+                ProcessMethod(newStaticInitializer, genericType.StaticInitializer);
+            }
 
             void SetupImplementations<T>(T[] implementations, Action<T> addImplementation)
                 where T : IDSharpMemberInfo
@@ -1355,7 +1365,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         }
         public IDSharpType GetType(string fullName)
         {
-            IDSharpType type = _types.FirstOrDefault(t => t.FullName == fullName);
+            IDSharpType? type = _types.FirstOrDefault(t => t.FullName == fullName);
 
             if (type != null)
             {

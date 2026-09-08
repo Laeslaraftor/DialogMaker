@@ -1,4 +1,6 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+﻿using DialogMaker.Core.Scripting.Compiler;
+using DialogMaker.Core.Scripting.Compiler.Ast;
+using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Runtime.Executor;
 using System.Diagnostics.CodeAnalysis;
 
@@ -511,7 +513,7 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// </summary>
             /// <param name="other">Type for finding nearest common type</param>
             /// <returns>Nearest common type</returns>
-            public IDSharpType GetNearestCommonType(IDSharpType other) 
+            public IDSharpType GetNearestCommonType(IDSharpType other)
             {
                 if (type == other)
                 {
@@ -639,7 +641,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                         return false;
                     }
                 }
-                
+
                 foreach (var genericBaseType in type.GetBaseTypes())
                 {
                     if (genericBaseType != normalType &&
@@ -747,6 +749,146 @@ namespace DialogMaker.Core.Scripting.Runtime
                     }
                 }
             }
+
+            /// <summary>
+            /// Try to find type that contains specified generic type or parameters
+            /// </summary>
+            /// <param name="generic">Generic type for searching type that contains it</param>
+            /// <param name="result">Type that contains specified generic type or parameters</param>
+            /// <param name="index">Index on which placed specified generic type or parameter</param>
+            /// <returns>Is type with specified generic type or parameter was found</returns>
+            public bool TryFindTypeWithGeneric(IDSharpType generic, [NotNullWhen(true)] out IDSharpType? result, out int index)
+            {
+                return type.TryFindTypeWithGeneric(generic, -1, true, out result, out _, out index);
+            }
+            /// <summary>
+            /// Try to find type that contains specified generic type or parameters
+            /// </summary>
+            /// <param name="generic">Generic type for searching type that contains it</param>
+            /// <param name="searchIndex">
+            /// Index that should contains specified generic type.
+            /// Set -1 for skipping this check.
+            /// </param>
+            /// <param name="checkPrecise">Check types equality (true) or assignability (false)</param>
+            /// <param name="typeWithGeneric">Type that contains specified generic type or parameters</param>
+            /// <param name="genericThatFound">
+            /// Generic type or parameter that was found on specified index.
+            /// It useless when searchIndex is -1
+            /// </param>
+            /// <param name="index">Index on which placed specified generic type or parameter</param>
+            /// <returns>Is type with specified generic type or parameter was found</returns>
+            public bool TryFindTypeWithGeneric(IDSharpType generic, int searchIndex, bool checkPrecise, [NotNullWhen(true)] out IDSharpType? typeWithGeneric, [NotNullWhen(true)] out IDSharpType? genericThatFound, out int index)
+            {
+                bool Contains(IDSharpType type, [NotNullWhen(true)] out IDSharpType? newGeneric, out int index)
+                {
+                    index = 0;
+                    newGeneric = null;
+
+                    foreach (var value in type.GetGenericTypes().Union(type.GetGenericParameters()))
+                    {
+                        if (searchIndex == -1 ||
+                            searchIndex != -1 && index == searchIndex)
+                        {
+                            if ((checkPrecise && value == generic) ||
+                                (!checkPrecise && value.IsAssignableTo(generic)))
+                            {
+                                newGeneric = value;
+                                return true;
+                            }
+                        }
+
+                        index++;
+                    }
+
+                    return false;
+                }
+                (IDSharpType? Type, IDSharpType? Generic, int Index)? Search(IDSharpType type)
+                {
+                    if (Contains(type, out var newGeneric, out var index))
+                    {
+                        return (type, newGeneric, index);
+                    }
+
+                    foreach (var baseType in type.GetBaseTypes())
+                    {
+                        var result = Search(baseType);
+
+                        if (result != null)
+                        {
+                            return result;
+                        }
+                    }
+
+                    return null;
+                }
+
+                var searchResult = Search(type);
+
+                if (searchResult != null)
+                {
+                    typeWithGeneric = searchResult.Value.Type;
+                    genericThatFound = searchResult.Value.Generic;
+                    index = searchResult.Value.Index;
+                }
+                else
+                {
+                    typeWithGeneric = null;
+                    genericThatFound = null;
+                    index = -1;
+                }
+
+                return typeWithGeneric != null;
+            }
+        }
+        extension(IEnumerable<IDSharpType> types)
+        {
+            /// <summary>
+            /// Get nearest common type between all types in sequence
+            /// </summary>
+            /// <returns>Nearest common type</returns>
+            /// <exception cref="ArgumentException">Sequence is empty</exception>
+            public IDSharpType GetNearestCommonType()
+            {
+                List<IDSharpType> buffer = [];
+                IDSharpType? previousType = null;
+
+                foreach (var type in types)
+                {
+                    if (previousType == null)
+                    {
+                        previousType = type;
+                        continue;
+                    }
+
+                    var nearestCommonType = type.GetNearestCommonType(previousType);
+                    buffer.Add(nearestCommonType);
+                    previousType = null;
+                }
+
+                if (previousType != null)
+                {
+                    buffer.Add(previousType);
+                }
+                if (buffer.Count == 0)
+                {
+                    throw new ArgumentException("Sequence is empty", nameof(types));
+                }
+
+                while (buffer.Count > 1)
+                {
+                    int i = 0;
+
+                    while (i < buffer.Count - 1)
+                    {
+                        int nextIndex = i + 1;
+                        buffer[i] = buffer[i].GetNearestCommonType(buffer[nextIndex]);
+                        buffer.RemoveAt(nextIndex);
+                        i++;
+                    }
+                }
+
+                return buffer[0];
+            }
         }
         extension(IDSharpAssembly assembly)
         {
@@ -808,6 +950,43 @@ namespace DialogMaker.Core.Scripting.Runtime
         }
         extension(IDSharpMethodInfo method)
         {
+            public bool IsExtension
+            {
+                get
+                {
+                    if (method is DSharpMethodBuilder builder)
+                    {
+                        if (builder.Parameters.Count == 0)
+                        {
+                            return false;
+                        }
+
+                        return builder.Parameters[0].Mode == DSharpMethodParameterMode.This;
+                    }
+
+                    return method.GetParameters().FirstOrDefault()?.Mode == DSharpMethodParameterMode.This;
+                }
+            }
+            public bool HasParams
+            {
+                get
+                {
+                    if (method is DSharpMethodBuilder builder)
+                    {
+                        if (builder.Parameters.Count == 0)
+                        {
+                            return false;
+                        }
+
+                        return builder.Parameters[^1].Mode == DSharpMethodParameterMode.Params;
+                    }
+
+                    var parameters = method.GetParameters();
+
+                    return parameters.Length != 0 && parameters[^1].Mode == DSharpMethodParameterMode.Default;
+                }
+            }
+
             public string ToString(IDictionary<IDSharpType, IDSharpType>? replacedTypes)
             {
                 string result = " ";

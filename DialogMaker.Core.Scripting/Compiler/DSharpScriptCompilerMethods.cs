@@ -53,6 +53,24 @@ namespace DialogMaker.Core.Scripting.Compiler
         }
         private void CompileMethod(DSharpMethodBuilder method, BlockStatementNode body, DSharpMethodCompileSettings settings = default)
         {
+            if (method.HasParams)
+            {
+                var lastParameter = method.Parameters[^1];
+
+                if (lastParameter.Type == null)
+                {
+                    throw new DSharpCompilerException($"Parameter with \"params\" should have array or span type at \"{method}\"", _createdMethods[method]);
+                }
+
+                var parameterType = (IDSharpType)Assembly.GetType(lastParameter.Type);
+
+                if (parameterType.GenericTemplate != Assembly.ArrayBaseType.Type &&
+                    parameterType.GenericTemplate != Assembly.SpanTypeInfo.Type)
+                {
+                    throw new DSharpCompilerException($"Parameter with \"params\" should have array or span type at \"{method}\"", _createdMethods[method]);
+                }
+            }
+
             var code = method.GetBytecodeBuilder();
             settings.LocalVariables ??= [];
             settings.UsingVariables ??= [];
@@ -236,13 +254,12 @@ namespace DialogMaker.Core.Scripting.Compiler
                     {
                         throw new DSharpCompilerException($"Failed to compile initializer for \"{info.Key}\"", info.Value);
                     }
-
-                    CompileExpressionValueWithRequestedType(initializer, returnType, code, info.Value, ref settings, null, context);
-
                     if (!isStatic)
                     {
                         code.LoadInstance();
                     }
+
+                    CompileExpressionValueWithRequestedType(initializer, returnType, code, info.Value, ref settings, null, context);
 
                     code.StorePropertyOrField(info.Key);
                     
@@ -738,7 +755,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 var returnTypeMethods = expressionReturnType.GetAllMembers(m => m is IDSharpMethodInfo &&
-                                                                                m.DeclaringType?.ObjectType != DSharpObjectType.Interface &&
                                                                                 m.Access == DSharpAccessModifier.Public)
                                                             .Cast<IDSharpMethodInfo>();
                 var getEnumeratorMethod = returnTypeMethods.FirstOrDefault(m => m.Name == "GetEnumerator" &&
@@ -1431,10 +1447,33 @@ namespace DialogMaker.Core.Scripting.Compiler
                     code.LoadInstance();
                     removeInstance = true;
                 }
-
-                foreach (var arg in callExpression.Arguments)
+                if (calledMethod.HasParams)
                 {
-                    CompileValueExpression(method, arg, ref settings, null, context);
+                    var paramsParameters = DSharpMethodCallingInfo.GetCallingParams(calledMethod, calledMethodInfo.Parameters);
+                    var paramsParam = calledMethod.GetParameters()[^1];
+                    var genericParameter = paramsParam.Type.GetGenericParameters().FirstOrDefault() 
+                        ?? throw new DSharpCompilerException("Unable to call method with \"params\" parameter that not array and not span", expression);
+                    int normalParametersCount = callExpression.Arguments.Count - (paramsParameters?.Length ?? 0);
+
+                    for (int i = 0; i < normalParametersCount; i++)
+                    {
+                        CompileValueExpression(method, callExpression.Arguments[i], ref settings, null, context);
+                    }
+
+                    if (paramsParameters == null || paramsParameters.Length > 0)
+                    {
+                        var isStack = paramsParam.Type.GenericTemplate == Assembly.SpanType;
+
+                        CompileArrayCreation(method, code, genericParameter, isStack, callExpression.Arguments.Skip(normalParametersCount),
+                                                                                      callExpression, ref settings, context);
+                    }
+                }
+                else
+                {
+                    foreach (var arg in callExpression.Arguments)
+                    {
+                        CompileValueExpression(method, arg, ref settings, null, context);
+                    }
                 }
 
                 context.CurrentMember = startCurrentMember;
@@ -1730,54 +1769,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 var type = (IDSharpType)Assembly.GetType(typeToken);
-                int arraySize = newArrayExpression.SizeExpressions.Count;
+                var sizeExpression = newArrayExpression.SizeExpressions.FirstOrDefault();
 
-                if (newArrayExpression.SizeExpressions.Count > 0)
-                {
-                    CompileValueExpression(method, newArrayExpression.SizeExpressions[0], ref settings, expression, context);
-                }
-                else
-                {
-                    code.Push(newArrayExpression.ItemsExpressions.Count);
-                }
-
-                if (newArrayExpression.IsStackAlloc)
-                {
-                    type = Assembly.CreateSpan(type);
-                    code.NewStackArray(type);
-                }
-                else
-                {
-                    type = Assembly.CreateArray(type);
-                    code.NewArray(type);
-                }
-
-                code.PopOffset(1);
-                var indexer = DSharpArrayType.GetIndexer(type);
-
-                //if (context.Scope == null ||
-                //    !context.Scope.TryCreateVariable($"_newArrayInstance_{expression.Line}_{expression.Column}", type, out var arrayVariable))
-                //{
-                //    throw new InvalidOperationException($"Unable to create variable for temporal storing new array instance: {expression}");
-                //}
-
-                //code.StoreLocal(arrayVariable);
-                //code.Pop();
-
-                for (int i = 0; i < newArrayExpression.ItemsExpressions.Count; i++)
-                {
-                    var item = newArrayExpression.ItemsExpressions[i];
-
-                    CompileValueExpression(method, item, ref settings, expression, context);
-                    code.Push(i);
-                    //code.LoadLocal(arrayVariable);
-                    code.StorePropertyOrField(indexer);
-                    code.PopRepeat(2);
-                }
+                type = CompileArrayCreation(method, code, type, newArrayExpression.IsStackAlloc, 
+                                                                newArrayExpression.ItemsExpressions, 
+                                                                newArrayExpression, 
+                                                                ref settings, context, sizeExpression);
 
                 settings.LastOperationIsReturnsValue = true;
-
-                //code.LoadLocal(arrayVariable);
 
                 return type;
             }
@@ -2979,11 +2978,12 @@ namespace DialogMaker.Core.Scripting.Compiler
             settings.DoNotCompileEndPointMember = startDoNotCompileEndPointMemberValue;
 
             if (result != null && result.IsStatic &&
+                (result is IDSharpMethodInfo resultMethod && !resultMethod.IsExtension) &&
                 (currentMember is not IDSharpType ||
                 previousTarget is ThisExpressionNode ||
                 previousTarget is BaseExpressionNode))
             {
-                throw new InvalidOperationException($"Unable to access to static member \"{result}\" throw instance, use full path to access it: {currentMemberAccess.Member}");
+                throw new InvalidOperationException($"Unable to access to static member \"{result}\" through instance, use full path to access it: {currentMemberAccess.Member}");
             }
             if (result != null && !result.IsStatic &&
                 !lastAccessedAsLocalMember &&
@@ -3098,6 +3098,58 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             return member;
+        }
+        private IDSharpType CompileArrayCreation(DSharpMethodBuilder method, DSharpBytecodeBuilder code, IDSharpType itemType, bool isStackAlloc, IEnumerable<ExpressionNode>? items, ExpressionNode parentExpression, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context = default, ExpressionNode? sizeExpression = null)
+        {
+            IDSharpType arrayType;
+
+            if (sizeExpression != null)
+            {
+                CompileValueExpression(method, sizeExpression, ref settings, parentExpression, context);
+            }
+            else
+            {
+                if (items == null)
+                {
+                    throw new DSharpCompilerException($"Unable to create array with unknown size", parentExpression);
+                }
+
+                code.Push(items.Count());
+            }
+
+            if (isStackAlloc)
+            {
+                arrayType = Assembly.CreateSpan(itemType);
+                code.NewStackArray(arrayType);
+            }
+            else
+            {
+                arrayType = Assembly.CreateArray(itemType);
+                code.NewArray(arrayType);
+            }
+
+            code.PopOffset(1);
+
+            if (items != null)
+            {
+                CompileArrayCreation(method, code, arrayType, items, parentExpression, ref settings, context);
+            }
+
+            return arrayType;
+        }
+        private void CompileArrayCreation(DSharpMethodBuilder method, DSharpBytecodeBuilder code, IDSharpType arrayType, IEnumerable<ExpressionNode> items, ExpressionNode parentExpression, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context = default)
+        {
+            int i = 0;
+            var indexer = DSharpArrayType.GetIndexer(arrayType);
+
+            foreach (var item in items)
+            {
+                CompileValueExpression(method, item, ref settings, parentExpression, context);
+                code.Push(i);
+                code.StorePropertyOrField(indexer);
+                code.PopRepeat(2);
+                i++;
+            }
         }
 
         #endregion

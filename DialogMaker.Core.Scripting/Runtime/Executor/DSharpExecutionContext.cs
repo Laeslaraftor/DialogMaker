@@ -241,9 +241,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 {
                     var pair = genericParameters[i];
 
-                    if (pair.Key.AsPointer()->MetadataToken == metadataToken)
+                    if (*pair.Key.AsPointer() == metadataToken)
                     {
-                        return pair.Value.AsPointer();
+                        return (DSharpRuntimeTypeInfo*)pair.Value.AsPointer();
                     }
                 }
             }            
@@ -258,12 +258,57 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <returns>Replaced type</returns>
         public DSharpRuntimeTypeInfo* ReplaceType(DSharpRuntimeTypeInfo* type)
         {
-            if (_executor->GenericParameters.TryGetValue(type, out var result))
+            if (_executor->GenericParameters.TryGetValue((DSharpMetadataToken*)type, out var result))
             {
-                return result.Value;
+                return (DSharpRuntimeTypeInfo*)result.Value.AsPointer();
             }
 
             return type;
+        }
+        /// <summary>
+        /// Replace specified method with generic parameter.
+        /// If there no replaced method then it will return specified method back
+        /// </summary>
+        /// <param name="method">Method for replacing</param>
+        /// <returns>Replaced method</returns>
+        public DSharpRuntimeMethodInfo* ReplaceMethod(DSharpRuntimeMethodInfo* method)
+        {
+            if (_executor->GenericParameters.TryGetValue((DSharpMetadataToken*)method, out var result))
+            {
+                return (DSharpRuntimeMethodInfo*)result.Value.AsPointer();
+            }
+
+            return method;
+        }
+        /// <summary>
+        /// Replace specified property with generic parameter.
+        /// If there no replaced property then it will return specified property back
+        /// </summary>
+        /// <param name="property">Property for replacing</param>
+        /// <returns>Replaced property</returns>
+        public DSharpRuntimePropertyInfo* ReplaceProperty(DSharpRuntimePropertyInfo* property)
+        {
+            if (_executor->GenericParameters.TryGetValue((DSharpMetadataToken*)property, out var result))
+            {
+                return (DSharpRuntimePropertyInfo*)result.Value.AsPointer();
+            }
+
+            return property;
+        }
+        /// <summary>
+        /// Replace specified member with generic parameter.
+        /// If there no replaced member then it will return specified member back
+        /// </summary>
+        /// <param name="memberToken">Member token for replacing</param>
+        /// <returns>Replaced member</returns>
+        public DSharpMetadataToken* ReplaceMember(DSharpMetadataToken* memberToken)
+        {
+            if (_executor->GenericParameters.TryGetValue(memberToken, out var result))
+            {
+                return result.Value.AsPointer();
+            }
+
+            return memberToken;
         }
 
         #endregion
