@@ -22,12 +22,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public ExpressionNode? Initializer { get; set; }
 
-        #region Управление
+        #region Controls
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             if (Type == null)
@@ -59,7 +55,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #endregion
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Check next tokens is variable definition;
@@ -102,6 +98,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 Type = variableType,
                 Attributes = attributes
             };
+            variableType.Parent = variable;
+            attributes?.SetParent(variable);
 
             if (stream.Check(DSharpTokenType.Assign))
             {
@@ -112,6 +110,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
                 stream.Eat(DSharpTokenType.Assign);
                 variable.Initializer = ExpressionNode.ParseExpression(stream);
+                variable.Initializer.Parent = variable;
             }
             if (eatEnding)
             {

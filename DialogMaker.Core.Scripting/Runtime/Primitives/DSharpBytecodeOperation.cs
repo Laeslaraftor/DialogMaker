@@ -15,6 +15,14 @@ namespace DialogMaker.Core.Scripting.Runtime
         [Executor(typeof(DSharpPushInstructionExecutor))]
         Push,
         /// <summary>
+        /// Push null value (all zero bytes) with buffer that have equals size to specified type.
+        /// For reference types this buffer have size as pointer
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(0)]
+        [Executor(typeof(DSharpPushSizedNullInstructionExecutor))]
+        PushSizedNull,
+        /// <summary>
         /// Remove last value from stack
         /// </summary>
         [ArgsCount(0)]

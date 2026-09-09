@@ -13,12 +13,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public VariableNode? Variable { get; set; }
 
-        #region Управление
+        #region Controls
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             return Variable?.ToString() ?? base.ToString();

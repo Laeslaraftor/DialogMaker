@@ -26,7 +26,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public List<AttributeNode> Attributes { get; set; } = [];
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse parameter expression starts with current token
@@ -34,7 +34,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <param name="stream">Abstract syntax tree parser stream</param>
         /// <param name="allowType">Allow parameter type definition</param>
         /// <param name="allowDefaultValue">Allow default value definition</param>
-        /// <param name="allowModes">Allow diffierent parameter modes (this, ref, out)</param>
+        /// <param name="allowModes">Allow different parameter modes (this, ref, out)</param>
         /// <returns>Parsed parameter expression</returns>
         public static ParameterExpressionNode Parse(AstParserStream stream, bool allowType = true, bool allowDefaultValue = true, bool allowModes = true)
         {
@@ -81,6 +81,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 Type = typeInfo,
                 Attributes = attributes
             };
+            attributes.SetParent(result);
+            typeInfo?.Parent = result;
 
             if (stream.Check(DSharpTokenType.Assign))
             {
@@ -91,6 +93,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
                 stream.Check(DSharpTokenType.Assign);
                 result.DefaultValueExpression = ParseExpression(stream);
+                result.DefaultValueExpression.Parent = result;
             }
 
             return result;

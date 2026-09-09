@@ -39,9 +39,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
                 yield return genericType;
             }
         }
-        protected override IEnumerable<IDSharpMemberInfo> GetMembers()
+        protected override IEnumerable<IDSharpMemberInfo> GetMembers(string name)
         {
-            yield break;
+            return GetTypes(name);
         }
         protected override IEnumerable<IDSharpParameterInfo> GetVariables()
         {

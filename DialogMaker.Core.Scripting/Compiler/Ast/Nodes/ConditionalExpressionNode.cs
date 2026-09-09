@@ -34,12 +34,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             var trueExpression = ParseExpression(stream);
             stream.Eat(DSharpTokenType.Colon);
             var falseExpression = ParseExpression(stream);
-
-            return new(question)
+            ConditionalExpressionNode result = new(question)
             {
                 TrueExpression = trueExpression,
                 FalseExpression = falseExpression
             };
+
+            trueExpression.Parent = result;
+            falseExpression.Parent = result;
+
+            return result;
         }
 
         #endregion

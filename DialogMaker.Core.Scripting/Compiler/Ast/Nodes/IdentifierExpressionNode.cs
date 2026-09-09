@@ -56,6 +56,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             if (parseGenericParameters)
             {
                 TypeInfoNode.ParseGenericParameters(stream, expression.GenericParameters, true);
+                expression.GenericParameters.SetParent(expression);
             }
 
             return expression;

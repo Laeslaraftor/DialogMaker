@@ -13,7 +13,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public ExpressionNode? Identifier { get; set; }
 
-        #region Управление
+        #region Controls
 
         /// <summary>
         /// Get full name of current namespace
@@ -41,7 +41,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #endregion
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse namespace statement starts with current token
@@ -56,17 +56,25 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             if (stream.Check(DSharpTokenType.Semicolon))
             {
                 stream.Eat(DSharpTokenType.Semicolon);
-                return new(namespaceKeyword)
+                NamespaceStatementNode result = new(namespaceKeyword)
                 {
                     Identifier = identifier
                 };
+                identifier.Parent = result;
+
+                return result;
             }
 
-            return new NamespaceBlockStatementBlock(namespaceKeyword)
+            NamespaceBlockStatementBlock namespaceBlock = new(namespaceKeyword)
             {
                 Identifier = identifier,
                 Block = BlockStatementNode.Parse(stream, DSharpStatementType.Declaration)
             };
+
+            identifier.Parent = namespaceBlock;
+            namespaceBlock.Block.Parent = namespaceBlock;
+
+            return namespaceBlock;
         }
 
         #endregion

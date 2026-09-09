@@ -14,12 +14,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public ExpressionNode? Value { get; set; }
 
-        #region Управление
+        #region Controls
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             if (Value == null)
@@ -36,7 +32,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #endregion
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse return statement starts with current token
@@ -51,6 +47,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             if (!stream.Check(DSharpTokenType.Semicolon))
             {
                 returnStatement.Value = ExpressionNode.ParseExpression(stream);
+                returnStatement.Value.Parent = returnStatement;
             }
 
             stream.Eat(DSharpTokenType.Semicolon);

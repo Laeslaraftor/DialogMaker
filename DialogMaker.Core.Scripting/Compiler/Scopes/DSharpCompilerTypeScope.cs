@@ -35,10 +35,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         }
         protected override IEnumerable<IDSharpType> GetTypes(string name)
         {
-            var typeFullName = DSharpCompilerFileScope.GetTypeFullName(Type);
+            var nameEqualityToCurrentType = DSharpCompilerFileScope.IsNameEquals(Type, name);
 
-            if (Type.Name == name ||
-                typeFullName == name)
+            if (nameEqualityToCurrentType.IsEquals())
             {
                 yield return Type;
             }
@@ -64,8 +63,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
             {
                 var nameEquality = DSharpCompilerFileScope.IsNameEquals(declaringType, name);
 
-                if (declaringType.Name == name ||
-                    nameEquality.IsEquals())
+                if (nameEquality.IsEquals())
                 {
                     yield return declaringType;
                 }
@@ -89,12 +87,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
                 declaringType = declaringType.DeclaringType;
             }
         }
-        protected override IEnumerable<IDSharpMemberInfo> GetMembers()
+        protected override IEnumerable<IDSharpMemberInfo> GetMembers(string name)
         {
-            foreach (var member in Type.GetAllMembers())
-            {
-                yield return member;
-            }
+            return Type.GetAllMembers(m => m is not IDSharpType && m.Name == name).Union(GetTypes(name));
         }
         protected override IEnumerable<IDSharpParameterInfo> GetVariables()
         {

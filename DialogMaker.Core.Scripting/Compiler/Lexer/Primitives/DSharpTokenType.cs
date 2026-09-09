@@ -63,12 +63,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// <summary>
         /// Extern keyword for function or methods which must me added by compiler or execution handler
         /// </summary>
-        [Keyword(ObjectDeclarationNode.ExternModifier)]
+        [Keyword("extern")]
         Extern,
         /// <summary>
         /// Static keyword for function or methods which allows to access without object instance
         /// </summary>
-        [Keyword(ObjectDeclarationNode.StaticModifier)]
+        [Keyword("static")]
         Static,
         /// <summary>
         /// Where keyword

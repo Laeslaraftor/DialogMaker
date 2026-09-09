@@ -1,10 +1,21 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast
 {
     internal static class AstExtensions
     {
+        extension(IEnumerable<AstNode> nodes)
+        {
+            public void SetParent(AstNode? parent)
+            {
+                foreach (var node in nodes)
+                {
+                    node.Parent = parent;
+                }
+            }
+        }
         extension(DSharpPropertyAccessor accessor)
         {
             public DSharpPropertyAccessor Invert()

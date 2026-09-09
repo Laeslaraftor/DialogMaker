@@ -27,12 +27,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         public static AsExpressionNode Parse(AstParserStream stream)
         {
             var token = stream.Eat(DSharpTokenType.As);
-            var type = TypeInfoNode.Parse(stream, true, true);
-
-            return new(token)
+            AsExpressionNode result = new(token)
             {
-                ConvertType = type
+                ConvertType = TypeInfoNode.Parse(stream, true, true)
             };
+            result.ConvertType.Parent = result;
+
+            return result;
         }
 
         #endregion

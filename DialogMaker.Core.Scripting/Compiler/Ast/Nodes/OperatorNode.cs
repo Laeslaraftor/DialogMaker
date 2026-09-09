@@ -59,6 +59,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     ReturnType = TypeInfoNode.Parse(stream, true, true)
                 };
                 result.Identifier = new(result.ReturnType.Token);
+                result.ReturnType.Parent = result;
+                result.Identifier.Parent = result;
             }
             else
             {
@@ -89,9 +91,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
 
                 result.ReturnType = memberInfo.Type;
+                result.Identifier.Parent = result;
+                result.ReturnType?.Parent = result;
             }
 
             ParseParameters(stream, result.Parameters);
+            result.Parameters.SetParent(result);
 
             if ((memberInfo.OperatorType == DSharpOperatorType.Implicit ||
                 memberInfo.OperatorType == DSharpOperatorType.Explicit ||
@@ -122,6 +127,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             result.OperatorType = memberInfo.OperatorType;
             result.Attributes = memberInfo.Attributes;
             result.Access = memberInfo.AccessModifier;
+            result.Body.Parent = result;
+            result.Attributes?.SetParent(result);
 
             return result;
         }

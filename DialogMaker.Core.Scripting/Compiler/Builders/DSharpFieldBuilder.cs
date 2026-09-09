@@ -20,7 +20,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <summary>
         /// Type that declared this field. Empty field means this field is global variable in assembly
         /// </summary>
-        public override DSharpTypeBuilder? DeclaringType { get; } = declaringType;
+        public override IDSharpType? DeclaringType { get; } = declaringType;
         /// <summary>
         /// Type of value that stored by this field
         /// </summary>

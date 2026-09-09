@@ -198,12 +198,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 var @operator = GetOperator();
 
                 var right = parser(stream);
-                left = new BinaryExpressionNode(operatorToken)
+                BinaryExpressionNode binaryExpression = new(operatorToken)
                 {
                     Left = left,
                     Operator = @operator,
                     Right = right,
                 };
+                left.Parent = binaryExpression;
+                right.Parent = binaryExpression;
+
+                left = binaryExpression;
             }
 
             return left;

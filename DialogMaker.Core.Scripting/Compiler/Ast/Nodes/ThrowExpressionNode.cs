@@ -13,7 +13,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public ExpressionNode? ValueExpression { get; set; }
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse throw expression starts with current token
@@ -23,11 +23,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         public static ThrowExpressionNode Parse(AstParserStream stream)
         {
             var token = stream.Eat(DSharpTokenType.Throw);
-
-            return new(token)
+            ThrowExpressionNode result = new(token)
             {
                 ValueExpression = ParseExpression(stream)
             };
+            result.ValueExpression.Parent = result;
+
+            return result;
         }
 
         #endregion

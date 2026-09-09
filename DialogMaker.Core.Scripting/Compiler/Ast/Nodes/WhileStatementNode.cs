@@ -17,7 +17,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public StatementNode? Body { get; set; }
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse while statement starts with current token
@@ -33,12 +33,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 Condition = ExpressionNode.ParseExpression(stream)
             };
+            statement.Condition.Parent = statement;
 
             stream.Eat(DSharpTokenType.RightParen);
-            
+
             if (!stream.Check(DSharpTokenType.Semicolon))
             {
                 statement.Body = ParseCode(stream);
+                statement.Body.Parent = statement;
             }
             else
             {

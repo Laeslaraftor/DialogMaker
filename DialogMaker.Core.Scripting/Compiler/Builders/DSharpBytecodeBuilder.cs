@@ -3,7 +3,6 @@ using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
 using DialogMaker.Core.Scripting.Runtime.Executor;
-using System.Data.Common;
 using System.Text;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
@@ -308,6 +307,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         public LiteralInstruction Push(DSharpLiteralValue value)
         {
             return CreateInstruction<LiteralInstruction>(this, DSharpBytecodeOperation.Push, value);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.PushSizedNull"/>
+        /// </summary>
+        /// <param name="type">Type of object</param>
+        /// <returns></returns>
+        public TypeInstruction PushSizedNull(IDSharpType type)
+        {
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.PushSizedNull, type);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.Push"/>

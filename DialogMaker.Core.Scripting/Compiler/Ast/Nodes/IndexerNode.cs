@@ -51,6 +51,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 stream.ThrowPositionException("Unable to read getter and setter of indexer");
             }
 
+            memberInfo.Identifier.Parent = indexer;
+            memberInfo.Attributes?.SetParent(indexer);
+            memberInfo.Type?.Parent = indexer;
+            indexer.Parameters.SetParent(indexer);
+
             return indexer;
         }
 

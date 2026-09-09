@@ -122,11 +122,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 return false;
             }
 
-            IsGenericParameters(stream, offset + 1, out endOffset);
+            int extraOffset = 1;
+
+            if (stream.Check(DSharpTokenType.Question, offset + 1))
+            {
+                extraOffset++;
+            }
+
+            IsGenericParameters(stream, offset + extraOffset, out endOffset);
 
             if (endOffset == -1)
             {
-                endOffset = offset + 1;
+                endOffset = offset + extraOffset;
             }
 
             return true;
@@ -164,6 +171,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     {
                         Member = memberAccess
                     };
+                    memberAccess.Parent = result;
                 }
                 else if (accessExpression is IdentifierExpressionNode identifier)
                 {
@@ -171,6 +179,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     {
                         GenericParameters = identifier.GenericParameters
                     };
+                    identifier.GenericParameters.SetParent(result);
                 }
                 else
                 {
@@ -205,6 +214,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             result.IsNullable = CheckNullable();
             ParseGenericParameters(stream, result.GenericParameters, true);
+            result.GenericParameters.SetParent(result);
 
             if (skipArrayCheck)
             {

@@ -30,8 +30,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 Attributes = memberInfo.Attributes
             };
 
+
             ParseParameters(stream, finalizer.Parameters);
             finalizer.Body = BlockStatementNode.Parse(stream, DSharpStatementType.Code);
+
+            memberInfo.Identifier.Parent = finalizer;
+            memberInfo.Attributes?.SetParent(finalizer);
+            finalizer.Parameters.SetParent(finalizer);
+            finalizer.Body.Parent = finalizer;
 
             return finalizer;
         }

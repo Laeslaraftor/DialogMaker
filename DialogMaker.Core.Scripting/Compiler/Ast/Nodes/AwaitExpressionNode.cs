@@ -47,11 +47,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         {
             var awaitToken = stream.Eat(DSharpTokenType.Await);
             var expression = UnaryExpressionNode.Parse(stream);
-
-            return new AwaitExpressionNode(awaitToken)
+            AwaitExpressionNode result = new(awaitToken)
             {
                 Expression = expression,
             };
+            result.Expression.Parent = result;
+
+            return result;
         }
 
         #endregion

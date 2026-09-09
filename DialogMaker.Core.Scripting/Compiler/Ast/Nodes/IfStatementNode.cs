@@ -66,10 +66,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 Condition = ExpressionNode.ParseExpression(stream)
             };
+            statement.Condition.Parent = statement;
 
             stream.Eat(DSharpTokenType.RightParen);
 
             statement.ThenBranch = BlockStatementNode.Parse(stream, DSharpStatementType.Code);
+            statement.ThenBranch.Parent = statement;
 
             if (stream.Check(DSharpTokenType.Else))
             {
@@ -83,6 +85,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 {
                     statement.ElseBranch = BlockStatementNode.Parse(stream, DSharpStatementType.Code);
                 }
+
+                statement.ElseBranch.Parent = statement;
             }
 
             return statement;

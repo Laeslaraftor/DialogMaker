@@ -53,6 +53,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 stream.Eat(DSharpTokenType.LeftParen);
                 leftParenExists = true;
                 ParseExpressions(stream, expression.Parameters, DSharpTokenType.RightParen, "Required parameter");
+                expression.Parameters.SetParent(expression);
                 stream.Eat(DSharpTokenType.RightParen);
             }
             if (!stream.Check(DSharpTokenType.Semicolon))
@@ -71,13 +72,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                         var property = IdentifierExpressionNode.Parse(stream);
                         var assignmentOperator = stream.Eat(DSharpTokenType.Assign);
                         var value = ParseExpression(stream);
-
-                        expression.PropertiesInitializer.Add(new(assignmentOperator)
+                        AssignmentExpressionNode initializerAssignment = new(assignmentOperator)
                         {
                             Left = property,
                             Operator = DSharpAssignmentOperator.Assign,
-                            Right = value
-                        });
+                            Right = value,
+                            Parent = expression
+                        };
+
+                        property.Parent = initializerAssignment;
+                        value.Parent = initializerAssignment;
+
+                        expression.PropertiesInitializer.Add(initializerAssignment);
 
                         if (!ArrayExpressionNode.CheckTokenAfterComma(stream, DSharpTokenType.RightBrace))
                         {

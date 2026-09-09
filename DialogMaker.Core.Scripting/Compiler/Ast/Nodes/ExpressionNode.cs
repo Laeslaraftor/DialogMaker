@@ -95,6 +95,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     Member = ParseExpression(stream, true)
                 };
 
+                target.Parent = memberAccess;
+                memberAccess.Member.Parent = memberAccess;
+
                 target = memberAccess;
             }
             while (stream.Check(DSharpTokenType.Dot));
@@ -102,7 +105,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             if (memberAccess.Member is AssignmentExpressionNode assignment)
             {
                 memberAccess.Member = assignment.Left;
+                assignment.Left?.Parent = memberAccess;
                 assignment.Left = memberAccess;
+                memberAccess.Parent = assignment;
 
                 return assignment;
             }
@@ -119,7 +124,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 else
                 {
                     memberAccess.Member = currentBinary.Left;
+                    currentBinary.Left?.Parent = memberAccess;
                     currentBinary.Left = memberAccess;
+                    memberAccess.Parent = currentBinary;
 
                     return rootBinary!;
                 }
@@ -142,23 +149,31 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 {
                     List<ExpressionNode> args = [];
                     var callToken = CallExpressionNode.ParseArguments(stream, args);
-
-                    expression = new CallExpressionNode(callToken)
+                    CallExpressionNode callExpression = new(callToken)
                     {
                         Callee = expression,
                         Arguments = args
                     };
+
+                    expression.Parent = callExpression;
+                    args.SetParent(expression);
+
+                    expression = callExpression;
                 }
                 else if (stream.Check(DSharpTokenType.LeftBracket))
                 {
                     List<ExpressionNode> args = [];
                     var arrayAccessToken = CallExpressionNode.ParseArguments(stream, args, DSharpTokenType.LeftBracket, DSharpTokenType.RightBracket);
-
-                    expression = new ArrayAccessExpressionNode(arrayAccessToken)
+                    ArrayAccessExpressionNode arrayAccessExpression = new(arrayAccessToken)
                     {
                         Array = expression,
                         Arguments = args
                     };
+
+                    expression.Parent = arrayAccessExpression;
+                    args.SetParent(arrayAccessExpression);
+
+                    expression = arrayAccessExpression;
                 }
                 else
                 {
@@ -209,12 +224,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             if (AssignmentExpressionNode.TryParse(stream, out var assignment))
             {
                 assignment.Left = left;
+                left.Parent = assignment;
                 return assignment;
             }
             if (stream.Check(DSharpTokenType.Question))
             {
                 var conditionalExpression = ConditionalExpressionNode.Parse(stream);
                 conditionalExpression.Condition = left;
+                left.Parent = conditionalExpression;
 
                 return conditionalExpression;
             }
@@ -222,24 +239,31 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 var asExpression = AsExpressionNode.Parse(stream);
                 asExpression.Expression = left;
+                left.Parent = asExpression;
 
                 return asExpression;
             }
             else if (stream.Check(DSharpTokenType.Increment))
             {
                 var incrementToken = stream.Eat(DSharpTokenType.Increment);
-                return new IncrementExpressionNode(incrementToken)
+                IncrementExpressionNode result = new(incrementToken)
                 {
                     Expression = left
                 };
+                left.Parent = result;
+
+                return result;
             }
             else if (stream.Check(DSharpTokenType.Decrement))
             {
                 var decrementToken = stream.Eat(DSharpTokenType.Decrement);
-                return new DecrementExpressionNode(decrementToken)
+                DecrementExpressionNode result = new(decrementToken)
                 {
                     Expression = left
                 };
+                left.Parent = result;
+
+                return result;
             }
 
             if (!previousIsMemberAccess)
@@ -247,11 +271,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 while (stream.Check(DSharpTokenType.Dot))
                 {
                     var accessOperation = stream.Eat(DSharpTokenType.Dot);
-                    left = new MemberAccessExpressionNode(accessOperation)
+                    MemberAccessExpressionNode memberAccess = new(accessOperation)
                     {
                         Target = left,
                         Member = ParseExpression(stream)
                     };
+                    left.Parent = memberAccess;
+
+                    left = memberAccess;
                 }
             }
 
@@ -273,6 +300,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             if (stream.Check(DSharpTokenType.Out))
             {
                 return OutExpressionNode.Parse(stream);
+            }
+            if (stream.Check(DSharpTokenType.Ref))
+            {
+                return RefExpressionNode.Parse(stream);
             }
             if (DelegateExpressionNode.IsDelegate(stream))
             {

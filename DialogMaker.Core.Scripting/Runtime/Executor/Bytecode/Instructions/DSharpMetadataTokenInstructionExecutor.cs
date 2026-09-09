@@ -88,7 +88,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 }
                 if (!isBase && property->CanBeOverriden)
                 {
-                    if (instance->Type->OverridenProperties.TryGetValue(property, out var endPointProperty))
+                    if (instance->Type->TryGetOverridenProperty(property, out var endPointProperty))
                     {
                         property = endPointProperty;
                         accessor = GetAccessor(endPointProperty, accessorType);

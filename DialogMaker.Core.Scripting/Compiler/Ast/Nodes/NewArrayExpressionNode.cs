@@ -21,7 +21,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public bool IsStackAlloc { get; set; }
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse new array instance expression
@@ -38,6 +38,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             };
 
             ParseExpressions(stream, expression.SizeExpressions, DSharpTokenType.RightBracket, "Required array size expression");
+            expression.SizeExpressions.SetParent(expression);
 
             stream.Eat(DSharpTokenType.RightBracket);
 
@@ -50,6 +51,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
                 stream.Eat(DSharpTokenType.LeftBrace);
                 ParseExpressions(stream, expression.ItemsExpressions, DSharpTokenType.RightBrace, "Required array item expression");
+                expression.ItemsExpressions.SetParent(expression);
                 stream.Eat(DSharpTokenType.RightBrace);
             }
 

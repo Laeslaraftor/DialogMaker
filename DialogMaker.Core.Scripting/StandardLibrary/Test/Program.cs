@@ -172,7 +172,16 @@ public class Program
         TestArray();
 
         Console.WriteLine();
-        Activator.CreateInstance(typeof(Program));
+
+        try
+        {
+            Activator.CreateInstance(typeof(Program));
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine(exception);
+        }
+
         Console.WriteLine();
 
         TestPlayersArray("zeBlack", 2);
@@ -180,7 +189,9 @@ public class Program
         Console.WriteLine("Text: " + "example" + Numbers.Int64ToString(12));
         Console.WriteLine("Int size: " + GetSize<int>());
         Console.WriteLine("Long size: " + GetGenericObject<long>().Size);
+        Console.WriteLine();
 
+        TestOutputs();
 
         // last exception should be unhandled
         TestExceptionHandling();
@@ -202,7 +213,7 @@ public class Program
             i++;
         }
 
-        var firstValue = values.FirstOrDefault();
+        var firstValue = Enumerator.FirstOrDefault(values);
 
         if (firstValue != null)
         {
@@ -257,6 +268,37 @@ public class Program
         }
 
         throw new NotImplementedException("Сказал как с лестницы упал");
+    }
+    private static void TestOutputs()
+    {
+        if (TryGetZeBlack("govno", out var ze))
+        {
+            Console.WriteLine("zeBlack ответил: " + ze);
+        }
+        else
+        {
+            Console.WriteLine("zeBlack не ответил");
+        }
+        if (TryGetZeBlack("zeBlack", out ze))
+        {
+            Console.WriteLine("zeBlack ответил: " + ze);
+        }
+        else
+        {
+            Console.WriteLine("zeBlack не ответил");
+        }
+    }
+
+    private static bool TryGetZeBlack(string value, out string? result)
+    {
+        if (value == "zeBlack")
+        {
+            result = "zeWhite";
+            return true;
+        }
+
+        result = null;
+        return false;
     }
 }
 

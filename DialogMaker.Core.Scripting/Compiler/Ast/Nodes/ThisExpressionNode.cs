@@ -8,7 +8,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// <param name="token">Token that represents this keyword</param>
     public class ThisExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse this expression starts with current token

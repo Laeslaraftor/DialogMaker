@@ -52,6 +52,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             BlockStatementNode block = new(blockStartToken);
 
             ParseBody(stream, type, block.Statements, endWith);
+            block.Statements.SetParent(block);
 
             if (endWith != DSharpTokenType.Semicolon)
             {

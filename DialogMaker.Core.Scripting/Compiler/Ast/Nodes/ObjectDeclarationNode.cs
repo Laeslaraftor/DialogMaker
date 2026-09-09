@@ -74,20 +74,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public List<OperatorNode> Operators { get; set; } = [];
 
-        #region Константы
-
-        /// <summary>
-        /// Name of static modifier for methods and fields
-        /// </summary>
-        public const string StaticModifier = "static";
-        /// <summary>
-        /// Name of extern modifier for methods
-        /// </summary>
-        public const string ExternModifier = "extern";
-
-        #endregion
-
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Try parse access modifier from current token and eat it on success
@@ -550,6 +537,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 IsStatic = isStatic
             };
 
+            identifier.Parent = node;
+
             if (stream.Check(DSharpTokenType.Colon))
             {
                 stream.Eat(DSharpTokenType.Colon);
@@ -558,6 +547,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                        !stream.Check(DSharpTokenType.Where))
                 {
                     var type = TypeInfoNode.Parse(stream, false, false);
+                    type.Parent = node;
                     node.BaseTypes.Add(type);
 
                     if (!ArrayExpressionNode.CheckTokenAfterComma(stream, DSharpTokenType.LeftBrace))
@@ -568,6 +558,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
 
             WhereNode.ParseAll(stream, node.GenericDescriptions);
+            node.GenericDescriptions.SetParent(node);
 
             stream.Eat(DSharpTokenType.LeftBrace);
 
@@ -582,6 +573,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 if (objectType == DSharpObjectType.Enum)
                 {
                     var enumField = FieldNode.ParseEnumField(stream);
+                    enumField.Parent = node;
                     node.Fields.Add(enumField);
 
                     if (stream.Check(DSharpTokenType.Comma))
@@ -595,6 +587,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 if (IsObjectDeclaration(stream))
                 {
                     var child = Parse(stream);
+                    child.Parent = node;
                     node.Children.Add(child);
                     continue;
                 }
@@ -604,6 +597,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
 
                 var member = ParseMember(stream, memberInfo);
+                member.Parent = node;
 
                 if (member is ConstructorNode constructor)
                 {

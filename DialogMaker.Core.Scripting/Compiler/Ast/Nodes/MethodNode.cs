@@ -87,6 +87,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 stream.Eat(DSharpTokenType.Semicolon);
             }
 
+            memberInfo.Identifier.Parent = method;
+            memberInfo.Attributes?.SetParent(method);
+            memberInfo.Type?.Parent = method;
+            method.Parameters.SetParent(method);
+            method.GenericDescriptions.SetParent(method);
+            method.Body?.Parent = method;
+
             return method;
         }
 

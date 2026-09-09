@@ -49,6 +49,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             while (!stream.Check(DSharpTokenType.RightBracket))
             {
                 var element = ParseExpression(stream);
+                element.Parent = array;
                 array.Elements.Add(element);
 
                 if (!CheckTokenAfterComma(stream))

@@ -1,7 +1,7 @@
-﻿using DialogMaker.Core.Scripting.Compiler;
-using DialogMaker.Core.Scripting.Compiler.Ast;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Runtime.Executor;
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Runtime
@@ -49,10 +49,30 @@ namespace DialogMaker.Core.Scripting.Runtime
         }
         extension(IDSharpType type)
         {
+            /// <summary>
+            /// Get all fields in current type
+            /// </summary>
+            /// <returns>Array of all fields that contains in current type</returns>
             public IDSharpFieldInfo[] GetFields() => type.GetFields(f => true);
+            /// <summary>
+            /// Get all properties in current type
+            /// </summary>
+            /// <returns>Array of all properties that contains in current type</returns>
             public IDSharpPropertyInfo[] GetProperties() => type.GetProperties(p => true);
+            /// <summary>
+            /// Get all methods in current type
+            /// </summary>
+            /// <returns>Array of all methods that contains in current type</returns>
             public IDSharpMethodInfo[] GetMethods() => type.GetMethods(p => true);
+            /// <summary>
+            /// Get all constructors in current type
+            /// </summary>
+            /// <returns>Array of all constructors that contains in current type</returns>
             public IDSharpMethodInfo[] GetConstructors() => type.GetConstructors(p => true);
+            /// <summary>
+            /// Get all indexers in current type
+            /// </summary>
+            /// <returns>Array of all indexers that contains in current type</returns>
             public IDSharpIndexerInfo[] GetIndexers() => type.GetIndexers(p => true);
             /// <summary>
             /// Get all custom binary operators for specified operator
@@ -838,6 +858,148 @@ namespace DialogMaker.Core.Scripting.Runtime
                 }
 
                 return typeWithGeneric != null;
+            }
+
+            /// <summary>
+            /// Get dictionary of members that created based on <see cref="GenericTemplate"/>
+            /// </summary>
+            /// <returns>Dictionary of members that created based template</returns>
+            public IReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo> GetTemplatedMembers()
+            {
+                if (type is DSharpTypeBuilder typeBuilder && typeBuilder._templatedMembers != null)
+                {
+                    return typeBuilder._templatedMembers;
+                }
+                if (type.GenericTemplate == null)
+                {
+                    throw new InvalidOperationException($"Unable to get dictionary of members that created based on template because current type does not have template \"{type}\"");
+                }
+
+                Dictionary<IDSharpMemberInfo, IDSharpMemberInfo> members = [];
+
+                var properties = type.GenericTemplate.GetProperties();
+                var fields = type.GenericTemplate.GetFields();
+                var methods = type.GenericTemplate.GetMethods();
+                var constructors = type.GenericTemplate.GetConstructors();
+                var currentProperties = type.GetProperties();
+                var currentFields = type.GetFields();
+                var currentMethods = type.GetMethods();
+                var currentConstructors = type.GetConstructors();
+
+                if (properties.Length != currentProperties.Length)
+                {
+                    throw new InvalidOperationException("Type must contains same properties that it's template");
+                }
+                if (fields.Length != currentFields.Length)
+                {
+                    throw new InvalidOperationException("Type must contains same fields that it's template");
+                }
+                if (methods.Length != currentMethods.Length)
+                {
+                    throw new InvalidOperationException("Type must contains same methods that it's template");
+                }
+                if (constructors.Length != currentConstructors.Length)
+                {
+                    throw new InvalidOperationException("Type must contains same constructors that it's template");
+                }
+
+                void Copy<T>(T[] templateMembers, IReadOnlyList<T> newMembers)
+                    where T : IDSharpMemberInfo
+                {
+                    for (int i = 0; i < templateMembers.Length; i++)
+                    {
+                        members.Add(templateMembers[i], newMembers[i]);
+                    }
+                }
+
+                var declaringType = type;
+
+                while (declaringType != null)
+                {
+                    if (declaringType.GenericTemplate != null)
+                    {
+                        var genericTypes = declaringType.GenericTemplate.GetGenericTypes();
+                        var genericParameters = declaringType.GetGenericParameters();
+
+                        for (int i = 0; i < genericTypes.Length; i++)
+                        {
+                            members.TryAdd(genericTypes[i], genericParameters[i]);
+                        }
+                    }
+
+                    declaringType = declaringType.DeclaringType;
+                }
+
+                Copy(properties, currentProperties);
+                Copy(fields, currentFields);
+                Copy(methods, currentMethods);
+                Copy(constructors, currentConstructors);
+
+                return new ReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo>(members);
+            }
+            public ReadOnlyDictionary<IDSharpType, IDSharpType> GetReplacedTypes()
+            {
+                if (type is DSharpTypeBuilder typeBuilder && typeBuilder._replacedTypes != null)
+                {
+                    return typeBuilder._replacedTypes;
+                }
+                if (type.GenericTemplate == null)
+                {
+                    throw new InvalidOperationException($"Unable to get dictionary of types that replaced by type parameters because current type does not have template \"{type}\"");
+                }
+
+                Dictionary<IDSharpType, IDSharpType> replacedTypes = [];
+                var genericTypes = type.GenericTemplate.GetGenericTypes();
+                var currentGenericParameters = type.GetGenericParameters();
+
+                for (int i = 0; i < currentGenericParameters.Length; i++)
+                {
+                    replacedTypes.Add(genericTypes[i], currentGenericParameters[i]);
+                }
+
+                return new(replacedTypes);
+            }
+
+            public bool TryGetInheritedFinalizer([NotNullWhen(true)] out IDSharpMethodInfo? result)
+            {
+                static IDSharpMethodInfo? FindInBaseType(IDSharpType type, bool skipFirstCheck)
+                {
+                    if (!skipFirstCheck)
+                    {
+                        if (type is DSharpTypeBuilder builder)
+                        {
+                            if (builder.Finalizer != null)
+                            {
+                                return builder.Finalizer;
+                            }
+                        }
+                        else
+                        {
+                            var finalizer = type.GetMethodOrDefault(DSharpTypeBuilder.FinalizerName);
+
+                            if (finalizer != null)
+                            {
+                                return finalizer;
+                            }
+                        }
+                    }
+
+                    foreach (var baseType in type.GetBaseTypes())
+                    {
+                        if (baseType.ObjectType == DSharpObjectType.Interface)
+                        {
+                            continue;
+                        }
+
+                        var finalizer = FindInBaseType(baseType, false);
+                        return finalizer;
+                    }
+
+                    return null;
+                }
+
+                result = FindInBaseType(type, true);
+                return result != null;
             }
         }
         extension(IEnumerable<IDSharpType> types)

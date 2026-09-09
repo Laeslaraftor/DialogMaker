@@ -20,6 +20,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public string Name { get; } = token.Value;
         /// <summary>
+        /// Parent node
+        /// </summary>
+        public AstNode? Parent { get; set; }
+        /// <summary>
         /// Line of this node in source code
         /// </summary>
         public int Line { get; set; } = token.Line;

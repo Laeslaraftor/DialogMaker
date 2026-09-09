@@ -8,7 +8,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// <param name="token">Token that represents typeof keyword</param>
     public class TypeOfExpressionNode(DSharpToken token) : CompileTimeExpressionNode<TypeInfoNode>(token)
     {
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse typeof() expression starts with current token

@@ -75,6 +75,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 Operator = (DSharpAssignmentOperator)op.Type,
                 Right = right,
             };
+            right.Parent = result;
 
             return true;
         }

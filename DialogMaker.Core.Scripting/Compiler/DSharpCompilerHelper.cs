@@ -5,7 +5,6 @@ using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -773,29 +772,45 @@ namespace DialogMaker.Core.Scripting.Compiler
             /// <exception cref="InvalidOperationException">Unable to get expression type</exception>
             public IDSharpType GetNearestCommonTypeWith(DSharpAssemblyBuilder assembly, DSharpCompilerContext context, ExpressionNode other)
             {
-                var trueValueType = expression.GetExpressionType(assembly, context);
-                var falseValueType = other.GetExpressionType(assembly, context);
+                static IDSharpType GetType(IDSharpMemberInfo? memberInfo, ExpressionNode expression)
+                {
+                    if (memberInfo == null ||
+                        !memberInfo.TryGetTypeOrReturnType(out var type))
+                    {
+                        throw new DSharpCompilerException($"Unable to get expression type: {expression}", expression);
+                    }
 
-                if (trueValueType == null ||
-                    !trueValueType.TryGetTypeOrReturnType(out var trueType))
-                {
-                    throw new InvalidOperationException($"Unable to get expression type: {expression}");
-                }
-                if (falseValueType == null ||
-                    !falseValueType.TryGetTypeOrReturnType(out var falseType))
-                {
-                    throw new InvalidOperationException($"Unable to get expression type: {other}");
+                    return type;
                 }
 
-                return trueType.GetNearestCommonType(falseType);
+                if (expression.IsThrowExpression())
+                {
+                    return GetType(other.GetExpressionType(assembly, context), other);
+                }
+                if (other.IsThrowExpression())
+                {
+                    return GetType(expression.GetExpressionType(assembly, context), expression);
+                }
+
+                var firstExpressionType = expression.GetExpressionType(assembly, context);
+                var secondExpressionType = other.GetExpressionType(assembly, context);
+                var firstType = GetType(firstExpressionType, expression);
+                var secondType = GetType(secondExpressionType, other);
+
+                return firstType.GetNearestCommonType(secondType);
             }
 
             /// <summary>
-            /// Get is current expression null
+            /// Is current expression null
             /// </summary>
             /// <returns>Is current expression null</returns>
             public bool IsNullExpression()
             {
+                while (expression is ParenContainedExpressionNode parenContained)
+                {
+                    expression = parenContained.Expression!;
+                }
+
                 if (expression is LiteralExpressionNode literalExpression)
                 {
                     return literalExpression.Type == DSharpLiteralType.Null;
@@ -803,6 +818,20 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 return false;
             }
+            /// <summary>
+            /// Is current expression throw
+            /// </summary>
+            /// <returns>Is current expression throw</returns>
+            public bool IsThrowExpression()
+            {
+                while (expression is ParenContainedExpressionNode parenContained)
+                {
+                    expression = parenContained.Expression!;
+                }
+
+                return expression is ThrowExpressionNode;
+            }
+
             /// <summary>
             /// Get result type of expression
             /// </summary>
@@ -924,10 +953,25 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new ArgumentException($"Unable to get type of \"base\" from type that do not have base types \"{currentType}\"", nameof(context));
                 }
                 if (expression is IdentifierExpressionNode identifierExpression &&
-                    context.CurrentMember is IDSharpMethodInfo method &&
-                    identifierExpression.TryGetLocalMember(context, out var localMember))
+                    context.CurrentMember is IDSharpMethodInfo method)
                 {
-                    return localMember.Type;
+                    if (identifierExpression.TryGetLocalMember(context, out var localMember))
+                    {
+                        return localMember.Type;
+                    }
+                    else if (identifierExpression.TryFindIdentifierDeclaration(out var identifierDeclaration))
+                    {
+                        if (identifierDeclaration is OutExpressionNode outExpression &&
+                            outExpression.Type != null)
+                        {
+                            return (IDSharpType)assembly.GetType(context.ResolveType(outExpression.Type));
+                        }
+                        else if (identifierDeclaration is IsTypeExpressionNode isTypeExpression &&
+                                 isTypeExpression.DestinationType != null)
+                        {
+                            return (IDSharpType)assembly.GetType(context.ResolveType(isTypeExpression.DestinationType));
+                        }
+                    }
                 }
 
                 if (context.TryResolveMember(expression, out var resolveResult))
@@ -1432,6 +1476,90 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 var identifier = identifierExpression.GetName(false);
                 return context.TryResolveVariable(identifier, out result);
+            }
+            /// <summary>
+            /// Try to find expression in parents that declares same identifier to current expression
+            /// </summary>
+            /// <param name="result">Expression that declares current identifier</param>
+            /// <returns>Is declaration expression was found</returns>
+            public bool TryFindIdentifierDeclaration([NotNullWhen(true)] out ExpressionNode? result)
+            {
+                var parent = identifierExpression.Parent;
+                var identifier = identifierExpression.Name;
+                bool isRoot = true;
+
+                bool TryFindOut(CallExpressionNode callExpression, [NotNullWhen(true)] out OutExpressionNode? result)
+                {
+                    result = callExpression.Arguments.FirstOrDefault(a => a is OutExpressionNode outExpression &&
+                                                                          outExpression.Identifier?.Name == identifier) as OutExpressionNode;
+                    return result != null;
+                }
+                bool TryFindInBinary(BinaryExpressionNode binaryExpression, bool skipRight, [NotNullWhen(true)] out ExpressionNode? result)
+                {
+                    bool TryFindInSide(ExpressionNode? expression, [NotNullWhen(true)] out ExpressionNode? result)
+                    {
+                        if (expression == null)
+                        {
+                            result = null;
+                            return false;
+                        }
+                        if (expression is ParenContainedExpressionNode parenContained)
+                        {
+                            expression = parenContained.GetContent();
+                        }
+                        if (expression is CallExpressionNode callExpression)
+                        {
+                            if (TryFindOut(callExpression, out var callOut))
+                            {
+                                result = callOut;
+                                return true;
+                            }
+                        }
+                        else if (expression is IsTypeExpressionNode isExpression)
+                        {
+                            if (isExpression.DestinationIdentifier?.Name == identifier)
+                            {
+                                result = isExpression;
+                                return true;
+                            }
+                        }
+                        else if (expression is BinaryExpressionNode binaryExpression)
+                        {
+                            return TryFindInBinary(binaryExpression, false, out result);
+                        }
+
+                        result = null;
+                        return false;
+                    }
+
+                    if (TryFindInSide(binaryExpression.Left, out result) ||
+                        !skipRight && TryFindInSide(binaryExpression.Right, out result))
+                    {
+                        return true;
+                    }
+
+                    return false;
+                }
+
+                while (parent != null && parent is not StatementNode)
+                {
+                    if (!isRoot && parent is CallExpressionNode callExpression && TryFindOut(callExpression, out var outResult))
+                    {
+                        result = outResult;
+                        return true;
+                    }
+                    else if (parent is BinaryExpressionNode binaryExpression &&
+                             TryFindInBinary(binaryExpression, isRoot, out result))
+                    {
+                        return true;
+                    }
+
+                    isRoot = false;
+                    parent = parent.Parent;
+                }
+
+                result = null;
+                return false;
             }
         }
         extension(NameOfExpressionNode nameofExpression)

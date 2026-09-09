@@ -95,14 +95,7 @@ public class Type : IEquatable<Type>
     public override string ToString() => FullName;
     public override bool Equals(object? obj)
     {
-        var other = obj as Type;
-
-        if (other == null)
-        {
-            return null;
-        }
-
-        return Equals(other);
+        return obj is Type other && Equals(other);
     }
     public bool Equals(Type other)
     {

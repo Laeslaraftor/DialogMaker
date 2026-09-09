@@ -79,8 +79,8 @@ namespace DialogMaker.Core.Scripting.Compiler
             // true - contains, false - not contains, null - contains with no access
             bool? ContainsInType(IDSharpType type, bool includeDeclaringType, bool allowProtected)
             {
-                if (type.GetAllLocalMembers().Any(m => m == member || 
-                                                       (m is IDSharpType typeMember && (typeMember.GenericTemplate == member || 
+                if (type.GetAllLocalMembers().Any(m => m == member ||
+                                                       (m is IDSharpType typeMember && (typeMember.GenericTemplate == member ||
                                                                                         member is IDSharpType checkTypeMember && checkTypeMember.GenericTemplate == typeMember))))
                 {
                     return true;
@@ -348,7 +348,13 @@ namespace DialogMaker.Core.Scripting.Compiler
             if (expression is IdentifierExpressionNode identifier)
             {
                 var name = identifier.GetName(true);
+                var assembly = Assembly;
 
+                if (assembly != null && assembly.TryGetStandardType(name, out var standardTypeToken))
+                {
+                    result = new(assembly.GetType(standardTypeToken));
+                    return true;
+                }
                 if (Scope != null)
                 {
                     if (Scope.TryGetVariable(name, out var variable))
@@ -358,15 +364,34 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                     else if (Scope.TryResolveMember(name, out var resultMember))
                     {
-                        result = new(resultMember);
+                        if (identifier.GenericParameters.Count > 0)
+                        {
+                            if (assembly == null || resultMember is not IDSharpType typeMember)
+                            {
+                                return false;
+                            }
+                            if (typeMember.GenericTemplate != null)
+                            {
+                                typeMember = typeMember.GenericTemplate;
+                            }
+
+                            List<IDSharpType> genericTypes = [.. ResolveTypes(identifier.GenericParameters).Select(t => (IDSharpType)assembly.GetType(t))];
+
+                            result = new(assembly.FillGeneric(typeMember, genericTypes));
+                        }
+                        else
+                        {
+                            result = new(resultMember);
+                        }
+
                         return true;
                     }
-                    else if (TryResolveType(identifier, out var typeToken))
-                    {
-                        var type = Scope.Assembly.GetType(typeToken);
-                        result = new(type);
-                        return true;
-                    }
+                    //else if (TryResolveType(identifier, out var typeToken))
+                    //{
+                    //    var type = Scope.Assembly.GetType(typeToken);
+                    //    result = new(type);
+                    //    return true;
+                    //}
                 }
                 if (result.IsEmpty && Assembly != null)
                 {
@@ -582,6 +607,12 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             return false;
+        }
+        public readonly List<DSharpTypeToken> ResolveTypes(IEnumerable<TypeInfoNode> typeInfos)
+        {
+            var context = this;
+            List<DSharpTypeToken> result = [.. typeInfos.Select(context.ResolveType)];
+            return result;
         }
         public readonly DSharpTypeToken ResolveType(TypeInfoNode typeInfo)
         {
@@ -1067,7 +1098,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 bool isExtensionCalling = method.IsExtension && currentType != null;
                 bool hasParams = method.HasParams;
 
-                if (isExtensionCalling)
+                if (isExtensionCalling && currentType != member.DeclaringType)
                 {
                     callingExtensionParameters ??= [.. parameters.Append(currentType)];
                     callingParameters = callingExtensionParameters;
@@ -1080,7 +1111,16 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 try
                 {
-                    var callingInfo = DSharpMethodCallingInfo.Create(method, callingParameters, genericParameters);
+                    IDSharpType[] filledCallingParameters = new IDSharpType[callingParameters.Length];
+
+                    for (int i = 0; i < filledCallingParameters.Length; i++)
+                    {
+                        var callingParameter = callingParameters[i];
+                        callingParameter ??= methodParameters[Math.Min(methodParameters.Length - 1, i)].Type;
+                        filledCallingParameters[i] = callingParameter;
+                    }
+
+                    var callingInfo = DSharpMethodCallingInfo.Create(method, filledCallingParameters, genericParameters);
 
                     if (callingInfosParameters.Count > 0 && IsOverriden(method))
                     {
@@ -1171,15 +1211,32 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             foreach (var arg in arguments)
             {
-                if (arg.IsNullExpression())
+                var argumentExpression = arg;
+
+                if (argumentExpression.IsNullExpression())
                 {
                     parameters[i] = null;
                     i++;
                     continue;
                 }
-                if (arg.GetExpressionType(Assembly, this) is not IDSharpType argumentType)
+                else if (argumentExpression is OutExpressionNode outExpression)
                 {
-                    throw new InvalidOperationException($"Unable to get argument type: {arg}");
+                    if (outExpression.Identifier == null)
+                    {
+                        throw new DSharpCompilerException("Out expression should contains identifier", argumentExpression);
+                    }
+                    if (outExpression.Type?.Name == DSharpAssemblyBuilder.VarName)
+                    {
+                        parameters[i] = null;
+                        i++;
+                        continue;
+                    }
+
+                    argumentExpression = outExpression.Identifier;
+                }
+                if (argumentExpression.GetExpressionType(Assembly, this) is not IDSharpType argumentType)
+                {
+                    throw new DSharpCompilerException($"Unable to get argument type", argumentExpression);
                 }
 
                 parameters[i] = argumentType;

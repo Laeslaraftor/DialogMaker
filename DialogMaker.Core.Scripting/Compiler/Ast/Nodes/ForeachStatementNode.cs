@@ -36,14 +36,17 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             stream.Eat(DSharpTokenType.LeftParen);
 
             result.Variable = VariableNode.ParseVariable(stream, null, false, false);
+            result.Variable.Parent = result;
 
             stream.Eat(DSharpTokenType.In);
 
             result.EnumeratorExpression = ExpressionNode.ParseExpression(stream);
+            result.EnumeratorExpression.Parent = result;
 
             stream.Eat(DSharpTokenType.RightParen);
 
             result.Body = BlockStatementNode.Parse(stream, DSharpStatementType.Code);
+            result.Body.Parent = result;
 
             return result;
         }

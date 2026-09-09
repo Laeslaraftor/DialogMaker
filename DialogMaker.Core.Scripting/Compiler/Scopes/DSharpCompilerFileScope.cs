@@ -17,9 +17,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// </summary>
         public List<string> Namespaces { get; } = [];
 
-        protected override IEnumerable<IDSharpMemberInfo> GetMembers()
+        protected override IEnumerable<IDSharpMemberInfo> GetMembers(string name)
         {
-            return Assembly.GlobalVariables.Cast<IDSharpMemberInfo>().Union(Assembly.GlobalFunctions);
+            return Assembly.GlobalVariables.Where(v => v.Name == name)
+                                           .Cast<IDSharpMemberInfo>()
+                                           .Union(Assembly.GlobalFunctions.Where(f => f.Name == name))
+                                           .Union(GetTypes(name));
         }
         protected override IEnumerable<IDSharpType> GetTypes()
         {
@@ -58,7 +61,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         {
             bool IsValid(IDSharpType type)
             {
-                if (type.IsGeneric)
+                if (type.IsGeneric || ((type.Access != DSharpAccessModifier.Public && type.Access != DSharpAccessModifier.Internal) ||
+                                       type.Access == DSharpAccessModifier.Internal &&
+                                       type.Assembly != Assembly))
                 {
                     return false;
                 }
@@ -176,8 +181,19 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// <returns>Name equality type</returns>
         public static TypeNameEqualityType IsNameEquals(IDSharpType type, string name, TypeNameEqualityCheckMode mode = TypeNameEqualityCheckMode.Full)
         {
+            string nameFromFull = type.FullName;
+
+            if (type.Namespace != null && type.DeclaringType == null)
+            {
+                nameFromFull = nameFromFull.Replace(type.Namespace + ".", string.Empty);
+            }
+            else if (type.DeclaringType != null)
+            {
+                nameFromFull = nameFromFull.Replace(type.DeclaringType.FullName + ".", string.Empty);
+            }
+
             if (mode != TypeNameEqualityCheckMode.SkipShortName && 
-                type.Name == name)
+                (nameFromFull == name))
             {
                 return TypeNameEqualityType.Name;
             }

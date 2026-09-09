@@ -23,6 +23,29 @@ public static class Enumerator
 
         throw new ArgumentException("No items in sequence");
     }
+    public static T? LastOrDefault<T>(this IEnumerable<T> enumerable)
+    {
+        T? lastItem = null;
+
+        foreach (var item in enumerable)
+        {
+            lastItem = item;
+        }
+
+        return lastItem;
+    }
+    public static T Last<T>(this IEnumerable<T> enumerable)
+    {
+        T? lastItem = null;
+
+        foreach (var item in enumerable)
+        {
+            lastItem = item;
+        }
+
+        return lastItem ??
+            throw new ArgumentException("No items in sequence");
+    }
     public static bool Any(this IEnumerable enumerable)
     {
         foreach (var item in enumerable)

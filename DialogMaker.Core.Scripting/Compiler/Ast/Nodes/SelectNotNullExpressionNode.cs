@@ -28,12 +28,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         public static SelectNotNullExpressionNode Parse(AstParserStream stream, ExpressionNode left)
         {
             var token = stream.Eat(DSharpTokenType.IfNull);
-
-            return new(token)
+            SelectNotNullExpressionNode result = new(token)
             {
                 Left = left,
                 Right = ParseExpression(stream)
             };
+
+            left.Parent = result;
+            result.Right.Parent = result;
+
+            return result;
         }
 
         #endregion

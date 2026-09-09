@@ -6,10 +6,10 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
 {
-    public class DSharpTypeBuilder(DSharpAssemblyBuilder assembly, bool isGeneric, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken)
+    public class DSharpTypeBuilder(DSharpAssemblyBuilder assembly, bool isGeneric, IDSharpType? declaringType, string name, DSharpTypeToken metadataToken)
         : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken), IDSharpType
     {
-        public DSharpTypeBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken)
+        public DSharpTypeBuilder(DSharpAssemblyBuilder assembly, IDSharpType? declaringType, string name, DSharpTypeToken metadataToken)
             : this(assembly, false, declaringType, name, metadataToken)
         {
         }
@@ -22,7 +22,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <summary>
         /// Type that declared this field
         /// </summary>
-        public override DSharpTypeBuilder? DeclaringType { get; } = declaringType;
+        public override IDSharpType? DeclaringType { get; } = declaringType;
         public override DSharpAccessModifier Access { get; set; } = DSharpAccessModifier.Public;
         public DSharpObjectType ObjectType { get; set; } = DSharpObjectType.Class;
         public string? Namespace
@@ -513,147 +513,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             Assembly.RemoveType(type);
             return _childrenTypes.Remove(type);
-        }
-
-        /// <summary>
-        /// Get dictionary of members that created based on <see cref="GenericTemplate"/>
-        /// </summary>
-        /// <returns>Dictionary of members that created based template</returns>
-        public IReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo> GetTemplatedMembers()
-        {
-            if (_templatedMembers != null)
-            {
-                return _templatedMembers;
-            }
-            if (GenericTemplate == null)
-            {
-                throw new InvalidOperationException($"Unable to get dictionary of members that created based on template because current type does not have template \"{this}\"");
-            }
-
-            Dictionary<IDSharpMemberInfo, IDSharpMemberInfo> members = [];
-
-            var properties = GenericTemplate.GetProperties();
-            var fields = GenericTemplate.GetFields();
-            var methods = GenericTemplate.GetMethods();
-            var constructors = GenericTemplate.GetConstructors();
-
-            if (properties.Length != Properties.Count)
-            {
-                throw new InvalidOperationException($"Type must contains same properties that it's template");
-            }
-            if (fields.Length != Fields.Count)
-            {
-                throw new InvalidOperationException($"Type must contains same fields that it's template");
-            }
-            if (methods.Length != Methods.Count)
-            {
-                throw new InvalidOperationException($"Type must contains same methods that it's template");
-            }
-            if (constructors.Length != Constructors.Count)
-            {
-                throw new InvalidOperationException($"Type must contains same constructors that it's template");
-            }
-
-            void Copy<T>(T[] templateMembers, IReadOnlyList<T> newMembers)
-                where T : IDSharpMemberInfo
-            {
-                for (int i = 0; i < templateMembers.Length; i++)
-                {
-                    members.Add(templateMembers[i], newMembers[i]);
-                }
-            }
-
-            var declaringType = this;
-
-            while (declaringType != null)
-            {
-                if (declaringType.GenericTemplate != null)
-                {
-                    var genericTypes = declaringType.GenericTemplate.GetGenericTypes();
-                    var genericParameters = declaringType.GetGenericParameters();
-
-                    for (int i = 0; i < genericTypes.Length; i++)
-                    {
-                        members.TryAdd(genericTypes[i], genericParameters[i]);
-                    }
-                }
-
-                declaringType = declaringType.DeclaringType;
-            }
-
-            Copy(properties, Properties);
-            Copy(fields, Fields);
-            Copy(methods, Methods);
-            Copy(constructors, Constructors);
-
-            _templatedMembers = new ReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo>(members);
-
-            return _templatedMembers;
-        }
-        public ReadOnlyDictionary<IDSharpType, IDSharpType> GetReplacedTypes()
-        {
-            if (_replacedTypes != null)
-            {
-                return _replacedTypes;
-            }
-            if (GenericTemplate == null)
-            {
-                throw new InvalidOperationException($"Unable to get dictionary of types that replaced by type parameters because current type does not have template \"{this}\"");
-            }
-
-            Dictionary<IDSharpType, IDSharpType> replacedTypes = [];
-            var genericTypes = GenericTemplate.GetGenericTypes();
-
-            for (int i = 0; i < GenericParameters.Count; i++)
-            {
-                replacedTypes.Add(genericTypes[i], (IDSharpType)Assembly.GetType(GenericParameters[i]));
-            }
-
-            _replacedTypes = new(replacedTypes);
-
-            return _replacedTypes;
-        }
-
-        public bool TryGetInheritedFinalizer([NotNullWhen(true)] out IDSharpMethodInfo? result)
-        {
-            static IDSharpMethodInfo? FindInBaseType(IDSharpType type, bool skipFirstCheck)
-            {
-                if (!skipFirstCheck)
-                {
-                    if (type is DSharpTypeBuilder builder)
-                    {
-                        if (builder.Finalizer != null)
-                        {
-                            return builder.Finalizer;
-                        }
-                    }
-                    else
-                    {
-                        var finalizer = type.GetMethodOrDefault(FinalizerName);
-
-                        if (finalizer != null)
-                        {
-                            return finalizer;
-                        }
-                    }
-                }
-
-                foreach (var baseType in type.GetBaseTypes())
-                {
-                    if (baseType.ObjectType == DSharpObjectType.Interface)
-                    {
-                        continue;
-                    }
-
-                    var finalizer = FindInBaseType(baseType, false);
-                    return finalizer;
-                }
-
-                return null;
-            }
-
-            result = FindInBaseType(this, true);
-            return result != null;
         }
 
         /// <summary>

@@ -8,7 +8,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// <param name="token">Token that represents break statement</param>
     public class BreakStatementNode(DSharpToken token) : StatementNode(token)
     {
-
         #region Статика
 
         /// <summary>

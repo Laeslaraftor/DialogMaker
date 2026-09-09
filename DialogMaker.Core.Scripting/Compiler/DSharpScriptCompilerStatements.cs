@@ -307,7 +307,12 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             if (fieldNode.Initializer != null)
             {
-                CreateInitializerIfNotExists(property.DeclaringType, property.IsStatic);
+                if (property.DeclaringType is not DSharpTypeBuilder declaringTypeBuilder)
+                {
+                    throw new DSharpCompilerException("Unable to create initializer for field that not declared in builder", fieldNode);
+                }
+
+                CreateInitializerIfNotExists(declaringTypeBuilder, property.IsStatic);
             }
 
             _createdProperties.Add(property, fieldNode);

@@ -48,6 +48,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             stream.Eat(DSharpTokenType.RightParen);
             statement.Body = ParseCode(stream);
 
+            statement.Initializer.Parent = statement;
+            statement.Condition.Parent = statement;
+            statement.Increment.Parent = statement;
+            statement.Body.Parent = statement;
+
             return statement;
         }
 

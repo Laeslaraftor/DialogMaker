@@ -291,6 +291,56 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             result = -1;
             return false;
         }
+        /// <summary>
+        /// Try to get overriden method
+        /// </summary>
+        /// <param name="methodInfo">Method that can be overriden</param>
+        /// <param name="result">Method that overrides specified method</param>
+        /// <returns>Is override method found</returns>
+        public readonly bool TryGetOverridenMethod(DSharpRuntimeMethodInfo* methodInfo, out DSharpRuntimeMethodInfo* result)
+        {
+            var current = this;
+            var currentType = &current;
+
+            while (currentType != null)
+            {
+                if (currentType->OverridenMethods.TryGetValue(methodInfo, out var overridenMethod))
+                {
+                    result = overridenMethod;
+                    return true;
+                }
+
+                currentType = currentType->BaseType;
+            }
+
+            result = null;
+            return false;
+        }
+        /// <summary>
+        /// Try to get overriden property
+        /// </summary>
+        /// <param name="propertyInfo">Property that can be overriden</param>
+        /// <param name="result">Property that overrides specified property</param>
+        /// <returns>Is override property found</returns>
+        public readonly bool TryGetOverridenProperty(DSharpRuntimePropertyInfo* propertyInfo, out DSharpRuntimePropertyInfo* result)
+        {
+            var current = this;
+            var currentType = &current;
+
+            while (currentType != null)
+            {
+                if (currentType->OverridenProperties.TryGetValue(propertyInfo, out var overridenProperty))
+                {
+                    result = overridenProperty;
+                    return true;
+                }
+
+                currentType = currentType->BaseType;
+            }
+
+            result = null;
+            return false;
+        }
 
         public readonly override string ToString()
         {

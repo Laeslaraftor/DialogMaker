@@ -594,7 +594,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             return result;
         }
-        internal DSharpTypeBuilder CreateType(string name, bool isGeneric, DSharpTypeBuilder? parent)
+        internal DSharpTypeBuilder CreateType(string name, bool isGeneric, IDSharpType? parent)
         {
             if (isGeneric && parent == null)
             {
@@ -623,11 +623,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             return false;
         }
         public bool RemoveType(DSharpTypeBuilder type) => RemoveMember(type);
-        public DSharpTypeBuilder CreateType(string name, DSharpTypeBuilder? parent = null)
+        public DSharpTypeBuilder CreateType(string name, IDSharpType? parent = null)
         {
-            if (parent != null)
+            if (parent is DSharpTypeBuilder typeBuilder)
             {
-                return parent.CreateChildType(name);
+                return typeBuilder.CreateChildType(name);
             }
 
             return CreateType(name, false, parent);
@@ -644,7 +644,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             return FillGeneric(genericType, null, genericParameters);
         }
-        public IDSharpType FillGeneric(IDSharpType genericType, DSharpTypeBuilder? parent, params IEnumerable<IDSharpType> genericParameters)
+        public IDSharpType FillGeneric(IDSharpType genericType, IDSharpType genericParameter) => FillGeneric(genericType, null, genericParameter);
+        public IDSharpType FillGeneric(IDSharpType genericType, IDSharpType? parent, params IEnumerable<IDSharpType> genericParameters)
         {
             if (genericType.GenericTemplate != null)
             {
@@ -682,7 +683,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             return ReplaceTypes(genericType, parent, replacedTypes);
         }
-        public IDSharpType ReplaceTypes(IDSharpType genericType, DSharpTypeBuilder? parent, IDictionary<IDSharpType, IDSharpType> replacedTypes)
+        public IDSharpType ReplaceTypes(IDSharpType genericType, IDSharpType? parent, IDictionary<IDSharpType, IDSharpType> replacedTypes)
         {
             Dictionary<IDSharpMemberInfo, IDSharpMemberInfo> replacedMembers = [];
             DSharpAssemblyBuilder assemblyBuilder = this;

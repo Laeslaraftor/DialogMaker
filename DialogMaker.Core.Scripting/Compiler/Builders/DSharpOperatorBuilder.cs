@@ -18,7 +18,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <summary>
         /// <inheritdoc/>
         /// </summary>
-        public override DSharpTypeBuilder DeclaringType { get; } = declaringType;
+        public override IDSharpType DeclaringType { get; } = declaringType;
         /// <summary>
         /// <inheritdoc/>
         /// </summary>
@@ -53,7 +53,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             {
                 if (field == null)
                 {
-                    field = DeclaringType.CreateMethod(t => DSharpMethodBuilder.CreateOperator(this, t));
+                    if (DeclaringType is not DSharpTypeBuilder declaringTypeBuilder)
+                    {
+                        throw new InvalidOperationException("Unable to create operator when declaring type is not builder");
+                    }
+
+                    field = declaringTypeBuilder.CreateMethod(t => DSharpMethodBuilder.CreateOperator(this, t));
                     OnMethodCreated(field);
                 }
 

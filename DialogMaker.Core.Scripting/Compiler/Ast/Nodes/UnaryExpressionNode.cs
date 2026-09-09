@@ -2,12 +2,22 @@
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
+    /// <summary>
+    /// Node that represents unary expression
+    /// </summary>
+    /// <param name="token">Token that represents unary operator</param>
     public class UnaryExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
+        /// <summary>
+        /// Unary operation
+        /// </summary>
         public DSharpUnaryOperator Operator { get; set; }
+        /// <summary>
+        /// Expression for performing unary operation
+        /// </summary>
         public ExpressionNode? Operand { get; set; }
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Check is current token unary operator
@@ -45,14 +55,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             if (stream.CheckAll<DSharpUnaryOperator>())
             {
-                var op = stream.Eat(stream.Current.Type);
+                var operatorToken = stream.Eat(stream.Current.Type);
                 var operand = Parse(stream);
-
-                return new UnaryExpressionNode(op)
+                UnaryExpressionNode unaryExpression = new(operatorToken)
                 {
-                    Operator = (DSharpUnaryOperator)op.Type,
+                    Operator = (DSharpUnaryOperator)operatorToken.Type,
                     Operand = operand,
                 };
+                operand.Parent = unaryExpression;
+
+                return unaryExpression;
             }
 
             if (stream.Check(DSharpTokenType.Await))

@@ -80,11 +80,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             return $"{targetName}.{memberName}";
         }
 
-
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             if (Target == null || Member == null)

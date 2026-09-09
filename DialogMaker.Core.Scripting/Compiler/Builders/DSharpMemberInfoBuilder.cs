@@ -43,7 +43,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <summary>
         /// Type that declared this member
         /// </summary>
-        public abstract DSharpTypeBuilder? DeclaringType { get; }
+        public abstract IDSharpType? DeclaringType { get; }
         /// <summary>
         /// List of member attributes
         /// </summary>
@@ -62,9 +62,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         public abstract bool IsDeclaration { get; }
 
         DSharpMetadataToken IDSharpMemberInfo.MetadataToken => MetadataToken;
-        IDSharpType IDSharpMemberInfo.DeclaringType => DeclaringType;
         IDSharpAssembly IDSharpMemberInfo.Assembly => Assembly;
-
 
         #region Управление
 

@@ -1,6 +1,6 @@
-namespace System;
-
 using System.Collections.Generic;
+
+namespace System;
 
 public sealed class String : IEnumerable<char>, IEquatable<string>
 {
@@ -189,10 +189,91 @@ public sealed class String : IEnumerable<char>, IEquatable<string>
     public static string operator +(string l, string r) => Ctor(l, r);
     public static string operator +(string l, object r) => Ctor(l, r.ToString());
     public static string operator +(object l, string r) => Ctor(l.ToString(), r);
+    public static string operator +(string l, char r)
+    {
+        Span<char> buffer = stackalloc char[l.Length + 1];
+
+        for (int i = 0; i < l.Length; i++)
+        {
+            buffer[i] = l[i];
+        }
+
+        buffer[buffer.Length - 1] = r;
+
+        return Ctor(buffer);
+    }
+    public static string operator +(char l, string r)
+    {
+        Span<char> buffer = stackalloc char[r.Length + 1];
+
+        for (int i = 1; i < r.Length + 1; i++)
+        {
+            buffer[i] = r[i];
+        }
+
+        buffer[0] = l;
+
+        return Ctor(buffer);
+    }
 
     public static readonly string Empty = "";
 
     public static bool IsNullOrEmpty(string str) => str == null || str.Length == 0;
+    public static string Concat(params object[] objects)
+    {
+        string? result = null;
+        
+        for (int i = 0; i < objects.Length; i++)
+        {
+            result += objects[i].ToString();
+        }
+
+        return result ?? Empty;
+    }
+    public static string Join(char separator, params string[] values)
+    {
+        string? result = null;
+
+        for (int i = 0; i < values.Length; i++)
+        {
+            var currentValue = values[i];
+
+            if (IsNullOrEmpty(currentValue))
+            {
+                continue;
+            }
+            if (result != null)
+            {
+                result += separator;
+            }
+
+            result += currentValue;
+        }
+
+        return result ?? Empty;
+    }
+    public static string Join(string separator, params string[] values)
+    {
+        string? result = null;
+
+        for (int i = 0; i < values.Length; i++)
+        {
+            var currentValue = values[i];
+
+            if (IsNullOrEmpty(currentValue))
+            {
+                continue;
+            }
+            if (result != null)
+            {
+                result += separator;
+            }
+
+            result += currentValue;
+        }
+
+        return result ?? Empty;
+    }
 
     private static string Ctor() => Empty;
     private static extern string Ctor(char[] chars);

@@ -8,7 +8,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// <param name="token">Token that represents continue statement</param>
     public class ContinueStatementNode(DSharpToken token) : StatementNode(token)
     {
-
         #region Статика
 
         /// <summary>

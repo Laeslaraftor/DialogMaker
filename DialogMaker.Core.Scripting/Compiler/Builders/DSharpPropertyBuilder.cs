@@ -1,12 +1,11 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
-using DialogMaker.Core.Scripting.Runtime;
+﻿using DialogMaker.Core.Scripting.Runtime;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
 {
     public class DSharpPropertyBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder declaringType, string name, DSharpTypeToken metadataToken)
         : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken), IDSharpPropertyInfo
     {
-        public override DSharpTypeBuilder DeclaringType { get; } = declaringType;
+        public override IDSharpType DeclaringType { get; } = declaringType;
         public DSharpTypeToken? PropertyType
         {
             get
@@ -29,10 +28,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                if (field == null && !_triedToFindGetter)
+                if (field == null && !_triedToFindGetter && DeclaringType is DSharpTypeBuilder declaringTypeBuilder)
                 {
                     _triedToFindGetter = true;
-                    field = DeclaringType.Methods.FirstOrDefault(m => m.Name == GetterMethodName);
+                    field = declaringTypeBuilder.Methods.FirstOrDefault(m => m.Name == GetterMethodName);
                 }
 
                 return field;
@@ -43,10 +42,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                if (field == null && !_triedToFindSetter)
+                if (field == null && !_triedToFindSetter && DeclaringType is DSharpTypeBuilder declaringTypeBuilder)
                 {
                     _triedToFindSetter = true;
-                    field = DeclaringType.Methods.FirstOrDefault(m => m.Name == SetterMethodName);
+                    field = declaringTypeBuilder.Methods.FirstOrDefault(m => m.Name == SetterMethodName);
                 }
 
                 return field;
@@ -214,8 +213,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             {
                 return Getter;
             }
+            if (DeclaringType is not DSharpTypeBuilder declaringTypeBuilder)
+            {
+                throw new InvalidOperationException("Unable to create getter for property when in declared not in builder");
+            }
 
-            var getter = DeclaringType.CreateMethod(t => DSharpMethodBuilder.CreateGetter(this, GetterMethodName, t));
+            var getter = declaringTypeBuilder.CreateMethod(t => DSharpMethodBuilder.CreateGetter(this, GetterMethodName, t));
             OnGetterCreated(getter);
 
             return getter;
@@ -226,8 +229,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             {
                 return Setter;
             }
+            if (DeclaringType is not DSharpTypeBuilder declaringTypeBuilder)
+            {
+                throw new InvalidOperationException("Unable to create setter for property when in declared not in builder");
+            }
 
-            var setter = DeclaringType.CreateMethod(t => DSharpMethodBuilder.CreateSetter(this, SetterMethodName, t));
+            var setter = declaringTypeBuilder.CreateMethod(t => DSharpMethodBuilder.CreateSetter(this, SetterMethodName, t));
             OnSetterCreated(setter);
 
             return setter;

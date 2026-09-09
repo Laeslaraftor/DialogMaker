@@ -35,27 +35,36 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 TryBlock = BlockStatementNode.Parse(stream, DSharpStatementType.Code)
             };
+            result.TryBlock.Parent = result;
 
             while (stream.Check(DSharpTokenType.Catch))
             {
                 var catchToken = stream.Eat(DSharpTokenType.Catch);
-                CatchBlock block = new(catchToken);
+                CatchBlock block = new(catchToken)
+                {
+                    Parent = result
+                };
 
                 if (stream.Check(DSharpTokenType.LeftParen))
                 {
                     stream.Eat(DSharpTokenType.LeftParen);
                     block.ExceptionType = TypeInfoNode.Parse(stream, false, false);
+                    block.ExceptionType.Parent = block;
                     
                     if (stream.Check(DSharpTokenType.Identifier))
                     {
                         var identifierToken = stream.Eat(DSharpTokenType.Identifier);
-                        block.ExceptionVariableIdentifier = new(identifierToken);
+                        block.ExceptionVariableIdentifier = new(identifierToken)
+                        {
+                            Parent = block
+                        };
                     }
 
                     stream.Eat(DSharpTokenType.RightParen);
                 }
 
                 block.Statements = BlockStatementNode.Parse(stream, DSharpStatementType.Code);
+                block.Statements.Parent = block;
                 result.CatchBlocks.Add(block);
             }
 
@@ -63,6 +72,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 stream.Eat(DSharpTokenType.Finally);
                 result.FinallyBlock = BlockStatementNode.Parse(stream, DSharpStatementType.Code);
+                result.FinallyBlock.Parent = result;
             }
 
             return result;

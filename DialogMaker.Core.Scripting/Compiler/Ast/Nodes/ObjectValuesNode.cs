@@ -49,8 +49,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             while (!stream.Check(DSharpTokenType.RightBrace))
             {
                 var identifier = IdentifierExpressionNode.Parse(stream, false);
+                identifier.Parent = result;
                 stream.Eat(separator);
                 var value = ExpressionNode.ParseExpression(stream);
+                value.Parent = result;
 
                 result.Values.Add(identifier, value);
 

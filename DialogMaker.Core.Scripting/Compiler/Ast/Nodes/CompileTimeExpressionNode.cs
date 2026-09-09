@@ -36,6 +36,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             var result = fabric(token);
             result.Value = value;
+            value.Parent = result;
 
             return result;
         }

@@ -56,6 +56,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
             int genericTypesCount = genericTypes?.Count ?? 0;
             IDSharpType? foundAssignableTemplate = null;
 
+            if (genericTypesCount > 0 && !name.Contains('`'))
+            {
+                name += '`' + genericTypesCount.ToString();
+            }
+
             bool? IsValid(IDSharpType type)
             {
                 if (type.GenericTemplate != null)
@@ -199,10 +204,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
 
             RecursiveCheck<T>(scope =>
             {
-                foreach (var member in scope.GetMembers())
+                foreach (var member in scope.GetMembers(name))
                 {
-                    if (member is T typedMember &&
-                        member.Name == name)
+                    if (member is T typedMember)
                     {
                         members ??= [];
                         members.Add(typedMember);
@@ -236,10 +240,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         {
             result = RecursiveCheck(scope =>
             {
-                foreach (var member in scope.GetMembers())
+                foreach (var member in scope.GetMembers(name))
                 {
-                    if (member is T typedMember &&
-                        member.Name == name)
+                    if (member is T typedMember)
                     {
                         return typedMember;
                     }
@@ -486,7 +489,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// Get all members in current scope
         /// </summary>
         /// <returns>Enumeration of all members in current scope</returns>
-        protected abstract IEnumerable<IDSharpMemberInfo> GetMembers();
+        protected abstract IEnumerable<IDSharpMemberInfo> GetMembers(string name);
         /// <summary>
         /// Get all variables in current scope
         /// </summary>

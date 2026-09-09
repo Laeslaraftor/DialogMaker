@@ -55,7 +55,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 }
                 if (!isBase && method->CanBeOverriden)
                 {
-                    if (instance->Type->OverridenMethods.TryGetValue(method, out var endPointMethod))
+                    if (instance->Type->TryGetOverridenMethod(method, out var endPointMethod))
                     {
                         method = endPointMethod;
                     }

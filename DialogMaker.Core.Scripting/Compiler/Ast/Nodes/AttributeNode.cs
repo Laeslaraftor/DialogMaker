@@ -86,6 +86,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     while (!stream.Check(DSharpTokenType.RightParen))
                     {
                         var arg = ExpressionNode.ParseLiteralOrArray(stream);
+                        arg.Parent = attribute;
                         attribute.Arguments.Add(arg);
 
                         if (!ArrayExpressionNode.CheckTokenAfterComma(stream))

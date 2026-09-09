@@ -13,7 +13,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public TypeInfoNode? Type { get; set; }
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse new expression starts with current token
@@ -50,6 +50,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
 
             expression.Type = type;
+            type?.Parent = expression;
 
             return expression;
         }

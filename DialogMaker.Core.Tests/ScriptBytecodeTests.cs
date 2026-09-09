@@ -65,6 +65,7 @@ namespace DialogMaker.Core.Tests
         [TestCase("Program", "TestArray")]
         [TestCase("Program", "GetSize")]
         [TestCase("Program", "GetGenericObject")]
+        [TestCase("Program", "TestOutputs")]
         [TestCase("System.Reflection.MetadataTokenType", "ctor")]
         [TestCase("System.Reflection.MetadataTokenType", "init")]
         [TestCase("ValuePlayer", "PrintMessage")]

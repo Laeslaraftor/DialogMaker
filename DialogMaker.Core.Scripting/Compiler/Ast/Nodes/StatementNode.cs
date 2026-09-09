@@ -39,11 +39,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             if (VariableNode.IsVariable(stream))
             {
                 var variable = VariableNode.ParseVariable(stream, null);
-
-                return new VariableStatementNode(variable.Token)
+                VariableStatementNode variableStatement = new(variable.Token)
                 {
                     Variable = variable
                 };
+                variable.Parent = variableStatement;
+
+                return variableStatement;
             }
             if (stream.Check(DSharpTokenType.Using))
             {
@@ -57,11 +59,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
 
                 var method = MethodNode.Parse(stream, memberInfo);
-
-                return new InvokableStatementNode(method.Token)
+                var invokableStatement = new InvokableStatementNode(method.Token)
                 {
                     Invokable = method
                 };
+                method.Parent = invokableStatement;
+
+                return invokableStatement;
             }
             if (stream.Check(DSharpTokenType.If))
             {
@@ -103,10 +107,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 stream.Eat(DSharpTokenType.Semicolon);
             }
 
-            return new ExpressionStatementNode(expression.Token)
+            ExpressionStatementNode expressionStatement = new(expression.Token)
             {
                 Expression = expression
             };
+            expression.Parent = expressionStatement;
+
+            return expressionStatement;
         }
         /// <summary>
         /// Parse any statement
@@ -117,7 +124,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         {
             return ParseDeclarationOrDefault(stream) ?? ParseCode(stream);
         }
-
         /// <summary>
         /// Parse statement with specified type
         /// </summary>
@@ -146,33 +152,43 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             StatementNode ParseObjectMember(ObjectDeclarationNode.MemberInfo memberInfo)
             {
                 var member = ObjectDeclarationNode.ParseMember(stream, memberInfo, attributes);
+                StatementNode statement;
 
                 if (member is InvokableNode invokable)
                 {
-                    return new InvokableStatementNode(invokable.Token)
+                    statement = new InvokableStatementNode(invokable.Token)
                     {
                         Invokable = invokable
                     };
                 }
                 else if (member is FieldNode field)
                 {
-                    return new VariableStatementNode(field.Token)
+                    statement = new VariableStatementNode(field.Token)
                     {
                         Variable = field
                     };
                 }
+                else
+                {
+                    throw new Exception($"Invalid member: {memberInfo.MemberType}");
+                }
 
-                throw new Exception($"Invalid member: {memberInfo.MemberType}");
+                member.Parent = statement;
+
+                return statement;
             }
             ObjectDeclarationStatementNode ParseObjectDeclaration()
             {
                 var objectDeclarationNode = ObjectDeclarationNode.Parse(stream);
                 objectDeclarationNode.Attributes = attributes;
-
-                return new ObjectDeclarationStatementNode(objectDeclarationNode.Token)
+                attributes?.SetParent(objectDeclarationNode);
+                ObjectDeclarationStatementNode objectDeclarationStatement = new(objectDeclarationNode.Token)
                 {
                     ObjectDeclaration = objectDeclarationNode
                 };
+                objectDeclarationNode.Parent = objectDeclarationStatement;
+
+                return objectDeclarationStatement;
             }
 
             if (stream.Check(DSharpTokenType.Using))

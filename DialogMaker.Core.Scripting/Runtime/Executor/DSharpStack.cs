@@ -96,7 +96,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             return _frames[index];
         }
 
-        public FrameInfo PushNull() => *AllocateSized(DSharpStackValueType.Null, 0);
+        public FrameInfo PushTypedNull(DSharpRuntimeTypeInfo* typeInfo)
+        {
+            if (typeInfo->IsValueType)
+            {
+                return PushStructure(typeInfo);
+            }
+
+            return PushReference(null);
+        }
+        public FrameInfo PushNull()
+        {
+            var frame = AllocateSized(DSharpStackValueType.Null, sizeof(nint));
+            *(nint*)frame->StackPointer = 0;
+
+            return *frame;
+        }
         public void Push(byte value) => PushNumber(_runtimeInformationProvider.Byte, value);
         public void Push(sbyte value) => PushNumber(_runtimeInformationProvider.SByte, value);
         public void Push(short value) => PushNumber(_runtimeInformationProvider.Int16, value);

@@ -1,10 +1,9 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
-using DialogMaker.Core.Scripting.Runtime;
+﻿using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
 {
-    public class DSharpMethodBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder? declaringType, string name, DSharpTypeToken metadataToken)
+    public class DSharpMethodBuilder(DSharpAssemblyBuilder assembly, IDSharpType? declaringType, string name, DSharpTypeToken metadataToken)
         : DSharpVirtualizedMemberInfoBuilder(assembly, name, metadataToken), IDSharpMethodInfo
     {
         private DSharpMethodBuilder(DSharpPropertyBuilder property, bool isSetter, string name, DSharpTypeToken metadataToken)
@@ -56,7 +55,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 }
                 else if (MethodType == DSharpMethodType.Initializer)
                 {
-                    return DSharpTypeBuilder.InitializerName;
+                    return IsStatic ? DSharpTypeBuilder.StaticInitializerName : DSharpTypeBuilder.InitializerName;
                 }
                 if (LinkedType != null)
                 {
@@ -81,7 +80,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// This property should be null when method is child of some type
         /// </summary>
         public virtual string? Namespace { get; set; }
-        public override DSharpTypeBuilder? DeclaringType { get; } = declaringType;
+        public override IDSharpType? DeclaringType { get; } = declaringType;
         public DSharpTypeToken? ReturnType
         {
             get
@@ -372,21 +371,25 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
         public DSharpTypeBuilder CreateGenericParameter(string name)
         {
-            if (DeclaringType == null)
+            if (DeclaringType is not DSharpTypeBuilder declaringTypeBuilder)
             {
-                throw new InvalidOperationException($"Unable to create generic parameter \"{name}\" for method without declaring type: {this}");
+                throw new InvalidOperationException($"Unable to create generic parameter for method that contained not in builder");
             }
 
-            var type = DeclaringType.CreateType(name, true, false);
+            var type = declaringTypeBuilder.CreateType(name, true, false);
             _genericParameters.Add(type);
 
             return type;
         }
         public bool RemoveGenericParameter(DSharpTypeBuilder type)
         {
-            if (DeclaringType != null && _genericParameters.Remove(type))
+            if (DeclaringType is not DSharpTypeBuilder declaringTypeBuilder)
             {
-                return DeclaringType.RemoveChildType(type);
+                throw new InvalidOperationException($"Unable to remove generic parameter from method that contained not in builder");
+            }
+            if (_genericParameters.Remove(type))
+            {
+                return declaringTypeBuilder.RemoveChildType(type);
             }
 
             return false;

@@ -32,9 +32,25 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             if (TypeInfoNode.CanParse(stream, 0))
             {
                 result.Type = TypeInfoNode.Parse(stream, true, true);
+                result.Type.Parent = result;
             }
 
-            result.Identifier = result.Type == null ? ParseIdentifier(stream, false) : IdentifierExpressionNode.Parse(stream, false);
+            if (result.Type != null &&
+                result.Type.GenericParameters.Count == 0 &&
+                !stream.Check(DSharpTokenType.Identifier))
+            {
+                result.Identifier = new IdentifierExpressionNode(result.Type.Token)
+                {
+                    Parent = result
+                };
+                result.Type = null;
+            }
+            else
+            {
+                result.Identifier = result.Type == null ? ParseIdentifier(stream, false) : IdentifierExpressionNode.Parse(stream, false);
+                result.Identifier.Parent = result;
+            }
+
 
             return result;
         }

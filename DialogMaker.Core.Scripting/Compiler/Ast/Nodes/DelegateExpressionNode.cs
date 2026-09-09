@@ -41,7 +41,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     offset++;
                 }
 
-                if (stream.Check(DSharpTokenType.RightParen, offset) && 
+                if (stream.Check(DSharpTokenType.RightParen, offset) &&
                     stream.Check(DSharpTokenType.Lambda, offset + 1))
                 {
                     return true;
@@ -84,6 +84,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 {
                     stream.Eat(DSharpTokenType.LeftParen);
                     ParameterExpressionNode.ParseMultiple(stream, result.Parameters, DSharpTokenType.RightParen, false, false);
+                    result.Parameters.SetParent(result);
                     stream.Eat(DSharpTokenType.RightParen);
                 }
             }
@@ -110,6 +111,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 {
                     Parameters = parameters
                 };
+                parameters.SetParent(result);
             }
 
             if (!isLambda || stream.Check(DSharpTokenType.LeftBrace))
@@ -123,6 +125,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
                 result.Body = body;
             }
+
+            result.Body.Parent = result;
 
             return result;
         }

@@ -52,6 +52,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             ParseParameters(stream, constructor.Parameters, allowModes: false);
 
+            memberInfo.Identifier.Parent = constructor;
+            memberInfo.Attributes?.SetParent(constructor);
+            constructor.Parameters.SetParent(constructor);
+
             if (stream.Check(DSharpTokenType.Colon))
             {
                 stream.Eat(DSharpTokenType.Colon);
@@ -71,11 +75,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
                 stream.Eat(stream.Current!.Type);
                 CallExpressionNode.ParseArguments(stream, constructor.ExtraInvokeParameters);
+                constructor.ExtraInvokeParameters.SetParent(constructor);
             }
 
             if (stream.Check(DSharpTokenType.LeftBrace))
             {
                 constructor.Body = BlockStatementNode.Parse(stream, DSharpStatementType.Code);
+                constructor.Body.Parent = constructor;
             }
             else
             {

@@ -54,6 +54,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             do
             {
                 expression.Expression = ParseExpression(stream);
+                expression.Expression.Parent = expression;
             }
             while (expression.Expression is ParenContainedExpressionNode);
 

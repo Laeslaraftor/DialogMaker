@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
@@ -97,6 +98,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 Type = memberInfo.Type
             };
 
+            memberInfo.Identifier.Parent = field;
+            memberInfo.Attributes?.SetParent(field);
+            memberInfo.Type?.Parent = field;
+
             if (ParseGetterAndSetter(stream, field))
             {
                 return field;
@@ -105,6 +110,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 stream.Eat(DSharpTokenType.Assign);
                 field.Initializer = ExpressionNode.ParseExpression(stream);
+                field.Initializer.Parent = field;
                 stream.Eat(DSharpTokenType.Semicolon);
             }
             else if (stream.Check(DSharpTokenType.Semicolon))
@@ -136,10 +142,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
                 if (TryParseAccessor(stream, DSharpPropertyAccessor.Getter, out var getterBlock))
                 {
+                    getterBlock?.Parent = node;
                     node.CanRead = true;
                     node.Getter = getterBlock;
                     return true;
                 }
+
                 return false;
             }
             bool ReadSetter()
@@ -150,6 +158,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
                 if (TryParseAccessor(stream, DSharpPropertyAccessor.Setter, out var setterBlock))
                 {
+                    setterBlock?.Parent = node;
                     node.CanWrite = true;
                     node.Setter = setterBlock;
                     return true;
@@ -184,6 +193,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 node.CanWrite = false;
                 node.Getter = BlockStatementNode.Parse(stream, DSharpStatementType.Code, DSharpTokenType.Semicolon, DSharpTokenType.Lambda);
+                node.Getter.Parent = node;
                 node.CustomGetterSetter = true;
 
                 return true;
@@ -208,10 +218,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 CanRead = true
             };
 
+            identifier.Parent = field;
+
             if (stream.Check(DSharpTokenType.Assign))
             {
                 stream.Eat(DSharpTokenType.Assign);
                 field.Initializer = ExpressionNode.ParseExpression(stream);
+                field.Initializer.Parent = field;
             }
 
             return field;

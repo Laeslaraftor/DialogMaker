@@ -13,7 +13,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public ObjectDeclarationNode? ObjectDeclaration { get; set; }
 
-        #region Управление
+        #region Controls
 
         /// <summary>
         /// <inheritdoc/>

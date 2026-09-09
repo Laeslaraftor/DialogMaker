@@ -31,7 +31,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             // Unboxing references to stack
             if (stackValue.ValueType == DSharpStackValueType.Reference &&
-                !objectReference->IsReferenceObject &&
+                objectReference != null && !objectReference->IsReferenceObject &&
                 context.ObjectsContainer.Unbox(objectReference, variable->Buffer))
             {
                 variable->Buffer.ValueType = DSharpStackValueType.Structure;

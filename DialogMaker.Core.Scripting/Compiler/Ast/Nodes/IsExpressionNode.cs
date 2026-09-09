@@ -53,12 +53,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
             if (LiteralExpressionNode.TryParse(stream, out var literalExpression))
             {
-                return new IsLiteralValueExpressionNode(token)
+                IsLiteralValueExpressionNode isLiteralExpression = new(token)
                 {
                     CheckExpression = checkExpression,
                     IsNegative = isNegative,
                     LiteralExpression = literalExpression
                 };
+                checkExpression.Parent = isLiteralExpression;
+
+                return isLiteralExpression;
             }
 
             IsTypeExpressionNode result = new(token)
@@ -66,19 +69,23 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 CheckExpression = checkExpression,
                 IsNegative = isNegative
             };
+            checkExpression.Parent = result;
 
             if (TypeInfoNode.CanParse(stream, 0))
             {
                 result.DestinationType = TypeInfoNode.Parse(stream, true, true);
+                result.DestinationType.Parent = result;
 
                 if (stream.Check(DSharpTokenType.Identifier))
                 {
                     result.DestinationIdentifier = IdentifierExpressionNode.Parse(stream, false);
+                    result.DestinationIdentifier.Parent = result;
                 }
             }
             if (stream.Check(DSharpTokenType.LeftBrace))
             {
                 result.DestinationObjectValues = ObjectValuesNode.Parse(stream, DSharpTokenType.Colon);
+                result.DestinationObjectValues.Parent = result;
             }
 
             return result;

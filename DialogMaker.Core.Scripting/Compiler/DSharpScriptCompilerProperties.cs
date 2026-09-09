@@ -19,7 +19,12 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             if (!_propertyFields.TryGetValue(property, out var field))
             {
-                field = property.DeclaringType.CreateField(property.Name + ValueFieldNameSuffix);
+                if (property.DeclaringType is not DSharpTypeBuilder declaringTypeBuilder)
+                {
+                    throw new DSharpCompilerException("Unable to create auto field for property that declared not in builder", _createdProperties[property]);
+                }
+
+                field = declaringTypeBuilder.CreateField(property.Name + ValueFieldNameSuffix);
                 field.FieldType = property.PropertyType;
                 field.Access = DSharpAccessModifier.Private;
                 _propertyFields.Add(property, field);

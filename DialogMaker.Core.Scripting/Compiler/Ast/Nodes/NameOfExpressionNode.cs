@@ -8,7 +8,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// <param name="token">Token that represents nameof keyword</param>
     public class NameOfExpressionNode(DSharpToken token) : CompileTimeExpressionNode<ExpressionNode>(token)
     {
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse nameof() expression starts with current token

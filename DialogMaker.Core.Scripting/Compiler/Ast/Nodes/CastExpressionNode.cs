@@ -44,12 +44,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             stream.Eat(DSharpTokenType.LeftParen);
             TypeInfoNode type = TypeInfoNode.Parse(stream, true, true);
             stream.Eat(DSharpTokenType.RightParen);
-
-            return new(type.Token)
+            CastExpressionNode result = new(type.Token)
             {
                 Type = type,
                 Expression = ParseExpression(stream)
             };
+
+            type.Parent = result; ;
+            result.Expression.Parent = result;
+
+            return result;
         }
 
         #endregion

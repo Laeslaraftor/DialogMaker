@@ -13,7 +13,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public ExpressionNode? Identifier { get; set; }
 
-        #region Управление
+        #region Controls
 
         /// <summary>
         /// Get full namespace value
@@ -49,10 +49,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             var identifier = ExpressionNode.ParseIdentifier(stream, false);
             stream.Eat(DSharpTokenType.Semicolon);
 
-            return new(usingToken)
+            UsingStatementNode result = new(usingToken)
             {
                 Identifier = identifier
             };
+            identifier.Parent = result;
+
+            return result;
         }
 
         #endregion

@@ -13,21 +13,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public MemberAccessExpressionNode? Member { get; set; }
 
-        #region Управление
+        #region Controls
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override string GetSimpleFullName()
         {
             return Member?.GetName(withoutGenerics: true) ?? base.GetSimpleFullName();
         }
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="simplifyGenerics"><inheritdoc/></param>
-        /// <returns><inheritdoc/></returns>
         protected override string GetTypeName(bool simplifyGenerics)
         {
             return Member?.GetName(simplifyGenerics) ?? base.GetTypeName(simplifyGenerics);

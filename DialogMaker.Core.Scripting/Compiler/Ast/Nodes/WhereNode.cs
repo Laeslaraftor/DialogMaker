@@ -22,7 +22,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public DSharpGenericTypeAttributes Attributes { get; set; }
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse where node starts with current token
@@ -36,6 +36,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 Type = TypeInfoNode.ParseOnlyIdentifier(stream, false)
             };
+            result.Type.Parent = result;
 
             stream.Eat(DSharpTokenType.Colon);
 
@@ -81,6 +82,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 else if (TypeInfoNode.CanParse(stream, 0))
                 {
                     var baseType = TypeInfoNode.Parse(stream, true, false);
+                    baseType.Parent = result;
                     result.BaseTypes.Add(baseType);
                     eatComma = true;
                 }
