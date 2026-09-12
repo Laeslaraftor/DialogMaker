@@ -1,10 +1,12 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+﻿using DialogMaker.Core.Scripting.CodeAnalyzer;
+using DialogMaker.Core.Scripting.Compiler.Lexer;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
     /// Access modifier of object type or it's member
     /// </summary>
+    [GenerateInformation(EnumValuesInformation.OnlyValues)]
     public enum DSharpAccessModifier : byte
     {
         /// <summary>

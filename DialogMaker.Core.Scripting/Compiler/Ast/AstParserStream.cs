@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast
@@ -30,9 +31,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
             return token?.Type == type;
         }
         public bool Check(params DSharpTokenType[] types) => types.Contains(Current?.Type ?? DSharpTokenType.EndOfFile);
-        public bool CheckAll<T>() where T : struct
+        public bool CheckAll<T>(ImmutableArray<T> values) where T : struct
         {
-            foreach (var value in Enum.GetValues(typeof(T)))
+            foreach (var value in values)
             {
                 var numberValue = (int)Convert.ChangeType(value, typeof(int));
                 var typedValue = (DSharpTokenType)Enum.ToObject(typeof(DSharpTokenType), numberValue);

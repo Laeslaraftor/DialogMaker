@@ -1,10 +1,11 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+﻿using DialogMaker.Core.Scripting.CodeAnalyzer;
 
 namespace DialogMaker.Core.Scripting.Compiler.Lexer
 {
     /// <summary>
     /// Script token type
     /// </summary>
+    [GenerateInformation(EnumValuesInformation.Full)]
     public enum DSharpTokenType
     {
         /// <summary>

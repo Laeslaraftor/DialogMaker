@@ -1,9 +1,11 @@
-﻿namespace DialogMaker.Core.Scripting.Runtime
+﻿using DialogMaker.Core.Scripting.CodeAnalyzer;
+
+namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
     /// Attributes of generic type
     /// </summary>
-    [Flags]
+    [Flags, GenerateInformation(EnumValuesInformation.OnlyValues)]
     public enum DSharpGenericTypeAttributes
     {
         /// <summary>

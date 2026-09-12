@@ -1,10 +1,12 @@
-﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions;
+﻿using DialogMaker.Core.Scripting.CodeAnalyzer;
+using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
     /// D# bytecode operation code
     /// </summary>
+    [GenerateInformation(EnumValuesInformation.Full)]
     public enum DSharpBytecodeOperation : byte
     {
         /// <summary>

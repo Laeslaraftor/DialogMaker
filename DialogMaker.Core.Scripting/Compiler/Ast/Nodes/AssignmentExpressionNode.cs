@@ -63,7 +63,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         {
             result = null;
 
-            if (!stream.CheckAll<DSharpAssignmentOperator>())
+            if (!stream.CheckAll(DSharpAssignmentOperatorHelper.Values))
             {
                 return false;
             }

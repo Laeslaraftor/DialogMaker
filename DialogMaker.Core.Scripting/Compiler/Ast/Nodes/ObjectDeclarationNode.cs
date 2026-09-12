@@ -109,14 +109,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         {
             result = DSharpAccessModifier.Private;
 
-            foreach (var accessValue in Enum.GetValues(typeof(DSharpAccessModifier)))
+            foreach (var accessValue in DSharpAccessModifierHelper.Values)
             {
-                var access = (DSharpAccessModifier)accessValue;
-                var tokenType = access.ToToken();
+                var tokenType = accessValue.ToToken();
 
                 if (token.Type == tokenType)
                 {
-                    result = access;
+                    result = accessValue;
                     return true;
                 }
             }
@@ -425,7 +424,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Return true when token is access modifier</returns>
         public static bool IsAccessModifier(AstParserStream stream)
         {
-            return stream.CheckAll<DSharpAccessModifier>();
+            return stream.CheckAll(DSharpAccessModifierHelper.Values);
         }
         /// <summary>
         /// Check current token is member mode (virtual or abstract)

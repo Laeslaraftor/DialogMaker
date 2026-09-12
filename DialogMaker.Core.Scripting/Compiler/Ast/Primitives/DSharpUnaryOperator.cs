@@ -1,7 +1,9 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+﻿using DialogMaker.Core.Scripting.CodeAnalyzer;
+using DialogMaker.Core.Scripting.Compiler.Lexer;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast
 {
+    [GenerateInformation(EnumValuesInformation.OnlyValues)]
     public enum DSharpUnaryOperator
     {
         Not = DSharpTokenType.Not,

@@ -599,13 +599,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                 {
                     Dictionary<string, DSharpTokenType> keywords = [];
 
-                    foreach (var tokenType in Enum.GetValues(typeof(DSharpTokenType)))
+                    foreach (var info in DSharpTokenTypeHelper.Values.Values)
                     {
-                        var keywordAttribute = tokenType.GetEnumAttribute<KeywordAttribute>();
-
-                        if (keywordAttribute != null)
+                        if (info.Keyword != null)
                         {
-                            keywords.Add(keywordAttribute.Name, (DSharpTokenType)tokenType);
+                            keywords.Add(info.Keyword.Name, info.Value);
                         }
                     }
 

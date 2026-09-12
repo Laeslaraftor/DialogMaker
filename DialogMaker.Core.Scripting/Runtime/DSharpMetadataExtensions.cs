@@ -634,7 +634,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                 }
                 if (normalType.IsGeneric && type.GenericAttributes != normalType.GenericAttributes)
                 {
-                    foreach (var flag in Enum.GetValues(typeof(DSharpGenericTypeAttributes)).Cast<DSharpGenericTypeAttributes>())
+                    foreach (var flag in DSharpGenericTypeAttributesHelper.Values)
                     {
                         if (type.GenericAttributes.HasFlag(flag) &&
                             !normalType.GenericAttributes.HasFlag(flag))

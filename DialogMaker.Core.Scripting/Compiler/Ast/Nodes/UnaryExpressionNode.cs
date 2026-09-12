@@ -53,7 +53,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 stream.ThrowPositionException("Invalid token");
             }
 
-            if (stream.CheckAll<DSharpUnaryOperator>())
+            if (stream.CheckAll(DSharpUnaryOperatorHelper.Values))
             {
                 var operatorToken = stream.Eat(stream.Current.Type);
                 var operand = Parse(stream);

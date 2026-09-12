@@ -188,15 +188,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
 
             _executors = [];
 
-            foreach (var value in Enum.GetValues(typeof(DSharpBytecodeOperation)))
+            foreach (var info in DSharpBytecodeOperationHelper.Values.Values)
             {
-                var executorAttribute = value.GetEnumAttribute<ExecutorAttribute>();
-
-                if (executorAttribute != null)
+                if (info.Executor == null)
                 {
-                    var instance = executorAttribute.GetInstance();
-                    _executors.Add((DSharpBytecodeOperation)value, instance);
+                    continue;
                 }
+
+                var instance = info.Executor.GetInstance();
+                _executors.Add(info.Value, instance);
             }
 
             return _executors;
