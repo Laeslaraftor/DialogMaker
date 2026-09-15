@@ -25,11 +25,8 @@ namespace DialogMaker.ScriptingExample
 
                     try
                     {
-                        var script = File.ReadAllText(filePath);
-                        string fileName = filePath.Replace('\\', '/').Split('/')[^1][..^3];
-                        var parsedScript = DSharpAstParser.ParseScript(fileName, script);
+                        var parsedScript = DSharpAstParser.ParseScript(filePath);
                         parsedScript.FilePath = filePath;
-
                         scripts.Add(parsedScript);
                     }
                     catch (Exception error)

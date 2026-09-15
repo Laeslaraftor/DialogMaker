@@ -187,7 +187,7 @@ namespace DialogMaker.Core.Scripting.CodeAnalyzer
                         {
                             if (attributeInfo.IsImmutableArray)
                             {
-
+                                builder.Append($"{indent3}default");
                             }
                             else
                             {

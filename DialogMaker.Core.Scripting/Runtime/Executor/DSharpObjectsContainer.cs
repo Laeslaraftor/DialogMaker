@@ -365,6 +365,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// Create structure with specified type and data in buffer
         /// </summary>
         /// <param name="type">Type of structure for creating</param>
+        /// <param name="buffer">Buffer that will be filled with structure</param>
+        /// <param name="isArray">Is array structure</param>
+        /// <returns>Pointer to structure</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpObject* CreateStructure(DSharpRuntimeTypeInfo* type, UnmanagedArray<byte> buffer, bool isArray)
+        {
+            return CreateStructure(type, default, buffer, isArray);
+        }
+        /// <summary>
+        /// Create structure with specified type and data in buffer
+        /// </summary>
+        /// <param name="type">Type of structure for creating</param>
         /// <param name="data">Data for filling structure</param>
         /// <param name="buffer">Buffer that will be filled with structure</param>
         /// <param name="isArray">Is array structure</param>
@@ -388,7 +400,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             int sizeForData = buffer.Length - sizeof(DSharpObject);
             byte* objectDataBuffer = DSharpObject.GetData(obj);
 
-            if (0 > sizeForData)
+            if (0 >= sizeForData)
             {
                 return obj;
             }

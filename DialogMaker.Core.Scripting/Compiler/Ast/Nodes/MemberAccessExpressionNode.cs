@@ -17,8 +17,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Accessed member
         /// </summary>
         public ExpressionNode? Member { get; set; }
+        /// <summary>
+        /// Member access mode
+        /// </summary>
+        public DSharpMemberAccessMode AccessMode { get; set; }
 
-        #region Управление
+        #region Controls
 
         /// <summary>
         /// Get full name of accessed member
@@ -93,6 +97,75 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             builder.Append($"Member: {Member}");
 
             return builder.ToString();
+        }
+
+        #endregion
+
+        #region Static
+
+        /// <summary>
+        /// Check is current token represents access to member
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="offset">Check offset</param>
+        /// <returns>Is current token represents access to member</returns>
+        public static bool IsAccess(AstParserStream stream, int offset = 0)
+        {
+            return stream.Check(DSharpTokenType.Dot, offset) ||
+                   stream.Check(DSharpTokenType.Greater, offset + 1) &&
+                   stream.Check(DSharpTokenType.Minus, offset);
+        }
+        public static bool TryParseAccessMode(AstParserStream stream, out DSharpMemberAccessMode mode)
+        {
+            return TryParseAccessMode(stream, true, out _, out mode);
+        }
+        /// <summary>
+        /// Try to parse member access mode start with current token
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="token">First eaten token</param>
+        /// <param name="mode">Parse member access mode</param>
+        /// <returns>Is member access mode successfully parsed</returns>
+        public static bool TryParseAccessMode(AstParserStream stream, out DSharpToken? token, out DSharpMemberAccessMode mode)
+        {
+            return TryParseAccessMode(stream, true, out token, out mode);
+        }
+        /// <summary>
+        /// Try to parse member access mode start with current token
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="eat">Eat access tokens</param>
+        /// <param name="token">First eaten token</param>
+        /// <param name="mode">Parse member access mode</param>
+        /// <returns>Is member access mode successfully parsed</returns>
+        public static bool TryParseAccessMode(AstParserStream stream, bool eat, out DSharpToken? token, out DSharpMemberAccessMode mode)
+        {
+            mode = DSharpMemberAccessMode.Reference;
+            token = null;
+
+            if (stream.Check(DSharpTokenType.Dot))
+            {
+                if (eat)
+                {
+                    token = stream.Eat(DSharpTokenType.Dot);
+                }
+
+                return true;
+            }
+            else if (stream.Check(DSharpTokenType.Minus) &&
+                     stream.Check(DSharpTokenType.Greater, 1))
+            {
+                if (eat)
+                {
+                    token = stream.Eat(DSharpTokenType.Minus);
+                    stream.Eat(DSharpTokenType.Greater);
+                }
+                
+                mode = DSharpMemberAccessMode.Pointer;
+                return true;
+            }
+
+            return false;
         }
 
         #endregion

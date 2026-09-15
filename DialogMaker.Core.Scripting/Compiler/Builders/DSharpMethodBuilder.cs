@@ -534,14 +534,19 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 {
                     Add(typedReferenceInstruction.Type, filledReferenceType);
                 }
-                else if (instruction is DSharpBytecodeBuilder.GenericCallingInstruction genericCallingInstruction)
+                else if (instruction is DSharpBytecodeBuilder.CallingInstruction genericCallingInstruction)
                 {
-                    foreach (var callingGeneric in genericCallingInstruction.CallingInfo.GenericParameters.Values)
+                    var callingInfo = genericCallingInstruction.CallingInfo;
+
+                    if (callingInfo != null)
                     {
-                        if (!result.ContainsKey(callingGeneric) &&
-                            TryFill(callingGeneric, out var newCallingGeneric))
+                        foreach (var callingGeneric in callingInfo.GenericParameters.Values)
                         {
-                            Add(callingGeneric, newCallingGeneric);
+                            if (!result.ContainsKey(callingGeneric) &&
+                                TryFill(callingGeneric, out var newCallingGeneric))
+                            {
+                                Add(callingGeneric, newCallingGeneric);
+                            }
                         }
                     }
                 }

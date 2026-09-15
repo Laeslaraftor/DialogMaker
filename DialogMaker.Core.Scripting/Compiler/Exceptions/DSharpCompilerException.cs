@@ -34,7 +34,22 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
         }
         public IEnumerable<AstNode>? Nodes { get; }
+        public override string Message
+        {
+            get
+            {
+                var result = base.Message;
+                var node = Node;
 
-        private readonly AstNode? _node; 
+                if (node == null)
+                {
+                    return result;
+                }
+
+                return result + " " + node.Token.ToPositionString();
+            }
+        }
+
+        private readonly AstNode? _node;
     }
 }

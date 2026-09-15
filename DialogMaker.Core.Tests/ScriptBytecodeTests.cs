@@ -45,6 +45,7 @@ namespace DialogMaker.Core.Tests
         [TestCase("System.Native.Pointer<Internal.System.Runtime.RuntimeTypeInfo>", "get_Item")]
         [TestCase("System.Native.Pointer<Internal.System.Runtime.RuntimeTypeInfo>", "get_IsNull")]
         [TestCase("System.Object", "Equals")]
+        [TestCase("System.Object", "ReferenceEquals")]
         [TestCase("System.Byte", "init")]
         [TestCase("System.String", "Equals")]
         [TestCase("System.String", "Split")]

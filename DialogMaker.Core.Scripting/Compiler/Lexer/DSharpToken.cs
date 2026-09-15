@@ -3,7 +3,7 @@
     /// <summary>
     /// Token of D#
     /// </summary>
-    public class DSharpToken(DSharpTokenType type, string value, int line, int column)
+    public class DSharpToken(DSharpTokenType type, string value, int line, int column, string? filePath = null)
     {
         /// <summary>
         /// Type of this token
@@ -21,16 +21,29 @@
         /// Token column start index
         /// </summary>
         public int Column { get; } = column;
+        public string? FilePath { get; } = filePath;
 
         #region Управление
 
         /// <summary>
-        /// <inheritdoc/>
+        /// Get position string for current token
         /// </summary>
-        /// <returns><inheritdoc/></returns>
+        /// <returns>Position string</returns>
+        public string ToPositionString()
+        {
+            var result = $"at line {Line}:{Column}";
+
+            if (FilePath != null)
+            {
+                result = $"in \"{FilePath}\" " + result;
+            }
+
+            return result;
+        }
+
         public override string ToString()
         {
-            return $"{Type}({Value}) at {Line}:{Column}";
+            return $"{Type}({Value}) {ToPositionString()}";
         }
 
         #endregion

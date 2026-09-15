@@ -42,5 +42,27 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
                 };
             }
         }
+        extension(string value)
+        {
+            public string GetFileName(bool removeExtension = true)
+            {
+                value = value.Replace("/", @"\");
+                var parts = value.Split('\\');
+                value = parts[^1];
+
+                if (removeExtension)
+                {
+                    var valueParts = value.Split('.');
+                    
+                    if (valueParts.Length > 1)
+                    {
+                        var lastPart = valueParts[^1];
+                        value = value[..(value.Length - lastPart.Length - 1)];
+                    }
+                }
+
+                return value;
+            }
+        }
     }
 }

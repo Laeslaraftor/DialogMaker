@@ -134,6 +134,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         {
             var left = parser(stream);
 
+            if (stream.Current?.Type == DSharpTokenType.Minus &&
+                stream.Peek()?.Type == DSharpTokenType.Greater)
+            {
+                return left;
+            }
+
             bool Check()
             {
                 foreach (var token in tokens)

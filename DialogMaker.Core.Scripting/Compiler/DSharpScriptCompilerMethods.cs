@@ -510,7 +510,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             else if (statement is ExpressionStatementNode expressionStatement)
             {
                 var expression = expressionStatement.Expression
-                    ?? throw new ArgumentException($"Invalid statement: {expressionStatement}");
+                    ?? throw new DSharpCompilerException("Invalid statement", statement);
 
                 settings.LastOperationIsReturnsValue = false;
                 IDSharpMemberInfo? expressionMember;
@@ -521,7 +521,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 catch (Exception error)
                 {
-                    throw new InvalidOperationException($"Failed to compile: {expressionStatement.Expression}", error);
+                    throw new DSharpCompilerException("Failed to compile expression statement", expression, error);
                 }
 
                 if (parentStatement?.Token.Type != DSharpTokenType.Lambda &&
@@ -1111,7 +1111,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             else
             {
-                throw new ArgumentException($"Invalid statement in current context: {statement}", nameof(statement));
+                throw new DSharpCompilerException("Invalid statement in current context", statement);
             }
         }
 
@@ -1324,7 +1324,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             else
             {
-                throw new ArgumentException($"Invalid expression for current context: {expression}", nameof(context));
+                throw new DSharpCompilerException("Invalid expression for current context", expression);
             }
 
             return null;
@@ -2466,7 +2466,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 return null;
             }
 
-            throw new ArgumentException($"Unable to compile expression: {expression}", nameof(expression));
+            throw new DSharpCompilerException("Unable to compile expression", expression);
         }
         private IDSharpIndexerInfo GetArrayIndexer(DSharpMethodBuilder method, ArrayAccessExpressionNode arrayExpression, DSharpCompilerContext context)
         {
@@ -2924,6 +2924,15 @@ namespace DialogMaker.Core.Scripting.Compiler
             bool canUseBase = true;
             bool lastAccessedAsLocalMember = false;
 
+            void CheckPointerAccessAvailability(MemberAccessExpressionNode node, bool canAccessThroughPointer, string message = "current expression")
+            {
+                if (node.AccessMode == DSharpMemberAccessMode.Pointer &&
+                    !canAccessThroughPointer)
+                {
+                    throw new DSharpCompilerException($"Access through pointer is not available for {message}", node);
+                }
+            }
+
             while (true)
             {
                 IDSharpMemberInfo currentType;
@@ -2931,6 +2940,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                 bool currentIsThis = false;
                 bool accessedAsLocalMember = false;
 
+                if (currentMember is IDSharpType previousType)
+                {
+                    CheckPointerAccessAvailability(currentMemberAccess, !previousType.IsStatic, $"accessing to member of static type \"{previousType}\"");
+                }
                 if (currentMemberAccess.Target is ThisExpressionNode thisExpression)
                 {
                     if (method.DeclaringType == null)
@@ -2942,6 +2955,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                         context.ThrowThisIsUnavailable(thisExpression);
                     }
 
+                    CheckPointerAccessAvailability(currentMemberAccess, false);
                     currentType = method.DeclaringType;
                     currentMember = method.DeclaringType;
                     previousIsThis = true;
@@ -2958,6 +2972,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                         context.ThrowBaseIsUnavailable(baseExpression);
                     }
 
+                    CheckPointerAccessAvailability(currentMemberAccess, false);
                     currentIsBase = true;
                     currentType = baseType ?? method.Assembly.ObjectType;
                     currentMember = currentType;
@@ -2991,6 +3006,8 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     currentMember = expressionMember;
                     bool expressionMemberSetted = false;
+
+                    CheckPointerAccessAvailability(currentMemberAccess, !expressionMember.IsStatic, $"accessing to member from static \"{expressionMember}\"");
 
                     if (settings.LastMethodCallingInfo?.TryGetValue(currentMemberAccess.Target!, out var callingInfo) == true &&
                         callingInfo.GenericParameters.Count > 0 &&

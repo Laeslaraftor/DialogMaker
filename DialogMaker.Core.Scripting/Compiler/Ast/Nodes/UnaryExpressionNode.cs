@@ -35,10 +35,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             var tokenType = currentToken.Type;
 
-            return tokenType == DSharpTokenType.Increment ||
-                   tokenType == DSharpTokenType.Decrement ||
-                   tokenType == DSharpTokenType.Minus ||
-                   tokenType == DSharpTokenType.Not;
+            foreach (var unaryOperator in DSharpUnaryOperatorHelper.Values)
+            {
+                if ((DSharpTokenType)unaryOperator == tokenType)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>

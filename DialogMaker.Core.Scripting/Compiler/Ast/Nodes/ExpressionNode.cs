@@ -78,7 +78,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Member access or target expression</returns>
         public static ExpressionNode ParseMemberAccess(AstParserStream stream, ExpressionNode target)
         {
-            if (!stream.Check(DSharpTokenType.Dot))
+            if (!MemberAccessExpressionNode.IsAccess(stream))
             {
                 return target;
             }
@@ -87,12 +87,21 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             do
             {
-                var accessOperation = stream.Eat(DSharpTokenType.Dot);
+                if (!MemberAccessExpressionNode.TryParseAccessMode(stream, out var accessOperation, out var mode))
+                {
+                    accessOperation ??= stream.Eat(DSharpTokenType.Dot);
+                }
+                else
+                {
+                    accessOperation ??= stream.Peek(-1)!;
+                }
+
 
                 memberAccess = new(accessOperation)
                 {
                     Target = target,
-                    Member = ParseExpression(stream, true)
+                    Member = ParseExpression(stream, true),
+                    AccessMode = mode
                 };
 
                 target.Parent = memberAccess;
@@ -100,7 +109,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
                 target = memberAccess;
             }
-            while (stream.Check(DSharpTokenType.Dot));
+            while (MemberAccessExpressionNode.IsAccess(stream));
 
             if (memberAccess.Member is AssignmentExpressionNode assignment)
             {
@@ -204,7 +213,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Parsed expression</returns>
         public static ExpressionNode ParseExpression(AstParserStream stream, bool ignoreBinaryExpression = false)
         {
-            bool previousIsMemberAccess = stream.Check(DSharpTokenType.Dot, -1);
+            bool previousIsMemberAccess = MemberAccessExpressionNode.IsAccess(stream, -1);
             ExpressionNode left;
 
             if (ignoreBinaryExpression)
@@ -266,20 +275,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 return result;
             }
 
-            if (!previousIsMemberAccess)
+            if (!previousIsMemberAccess &&
+                MemberAccessExpressionNode.IsAccess(stream))
             {
-                while (stream.Check(DSharpTokenType.Dot))
-                {
-                    var accessOperation = stream.Eat(DSharpTokenType.Dot);
-                    MemberAccessExpressionNode memberAccess = new(accessOperation)
-                    {
-                        Target = left,
-                        Member = ParseExpression(stream)
-                    };
-                    left.Parent = memberAccess;
-
-                    left = memberAccess;
-                }
+                return ParseMemberAccess(stream, left);
             }
 
             return left;
@@ -349,7 +348,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 return ArrayExpressionNode.Parse(stream);
             }
-            if (TypeInfoNode.CanParseIdentifier(stream) && stream.Check(DSharpTokenType.Dot, 1))
+            if (TypeInfoNode.CanParseIdentifier(stream) && MemberAccessExpressionNode.IsAccess(stream, 1))
             {
                 return ParseIdentifier(stream);
             }

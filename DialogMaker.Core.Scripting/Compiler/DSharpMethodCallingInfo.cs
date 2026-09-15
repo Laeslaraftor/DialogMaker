@@ -1,7 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Collections.ObjectModel;
-using System.Reflection;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -64,12 +63,21 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
             }
 
+            if (replacedMembers.TryGetValue(Method, out var replacedMethod))
+            {
+                isAnyTypeReplaced = true;
+            }
+            else
+            {
+                replacedMethod = Method;
+            }
+
             if (!isAnyTypeReplaced)
             {
                 return this;
             }
 
-            return new(Method, parameters, genericParameters);
+            return new((IDSharpMethodInfo)replacedMethod, parameters, genericParameters);
         }
 
         /// <summary>

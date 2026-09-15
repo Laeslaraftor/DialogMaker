@@ -36,6 +36,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
 
         private readonly List<DSharpToken> _tokens = [];
         private string _source = string.Empty;
+        private string? _filePath;
         private int _position = 0;
         private int _line = 1;
         private int _column = 1;
@@ -45,6 +46,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// <summary>
         /// Parse specified source code to tokens
         /// </summary>
+        /// <param name="sourceCode">Source code to parse</param>
         public void Tokenize(string sourceCode)
         {
             if (IsBusy)
@@ -52,12 +54,45 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                 throw new InvalidOperationException("Lexer is busy now");
             }
 
+            TokenizeSafe(null, sourceCode);
+        }
+        /// <summary>
+        /// Parse specified source code to tokens
+        /// </summary>
+        /// <param name="sourceCode">Source code to parse</param>
+        /// <param name="filePath">Path to file that contains specified source code</param>
+        public void Tokenize(string? filePath, string sourceCode)
+        {
+            if (IsBusy)
+            {
+                throw new InvalidOperationException("Lexer is busy now");
+            }
+
+            TokenizeSafe(filePath, sourceCode);
+        }
+        /// <summary>
+        /// Parse specified source code to tokens
+        /// </summary>
+        /// <param name="filePath">Path to source code file</param>
+        public void TokenizeFromFile(string filePath)
+        {
+            if (IsBusy)
+            {
+                throw new InvalidOperationException("Lexer is busy now");
+            }
+
+            var sourceCode = File.ReadAllText(filePath);
+            TokenizeSafe(filePath, sourceCode);
+        }
+
+        private void TokenizeSafe(string? filePath, string sourceCode)
+        {
             IsBusy = true;
             _tokens.Clear();
 
             try
             {
-                TokenizeImplementation(sourceCode);
+                TokenizeImplementation(filePath, sourceCode);
             }
             catch
             {
@@ -68,10 +103,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                 IsBusy = false;
             }
         }
-
-        private void TokenizeImplementation(string sourceCode)
+        private void TokenizeImplementation(string? filePath, string sourceCode)
         {
             _source = sourceCode;
+            _filePath = filePath;
 
             while (!IsEndOfFile())
             {
@@ -116,7 +151,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                 ReadOperatorOrPunctuation();
             }
 
-            AddToken(DSharpTokenType.EndOfFile, "");
+            AddToken(DSharpTokenType.EndOfFile, string.Empty);
         }
 
         #endregion
@@ -569,9 +604,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         }
         private void AddToken(DSharpTokenType type, string value, int line = -1, int column = -1)
         {
-            _tokens.Add(new(type, value,
-                            line == -1 ? _line : line,
-                            column == -1 ? _column : column));
+            DSharpToken token = new(type, value,
+                                    line == -1 ? _line : line,
+                                    column == -1 ? _column : column,
+                                    _filePath);
+            _tokens.Add(token);
         }
 
         #endregion

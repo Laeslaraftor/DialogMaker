@@ -1250,5 +1250,52 @@ namespace DialogMaker.Core.Scripting.Runtime
                 return result;
             }
         }
+        extension(IDSharpMemberInfo member)
+        {
+            /// <summary>
+            /// Get required calling type for correct access to current member
+            /// </summary>
+            /// <param name="tryToDefault">Try to get default calling type</param>
+            /// <returns>Required calling type</returns>
+            public DSharpMethodCallingType GetRequiredCallingType(bool tryToDefault = false)
+            {
+                if (member.IsStatic)
+                {
+                    return DSharpMethodCallingType.Default;
+                }
+
+                var declaringType = member.DeclaringType;
+
+                if (declaringType != null &&
+                    declaringType.ObjectType == DSharpObjectType.Interface)
+                {
+                    return DSharpMethodCallingType.Virtual;
+                }
+                if (member is IDSharpMethodInfo method)
+                {
+                    if (!method.IsSealed && (method.OverrideMethod != null ||
+                                             method.IsVirtual ||
+                                             !tryToDefault && method.IsAbstract))
+                    {
+                        return DSharpMethodCallingType.Virtual;
+                    }
+
+                    return DSharpMethodCallingType.Default;
+                }
+                if (member is IDSharpPropertyInfo property)
+                {
+                    if (!property.IsSealed && (property.OverrideProperty != null ||
+                                               property.IsVirtual ||
+                                               !tryToDefault && property.IsAbstract))
+                    {
+                        return DSharpMethodCallingType.Virtual;
+                    }
+
+                    return DSharpMethodCallingType.Default;
+                }
+
+                return DSharpMethodCallingType.Default;
+            }
+        }
     }
 }

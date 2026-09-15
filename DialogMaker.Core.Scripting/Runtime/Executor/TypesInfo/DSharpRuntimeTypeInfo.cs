@@ -351,13 +351,32 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
             string name = new((ReadOnlySpan<char>)Name);
 
-            if (DeclaringType != null)
+            if (!IsGeneric)
             {
-                name = DeclaringType->ToString() + "." + name;
+                if (DeclaringType != null)
+                {
+                    name = DeclaringType->ToString() + "." + name;
+                }
+                else if (Namespace.Length > 0)
+                {
+                    name = new string((ReadOnlySpan<char>)Namespace) + "." + name;
+                }
             }
-            else if (Namespace.Length > 0)
+            if (GenericParameters.Length > 0)
             {
-                name = new string((ReadOnlySpan<char>)Namespace) + "." + name;
+                name += '<';
+
+                for (int i = 0; i < GenericParameters.Length; i++)
+                {
+                    if (i > 0)
+                    {
+                        name += ", ";
+                    }
+
+                    name += GenericParameters[i].AsPointer()->ToString();
+                }
+
+                name += '>';
             }
 
             return name;

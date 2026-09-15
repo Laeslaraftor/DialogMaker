@@ -16,8 +16,7 @@ public sealed class Object
 
     public static bool Equals(object? a, object? b)
     {
-        if (a == null && b == null ||
-            ReferenceEquals(a, b))
+        if (ReferenceEquals(a, b))
         {
             return true;
         }
@@ -29,7 +28,23 @@ public sealed class Object
 
         return a.Equals(b) || b.Equals(a);
     }
-    public static extern bool ReferenceEquals(object? a, object? b);
+    public static bool ReferenceEquals(object? a, object? b)
+    {
+        if (a == null && b == null)
+        {
+            return true;
+        }
+        if (a == null && b != null ||
+            a != null && b == null)
+        {
+            return false;
+        }
+
+        var aAddress = CompilerServices.GetObjectAddress(a);
+        var bAddress = CompilerServices.GetObjectAddress(b);
+
+        return aAddress == bAddress;
+    }
 
     private static extern int GetHashCode(object obj);
     private static extern bool ContentEquals(object? a, object? b);

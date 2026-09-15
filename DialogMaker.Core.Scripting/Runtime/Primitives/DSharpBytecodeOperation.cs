@@ -136,7 +136,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(1)]
         [RequestsStackValues(2)]
-        [Executor(typeof(DSharpStoreInstancePropertyInstructionExecutor))]
+        [Executor(typeof(DSharpStorePropertyInstructionExecutor))]
         StoreInstanceProperty,
         /// <summary>
         /// Store last value from stack to object instance property without searching overriding member. 
@@ -146,7 +146,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(1)]
         [RequestsStackValues(2)]
-        [Executor(typeof(DSharpStoreBaseInstancePropertyInstructionExecutor))]
+        [Executor(typeof(DSharpStorePropertyInstructionExecutor))]
         StoreBaseInstanceProperty,
         /// <summary>
         /// Load value from static property to stack.
@@ -162,7 +162,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(1)]
         [RequestsStackValues(1)]
-        [Executor(typeof(DSharpLoadInstancePropertyInstructionExecutor))]
+        [Executor(typeof(DSharpLoadPropertyInstructionExecutor))]
         LoadInstanceProperty,
         /// <summary>
         /// Load value from object instance property to stack without searching overriding member. 
@@ -171,7 +171,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(1)]
         [RequestsStackValues(1)]
-        [Executor(typeof(DSharpLoadBaseInstancePropertyInstructionExecutor))]
+        [Executor(typeof(DSharpLoadPropertyInstructionExecutor))]
         LoadBaseInstanceProperty,
 
         /// <summary>
@@ -182,7 +182,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(1)]
         [RequestsStackValues(-3)]
-        [Executor(typeof(DSharpStoreIndexerInstructionExecutor))]
+        [Executor(typeof(DSharpStorePropertyInstructionExecutor))]
         StoreIndexer,
         /// <summary>
         /// Store last value from stack to object instance indexer without searching overriding member. 
@@ -192,7 +192,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(1)]
         [RequestsStackValues(-3)]
-        [Executor(typeof(DSharpStoreBaseIndexerInstructionExecutor))]
+        [Executor(typeof(DSharpStorePropertyInstructionExecutor))]
         StoreBaseIndexer,
         /// <summary>
         /// Load value from object instance indexer to stack.
@@ -201,7 +201,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(1)]
         [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpLoadIndexerInstructionExecutor))]
+        [Executor(typeof(DSharpLoadPropertyInstructionExecutor))]
         LoadIndexer,
         /// <summary>
         /// Load value from object instance indexer to stack without searching overriding member. 
@@ -210,7 +210,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(1)]
         [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpLoadBaseIndexerInstructionExecutor))]
+        [Executor(typeof(DSharpLoadPropertyInstructionExecutor))]
         LoadBaseIndexer,
 
         /// <summary>
@@ -241,6 +241,41 @@ namespace DialogMaker.Core.Scripting.Runtime
         [RequestsStackValues(0)]
         [Executor(typeof(DSharpLoadCurrentInstructionIndexInstructionExecutor))]
         LoadCurrentInstructionIndex,
+        /// <summary>
+        /// Get address of variable or field. It works identically to <![CDATA[&someVariable]]>.
+        /// First argument is <see cref="DSharpGetAddressMember"/>, second is variable index or field metadata token
+        /// Stack:
+        /// 0: instance
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(1)]
+        [Executor(typeof(DSharpGetAddressInstructionExecutor))]
+        GetAddress,
+        /// <summary>
+        /// Read value on address that placed on last stack value.
+        /// First argument is type metadata token. It works like <c>*pointer</c>
+        /// Stack:
+        /// 0: address
+        /// </summary>
+        /// <remarks>
+        /// <c>Not implemented yet</c>
+        /// </remarks>
+        [ArgsCount(1)]
+        [RequestsStackValues(1)]
+        ReadOnAddress,
+        /// <summary>
+        /// Write value that placed on last stack value on address before value.
+        /// First argument is type metadata token. It works like <c>*pointer = value</c>
+        /// Stack:
+        /// 0: value
+        /// 1: address
+        /// </summary>
+        /// <remarks>
+        /// <c>Not implemented yet</c>
+        /// </remarks>
+        [ArgsCount(1)]
+        [RequestsStackValues(2)]
+        StoreOnAddress,
 
         /// <summary>
         /// Call function or static method.
@@ -249,7 +284,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(1)]
         [RequestsStackValues(-1)]
-        [Executor(typeof(DSharpCallInstructionExecutor))]
+        [Executor(typeof(DSharpMethodInstructionExecutor))]
         Call,
         /// <summary>
         /// Call and await function or static method.
@@ -258,7 +293,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(1)]
         [RequestsStackValues(-1)]
-        [Executor(typeof(DSharpAwaitCallInstructionExecutor))]
+        [Executor(typeof(DSharpMethodInstructionExecutor))]
         AwaitCall,
         /// <summary>
         /// Call method from instance of object that must be placed in bottom of stack. 
@@ -268,7 +303,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(1)]
         [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpCallInstanceInstructionExecutor))]
+        [Executor(typeof(DSharpMethodInstructionExecutor))]
         CallInstance,
         /// <summary>
         /// Call method from instance of object that must be placed in bottom of stack without searching overriding member. 
@@ -278,7 +313,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(1)]
         [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpCallBaseInstanceInstructionExecutor))]
+        [Executor(typeof(DSharpMethodInstructionExecutor))]
         CallBaseInstance,
         /// <summary>
         /// Call and await method from instance of object that must be placed in bottom of stack. 
@@ -288,7 +323,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(1)]
         [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpAwaitCallInstanceInstructionExecutor))]
+        [Executor(typeof(DSharpMethodInstructionExecutor))]
         AwaitCallInstance,
         /// <summary>
         /// Call and await method from instance of object that must be placed in bottom of stack without searching overriding member. 
@@ -298,7 +333,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(1)]
         [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpAwaitCallBaseInstanceInstructionExecutor))]
+        [Executor(typeof(DSharpMethodInstructionExecutor))]
         AwaitCallBaseInstance,
         /// <summary>
         /// Call generic function or static generic method.
@@ -307,7 +342,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(-2)]
         [RequestsStackValues(-1)]
-        [Executor(typeof(DSharpGenericCallInstructionExecutor))]
+        [Executor(typeof(DSharpMethodInstructionExecutor))]
         GenericCall,
         /// <summary>
         /// Call and await generic function or static generic method.
@@ -316,7 +351,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(-2)]
         [RequestsStackValues(-1)]
-        [Executor(typeof(DSharpAwaitGenericCallInstructionExecutor))]
+        [Executor(typeof(DSharpMethodInstructionExecutor))]
         AwaitGenericCall,
         /// <summary>
         /// Call generic method from instance of object that must be placed in bottom of stack. 
@@ -326,7 +361,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(-2)]
         [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpGenericCallInstanceInstructionExecutor))]
+        [Executor(typeof(DSharpMethodInstructionExecutor))]
         GenericCallInstance,
         /// <summary>
         /// Call generic method from instance of object that must be placed in bottom of stack without searching overriding member. 
@@ -336,7 +371,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(-2)]
         [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpGenericCallBaseInstanceInstructionExecutor))]
+        [Executor(typeof(DSharpMethodInstructionExecutor))]
         GenericCallBaseInstance,
         /// <summary>
         /// Call and await generic method from instance of object that must be placed in bottom of stack. 
@@ -346,7 +381,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(-2)]
         [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpAwaitGenericCallInstanceInstructionExecutor))]
+        [Executor(typeof(DSharpMethodInstructionExecutor))]
         AwaitGenericCallInstance,
         /// <summary>
         /// Call and await generic method from instance of object that must be placed in bottom of stack without searching overriding member. 
@@ -356,7 +391,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(-2)]
         [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpAwaitGenericCallBaseInstanceInstructionExecutor))]
+        [Executor(typeof(DSharpMethodInstructionExecutor))]
         AwaitGenericCallBaseInstance,
 
         /// <summary>

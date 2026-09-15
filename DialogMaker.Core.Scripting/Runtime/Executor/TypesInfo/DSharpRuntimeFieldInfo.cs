@@ -197,6 +197,28 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 throw new InvalidOperationException($"Unable to write value to field from stack with type \"{frame.ValueType}\"");
             }
         }
+        /// <summary>
+        /// Get pointer to start field data
+        /// </summary>
+        /// <param name="instance">Object instance. No need to specify instance if field is static</param>
+        /// <returns>Pointer to start field stat</returns>
+        public byte* GetDataPointer(DSharpObject* instance)
+        {
+            byte* data;
+
+            if (IsStatic)
+            {
+                data = DeclaringType->StaticFieldsData.AsPointer();
+            }
+            else
+            {
+                data = (byte*)instance;
+            }
+
+            int offset = GetOffset(instance);
+
+            return data + offset;
+        }
 
         public readonly override string ToString()
         {
@@ -236,23 +258,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
             throw new InvalidOperationException($"Unable to get instance field ({MetadataToken}) offset at {instance->Type->ToString()}");
         }
-        private byte* GetDataPointer(DSharpObject* instance)
-        {
-            byte* data;
-
-            if (IsStatic)
-            {
-                data = DeclaringType->StaticFieldsData.AsPointer();
-            }
-            else
-            {
-                data = (byte*)instance;
-            }
-
-            int offset = GetOffset(instance);
-
-            return data + offset;
-        }
+        
         private DSharpObject* GetValuePointer(DSharpObject* instance)
         {
             byte* data = GetDataPointer(instance);

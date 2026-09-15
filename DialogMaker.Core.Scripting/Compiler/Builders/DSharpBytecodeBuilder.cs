@@ -218,9 +218,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 {
                     typeInstruction.MemberInfo = ReplaceMember(typeInstruction.MemberInfo);
                 }
-                else if (instruction is GenericCallingInstruction genericCallInstruction)
+                else if (instruction is CallingInstruction genericCallInstruction)
                 {
-                    genericCallInstruction.CallingInfo = genericCallInstruction.CallingInfo.ReplaceTypes(replacedMembers);
+                    var callingInfo = genericCallInstruction.CallingInfo;
+
+                    if (callingInfo != null)
+                    {
+                        genericCallInstruction.CallingInfo = callingInfo.ReplaceTypes(replacedMembers);
+                    }
+                    else
+                    {
+                        genericCallInstruction.AccessedMember = ReplaceMember(genericCallInstruction.AccessedMember);
+                    }
                 }
             }
         }
@@ -523,60 +532,66 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// </summary>
         /// <param name="member">Property to load to stack</param>
         /// <returns></returns>
-        public TypeInstruction LoadProperty(IDSharpPropertyInfo member)
+        public CallingInstruction LoadProperty(IDSharpPropertyInfo member)
         {
             CheckAccess(member);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadProperty, member);
+            return CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.LoadProperty, member);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.LoadInstanceProperty"/>
         /// </summary>
         /// <param name="member">Property to load to stack</param>
         /// <returns></returns>
-        public TypeInstruction LoadInstanceProperty(IDSharpPropertyInfo member)
+        public CallingInstruction LoadInstanceProperty(IDSharpPropertyInfo member)
         {
             CheckAccess(member);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadInstanceProperty, member);
+            return CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.LoadInstanceProperty, member);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.LoadBaseInstanceProperty"/>
         /// </summary>
         /// <param name="member">Property to load to stack</param>
         /// <returns></returns>
-        public TypeInstruction LoadBaseInstanceProperty(IDSharpPropertyInfo member)
+        public CallingInstruction LoadBaseInstanceProperty(IDSharpPropertyInfo member)
         {
             CheckAccess(member);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadBaseInstanceProperty, member);
+            var instruction = CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.LoadBaseInstanceProperty, member);
+            instruction.RequestDefaultCalling = true;
+
+            return instruction;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.StoreProperty"/>
         /// </summary>
         /// <param name="member">Property for writing value from stack</param>
         /// <returns></returns>
-        public TypeInstruction StoreProperty(IDSharpPropertyInfo member)
+        public CallingInstruction StoreProperty(IDSharpPropertyInfo member)
         {
             CheckAccess(member);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreProperty, member);
+            return CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.StoreProperty, member);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.StoreInstanceProperty"/>
         /// </summary>
         /// <param name="member">Property for writing value from stack</param>
         /// <returns></returns>
-        public TypeInstruction StoreInstanceProperty(IDSharpPropertyInfo member)
+        public CallingInstruction StoreInstanceProperty(IDSharpPropertyInfo member)
         {
             CheckAccess(member);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreInstanceProperty, member);
+            return CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.StoreInstanceProperty, member);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.StoreBaseInstanceProperty"/>
         /// </summary>
         /// <param name="member">Property for writing value from stack</param>
         /// <returns></returns>
-        public TypeInstruction StoreBaseInstanceProperty(IDSharpPropertyInfo member)
+        public CallingInstruction StoreBaseInstanceProperty(IDSharpPropertyInfo member)
         {
             CheckAccess(member);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreBaseInstanceProperty, member);
+            var instruction = CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.StoreInstanceProperty, member);
+            instruction.RequestDefaultCalling = true;
+
+            return instruction;
         }
 
         /// <summary>
@@ -584,40 +599,46 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// </summary>
         /// <param name="member">Indexer to load to stack</param>
         /// <returns></returns>
-        public TypeInstruction LoadIndexer(IDSharpIndexerInfo member)
+        public CallingInstruction LoadIndexer(IDSharpIndexerInfo member)
         {
             CheckAccess(member);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadIndexer, member);
+            return CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.LoadIndexer, member);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.LoadBaseIndexer"/>
         /// </summary>
         /// <param name="member">Indexer to load to stack</param>
         /// <returns></returns>
-        public TypeInstruction LoadBaseIndexer(IDSharpIndexerInfo member)
+        public CallingInstruction LoadBaseIndexer(IDSharpIndexerInfo member)
         {
             CheckAccess(member);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadBaseIndexer, member);
+            var instruction = CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.LoadBaseIndexer, member);
+            instruction.RequestDefaultCalling = true;
+
+            return instruction;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.StoreIndexer"/>
         /// </summary>
         /// <param name="member">Indexer for writing value from stack</param>
         /// <returns></returns>
-        public TypeInstruction StoreIndexer(IDSharpIndexerInfo member)
+        public CallingInstruction StoreIndexer(IDSharpIndexerInfo member)
         {
             CheckAccess(member);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreIndexer, member);
+            return CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.StoreIndexer, member);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.StoreBaseIndexer"/>
         /// </summary>
         /// <param name="member">Indexer for writing value from stack</param>
         /// <returns></returns>
-        public TypeInstruction StoreBaseIndexer(IDSharpIndexerInfo member)
+        public CallingInstruction StoreBaseIndexer(IDSharpIndexerInfo member)
         {
             CheckAccess(member);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreBaseIndexer, member);
+            var instruction = CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.StoreBaseIndexer, member);
+            instruction.RequestDefaultCalling = true;
+
+            return instruction;
         }
 
         /// <summary>
@@ -626,7 +647,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <param name="propertyOrField">Property or field</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public TypeInstruction LoadPropertyOrField(IDSharpMemberInfo propertyOrField, bool isBase = false)
+        public Instruction LoadPropertyOrField(IDSharpMemberInfo propertyOrField, bool isBase = false)
         {
             if (propertyOrField is IDSharpIndexerInfo indexer)
             {
@@ -680,7 +701,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <param name="propertyOrField">Property or field</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public TypeInstruction StorePropertyOrField(IDSharpMemberInfo propertyOrField, bool isBase = false)
+        public Instruction StorePropertyOrField(IDSharpMemberInfo propertyOrField, bool isBase = false)
         {
             if (propertyOrField is IDSharpIndexerInfo indexer)
             {
@@ -792,127 +813,139 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// </summary>
         /// <param name="method">Method or function that needs to call</param>
         /// <returns></returns>
-        public TypeInstruction Call(IDSharpMethodInfo method)
+        public CallingInstruction Call(IDSharpMethodInfo method)
         {
             CheckAccess(method);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.Call, method);
+            return CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.Call, method);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.AwaitCall"/>
         /// </summary>
         /// <param name="method">Method or function that needs to call</param>
         /// <returns></returns>
-        public TypeInstruction AwaitCall(IDSharpMethodInfo method)
+        public CallingInstruction AwaitCall(IDSharpMethodInfo method)
         {
             CheckAccess(method);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.AwaitCall, method);
+            return CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.AwaitCall, method);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.CallInstance"/>
         /// </summary>
         /// <param name="method">Method that needs to call</param>
         /// <returns></returns>
-        public TypeInstruction CallInstance(IDSharpMethodInfo method)
+        public CallingInstruction CallInstance(IDSharpMethodInfo method)
         {
             CheckAccess(method);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.CallInstance, method);
+            return CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.CallInstance, method);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.CallBaseInstance"/>
         /// </summary>
         /// <param name="method">Method that needs to call</param>
         /// <returns></returns>
-        public TypeInstruction CallBaseInstance(IDSharpMethodInfo method)
+        public CallingInstruction CallBaseInstance(IDSharpMethodInfo method)
         {
             CheckAccess(method);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.CallBaseInstance, method);
+            var instruction = CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.CallInstance, method);
+            instruction.RequestDefaultCalling = true;
+
+            return instruction;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.AwaitCallInstance"/>
         /// </summary>
         /// <param name="method">Method that needs to call</param>
         /// <returns></returns>
-        public TypeInstruction AwaitCallInstance(IDSharpMethodInfo method)
+        public CallingInstruction AwaitCallInstance(IDSharpMethodInfo method)
         {
             CheckAccess(method);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.AwaitCallInstance, method);
+            return CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.AwaitCallInstance, method);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.AwaitCallBaseInstance"/>
         /// </summary>
         /// <param name="method">Method that needs to call</param>
         /// <returns></returns>
-        public TypeInstruction AwaitCallBaseInstance(IDSharpMethodInfo method)
+        public CallingInstruction AwaitCallBaseInstance(IDSharpMethodInfo method)
         {
             CheckAccess(method);
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.AwaitCallBaseInstance, method);
+            var instruction = CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.AwaitCallInstance, method);
+            instruction.RequestDefaultCalling = true;
+
+            return instruction;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.GenericCall"/>
         /// </summary>
         /// <param name="info">Method or function that needs to call</param>
         /// <returns></returns>
-        public GenericCallingInstruction GenericCall(DSharpMethodCallingInfo info)
+        public CallingInstruction GenericCall(DSharpMethodCallingInfo info)
         {
             CheckAccess(info.Method);
-            return CreateInstruction<GenericCallingInstruction>(this, DSharpBytecodeOperation.GenericCall, info);
+            return CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.GenericCall, info);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.AwaitGenericCall"/>
         /// </summary>
         /// <param name="info">Method or function that needs to call</param>
         /// <returns></returns>
-        public GenericCallingInstruction AwaitGenericCall(DSharpMethodCallingInfo info)
+        public CallingInstruction AwaitGenericCall(DSharpMethodCallingInfo info)
         {
             CheckAccess(info.Method);
-            return CreateInstruction<GenericCallingInstruction>(this, DSharpBytecodeOperation.AwaitGenericCall, info);
+            return CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.AwaitGenericCall, info);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.GenericCallInstance"/>
         /// </summary>
         /// <param name="info">Method that needs to call</param>
         /// <returns></returns>
-        public GenericCallingInstruction GenericCallInstance(DSharpMethodCallingInfo info)
+        public CallingInstruction GenericCallInstance(DSharpMethodCallingInfo info)
         {
             CheckAccess(info.Method);
-            return CreateInstruction<GenericCallingInstruction>(this, DSharpBytecodeOperation.GenericCallInstance, info);
+            return CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.GenericCallInstance, info);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.GenericCallBaseInstance"/>
         /// </summary>
         /// <param name="info">Method that needs to call</param>
         /// <returns></returns>
-        public GenericCallingInstruction GenericCallBaseInstance(DSharpMethodCallingInfo info)
+        public CallingInstruction GenericCallBaseInstance(DSharpMethodCallingInfo info)
         {
             CheckAccess(info.Method);
-            return CreateInstruction<GenericCallingInstruction>(this, DSharpBytecodeOperation.GenericCallBaseInstance, info);
+            var instruction = CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.GenericCallInstance, info);
+            instruction.RequestDefaultCalling = true;
+
+            return instruction;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.AwaitGenericCallInstance"/>
         /// </summary>
         /// <param name="info">Method that needs to call</param>
         /// <returns></returns>
-        public GenericCallingInstruction AwaitGenericCallInstance(DSharpMethodCallingInfo info)
+        public CallingInstruction AwaitGenericCallInstance(DSharpMethodCallingInfo info)
         {
             CheckAccess(info.Method);
-            return CreateInstruction<GenericCallingInstruction>(this, DSharpBytecodeOperation.AwaitGenericCallInstance, info);
+            return CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.AwaitGenericCallInstance, info);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.AwaitGenericCallBaseInstance"/>
         /// </summary>
         /// <param name="info">Method that needs to call</param>
         /// <returns></returns>
-        public GenericCallingInstruction AwaitGenericCallBaseInstance(DSharpMethodCallingInfo info)
+        public CallingInstruction AwaitGenericCallBaseInstance(DSharpMethodCallingInfo info)
         {
             CheckAccess(info.Method);
-            return CreateInstruction<GenericCallingInstruction>(this, DSharpBytecodeOperation.AwaitGenericCallBaseInstance, info);
+            var instruction = CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.AwaitGenericCallInstance, info);
+            instruction.RequestDefaultCalling = true;
+
+            return instruction;
         }
 
-        public TypeInstruction CallAuto(IDSharpMethodInfo method, bool isAwait, ref DSharpMethodCompileSettings settings)
+        public Instruction CallAuto(IDSharpMethodInfo method, bool isAwait, ref DSharpMethodCompileSettings settings)
         {
             return CallAuto(method, isAwait, settings.NextNonVirtualizedAccess);
         }
-        public TypeInstruction CallAuto(IDSharpMethodInfo method, bool isAwait = false, bool nextNonVirtualizedAccess = false)
+        public Instruction CallAuto(IDSharpMethodInfo method, bool isAwait = false, bool nextNonVirtualizedAccess = false)
         {
             bool isStatic = method.IsStatic ||
                             method.DeclaringType == null;

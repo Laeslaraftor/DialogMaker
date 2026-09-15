@@ -105,13 +105,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             return PushReference(null);
         }
-        public FrameInfo PushNull()
-        {
-            var frame = AllocateSized(DSharpStackValueType.Null, sizeof(nint));
-            *(nint*)frame->StackPointer = 0;
-
-            return *frame;
-        }
+        public FrameInfo PushNull() => *AllocateSized(DSharpStackValueType.Null, 0);
         public void Push(byte value) => PushNumber(_runtimeInformationProvider.Byte, value);
         public void Push(sbyte value) => PushNumber(_runtimeInformationProvider.SByte, value);
         public void Push(short value) => PushNumber(_runtimeInformationProvider.Int16, value);
@@ -323,15 +317,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 throw new ArgumentException($"Unsupported literal value ({literalValue.Type})", nameof(literalValue));
             }
         }
-        public void PushReference(nint value) => PushReference((DSharpObject*)value);
-        public FrameInfo PushReference(DSharpObject* value, bool force = false)
+        public void PushReference(nint value, bool isPointerToPointer = false) => PushReference((DSharpObject*)value, isPointerToPointer: isPointerToPointer);
+        public FrameInfo PushReference(DSharpObject* value, bool force = false, bool isPointerToPointer = false)
         {
-            if (value != null && !value->IsReferenceObject && !force)
+            if (!isPointerToPointer && value != null && !value->IsReferenceObject && !force)
             {
                 return PushStructure(value, true);
             }
 
-            return *AllocateValue(DSharpStackValueType.Reference, (nint)value);
+            var frame = AllocateValue(DSharpStackValueType.Reference, (nint)value);
+
+            if (isPointerToPointer)
+            {
+                frame->Mode = DSharpStackValueMode.PointerToPointer;
+            }
+
+            return *frame;
         }
         public DSharpMethodExecutor* PushMethodExecutor(DSharpRuntimeMethodInfo* methodInfo, int reservedSize = 0, uint scopeOffset = 0)
         {
@@ -802,10 +803,26 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 }
             }
             public readonly bool HasBuffer => Buffer != null;
+            public readonly bool IsPointerToPointer => Mode == DSharpStackValueMode.PointerToPointer;
+            public bool IsNumber
+            {
+                readonly get => Mode == DSharpStackValueMode.Number;
+                set
+                {
+                    if (value)
+                    {
+                        Mode = DSharpStackValueMode.Number;
+                    }
+                    else if (Mode == DSharpStackValueMode.Number)
+                    {
+                        Mode = DSharpStackValueMode.Default;
+                    }
+                }
+            }
 
             public DSharpStackValueType ValueType;
+            public DSharpStackValueMode Mode;
             public int Size;
-            public bool IsNumber;
             public nint StackPointer;
             public Buffer* Buffer;
 
@@ -817,28 +834,32 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             public readonly void SetNullValue()
             {
-                byte* values = (byte*)StackPointer;
-
-                for (int i = 0; i < Size; i++)
+                if (Size > 0)
                 {
-                    values[i] = 0;
+                    RuntimeExtensions.FillZero((void*)StackPointer, Size);
                 }
             }
             public readonly void Write(FrameInfo frameWithValue)
             {
-                if (frameWithValue.ValueType == DSharpStackValueType.Null)
+                if (frameWithValue.ValueType == DSharpStackValueType.Null ||
+                    0 >= frameWithValue.Size)
                 {
                     SetNullValue();
                     return;
                 }
 
-                byte* source = (byte*)frameWithValue.StackPointer;
+                Write((void*)frameWithValue.StackPointer, frameWithValue.Size);
+            }
+            public readonly void Write(void* source, int sourceSize)
+            {
+                if (Size == 0)
+                {
+                    return;
+                }
+
                 byte* destination = (byte*)StackPointer;
 
-                for (int i = 0; i < Math.Min(Size, frameWithValue.Size); i++)
-                {
-                    destination[i] = source[i];
-                }
+                System.Buffer.MemoryCopy(source, destination, Size, Math.Min(Size, sourceSize));
             }
             public readonly void Write<T>(int index, T value) where T : unmanaged
             {
@@ -900,6 +921,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 {
                     return 0;
                 }
+                if (IsPointerToPointer)
+                {
+                    return **(nint**)StackPointer;
+                }
 
                 return *(nint*)StackPointer;
             }
@@ -915,6 +940,41 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 }
 
                 return null;
+            }
+            public readonly bool WhiteAsObject(DSharpObject* instance)
+            {
+                if (instance == null)
+                {
+                    if (ValueType == DSharpStackValueType.Structure)
+                    {
+                        var type = ObjectType;
+                        SetNullValue();
+                        DSharpObjectsContainer.CreateStructure(type, new(StackPointer, Size), false);
+                        return true;
+                    }
+                    else if (ValueType == DSharpStackValueType.Reference)
+                    {
+                        SetNullValue();
+                        return true;
+                    }
+                }
+                else
+                {
+                    if (ValueType == DSharpStackValueType.Structure &&
+                        instance->Type->IsValueType)
+                    {
+                        Write(instance, DSharpObject.GetTotalSize(instance));
+                        return true;
+                    }
+                    else if (ValueType == DSharpStackValueType.Reference &&
+                             instance->IsReferenceObject)
+                    {
+                        Write((nint)instance);
+                        return true;
+                    }
+                }
+
+                return false;
             }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public readonly void Clear()

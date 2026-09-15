@@ -49,7 +49,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 variable->Buffer.Write(stackValue);
             }
 
-            variable->Buffer.IsNumber = stackValue.IsNumber;
+            variable->Buffer.Mode = stackValue.Mode;
 
             return DSharpMethodExecutionCallback.Complete();
         }

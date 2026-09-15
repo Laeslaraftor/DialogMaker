@@ -26,14 +26,38 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
         /// Parse source code and create script with specified name
         /// </summary>
         /// <param name="scriptName">Name of parsing script</param>
+        /// <param name="filePath">Path to file that contains specified source code</param>
         /// <param name="sourceCode">D# source code</param>
         /// <returns>Parsed script</returns>
-        public DSharpScript Parse(string scriptName, string sourceCode)
+        public DSharpScript Parse(string scriptName, string? filePath, string sourceCode)
         {
             _stream.Position = 0;
-            _lexer.Tokenize(sourceCode);
+            _lexer.Tokenize(filePath, sourceCode);
 
             return Parse(scriptName, _stream);
+        }
+        /// <summary>
+        /// Parse source code and create script with specified name
+        /// </summary>
+        /// <param name="scriptName">Name of parsing script</param>
+        /// <param name="filePath">Path to file that contains source code</param>
+        /// <returns>Parsed script</returns>
+        public DSharpScript ParseFromFile(string scriptName, string filePath)
+        {
+            _stream.Position = 0;
+            _lexer.TokenizeFromFile(filePath);
+
+            return Parse(scriptName, _stream);
+        }
+        /// <summary>
+        /// Parse source code and create script with specified name
+        /// </summary>
+        /// <param name="filePath">Path to file that contains source code</param>
+        /// <returns>Parsed script</returns>
+        public DSharpScript ParseFromFile(string filePath)
+        {
+            var fileName = filePath.GetFileName();
+            return ParseFromFile(fileName, filePath);
         }
 
         #endregion
@@ -52,6 +76,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
             lexer.Tokenize(sourceCode);
 
             return ParseScript(scriptName, lexer);
+        }
+        /// <summary>
+        /// Parse source code and create script with specified name
+        /// </summary>
+        /// <param name="scriptName">Name of parsing script</param>
+        /// <param name="sourceCode">D# source code</param>
+        /// <returns>Parsed script</returns>
+        public static DSharpScript ParseScript(string filePath)
+        {
+            DSharpLexer lexer = new();
+            var fileName = filePath.GetFileName();
+            lexer.TokenizeFromFile(filePath);
+
+            return ParseScript(fileName, lexer);
         }
         /// <summary>
         /// Parse source code and create script with specified name
