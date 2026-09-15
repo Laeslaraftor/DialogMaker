@@ -3,7 +3,7 @@
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
     /// <summary>
-    /// Base implementation of instruction executor that have property metadata token as single argument
+    /// Implementation of instruction executor that have property metadata token as single argument
     /// </summary>
     public unsafe abstract class DSharpPropertyInstructionExecutor : DSharpCallingInstructionExecutor<DSharpRuntimePropertyInfo>
     {
@@ -43,7 +43,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 return context.ThrowExecutionException($"Trying to access property \"{property->ToString()}\" without implementation");
             }
 
-            var args = DSharpMethodInstructionExecutor.CreateArguments(context, accessor, 0);
+            var args = DSharpCallInstructionExecutor.CreateArguments(context, accessor, 0);
 
             return DSharpMethodExecutionCallback.Call(instance, accessor, args);
         }

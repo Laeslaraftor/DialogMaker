@@ -25,6 +25,10 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// </summary>
         public DSharpMethodBuilder? ToStringMethod { get; set; }
         /// <summary>
+        /// Method that override <c>GetHashCode</c> and return hash code of current value
+        /// </summary>
+        public DSharpMethodBuilder? GetHashCodeMethod { get; set; }
+        /// <summary>
         /// Constructor for initializing enum value
         /// </summary>
         public DSharpMethodBuilder? ValueConstructor { get; set; }

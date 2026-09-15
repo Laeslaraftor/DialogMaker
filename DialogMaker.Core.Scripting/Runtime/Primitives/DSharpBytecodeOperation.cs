@@ -129,50 +129,12 @@ namespace DialogMaker.Core.Scripting.Runtime
         [Executor(typeof(DSharpStorePropertyInstructionExecutor))]
         StoreProperty,
         /// <summary>
-        /// Store last value from stack to object instance property.
-        /// Stack:
-        /// 0: instance
-        /// 1: value
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(2)]
-        [Executor(typeof(DSharpStorePropertyInstructionExecutor))]
-        StoreInstanceProperty,
-        /// <summary>
-        /// Store last value from stack to object instance property without searching overriding member. 
-        /// Stack:
-        /// 0: instance
-        /// 1: value
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(2)]
-        [Executor(typeof(DSharpStorePropertyInstructionExecutor))]
-        StoreBaseInstanceProperty,
-        /// <summary>
         /// Load value from static property to stack.
         /// </summary>
         [ArgsCount(1)]
         [RequestsStackValues(0)]
         [Executor(typeof(DSharpLoadPropertyInstructionExecutor))]
         LoadProperty,
-        /// <summary>
-        /// Load value from object instance property to stack.
-        /// Stack:
-        /// 0: instance
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(1)]
-        [Executor(typeof(DSharpLoadPropertyInstructionExecutor))]
-        LoadInstanceProperty,
-        /// <summary>
-        /// Load value from object instance property to stack without searching overriding member. 
-        /// Stack:
-        /// 0: instance
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(1)]
-        [Executor(typeof(DSharpLoadPropertyInstructionExecutor))]
-        LoadBaseInstanceProperty,
 
         /// <summary>
         /// Store last value from stack to object instance indexer.
@@ -185,16 +147,6 @@ namespace DialogMaker.Core.Scripting.Runtime
         [Executor(typeof(DSharpStorePropertyInstructionExecutor))]
         StoreIndexer,
         /// <summary>
-        /// Store last value from stack to object instance indexer without searching overriding member. 
-        /// Stack:
-        /// 0: instance
-        /// 1: value
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(-3)]
-        [Executor(typeof(DSharpStorePropertyInstructionExecutor))]
-        StoreBaseIndexer,
-        /// <summary>
         /// Load value from object instance indexer to stack.
         /// Stack:
         /// 0: instance
@@ -203,15 +155,6 @@ namespace DialogMaker.Core.Scripting.Runtime
         [RequestsStackValues(-2)]
         [Executor(typeof(DSharpLoadPropertyInstructionExecutor))]
         LoadIndexer,
-        /// <summary>
-        /// Load value from object instance indexer to stack without searching overriding member. 
-        /// Stack:
-        /// 0: instance
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpLoadPropertyInstructionExecutor))]
-        LoadBaseIndexer,
 
         /// <summary>
         /// Load current object instance to stack
@@ -284,115 +227,8 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(1)]
         [RequestsStackValues(-1)]
-        [Executor(typeof(DSharpMethodInstructionExecutor))]
+        [Executor(typeof(DSharpCallInstructionExecutor))]
         Call,
-        /// <summary>
-        /// Call and await function or static method.
-        /// Stack:
-        /// 0: args...
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(-1)]
-        [Executor(typeof(DSharpMethodInstructionExecutor))]
-        AwaitCall,
-        /// <summary>
-        /// Call method from instance of object that must be placed in bottom of stack. 
-        /// Stack:
-        /// 0: instance,
-        /// 1: args...
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpMethodInstructionExecutor))]
-        CallInstance,
-        /// <summary>
-        /// Call method from instance of object that must be placed in bottom of stack without searching overriding member. 
-        /// Stack:
-        /// 0: instance,
-        /// 1: args...
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpMethodInstructionExecutor))]
-        CallBaseInstance,
-        /// <summary>
-        /// Call and await method from instance of object that must be placed in bottom of stack. 
-        /// Stack:
-        /// 0: instance,
-        /// 1: args...
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpMethodInstructionExecutor))]
-        AwaitCallInstance,
-        /// <summary>
-        /// Call and await method from instance of object that must be placed in bottom of stack without searching overriding member. 
-        /// Stack:
-        /// 0: instance,
-        /// 1: args...
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpMethodInstructionExecutor))]
-        AwaitCallBaseInstance,
-        /// <summary>
-        /// Call generic function or static generic method.
-        /// Stack:
-        /// 0: args...
-        /// </summary>
-        [ArgsCount(-2)]
-        [RequestsStackValues(-1)]
-        [Executor(typeof(DSharpMethodInstructionExecutor))]
-        GenericCall,
-        /// <summary>
-        /// Call and await generic function or static generic method.
-        /// Stack:
-        /// 0: args...
-        /// </summary>
-        [ArgsCount(-2)]
-        [RequestsStackValues(-1)]
-        [Executor(typeof(DSharpMethodInstructionExecutor))]
-        AwaitGenericCall,
-        /// <summary>
-        /// Call generic method from instance of object that must be placed in bottom of stack. 
-        /// Stack:
-        /// 0: instance,
-        /// 1: args...
-        /// </summary>
-        [ArgsCount(-2)]
-        [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpMethodInstructionExecutor))]
-        GenericCallInstance,
-        /// <summary>
-        /// Call generic method from instance of object that must be placed in bottom of stack without searching overriding member. 
-        /// Stack:
-        /// 0: instance,
-        /// 1: args...
-        /// </summary>
-        [ArgsCount(-2)]
-        [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpMethodInstructionExecutor))]
-        GenericCallBaseInstance,
-        /// <summary>
-        /// Call and await generic method from instance of object that must be placed in bottom of stack. 
-        /// Stack:
-        /// 0: instance,
-        /// 1: args...
-        /// </summary>
-        [ArgsCount(-2)]
-        [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpMethodInstructionExecutor))]
-        AwaitGenericCallInstance,
-        /// <summary>
-        /// Call and await generic method from instance of object that must be placed in bottom of stack without searching overriding member. 
-        /// Stack:
-        /// 0: instance,
-        /// 1: args...
-        /// </summary>
-        [ArgsCount(-2)]
-        [RequestsStackValues(-2)]
-        [Executor(typeof(DSharpMethodInstructionExecutor))]
-        AwaitGenericCallBaseInstance,
 
         /// <summary>
         /// Jump to instruction on index that stores in stack last value

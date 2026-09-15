@@ -208,7 +208,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             var messageInstance = ObjectsContainer.CreateString(message);
             Stack.PushReference(messageInstance);
-            var args = DSharpMethodInstructionExecutor.CreateArguments(this, runtimeThrowMethod);
+            var args = DSharpCallInstructionExecutor.CreateArguments(this, runtimeThrowMethod);
 
             return DSharpMethodExecutionCallback.Call(null, runtimeThrowMethod, args);
         }

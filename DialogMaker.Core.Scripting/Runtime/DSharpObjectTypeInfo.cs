@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core.Scripting.Runtime
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
     /// Information about object type
@@ -40,15 +42,51 @@
         {
             var type = assembly.GetType(DSharpBuildInTypes.Object);
             var instanceEqualsMethod = type.GetMethods().FirstOrDefault(m => m.Name == "Equals")
-                ?? throw new InvalidOperationException($"Unable to find static Equals(object) method in \"{type}\"");
+                ?? throw new InvalidOperationException($"Unable to find Equals(object) method in \"{type}\"");
             var toStringMethod = type.GetMethods().FirstOrDefault(m => m.Name == "ToString")
-                ?? throw new InvalidOperationException($"Unable to find static Equals(object, object) method in \"{type}\"");
-            var getHashCodeMethod = type.GetMethods().FirstOrDefault(m => m.Name == "GetHashCode")
-                ?? throw new InvalidOperationException($"Unable to find static Equals(object, object) method in \"{type}\"");
+                ?? throw new InvalidOperationException($"Unable to find ToString method in \"{type}\"");
+
+            if (!TryFindGetHashCode(type, out var getHashCodeMethod))
+            {
+                throw new InvalidOperationException($"Unable to find GetHashCode method in \"{type}\"");
+            }
+
             var equalsMethod = type.GetMethods().FirstOrDefault(m => m.Name == "Equals" && m.IsStatic)
                 ?? throw new InvalidOperationException($"Unable to find static Equals(object, object) method in \"{type}\"");
 
             return new(type, toStringMethod, instanceEqualsMethod, getHashCodeMethod, equalsMethod);
+        }
+
+        /// <summary>
+        /// Try to find GetHashCode in specified type
+        /// </summary>
+        /// <param name="type">Type for searching GetHashCode method</param>
+        /// <param name="result">GetHashCode method that was found</param>
+        /// <returns>Is GetHashCode method successfully found</returns>
+        public static bool TryFindGetHashCode(IDSharpType? type, [NotNullWhen(true)] out IDSharpMethodInfo? result)
+        {
+            result = null;
+
+            while (type != null)
+            {
+                result = type.GetMethods().FirstOrDefault(m => m.Name == "GetHashCode");
+
+                if (result != null)
+                {
+                    return true;
+                }
+
+                var baseType = type.GetBaseTypes().FirstOrDefault(t => t.ObjectType != DSharpObjectType.Interface);
+
+                if (baseType == type)
+                {
+                    return false;
+                }
+
+                type = baseType;
+            }
+
+            return false;
         }
 
         #endregion

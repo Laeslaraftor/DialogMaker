@@ -17,19 +17,13 @@ namespace DialogMaker.Core.Scripting.Compiler
             DSharpBytecodeOperation.StoreField,
             DSharpBytecodeOperation.StoreInstanceField,
             DSharpBytecodeOperation.StoreProperty,
-            DSharpBytecodeOperation.StoreInstanceProperty,
-            DSharpBytecodeOperation.StoreBaseInstanceProperty,
-            DSharpBytecodeOperation.StoreIndexer,
-            DSharpBytecodeOperation.StoreBaseIndexer
+            DSharpBytecodeOperation.StoreIndexer
         ]);
         private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _loadMemberOperations = new([
             DSharpBytecodeOperation.LoadField,
             DSharpBytecodeOperation.LoadInstanceField,
             DSharpBytecodeOperation.LoadProperty,
-            DSharpBytecodeOperation.LoadInstanceProperty,
-            DSharpBytecodeOperation.LoadBaseInstanceProperty,
-            DSharpBytecodeOperation.LoadIndexer,
-            DSharpBytecodeOperation.LoadBaseIndexer
+            DSharpBytecodeOperation.LoadIndexer
         ]);
         private static readonly Range _uselessPopCombinationsRange = new(0, 5);
         private static readonly ReadOnlyCollection<UselessCombination> _uselessCombinations = new([

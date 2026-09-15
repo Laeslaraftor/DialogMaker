@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
-using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
+﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
 using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
@@ -25,12 +24,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// </summary>
         public UnmanagedArray<char> Name;
         /// <summary>
-        /// Type of method
-        /// </summary>
-        /// <summary>
         /// Member access modifier
         /// </summary>
         public DSharpAccessModifier Access;
+        /// <summary>
+        /// Type of method
+        /// </summary>
         public DSharpMethodType MethodType;
         /// <summary>
         /// Is method abstract
@@ -98,7 +97,38 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 return "Nameless method";
             }
 
-            return declaringType + new string((ReadOnlySpan<char>)Name);
+            declaringType += new string((ReadOnlySpan<char>)Name);
+
+            if (GenericTypes.Length > 0)
+            {
+                declaringType += '<';
+
+                for (int i = 0; i < GenericTypes.Length; i++)
+                {
+                    if (i > 0)
+                    {
+                        declaringType += ", ";
+                    }
+
+                    declaringType += ((DSharpRuntimeTypeInfo*)GenericTypes[i])->ToString();
+                }
+
+                declaringType += '>';
+            }
+
+            declaringType += '(';
+
+            for (int i = 0; i < ParametersType.Length; i++)
+            {
+                if (i > 0)
+                {
+                    declaringType += ", ";
+                }
+
+                declaringType += ParametersType[i].Type->ToString();
+            }
+
+            return declaringType + ')';
         }
 
         #region Static

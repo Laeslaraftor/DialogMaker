@@ -100,7 +100,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                     return DSharpMethodExecutionCallback.Complete();
                 }
 
-                return DSharpMethodInstructionExecutor.Call(instruction, ref context, new()
+                return DSharpCallInstructionExecutor.Call(instruction, ref context, new()
                 {
                     CallingType = DSharpMethodCallingType.Default,
                     Member = convertOperator

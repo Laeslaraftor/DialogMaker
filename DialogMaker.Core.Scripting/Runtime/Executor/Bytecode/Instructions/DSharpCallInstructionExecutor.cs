@@ -3,9 +3,9 @@
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
     /// <summary>
-    /// Base implementation of instruction executor that have method metadata token as single argument
+    /// Executor of <see cref="DSharpBytecodeOperation.Call"/> operation
     /// </summary>
-    public unsafe class DSharpMethodInstructionExecutor : DSharpCallingInstructionExecutor<DSharpRuntimeMethodInfo>
+    public unsafe class DSharpCallInstructionExecutor : DSharpCallingInstructionExecutor<DSharpRuntimeMethodInfo>
     {
         #region Controls
 
@@ -42,9 +42,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         #region Static
 
         /// <summary>
-        /// Global instance of method instructions executor
+        /// Global instance of <see cref="DSharpBytecodeOperation.Call"/> operation executor
         /// </summary>
-        public static readonly DSharpMethodInstructionExecutor Instance = new();
+        public static readonly DSharpCallInstructionExecutor Instance = new();
 
         internal static DSharpMethodExecutionCallback Call(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, CallingExecutionParameters parameters, uint extraScopeOffset = 0)
         {

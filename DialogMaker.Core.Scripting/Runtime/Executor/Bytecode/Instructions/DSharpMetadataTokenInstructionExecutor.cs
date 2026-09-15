@@ -106,7 +106,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 return context.ThrowExecutionException($"Unable to get value from property \"{property->ToString()}\" because it have not getter");
             }
 
-            var args = DSharpMethodInstructionExecutor.CreateArguments(context, accessor, 0);
+            var args = DSharpCallInstructionExecutor.CreateArguments(context, accessor, 0);
 
             return DSharpMethodExecutionCallback.Call(instance, accessor, args);
         }

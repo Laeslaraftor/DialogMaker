@@ -160,6 +160,11 @@ namespace DialogMaker.Core.Scripting.Compiler
             description.ToStringMethod.ReturnType = Assembly.StringToken;
             description.ToStringMethod.OverrideMethod = Assembly.ObjectTypeInfo.ToStringMethod;
 
+            description.GetHashCodeMethod ??= type.CreateMethod(nameof(GetHashCode));
+            description.GetHashCodeMethod.Access = DSharpAccessModifier.Public;
+            description.GetHashCodeMethod.ReturnType = Assembly.Int32Token;
+            description.GetHashCodeMethod.OverrideMethod = Assembly.ObjectTypeInfo.GetHashCodeMethod;
+
             description.ExplicitEnumToValueOperator = type.CreateExplicitOperator();
             description.ExplicitEnumToValueOperator.ReturnType = type;
             SetupParameters(description.ExplicitEnumToValueOperator.Parameters, ("value", valueTypeToken));
@@ -175,6 +180,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             CompileEnumExplicitValueToEnumOperator(description);
             CompileEnumValues(description);
             CompileEnumToString(description);
+            CompileEnumGetHashCode(description);
         }
 
         private void CompileEnumValueConstructor(DSharpCompilerEnumDescription description)
@@ -289,6 +295,39 @@ namespace DialogMaker.Core.Scripting.Compiler
                 valueIndex++;
             }
         }
+        private void CompileEnumGetHashCode(DSharpCompilerEnumDescription description)
+        {
+            if (description.InstanceValueField == null)
+            {
+                throw new DSharpCompilerException("Enum instance value not found", description.DeclarationNode);
+            }
+            if (description.InstanceValueField.FieldType == null)
+            {
+                throw new DSharpCompilerException("Enum instance value type not specified", description.DeclarationNode);
+            }
+            if (description.GetHashCodeMethod == null)
+            {
+                throw new DSharpCompilerException("Enum GetHashCode method not found", description.DeclarationNode);
+            }
+
+            var code = description.GetHashCodeMethod.GetBytecodeBuilder();
+            var instanceValueField = description.InstanceValueField;
+            var instanceValueFieldType = (IDSharpType)Assembly.GetType(instanceValueField.FieldType);
+
+            code.LoadInstance();
+            code.LoadField(instanceValueField);
+            
+            if (DSharpObjectTypeInfo.TryFindGetHashCode(instanceValueFieldType, out var getHashCodeMethod))
+            {
+                code.Call(getHashCodeMethod);
+            }
+            else
+            {
+                code.Call(Assembly.ObjectTypeInfo.GetHashCodeMethod);
+            }
+
+            code.Return();
+        }
         private void CompileEnumToString(DSharpCompilerEnumDescription description)
         {
             if (description.InstanceValueField == null)
@@ -301,7 +340,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             if (description.ToStringMethod == null)
             {
-                throw new DSharpCompilerException("Enum to string method not found", description.DeclarationNode);
+                throw new DSharpCompilerException("Enum ToString method not found", description.DeclarationNode);
             }
 
             var valueType = (IDSharpType)Assembly.GetType(description.InstanceValueField.FieldType);
@@ -311,7 +350,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             if (description.ValueFields == null)
             {
                 code.LoadInstance();
-                code.CallBaseInstance(Assembly.ObjectTypeInfo.ToStringMethod);
+                code.Call(Assembly.ObjectTypeInfo.ToStringMethod, DSharpMethodCallingType.Default);
                 return;
             }
 

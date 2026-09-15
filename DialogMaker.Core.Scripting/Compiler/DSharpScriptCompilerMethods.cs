@@ -168,15 +168,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                 CompileValueExpression(method, parameter, ref settings, null, context);
             }
 
+            DSharpMethodCallingType callingType = DSharpMethodCallingType.Virtual;
+
             if (node.Type == DSharpConstructorType.BaseInvocation)
             {
-                code.CallBaseInstance(constructor);
-            }
-            else
-            {
-                code.CallInstance(constructor);
+                callingType = DSharpMethodCallingType.Default;
             }
 
+            code.Call(constructor, callingType);
             code.Pop();
         }
 
@@ -343,7 +342,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     code.Equals();
                     var skipCallingInstruction = code.JumpIfTrue();
                     code.PopRepeat(2);
-                    code.CallInstance(info.Value);
+                    code.Call(info.Value);
                     code.Pop();
                     code.SkipNext();
                     skipCallingInstruction.ReferencedInstruction = code.PopRepeat(3);
@@ -500,7 +499,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 code.Equals();
                 var skipCallingInstruction = code.JumpIfTrue();
                 code.PopRepeat(2);
-                code.CallInstance(disposeMethod);
+                code.Call(disposeMethod);
                 code.Pop();
                 code.SkipNext();
                 skipCallingInstruction.ReferencedInstruction = code.PopRepeat(3);
@@ -797,13 +796,13 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 var enumeratorVariable = GetCustomVariable($"foreachEnumerator_{statement.Line}_{statement.Column}", getEnumeratorMethod.ReturnType!, ref settings);
 
-                code.CallInstance(getEnumeratorMethod);
+                code.Call(getEnumeratorMethod);
                 code.PopOffset(1);
                 code.StoreLocal(enumeratorVariable);
-                code.CallInstance(enumerator.ResetMethod);
+                code.Call(enumerator.ResetMethod);
                 code.SkipNext();
                 var moveNextOperation = code.LoadLocal(enumeratorVariable);
-                code.CallInstance(enumerator.MoveNextMethod);
+                code.Call(enumerator.MoveNextMethod);
                 var skipIteration = code.JumpIfFalse();
                 code.Pop();
                 code.LoadPropertyOrField(enumerator.CurrentProperty);
@@ -826,7 +825,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 if (DSharpIDisposableType.TryGetDisposeMethod(enumeratorVariable.Type, out var disposeMethod))
                 {
                     code.LoadLocal(enumeratorVariable);
-                    code.CallInstance(disposeMethod);
+                    code.Call(disposeMethod);
                     code.Pop();
                 }
 

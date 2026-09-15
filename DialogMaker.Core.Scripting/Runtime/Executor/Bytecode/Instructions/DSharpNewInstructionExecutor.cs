@@ -62,7 +62,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
                 if (constructor->ParametersType.Length > 0)
                 {
-                    args = DSharpMethodInstructionExecutor.CreateArguments(context, constructor, 1);
+                    args = DSharpCallInstructionExecutor.CreateArguments(context, constructor, 1);
                 }
 
                 return DSharpMethodExecutionCallback.InitializeObject(newInstance, constructor, args);

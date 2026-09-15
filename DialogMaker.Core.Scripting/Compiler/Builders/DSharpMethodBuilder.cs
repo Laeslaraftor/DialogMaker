@@ -489,7 +489,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 {
                     continue;
                 }
-                
+
                 if (TryFillToken(parameter.Type, out var parameterType, out var filled))
                 {
                     Add(parameterType, filled);
@@ -507,26 +507,34 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             var code = GetBytecodeBuilder();
 
+            bool TryAddOrFill(IDSharpMemberInfo member)
+            {
+                if (member is IDSharpType typeMember)
+                {
+                    if (TryFill(typeMember, out var filledType))
+                    {
+                        Add(typeMember, filledType);
+                        return true;
+                    }
+                }
+
+                var replacedMember = member.Replace(Assembly, result);
+
+                if (replacedMember != member)
+                {
+                    Add(member, replacedMember);
+                    return true;
+                }
+
+                return false;
+            }
+
             foreach (var instruction in code.Instructions)
             {
                 if (instruction is DSharpBytecodeBuilder.TypeInstruction typeInstruction &&
                     !result.ContainsKey(typeInstruction.MemberInfo))
                 {
-                    if (typeInstruction.MemberInfo is IDSharpType typeMember)
-                    {
-                        if (TryFill(typeMember, out var filledType))
-                        {
-                            Add(typeMember, filledType);
-                            continue;
-                        }
-                    }
-
-                    var member = typeInstruction.MemberInfo.Replace(Assembly, result);
-                    
-                    if (member != typeInstruction.MemberInfo)
-                    {
-                        Add(typeInstruction.MemberInfo, member);
-                    }
+                    TryAddOrFill(typeInstruction.MemberInfo);
                 }
                 else if (instruction is DSharpBytecodeBuilder.TypedReferenceInstruction typedReferenceInstruction &&
                          !result.ContainsKey(typedReferenceInstruction.Type) &&
@@ -548,6 +556,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                                 Add(callingGeneric, newCallingGeneric);
                             }
                         }
+                    }
+                    else
+                    {
+                        TryAddOrFill(genericCallingInstruction.AccessedMember);
                     }
                 }
             }
