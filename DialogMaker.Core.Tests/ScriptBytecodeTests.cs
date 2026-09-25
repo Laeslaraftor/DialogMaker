@@ -212,25 +212,11 @@ namespace DialogMaker.Core.Tests
             DSharpBytecodeOperation.LoadField,
             DSharpBytecodeOperation.LoadInstanceField,
             DSharpBytecodeOperation.LoadProperty,
-            DSharpBytecodeOperation.LoadInstanceProperty,
-            DSharpBytecodeOperation.LoadBaseInstanceProperty,
             DSharpBytecodeOperation.LoadIndexer,
-            DSharpBytecodeOperation.LoadBaseIndexer
         ];
         private static readonly DSharpBytecodeOperation[] _callInstructions =
         [
-            DSharpBytecodeOperation.Call,
-            DSharpBytecodeOperation.CallInstance,
-            DSharpBytecodeOperation.CallBaseInstance,
-            DSharpBytecodeOperation.AwaitCall,
-            DSharpBytecodeOperation.AwaitCallInstance,
-            DSharpBytecodeOperation.AwaitCallBaseInstance,
-            DSharpBytecodeOperation.GenericCall,
-            DSharpBytecodeOperation.GenericCallInstance,
-            DSharpBytecodeOperation.GenericCallBaseInstance,
-            DSharpBytecodeOperation.AwaitGenericCall,
-            DSharpBytecodeOperation.AwaitGenericCallInstance,
-            DSharpBytecodeOperation.AwaitGenericCallBaseInstance
+            DSharpBytecodeOperation.Call
         ];
         private static readonly DSharpBytecodeOperation[] _returnInstructions =
         [

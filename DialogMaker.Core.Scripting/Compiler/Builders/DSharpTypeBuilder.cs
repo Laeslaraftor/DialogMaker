@@ -653,11 +653,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <summary>
         /// Name for initializer methods
         /// </summary>
-        public const string InitializerName = "init";
+        public const string InitializerName = "<>__Initialize";
         /// <summary>
         /// Name for static initializer methods
         /// </summary>
-        public const string StaticInitializerName = "init_static";
+        public const string StaticInitializerName = "<>__InitializeStatics";
         /// <summary>
         /// Name for all indexers
         /// </summary>
@@ -665,7 +665,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <summary>
         /// Name prefix for all operators
         /// </summary>
-        public const string OperatorPrefixName = "__Operator_";
+        public const string OperatorPrefixName = "<>__Operator_";
 
         #endregion
 

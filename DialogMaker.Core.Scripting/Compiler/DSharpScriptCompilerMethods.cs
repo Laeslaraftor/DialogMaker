@@ -4,6 +4,7 @@ using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
+using MessagePack.Formatters;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -114,8 +115,9 @@ namespace DialogMaker.Core.Scripting.Compiler
                     return code.ExpressionMemberResolver(context, obj);
                 };
             }
-
-            context.Scope = GetScope(method);
+            
+            var scope = GetScope(method);
+            context.Scope = scope;
 
             if (method.MethodType == DSharpMethodType.Constructor &&
                 _createdConstructors.TryGetValue(method, out var node))
@@ -123,6 +125,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 CompileConstructor(method, node, code, ref settings, context);
             }
 
+            CompileLocalFunctions(method, scope, body, settings, context);
             CompileStatement(method, body, 0, code, ref settings, context);
 
             bool alwaysReturns = settings.AlwaysReturn(method);
@@ -280,6 +283,72 @@ namespace DialogMaker.Core.Scripting.Compiler
             if (staticInitializers.Count != 0)
             {
                 CreateInitializers(staticInitializers, true);
+            }
+        }
+
+        private void CompileLocalFunctions(DSharpMethodBuilder method, DSharpCompilerMethodScope scope, BlockStatementNode body, DSharpMethodCompileSettings settings, DSharpCompilerContext context)
+        {
+            Dictionary<string, InvokableNode>? localFunctions = null;
+
+            body.ForEachStatement<InvokableStatementNode>(invokable =>
+            {
+                if (invokable.Invokable == null)
+                {
+                    throw new DSharpCompilerException("Invokable statement should contain invokable node", invokable);
+                }
+                if (invokable.Invokable.Identifier == null)
+                {
+                    throw new DSharpCompilerException("Invokable node should contain identifier", invokable.Invokable);
+                }
+                if (invokable.Invokable.Body == null)
+                {
+                    throw new DSharpCompilerException("Invokable node should contain body", invokable.Invokable);
+                }
+
+                localFunctions ??= [];
+                var functionName = invokable.Invokable.Identifier.Name;
+
+                if (scope.TryGetLocalFunction(functionName, out _) ||
+                    !localFunctions.TryAdd(functionName, invokable.Invokable))
+                {
+                    throw new DSharpCompilerException($"Local function \"{functionName}\" with same name already exist in current context", invokable);
+                }
+
+                return StatementsEnumerationAction.SkipCurrent;
+            });
+
+            if (localFunctions == null)
+            {
+                return;
+            }
+
+            foreach (var info in localFunctions)
+            {
+                var functionName = $"<>_{method.Name}_{info.Key}";
+                DSharpMethodBuilder localFunction;
+
+                if (method.DeclaringType != null)
+                {
+                    if (method.DeclaringType is not DSharpTypeBuilder builder)
+                    {
+                        throw new DSharpCompilerException($"Unable to create local function \"{info.Key}\" in \"{method}\" because method contained not in builder", info.Value);
+                    }
+
+                    localFunction = builder.CreateMethod(functionName);
+                }
+                else
+                {
+                    localFunction = Assembly.CreateGlobalFunction(functionName);
+                }
+
+                localFunction.IsStatic = true;
+                localFunction.Access = DSharpAccessModifier.Private;
+
+                ResolveParameters(info.Value.Parameters, localFunction.Parameters, context);
+
+                scope.LocalFunctions.Add(info.Key, localFunction);
+
+                CompileMethod(localFunction, info.Value.Body!, settings);
             }
         }
 
@@ -1108,9 +1177,9 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 code.Instructions.Add(endInstruction);
             }
-            else
+            else if (statement is not InvokableStatementNode)
             {
-                throw new DSharpCompilerException("Invalid statement in current context", statement);
+                throw new DSharpCompilerException($"Invalid statement in current context ({statement.GetType().Name})", statement);
             }
         }
 
@@ -1256,7 +1325,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                             throw new InvalidOperationException($"Property must contains declaring type {property}: {expression}");
                         }
 
-                        var propertyField = property.DeclaringType.GetFieldOrDefault($"{property.Name}{ValueFieldNameSuffix}")
+                        var propertyField = property.DeclaringType.GetFieldOrDefault(ValueFieldNamePrefix + property.Name)
                             ?? throw new ArgumentException($"Unable to write value to property \"{property}\" because it have not setter: {expression}", nameof(expression));
                         member = propertyField;
                     }

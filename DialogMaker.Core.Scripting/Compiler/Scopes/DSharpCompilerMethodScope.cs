@@ -24,6 +24,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// </summary>
         public List<DSharpMethodBuilderParameter> Variables { get; } = [];
         /// <summary>
+        /// Current scope local functions
+        /// </summary>
+        public Dictionary<string, DSharpMethodBuilder> LocalFunctions { get; } = [];
+        /// <summary>
         /// Is root scope. Root scope contains method parameters as variables
         /// </summary>
         public bool IsRoot { get; set; }

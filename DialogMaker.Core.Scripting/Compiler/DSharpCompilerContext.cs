@@ -1025,8 +1025,14 @@ namespace DialogMaker.Core.Scripting.Compiler
             IEnumerable<IDSharpMemberInfo> members;
             IDSharpType?[]? callingExtensionParameters = null;
             object membersSource;
-
-            if (currentType == null)
+            
+            if (CurrentMember is IDSharpMethodInfo methodMember &&
+                Scope != null && Scope.TryGetLocalFunction(name, out var localFunction))
+            {
+                membersSource = methodMember;
+                members = localFunction.Enumerate();
+            }
+            else if (currentType == null)
             {
                 if (Assembly == null)
                 {

@@ -137,7 +137,19 @@ public class Program
         }
 
         Console.WriteLine();
+        
+        void LocalFunction()
+        {
+            Console.WriteLine("Message from local function");
+            OtherLocalFunction();
 
+            void OtherLocalFunction()
+            {
+                Console.WriteLine("Message from another local function");
+            }
+        } 
+
+        LocalFunction();
         IPlayer player = new ValuePlayer("zeWhite");
 
         for (int i = 0; i < 5; i++)

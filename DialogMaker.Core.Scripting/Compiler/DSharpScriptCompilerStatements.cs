@@ -635,6 +635,26 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         #region Resolving types
 
+        private void ResolveParameters(List<ParameterExpressionNode> variables, IList<DSharpMethodBuilderParameter> parameters, DSharpCompilerContext context)
+        {
+            parameters.Clear();
+
+            foreach (var parameter in variables)
+            {
+                if (parameter.Type == null)
+                {
+                    throw new InvalidOperationException($"Parameter must have a type: {parameter}");
+                }
+
+                parameters.Add(new(Assembly)
+                {
+                    Name = parameter.Name,
+                    Mode = parameter.Mode,
+                    TypeGetter = () => context.ResolveType(parameter.Type)
+                });
+            }
+        }
+
         private void ResolveCreatedTypes()
         {
             T? FindBaseMember<T>(Func<IDSharpType, T> selector, IDSharpType type, Predicate<T>? extraPredicate = null)
@@ -675,25 +695,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 return member;
-            }
-            void ResolveParameters(List<ParameterExpressionNode> variables, IList<DSharpMethodBuilderParameter> parameters, DSharpCompilerContext context)
-            {
-                parameters.Clear();
-
-                foreach (var parameter in variables)
-                {
-                    if (parameter.Type == null)
-                    {
-                        throw new InvalidOperationException($"Parameter must have a type: {parameter}");
-                    }
-
-                    parameters.Add(new(Assembly)
-                    {
-                        Name = parameter.Name,
-                        Mode = parameter.Mode,
-                        TypeGetter = () => context.ResolveType(parameter.Type)
-                    });
-                }
             }
             void OverrideProperty(DSharpPropertyBuilder property, FieldNode node, string memberName, Func<IDSharpType, IDSharpPropertyInfo> selector)
             {

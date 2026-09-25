@@ -616,8 +616,158 @@ namespace DialogMaker.Core.Scripting.Compiler
                 return true;
             }
         }
+        extension(StatementNode statement)
+        {
+            /// <summary>
+            /// Handle all statements in current block.
+            /// It automatically handle other statements blocks
+            /// </summary>
+            /// <param name="handler">Statement handler. It should return value for continuing enumeration (true) or for stopping (false)</param>
+            public void ForEachStatement<T>(Func<T, StatementsEnumerationAction> handler)
+            {
+                statement.ForEachStatement(statement =>
+                {
+                    if (statement is T typedStatement)
+                    {
+                        return handler(typedStatement);
+                    }
+
+                    return StatementsEnumerationAction.Continue;
+                });
+            }
+            /// <summary>
+            /// Handle all statements in current block.
+            /// It automatically handle other statements blocks
+            /// </summary>
+            /// <param name="handler">Statement handler. It should return value for continuing enumeration (true) or for stopping (false)</param>
+            public void ForEachStatement(Func<StatementNode, StatementsEnumerationAction> handler)
+            {
+                if (statement is BlockStatementNode blockStatement)
+                {
+                    blockStatement.ForEachStatement(handler);
+                }
+                else if (statement is TryStatementNode tryStatement)
+                {
+                    tryStatement.ForEachStatement(handler);
+                }
+                else if (statement is IfStatementNode ifStatement)
+                {
+                    ifStatement.ForEachStatement(handler);
+                }
+                else if (statement is InvokableStatementNode invokableStatement)
+                {
+                    invokableStatement.ForEachStatement(handler);
+                }
+                else if (statement is UsingVariableStatementNode usingVariableStatement)
+                {
+                    usingVariableStatement.ForEachStatement(handler);
+                }
+                else if (statement is ForStatementNode forStatement)
+                {
+                    forStatement.ForEachStatement(handler);
+                }
+                else if (statement is ForeachStatementNode foreachStatement)
+                {
+                    foreachStatement.ForEachStatement(handler);
+                }
+                else if (statement is WhileStatementNode whileStatement)
+                {
+                    whileStatement.ForEachStatement(handler);
+                }
+            }
+        }
+        extension(ForStatementNode forStatement)
+        {
+            /// <summary>
+            /// Handle all statements in current block.
+            /// It automatically handle other statements blocks
+            /// </summary>
+            /// <param name="handler">Statement handler. It should return value for continuing enumeration (true) or for stopping (false)</param>
+            public void ForEachStatement(Func<StatementNode, StatementsEnumerationAction> handler)
+            {
+                forStatement.Body?.ForEachStatement(handler);
+            }
+        }
+        extension(ForeachStatementNode foreachStatement)
+        {
+            /// <summary>
+            /// Handle all statements in current block.
+            /// It automatically handle other statements blocks
+            /// </summary>
+            /// <param name="handler">Statement handler. It should return value for continuing enumeration (true) or for stopping (false)</param>
+            public void ForEachStatement(Func<StatementNode, StatementsEnumerationAction> handler)
+            {
+                foreachStatement.Body?.ForEachStatement(handler);
+            }
+        }
+        extension(WhileStatementNode whileStatement)
+        {
+            /// <summary>
+            /// Handle all statements in current block.
+            /// It automatically handle other statements blocks
+            /// </summary>
+            /// <param name="handler">Statement handler. It should return value for continuing enumeration (true) or for stopping (false)</param>
+            public void ForEachStatement(Func<StatementNode, StatementsEnumerationAction> handler)
+            {
+                whileStatement.Body?.ForEachStatement(handler);
+            }
+        }
+        extension(UsingVariableStatementNode usingVariableStatement)
+        {
+            /// <summary>
+            /// Handle all statements in current block.
+            /// It automatically handle other statements blocks
+            /// </summary>
+            /// <param name="handler">Statement handler. It should return value for continuing enumeration (true) or for stopping (false)</param>
+            public void ForEachStatement(Func<StatementNode, StatementsEnumerationAction> handler)
+            {
+                usingVariableStatement.Body?.ForEachStatement(handler);
+            }
+        }
+        extension(InvokableStatementNode invokableStatement)
+        {
+            /// <summary>
+            /// Handle all statements in current block.
+            /// It automatically handle other statements blocks
+            /// </summary>
+            /// <param name="handler">Statement handler. It should return value for continuing enumeration (true) or for stopping (false)</param>
+            public void ForEachStatement(Func<StatementNode, StatementsEnumerationAction> handler)
+            {
+                invokableStatement.Invokable?.Body?.ForEachStatement(handler);
+            }
+        }
+        extension(IfStatementNode ifStatement)
+        {
+            /// <summary>
+            /// Handle all statements in current block.
+            /// It automatically handle other statements blocks
+            /// </summary>
+            /// <param name="handler">Statement handler. It should return value for continuing enumeration (true) or for stopping (false)</param>
+            public void ForEachStatement(Func<StatementNode, StatementsEnumerationAction> handler)
+            {
+                ifStatement.ThenBranch?.ForEachStatement(handler);
+                ifStatement.ElseBranch?.ForEachStatement(handler);
+            }
+        }
         extension(TryStatementNode tryStatement)
         {
+            /// <summary>
+            /// Handle all statements in current block.
+            /// It automatically handle other statements blocks
+            /// </summary>
+            /// <param name="handler">Statement handler. It should return value for continuing enumeration (true) or for stopping (false)</param>
+            public void ForEachStatement(Func<StatementNode, StatementsEnumerationAction> handler)
+            {
+                tryStatement.TryBlock?.ForEachStatement(handler);
+
+                foreach (var catchBlock in tryStatement.CatchBlocks)
+                {
+                    catchBlock?.ForEachStatement(handler);
+                }
+
+                tryStatement.FinallyBlock?.ForEachStatement(handler);
+            }
+
             /// <summary>
             /// Check all paths in current if statement for returning values
             /// </summary>
@@ -666,6 +816,29 @@ namespace DialogMaker.Core.Scripting.Compiler
         }
         extension(BlockStatementNode blockStatement)
         {
+            /// <summary>
+            /// Handle all statements in current block.
+            /// It automatically handle other statements blocks
+            /// </summary>
+            /// <param name="handler">Statement handler. It should return value for continuing enumeration (true) or for stopping (false)</param>
+            public void ForEachStatement(Func<StatementNode, StatementsEnumerationAction> handler)
+            {
+                foreach (var statement in blockStatement.Statements)
+                {
+                    var action = handler(statement);
+
+                    if (action == StatementsEnumerationAction.Stop)
+                    {
+                        return;
+                    }
+                    else if (action == StatementsEnumerationAction.SkipCurrent)
+                    {
+                        continue;
+                    }
+
+                    statement.ForEachStatement(handler);
+                }
+            }
             /// <summary>
             /// Check block on return values or throw exception on all paths
             /// </summary>
@@ -1643,6 +1816,17 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 result = DSharpLiteralValue.FromObject(Convert.ChangeType(currentNumber, requiredMinMax.Type));
                 return true;
+            }
+        }
+        extension<T>(T obj)
+        {
+            /// <summary>
+            /// Enumerate single object
+            /// </summary>
+            /// <returns>Enumeration of object</returns>
+            public IEnumerable<T> Enumerate()
+            {
+                yield return obj;
             }
         }
     }

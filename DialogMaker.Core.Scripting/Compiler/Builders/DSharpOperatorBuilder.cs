@@ -204,7 +204,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
         }
 
-        private void OnParametersCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        private void OnParametersCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             _skipMethodCreateEvent = true;
 

@@ -292,6 +292,27 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
 
             return result != null;
         }
+        /// <summary>
+        /// Try to get local function in current context
+        /// </summary>
+        /// <param name="name">Name of searching local function</param>
+        /// <param name="result">Local function that was found</param>
+        /// <returns>Is local function was found</returns>
+        public bool TryGetLocalFunction(string name, [NotNullWhen(true)] out DSharpMethodBuilder? result)
+        {
+            result = RecursiveCheck(scope =>
+            {
+                if (scope is DSharpCompilerMethodScope methodScope && 
+                    methodScope.LocalFunctions.TryGetValue(name, out var localFunction))
+                {
+                    return localFunction;
+                }
+
+                return null;
+            });
+
+            return result != null;
+        }
 
         /// <summary>
         /// Try to resolve first property or field
