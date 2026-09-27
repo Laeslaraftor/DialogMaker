@@ -6,9 +6,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Break node for stopping loop execution
     /// </summary>
     /// <param name="token">Token that represents break statement</param>
-    public class BreakStatementNode(DSharpToken token) : StatementNode(token)
+    public partial class BreakStatementNode(DSharpToken token) : StatementNode(token)
     {
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse break statement starts with current token

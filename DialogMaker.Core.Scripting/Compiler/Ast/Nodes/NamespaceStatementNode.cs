@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Namespace statement
     /// </summary>
     /// <param name="token">Token that represents namespace keyword</param>
-    public class NamespaceStatementNode(DSharpToken token) : StatementNode(token)
+    public partial class NamespaceStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// Identifier of this namespace

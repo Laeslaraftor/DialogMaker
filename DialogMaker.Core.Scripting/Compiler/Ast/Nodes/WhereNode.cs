@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents description of generic type
     /// </summary>
     /// <param name="token">Token that represents where keyword</param>
-    public class WhereNode(DSharpToken token) : AstNode(token)
+    public partial class WhereNode(DSharpToken token) : AstNode(token)
     {
         /// <summary>
         /// Type that describes

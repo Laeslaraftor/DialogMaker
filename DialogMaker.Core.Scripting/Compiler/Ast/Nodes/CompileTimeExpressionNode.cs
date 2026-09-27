@@ -11,11 +11,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         where T : AstNode
     {
         /// <summary>
-        /// Value of expression
+        /// Expression value
         /// </summary>
         public T? Value { get; set; }
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse compile time expression starts with current token

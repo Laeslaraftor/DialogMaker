@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents using for disposable
     /// </summary>
     /// <param name="token">Token that represents using keyword</param>
-    public class UsingVariableStatementNode(DSharpToken token) : StatementNode(token)
+    public partial class UsingVariableStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// Variable that contains disposable object

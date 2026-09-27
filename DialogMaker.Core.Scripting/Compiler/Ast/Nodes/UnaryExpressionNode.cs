@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents unary expression
     /// </summary>
     /// <param name="token">Token that represents unary operator</param>
-    public class UnaryExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class UnaryExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Unary operation

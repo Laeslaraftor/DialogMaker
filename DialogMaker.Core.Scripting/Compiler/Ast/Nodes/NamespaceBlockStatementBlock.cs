@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Namespace with block of statements
     /// </summary>
     /// <param name="token"><inheritdoc/></param>
-    public class NamespaceBlockStatementBlock(DSharpToken token) : NamespaceStatementNode(token)
+    public partial class NamespaceBlockStatementBlock(DSharpToken token) : NamespaceStatementNode(token)
     {
         /// <summary>
         /// Block of statement that contains in this namespace

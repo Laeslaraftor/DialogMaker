@@ -11,6 +11,7 @@ namespace DialogMaker.Core.Tests
         public const string ExpressionsScriptPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\ExpressionsScript.txt";
         public const string MathScriptPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\MathScript.txt";
         public const string TypeDetectionScriptPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\TypeDetectionScript.txt";
+        public const string CapturingTestPath = @"F:\Projects\DialogMaker\DialogMaker.Core.Tests\CodeExample\CapturingTest.txt";
 
         [Test]
         public static void Tokenize()

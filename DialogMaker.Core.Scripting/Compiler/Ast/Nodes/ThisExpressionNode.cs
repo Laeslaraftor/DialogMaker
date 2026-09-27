@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Expression that represents accessing to current instance
     /// </summary>
     /// <param name="token">Token that represents this keyword</param>
-    public class ThisExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class ThisExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         #region Static
 

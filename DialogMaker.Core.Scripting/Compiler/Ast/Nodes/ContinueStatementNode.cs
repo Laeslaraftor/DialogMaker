@@ -6,9 +6,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Continue statement for skipping loop iteration
     /// </summary>
     /// <param name="token">Token that represents continue statement</param>
-    public class ContinueStatementNode(DSharpToken token) : StatementNode(token)
+    public partial class ContinueStatementNode(DSharpToken token) : StatementNode(token)
     {
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse continue statement starts from current token

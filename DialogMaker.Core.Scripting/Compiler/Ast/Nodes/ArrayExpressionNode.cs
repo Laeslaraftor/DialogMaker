@@ -7,15 +7,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Array expression node
     /// </summary>
     /// <param name="token">Token that represents start of array</param>
-    public class ArrayExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class ArrayExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Elements of this array
         /// </summary>
         public List<ExpressionNode> Elements { get; set; } = [];
 
-        #region Управление
-
+        #region Controls
         public override string ToString()
         {
             StringBuilder builder = new();
@@ -34,7 +33,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #endregion
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse array starts with current token

@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Member access expression
     /// </summary>
     /// <param name="token">Token that represents access operation</param>
-    public class MemberAccessExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class MemberAccessExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Expression of target

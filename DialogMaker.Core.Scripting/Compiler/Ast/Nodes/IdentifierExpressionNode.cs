@@ -6,14 +6,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Identifier expression
     /// </summary>
     /// <param name="token">Token that represents identifier (name)</param>
-    public class IdentifierExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class IdentifierExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// List of generic parameters
         /// </summary>
         public List<TypeInfoNode> GenericParameters { get; set; } = [];
 
-        #region Управление
+        #region Controls
 
         /// <summary>
         /// Get full name of this identifier include generic parameters
@@ -27,7 +27,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #endregion
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse identifier expression starts with current token

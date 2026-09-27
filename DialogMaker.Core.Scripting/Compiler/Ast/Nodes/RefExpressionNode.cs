@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents reference to variable or field
     /// </summary>
     /// <param name="token">Token that represents ref keyword</param>
-    public class RefExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class RefExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Expression of variable/field identifier or access to it

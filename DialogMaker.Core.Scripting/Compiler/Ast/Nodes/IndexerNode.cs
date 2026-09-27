@@ -6,14 +6,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents indexer of object: this[int] { get; set; }
     /// </summary>
     /// <param name="token">Token that represents this keyword</param>
-    public class IndexerNode(DSharpToken token) : FieldNode(token)
+    public partial class IndexerNode(DSharpToken token) : FieldNode(token)
     {
         /// <summary>
         /// Parameters of indexer
         /// </summary>
         public List<ParameterExpressionNode> Parameters { get; set; } = [];
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse indexer starts with current token

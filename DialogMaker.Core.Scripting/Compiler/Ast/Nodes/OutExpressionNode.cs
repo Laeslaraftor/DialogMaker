@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents out expression
     /// </summary>
     /// <param name="token">Token that represents out keyword</param>
-    public class OutExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class OutExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Type of variable that will be created for output value

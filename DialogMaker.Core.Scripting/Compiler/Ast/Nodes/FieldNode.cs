@@ -1,6 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
-using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
@@ -8,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Field node
     /// </summary>
     /// <param name="token">Token that represents field name</param>
-    public class FieldNode(DSharpToken token) : VariableNode(token)
+    public partial class FieldNode(DSharpToken token) : VariableNode(token)
     {
         /// <summary>
         /// Identifier of this field
@@ -67,7 +66,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public DSharpAccessModifier SetterAccess { get; set; } = DSharpAccessModifier.Public;
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse field starts with current token

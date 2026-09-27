@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Expression that represents parameter declaration
     /// </summary>
     /// <param name="token">Token that represents identifier of parameter</param>
-    public class ParameterExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class ParameterExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Type of parameter

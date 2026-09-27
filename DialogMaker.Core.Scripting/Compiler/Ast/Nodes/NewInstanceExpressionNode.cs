@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// New object instance expression
     /// </summary>
     /// <param name="token"><inheritdoc/></param>
-    public class NewInstanceExpressionNode(DSharpToken token) : NewExpressionNode(token)
+    public partial class NewInstanceExpressionNode(DSharpToken token) : NewExpressionNode(token)
     {
         /// <summary>
         /// List of parameters for constructor
@@ -17,7 +17,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public List<AssignmentExpressionNode> PropertiesInitializer { get; set; } = [];
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse new object instance expression

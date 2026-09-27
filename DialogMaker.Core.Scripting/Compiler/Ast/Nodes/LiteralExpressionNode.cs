@@ -8,7 +8,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents literal value like number, string, boolean or null
     /// </summary>
     /// <param name="token">Literal value token</param>
-    public class LiteralExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class LiteralExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Value of this node
@@ -19,12 +19,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public DSharpLiteralType Type { get; set; }
 
-        #region Управление
+        #region Controls
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             return $"Value: {Value}, type: {Type}. {base.ToString()}";
@@ -32,7 +28,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #endregion
 
-        #region Статика
+        #region Static
 
         private static readonly Dictionary<DSharpTokenType, Func<string, DSharpLiteralValue>> _literals = new()
         {

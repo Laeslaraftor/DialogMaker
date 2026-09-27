@@ -7,7 +7,7 @@ using System.Text;
 
 namespace DialogMaker.Core.Scripting.CodeAnalyzer
 {
-    [Generator]
+    [Generator(LanguageNames.CSharp)]
     public class EnumHelperGenerator : IIncrementalGenerator
     {
         #region Controls

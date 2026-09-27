@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Variable node
     /// </summary>
     /// <param name="token">Token that represents variable name</param>
-    public class VariableNode(DSharpToken token) : AstNode(token)
+    public partial class VariableNode(DSharpToken token) : AstNode(token)
     {
         /// <summary>
         /// Attributes of this variable

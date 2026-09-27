@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents anonymous delegate
     /// </summary>
     /// <param name="token">Token that represents delegate keyword</param>
-    public class DelegateExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class DelegateExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Input parameters of delegate
@@ -17,7 +17,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public BlockStatementNode? Body { get; set; }
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Check is current tokens is delegate expression

@@ -1,0 +1,22 @@
+﻿void SomeFunction(string arg)
+{
+	int variable = 0;
+	bool isEnabled = false;
+	
+	void Increment() 
+	{
+		string text = string.Empty;
+		
+		void Debug()
+		{
+			text += "value";
+		}
+	}
+	void Reset() 
+	{
+		variable = 0;
+		isEnabled = false;
+	}
+	
+	isEnabled = false;
+}

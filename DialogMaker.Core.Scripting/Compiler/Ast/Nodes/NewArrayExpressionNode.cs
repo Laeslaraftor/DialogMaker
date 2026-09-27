@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// New array instance expression
     /// </summary>
     /// <param name="token"><inheritdoc/></param>
-    public class NewArrayExpressionNode(DSharpToken token) : NewExpressionNode(token)
+    public partial class NewArrayExpressionNode(DSharpToken token) : NewExpressionNode(token)
     {
         /// <summary>
         /// List of array size expressions

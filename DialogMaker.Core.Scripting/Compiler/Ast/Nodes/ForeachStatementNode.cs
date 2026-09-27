@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Statement of foreach loop
     /// </summary>
     /// <param name="token">Token that represents foreach keyword</param>
-    public class ForeachStatementNode(DSharpToken token) : StatementNode(token)
+    public partial class ForeachStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// Variable that contains value of iteration
@@ -21,7 +21,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public BlockStatementNode? Body { get; set; }
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse foreach loop starts with current token

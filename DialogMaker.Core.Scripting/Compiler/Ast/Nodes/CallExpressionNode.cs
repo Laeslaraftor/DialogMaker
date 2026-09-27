@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Call expression
     /// </summary>
     /// <param name="token">Token that represents calling expression</param>
-    public class CallExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class CallExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Expression that calling
@@ -18,12 +18,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public List<ExpressionNode> Arguments { get; set; } = [];
 
-        #region Управление
+        #region Controls
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             if (Callee == null)

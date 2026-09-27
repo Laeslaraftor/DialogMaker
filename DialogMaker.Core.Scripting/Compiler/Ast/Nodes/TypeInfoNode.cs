@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// For example: object, string, number, bool, SomeType, Some.Type, object?, object[], SomeType?[]?
     /// </summary>
     /// <param name="token">Token at start of type</param>
-    public class TypeInfoNode(DSharpToken token) : AstNode(token)
+    public partial class TypeInfoNode(DSharpToken token) : AstNode(token)
     {
         /// <summary>
         /// Flag which indicate when type can be nullable

@@ -6,9 +6,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents finalizer/destructor of object
     /// </summary>
     /// <param name="token">Token that represents identifier of finalizer</param>
-    public class FinalizerNode(DSharpToken token) : InvokableNode(token)
+    public partial class FinalizerNode(DSharpToken token) : InvokableNode(token)
     {
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse finalizer node starts with current token

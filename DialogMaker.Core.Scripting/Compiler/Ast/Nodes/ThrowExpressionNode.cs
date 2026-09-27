@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents throwing exception
     /// </summary>
     /// <param name="token">Token that represents throw keyword</param>
-    public class ThrowExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class ThrowExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Expression of throwing value

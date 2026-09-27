@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents conditional expression (condition ? true : false)
     /// </summary>
     /// <param name="token">Token that represents question mark</param>
-    public class ConditionalExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class ConditionalExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Condition of this expression

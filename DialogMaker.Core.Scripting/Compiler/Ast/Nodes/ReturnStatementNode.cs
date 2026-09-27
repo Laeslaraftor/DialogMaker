@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Return statement for returning value from function/method or just stopping it execution
     /// </summary>
     /// <param name="token">Token that represents return statement</param>
-    public class ReturnStatementNode(DSharpToken token) : StatementNode(token)
+    public partial class ReturnStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// Returning expression

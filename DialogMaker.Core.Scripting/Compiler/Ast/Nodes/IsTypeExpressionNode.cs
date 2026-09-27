@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents <c>is</c> expression with checking value type or/and fields
     /// </summary>
     /// <param name="token">Token that represents <c>is</c> keyword</param>
-    public class IsTypeExpressionNode(DSharpToken token) : IsExpressionNode(token)
+    public partial class IsTypeExpressionNode(DSharpToken token) : IsExpressionNode(token)
     {
         /// <summary>
         /// Type for checking expression

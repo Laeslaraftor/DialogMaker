@@ -4,7 +4,6 @@ using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
-using MessagePack.Formatters;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {

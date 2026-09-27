@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Method node
     /// </summary>
     /// <param name="token">Token that represents method name</param>
-    public class MethodNode(DSharpToken token) : InvokableNode(token)
+    public partial class MethodNode(DSharpToken token) : InvokableNode(token)
     {
         /// <summary>
         /// Descriptions of generic parameters
@@ -42,7 +42,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public DSharpAccessModifier Access { get; set; } = DSharpAccessModifier.Private;
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse method starts with current token

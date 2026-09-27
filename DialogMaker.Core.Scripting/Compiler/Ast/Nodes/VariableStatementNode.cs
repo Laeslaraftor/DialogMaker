@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Statement that references to variable
     /// </summary>
     /// <param name="token">Token that represents variable</param>
-    public class VariableStatementNode(DSharpToken token) : StatementNode(token)
+    public partial class VariableStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// Variable node

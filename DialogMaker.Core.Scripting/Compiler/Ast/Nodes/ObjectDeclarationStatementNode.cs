@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Statement that references to struct
     /// </summary>
     /// <param name="token">Token that represents struct name</param>
-    public class ObjectDeclarationStatementNode(DSharpToken token) : StatementNode(token)
+    public partial class ObjectDeclarationStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// Referenced struct

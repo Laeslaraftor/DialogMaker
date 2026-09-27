@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Expression that represents nameof() expression
     /// </summary>
     /// <param name="token">Token that represents nameof keyword</param>
-    public class NameOfExpressionNode(DSharpToken token) : CompileTimeExpressionNode<ExpressionNode>(token)
+    public partial class NameOfExpressionNode(DSharpToken token) : CompileTimeExpressionNode<ExpressionNode>(token)
     {
         #region Static
 

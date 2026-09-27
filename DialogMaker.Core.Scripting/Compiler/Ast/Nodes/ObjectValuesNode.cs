@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents block with declaring object values
     /// </summary>
     /// <param name="token">Token that represents start of block</param>
-    public class ObjectValuesNode(DSharpToken token) : AstNode(token)
+    public partial class ObjectValuesNode(DSharpToken token) : AstNode(token)
     {
         /// <summary>
         /// Declared values for fields or properties

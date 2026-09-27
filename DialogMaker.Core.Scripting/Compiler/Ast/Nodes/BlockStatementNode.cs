@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Block of statements
     /// </summary>
     /// <param name="token">Token that represents start of block</param>
-    public class BlockStatementNode(DSharpToken token) : StatementNode(token)
+    public partial class BlockStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// List of statement

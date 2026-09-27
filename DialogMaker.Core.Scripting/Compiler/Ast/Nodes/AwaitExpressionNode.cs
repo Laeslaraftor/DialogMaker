@@ -7,19 +7,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Await node
     /// </summary>
     /// <param name="token">Token that represents await expression</param>
-    public class AwaitExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class AwaitExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Expression to await
         /// </summary>
         public ExpressionNode? Expression { get; set; }
 
-        #region Управление
+        #region Controls
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             if (Expression == null)
@@ -36,7 +32,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #endregion
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse await expression starts with current token

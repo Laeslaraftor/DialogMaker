@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Object (class or struct) declaration node
     /// </summary>
     /// <param name="token">Token that represents object name</param>
-    public class ObjectDeclarationNode(DSharpToken token) : AstNode(token)
+    public partial class ObjectDeclarationNode(DSharpToken token) : AstNode(token)
     {
         /// <summary>
         /// Identifier (name with generic parameters) of this object type

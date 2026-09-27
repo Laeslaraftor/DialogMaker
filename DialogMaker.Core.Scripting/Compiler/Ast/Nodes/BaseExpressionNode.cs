@@ -6,9 +6,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Expression that means access to base type
     /// </summary>
     /// <param name="token">Token that represents base keyword</param>
-    public class BaseExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class BaseExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse base expression starts with current token

@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents casting an expression
     /// </summary>
     /// <param name="token">Token that represents type identifier</param>
-    public class CastExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class CastExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Target type for cast

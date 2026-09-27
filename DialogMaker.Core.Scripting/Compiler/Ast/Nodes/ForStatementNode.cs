@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// For statement node
     /// </summary>
     /// <param name="token">Token that represents for keyword</param>
-    public class ForStatementNode(DSharpToken token) : StatementNode(token)
+    public partial class ForStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// Initializer for conditional and incremental variable
@@ -25,7 +25,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public StatementNode? Body { get; set; }
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse for statement starts with current token

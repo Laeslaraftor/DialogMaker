@@ -8,7 +8,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Attribute node
     /// </summary>
     /// <param name="token">Token that represents name of attribute</param>
-    public class AttributeNode(DSharpToken token) : AstNode(token)
+    public partial class AttributeNode(DSharpToken token) : AstNode(token)
     {
         /// <summary>
         /// Type of this attribute
@@ -19,12 +19,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public List<ExpressionNode> Arguments { get; set; } = [];
 
-        #region Управление
+        #region Controls
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             if (Type == null)
@@ -51,7 +47,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #endregion
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Try parse attributes

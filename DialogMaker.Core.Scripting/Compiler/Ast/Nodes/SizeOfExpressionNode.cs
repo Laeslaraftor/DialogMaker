@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents sizeof() expression
     /// </summary>
     /// <param name="token">Token that represents sizeof keyword</param>
-    public class SizeOfExpressionNode(DSharpToken token) : CompileTimeExpressionNode<TypeInfoNode>(token)
+    public partial class SizeOfExpressionNode(DSharpToken token) : CompileTimeExpressionNode<TypeInfoNode>(token)
     {
         #region Статика
 

@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents typeof() expression
     /// </summary>
     /// <param name="token">Token that represents typeof keyword</param>
-    public class TypeOfExpressionNode(DSharpToken token) : CompileTimeExpressionNode<TypeInfoNode>(token)
+    public partial class TypeOfExpressionNode(DSharpToken token) : CompileTimeExpressionNode<TypeInfoNode>(token)
     {
         #region Static
 

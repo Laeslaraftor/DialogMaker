@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents custom operator
     /// </summary>
     /// <param name="token">Token that represents operator</param>
-    public class OperatorNode(DSharpToken token) : InvokableNode(token)
+    public partial class OperatorNode(DSharpToken token) : InvokableNode(token)
     {
         /// <summary>
         /// Binary operator that implement this operator
@@ -30,7 +30,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public DSharpAccessModifier Access { get; set; }
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse operator node starts with current token

@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents <c>as</c> expression
     /// </summary>
     /// <param name="token">Token that represents <c>as</c> keyword</param>
-    public class AsExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class AsExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Expression that should be converted

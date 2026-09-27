@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Type info with access to member of other type
     /// </summary>
     /// <param name="token">Token that represents type</param>
-    public class MemberTypeInfoNode(DSharpToken token) : TypeInfoNode(token)
+    public partial class MemberTypeInfoNode(DSharpToken token) : TypeInfoNode(token)
     {
         /// <summary>
         /// Member access expression to current type

@@ -6,19 +6,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Statement that references to expression
     /// </summary>
     /// <param name="token">Token that represents expression</param>
-    public class ExpressionStatementNode(DSharpToken token) : StatementNode(token)
+    public partial class ExpressionStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// Referenced expression
         /// </summary>
         public ExpressionNode? Expression { get; set; }
 
-        #region Управление
+        #region Controls
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             if (Expression == null)

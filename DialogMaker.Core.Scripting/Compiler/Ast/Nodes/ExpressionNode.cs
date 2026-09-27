@@ -8,7 +8,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// <param name="token">Token that represents some expression</param>
     public abstract class ExpressionNode(DSharpToken token) : AstNode(token)
     {
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse expression that wrote with comma separator and write it's into buffer

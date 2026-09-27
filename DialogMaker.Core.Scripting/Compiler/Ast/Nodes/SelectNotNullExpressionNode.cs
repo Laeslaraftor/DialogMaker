@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents selecting not null expression
     /// </summary>
     /// <param name="token">Token that represents not null selecting operator (??)</param>
-    public class SelectNotNullExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class SelectNotNullExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Left expression

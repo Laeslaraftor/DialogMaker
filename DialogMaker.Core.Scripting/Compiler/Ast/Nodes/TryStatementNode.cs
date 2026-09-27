@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Statement that represents try/catch/finally 
     /// </summary>
     /// <param name="token">Token that represents try keyword</param>
-    public class TryStatementNode(DSharpToken token) : StatementNode(token)
+    public partial class TryStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// Try statements block
@@ -86,7 +86,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Statement that represents catch block
         /// </summary>
         /// <param name="token">Token that represents catch keyword</param>
-        public class CatchBlock(DSharpToken token) : StatementNode(token)
+        public partial class CatchBlock(DSharpToken token) : StatementNode(token)
         {
             /// <summary>
             /// Catch statements block

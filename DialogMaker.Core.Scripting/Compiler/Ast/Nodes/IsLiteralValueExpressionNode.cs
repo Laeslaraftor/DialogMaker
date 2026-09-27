@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents <c>is</c> expression with comparing value with literal value
     /// </summary>
     /// <param name="token">Token that represents <c>is</c> keyword</param>
-    public class IsLiteralValueExpressionNode(DSharpToken token) : IsExpressionNode(token)
+    public partial class IsLiteralValueExpressionNode(DSharpToken token) : IsExpressionNode(token)
     {
         /// <summary>
         /// Literal value for comparing

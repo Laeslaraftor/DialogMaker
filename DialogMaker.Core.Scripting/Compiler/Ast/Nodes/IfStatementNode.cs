@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// If statement node
     /// </summary>
     /// <param name="token">Token that represents if keyword</param>
-    public class IfStatementNode(DSharpToken token) : StatementNode(token)
+    public partial class IfStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// Condition for execution "then" branch
@@ -22,12 +22,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public StatementNode? ElseBranch { get; set; }
 
-        #region Управление
+        #region Controls
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             if (Condition == null || ThenBranch == null)
@@ -50,7 +46,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #endregion
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse if statement starts with current token

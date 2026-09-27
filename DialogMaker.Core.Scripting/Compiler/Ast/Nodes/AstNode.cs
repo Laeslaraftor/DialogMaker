@@ -32,12 +32,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public int Column { get; set; } = token.Column;
 
-        #region Управление
+        #region Controls
 
         /// <summary>
-        /// <inheritdoc/>
+        /// Accept abstract syntax tree visitor
         /// </summary>
-        /// <returns><inheritdoc/></returns>
+        /// <param name="visitor">Abstract syntax tree visitor</param>
+        /// <param name="acceptChildren">Also accept children</param>
+        public abstract void Accept(IDSharpAstVisitor visitor, DSharpAstVisitMode visitMode = DSharpAstVisitMode.Simple);
+
         public override string ToString()
         {
             return $"{GetType().Name}({Name}) at line: {Line}, column: {Column}";

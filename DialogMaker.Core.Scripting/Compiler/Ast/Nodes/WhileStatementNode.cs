@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// While statement node
     /// </summary>
     /// <param name="token">Token that represents while keyword</param>
-    public class WhileStatementNode(DSharpToken token) : StatementNode(token)
+    public partial class WhileStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
         /// Condition for execution body

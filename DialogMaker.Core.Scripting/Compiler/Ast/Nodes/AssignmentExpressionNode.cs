@@ -8,7 +8,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Assignment expression node
     /// </summary>
     /// <param name="token">Token that represents assignment operator</param>
-    public class AssignmentExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class AssignmentExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Left expression of operation
@@ -23,12 +23,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public ExpressionNode? Right { get; set; }
 
-        #region Управление
+        #region Controls
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             if (Left == null)
@@ -51,7 +47,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #endregion
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Try to parse assignment expression node

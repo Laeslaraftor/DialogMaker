@@ -26,7 +26,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public BlockStatementNode? Body { get; set; }
 
-        #region Управление
+        #region Controls
 
         public override string ToString()
         {
@@ -65,7 +65,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #endregion
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse parameters starts with current token and write them into buffer

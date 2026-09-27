@@ -35,7 +35,13 @@ namespace DialogMaker.Core.Scripting.CodeAnalyzer
                 {
                     var @namespace = namedType.ContainingNamespace;
                     string result = namedType.Name;
+                    var declaringType = namedType.ContainingType;
 
+                    while (declaringType is ITypeSymbol declaring)
+                    {
+                        result = declaring.Name + "." + result;
+                        declaringType = declaring.ContainingType;
+                    }
                     if (@namespace != null)
                     {
                         result = @namespace.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + "." + result;

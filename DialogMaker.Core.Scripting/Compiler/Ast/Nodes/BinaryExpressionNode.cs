@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents binary expression
     /// </summary>
     /// <param name="token">Token that represents binary operator</param>
-    public class BinaryExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class BinaryExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Left side of binary expression

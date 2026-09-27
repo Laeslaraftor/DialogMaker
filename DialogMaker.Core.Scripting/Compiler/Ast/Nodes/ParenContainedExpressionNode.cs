@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Expression node that contains expression in paren
     /// </summary>
     /// <param name="token">Token that represents open paren</param>
-    public class ParenContainedExpressionNode(DSharpToken token) : ExpressionNode(token)
+    public partial class ParenContainedExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
         /// Contained expression

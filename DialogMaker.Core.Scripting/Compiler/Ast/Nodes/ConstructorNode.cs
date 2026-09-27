@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Constructor node
     /// </summary>
     /// <param name="token">Token that represents name of constructor</param>
-    public class ConstructorNode(DSharpToken token) : InvokableNode(token)
+    public partial class ConstructorNode(DSharpToken token) : InvokableNode(token)
     {
         /// <summary>
         /// Access modifier of this constructor
@@ -26,7 +26,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public bool IsStatic { get; set; }
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Parse constructor starts with current token
