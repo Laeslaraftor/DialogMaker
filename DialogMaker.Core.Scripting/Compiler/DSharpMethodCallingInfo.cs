@@ -13,6 +13,10 @@ namespace DialogMaker.Core.Scripting.Compiler
             : this(method, [.. method.GetParameters().Select(p => p.Type)], _emptyGenericParameters)
         {
         }
+        public DSharpMethodCallingInfo(IDSharpMethodInfo method, DSharpMethodCallingInfo callingInfo)
+            : this(method, callingInfo.Parameters, callingInfo.GenericParameters)
+        {
+        }
 
         /// <summary>
         /// Generic method that calling

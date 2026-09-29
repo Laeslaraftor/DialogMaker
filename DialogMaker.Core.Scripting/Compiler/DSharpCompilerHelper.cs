@@ -490,6 +490,48 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                 }
             }
+            /// <summary>
+            /// Check method on containing in curren type or overriding it
+            /// </summary>
+            /// <param name="method">Method to check</param>
+            /// <param name="includeInterfaces">Include interfaces for checking</param>
+            /// <param name="result">Method that was found</param>
+            /// <returns>Is method was found successfully</returns>
+            public bool ContainsMethodOrOverride(IDSharpMethodInfo method, bool includeInterfaces, [NotNullWhen(true)] out IDSharpMethodInfo? result)
+            {
+                IDSharpMethodInfo? Find(IDSharpType type)
+                {
+                    foreach (var typeMethod in type.GetMethods())
+                    {
+                        if (typeMethod == method ||
+                            typeMethod.OverrideMethod == method)
+                        {
+                            return typeMethod;
+                        }
+                    }
+
+                    foreach (var baseType in type.GetBaseTypes())
+                    {
+                        if (!includeInterfaces && baseType.ObjectType == DSharpObjectType.Interface)
+                        {
+                            continue;
+                        }
+
+                        var baseMethod = Find(baseType);
+
+                        if (baseMethod != null)
+                        {
+                            return baseMethod;
+                        }
+                    }
+
+                    return null;
+                }
+
+                result = Find(type);
+
+                return result != null;
+            }
 
             public bool TryFillRecursive(DSharpAssemblyBuilder assemblyBuilder, IDictionary<IDSharpType, IDSharpType> replacedTypes, [NotNullWhen(true)] out IDSharpType? filledType)
             {
@@ -1070,6 +1112,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     var scope = context.Scope;
 
+                    if (scope != null &&
+                        scope.TryGetCapturedInstance(out _, out var variableField) &&
+                        variableField.FieldType != null &&
+                        context.Assembly != null)
+                    {
+                        return (IDSharpType)context.Assembly.GetType(variableField.FieldType);
+                    }
+
                     while (scope != null)
                     {
                         if (scope is DSharpCompilerMethodScope methodScope &&
@@ -1144,6 +1194,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                         {
                             return (IDSharpType)assembly.GetType(context.ResolveType(isTypeExpression.DestinationType));
                         }
+                    }
+                    else if (context.Scope != null &&
+                             context.Scope.TryGetCapturedVariable(identifierExpression.Name, out _, out var variableField) &&
+                             variableField.FieldType != null &&
+                             context.Assembly != null)
+                    {
+                        return (IDSharpType)context.Assembly.GetType(variableField.FieldType);
                     }
                 }
 

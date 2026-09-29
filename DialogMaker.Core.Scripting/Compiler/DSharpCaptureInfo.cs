@@ -17,6 +17,70 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// </summary>
         public ReadOnlyCollection<Capture> Captures { get; } = new(captures);
 
+        #region Controls
+
+        /// <summary>
+        /// Try to find variables capture for variable declaration
+        /// </summary>
+        /// <param name="variableDeclaration">Variable declaration for searching capture</param>
+        /// <param name="result">Variables capture</param>
+        /// <returns>Is capture was found successfully</returns>
+        public bool TryFindCaptureForDeclaration(AstNode variableDeclaration, [NotNullWhen(true)] out Capture? result)
+        {
+            foreach (var capture in Captures)
+            {
+                foreach (var variable in capture.Variables.Values)
+                {
+                    if (variable.Declaration.Node == variableDeclaration)
+                    {
+                        result = capture;
+                        return true;
+                    }
+                }
+            }
+
+            result = null;
+
+            return false;
+        }
+        /// <summary>
+        /// Try to find capture for specified scope.
+        /// It checks captures that attached to specified scope, 
+        /// then checks on containing any variable reference
+        /// </summary>
+        /// <param name="scope">Scope for searching capture for it</param>
+        /// <param name="result">Variables capture</param>
+        /// <returns>Is capture was found successfully</returns>
+        public bool TryFindCaptureForScope(AstNode scope, [NotNullWhen(true)] out Capture? result)
+        {
+            foreach (var capture in Captures)
+            {
+                if (capture.Scope == scope)
+                {
+                    result = capture;
+                    return true;
+                }
+
+                foreach (var variable in capture.Variables.Values)
+                {
+                    foreach (var reference in variable.References)
+                    {
+                        if (scope.Contains(reference))
+                        {
+                            result = capture;
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            result = null;
+
+            return false;
+        }
+
+        #endregion
+
         #region Static
 
         private static string? ThisKeyword
@@ -226,7 +290,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// Information about captured variable
         /// </summary>
         /// <param name="name">Variable name</param>
-        public class Variable(string name, AstNode declaration)
+        public class Variable(string name, DSharpVariablesVisitor.CaptureDeclaration declaration)
         {
             /// <summary>
             /// Variable name
@@ -235,7 +299,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             /// <summary>
             /// Variable declaration
             /// </summary>
-            public AstNode Declaration { get; } = declaration;
+            public DSharpVariablesVisitor.CaptureDeclaration Declaration { get; } = declaration;
             /// <summary>
             /// Node that references to this variable
             /// </summary>
@@ -243,7 +307,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             public override string ToString()
             {
-                var result = $"\"{Name}\"-{Declaration.Line}:{Declaration.Column}";
+                var result = $"\"{Name}\"-{Declaration.Node.Line}:{Declaration.Node.Column}";
 
                 if (References.Count > 0)
                 {

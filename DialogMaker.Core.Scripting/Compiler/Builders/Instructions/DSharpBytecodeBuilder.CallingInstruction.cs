@@ -107,10 +107,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             {
                 if (CallingInfo != null)
                 {
-                    return $"{Operation} [{CallingInfo.Method.ToString(CallingInfo.GenericParameters)}]";
+                    return $"{Operation} [{(RequestDefaultCalling ? "default: " : string.Empty)}{CallingInfo.Method.ToString(CallingInfo.GenericParameters)}]";
                 }
 
-                return $"{Operation} [{AccessedMember}]";
+                return $"{Operation} [{(RequestDefaultCalling ? "default: " : string.Empty)}{AccessedMember}]";
             }
 
             #endregion

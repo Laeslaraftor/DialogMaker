@@ -1,8 +1,8 @@
-namespace Internal.System.Runtime;
-
 using System.Native;
 using System;
 using System.Reflection;
+
+namespace Internal.System.Runtime;
 
 internal struct RuntimeTypeInfo
 {

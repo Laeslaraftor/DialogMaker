@@ -21,6 +21,13 @@ namespace DialogMaker.Core.Scripting.Compiler
         public bool SetupNextContextAsInsideTryBlockWithFinally { get; set; }
         public Func<DSharpFieldBuilder>? PropertyFieldProvider { get; set; }
 
+        public readonly void Clear()
+        {
+            UsingVariables?.Clear();
+            AlwaysReturnMethods?.Clear();
+            BannedExpressions?.Clear();
+            LastMethodCallingInfo?.Clear();
+        }
         public readonly bool BanExpression(ExpressionNode expression) => BannedExpressions?.Add(expression) == true;
         public readonly bool IsExpressionBanned(ExpressionNode? expression)
         {

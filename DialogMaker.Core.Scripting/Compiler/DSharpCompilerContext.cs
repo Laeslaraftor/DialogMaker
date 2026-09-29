@@ -31,6 +31,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             HasFinally = context.HasFinally;
             NowInCatchBlock = context.NowInCatchBlock;
             NowInFinallyBlock = context.NowInFinallyBlock;
+            CaptureInfo = context.CaptureInfo;
 
             if (context.Compiler != null && context.CurrentMember != currentMember)
             {
@@ -63,6 +64,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         public bool NowInCatchBlock { get; set; }
         public bool NowInFinallyBlock { get; set; }
         public DSharpCompilerScope? Scope { get; set; }
+        public DSharpCaptureInfo? CaptureInfo { get; set; }
 
         #region Доступ
 
@@ -708,6 +710,11 @@ namespace DialogMaker.Core.Scripting.Compiler
                 return count;
             }
 
+            if (Scope != null && Scope.TryGetClosure(out var closure) &&
+                closure.OriginalType != null)
+            {
+                AddRange(closure.OriginalType.GetAllLocalMembers(m => m.Name == name, false, false));
+            }
             if (Assembly != null)
             {
                 if (TryResolveMember(name, true, out var typeToken))
@@ -715,10 +722,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                     Add(typeToken);
                     return result;
                 }
+
                 var variable = Assembly.GetGlobalVariables().FirstOrDefault(f => f.Name == name);
                 var functions = Assembly.GetGlobalFunctions().Where(f => f.Name == name);
 
-                Add(variable);
+                if (variable != null)
+                {
+                    Add(variable);
+                }
+
                 AddRange(functions);
             }
             if (CurrentMember == null)
@@ -1025,9 +1037,9 @@ namespace DialogMaker.Core.Scripting.Compiler
             IEnumerable<IDSharpMemberInfo> members;
             IDSharpType?[]? callingExtensionParameters = null;
             object membersSource;
-            
+
             if (CurrentMember is IDSharpMethodInfo methodMember &&
-                Scope != null && Scope.TryGetLocalFunction(name, out var localFunction))
+                Scope != null && Scope.TryGetLocalFunction(name, out _, out var localFunction))
             {
                 membersSource = methodMember;
                 members = localFunction.Enumerate();

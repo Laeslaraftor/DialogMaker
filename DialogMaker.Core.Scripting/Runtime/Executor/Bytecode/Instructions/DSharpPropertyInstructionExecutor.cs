@@ -33,7 +33,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                     else if (property->DeclaringType->ObjectType == DSharpObjectType.Interface ||
                              property->IsAbstract)
                     {
-                        return context.ThrowExecutionException($"Unable to find end-point property for \"{property->ToString()}\"");
+                        return context.ThrowExecutionException($"Unable to find end-point property for \"{property->ToString()}\" in {instance->Type->ToString()}");
                     }
                 }
             }

@@ -22,6 +22,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         public DSharpCompilerScope? Parent { get; } = parent;
 
         /// <summary>
+        /// Clear scope
+        /// </summary>
+        /// <param name="recursive">Is recursive clear. It also clears parent scopes</param>
+        public virtual void Clear(bool recursive = true)
+        {
+            if (recursive)
+            {
+                Parent?.Clear();
+            }
+        }
+
+        /// <summary>
         /// Try to resolve type in current and parent scope
         /// </summary>
         /// <param name="name">Name of type</param>
@@ -298,20 +310,105 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// <param name="name">Name of searching local function</param>
         /// <param name="result">Local function that was found</param>
         /// <returns>Is local function was found</returns>
-        public bool TryGetLocalFunction(string name, [NotNullWhen(true)] out DSharpMethodBuilder? result)
+        public bool TryGetLocalFunction(string name, out DSharpCompilerMethodScope? closureScope, [NotNullWhen(true)] out DSharpMethodBuilder? result)
         {
+            DSharpCompilerMethodScope? resultClosureScope = null;
+
             result = RecursiveCheck(scope =>
             {
-                if (scope is DSharpCompilerMethodScope methodScope && 
+                if (scope is DSharpCompilerMethodScope methodScope &&
                     methodScope.LocalFunctions.TryGetValue(name, out var localFunction))
                 {
+                    if (methodScope.Closure != null &&
+                        methodScope.Closure.Type.Methods.Any(m => m.Name == name))
+                    {
+                        resultClosureScope = methodScope;
+                    }
+
                     return localFunction;
                 }
 
                 return null;
             });
 
+            closureScope = resultClosureScope;
+
             return result != null;
+        }
+        /// <summary>
+        /// Try to get captured instance in current scope
+        /// </summary>
+        /// <param name="captureScope">Scope that contains closure</param>
+        /// <param name="field">Field that represents captured variable</param>
+        /// <returns>Is captured variable was successfully found</returns>
+        public bool TryGetCapturedInstance([NotNullWhen(true)] out DSharpCompilerMethodScope? captureScope, [NotNullWhen(true)] out DSharpFieldBuilder? field)
+        {
+            return TryGetCapturedVariable(DSharpCompilerMethodScope.CaptureInfo.InstanceFieldName, out captureScope, out field);
+        }
+        /// <summary>
+        /// Try to get captured variable in current scope
+        /// </summary>
+        /// <param name="name">Variable name that need to find</param>
+        /// <param name="captureScope">Scope that contains closure</param>
+        /// <param name="field">Field that represents captured variable</param>
+        /// <returns>Is captured variable was successfully found</returns>
+        public bool TryGetCapturedVariable(string name, [NotNullWhen(true)] out DSharpCompilerMethodScope? captureScope, [NotNullWhen(true)] out DSharpFieldBuilder? field)
+        {
+            DSharpFieldBuilder? variableField = null;
+            captureScope = RecursiveCheck(scope =>
+            {
+                if (scope is DSharpCompilerMethodScope methodScope &&
+                    methodScope.Closure != null)
+                {
+                    variableField = methodScope.Closure.Type.Fields.FirstOrDefault(f => f.Name == name);
+                    return methodScope;
+                }
+
+                return null;
+            });
+
+            field = variableField;
+
+            return captureScope != null && variableField != null;
+        }
+        /// <summary>
+        /// Try to get closure in current and parent scopes
+        /// </summary>
+        /// <param name="result">Closure that was found</param>
+        /// <returns>Is close was successfully found</returns>
+        public bool TryGetClosure([NotNullWhen(true)] out DSharpCompilerMethodScope.CaptureInfo? result)
+        {
+            result = RecursiveCheck(scope =>
+            {
+                if (scope is DSharpCompilerMethodScope methodScope)
+                {
+                    return methodScope.Closure;
+                }
+
+                return null;
+            });
+
+            return result != null;
+        }
+        /// <summary>
+        /// Check method on capturing
+        /// </summary>
+        /// <param name="method">Method that need to check on capturing</param>
+        /// <returns>Is specified method was captured</returns>
+        public bool IsCapturedMethod(IDSharpMethodInfo method)
+        {
+            var methodScope = RecursiveCheck(scope =>
+            {
+                if (scope is DSharpCompilerMethodScope methodScope &&
+                    methodScope.Closure?.Type.Methods.Contains(method) == true)
+                {
+                    return methodScope;
+                }
+
+                return null;
+            });
+
+            return methodScope != null;
         }
 
         /// <summary>

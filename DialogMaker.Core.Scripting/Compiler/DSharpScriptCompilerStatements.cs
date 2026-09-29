@@ -891,6 +891,11 @@ namespace DialogMaker.Core.Scripting.Compiler
                 typesToSetupBases.Remove(type);
                 typeBuilder.SetupHandler = null;
 
+                if (type.ObjectType == DSharpObjectType.Enum)
+                {
+                    return;
+                }
+
                 foreach (var baseTypeInfo in declaration.BaseTypes)
                 {
                     bool setupCompleted = false;

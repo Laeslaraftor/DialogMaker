@@ -62,7 +62,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                          method->IsAbstract)
                 {
                     var methods = instance->Type->Methods;
-                    return context.ThrowExecutionException($"Unable to find end-point method for \"{method->ToString()}\"");
+                    return context.ThrowExecutionException($"Unable to find end-point method for \"{method->ToString()}\" in \"{instance->Type->ToString()}\"");
                 }
             }
 

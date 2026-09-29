@@ -181,7 +181,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 }
                 if (!methodInfo->IsStatic && !instance->Type->IsInheritFrom(methodInfo->DeclaringType))
                 {
-                    throw new InvalidOperationException("Unable to invoke method with object instance that not declares calling method");
+                    throw new InvalidOperationException($"Unable to invoke method \"{methodInfo->ToString()}\" with object instance \"{instance->Type->ToString()}\" that not declares calling method");
                 }
 
                 if (!continueExecuting)

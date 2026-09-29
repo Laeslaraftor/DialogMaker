@@ -275,14 +275,36 @@ namespace DialogMaker.Core.Scripting.Compiler
             var code = staticInitializer.GetBytecodeBuilder();
             var context = CreateContext(staticInitializer);
             var settings = CreateSettings();
-            int valueIndex = 0;
+            long valueIndex = 0;
 
             foreach (var info in description.ValueFields)
             {
                 if (info.Value.Initializer == null)
                 {
-                    code.Push(valueIndex);
+                    IDSharpType autoValueType;
+
+                    if (byte.MaxValue >= valueIndex && valueIndex >= byte.MinValue)
+                    {
+                        autoValueType = Assembly.ByteType;
+                        code.Push((byte)valueIndex);
                     }
+                    else if (short.MaxValue >= valueIndex && valueIndex >= short.MinValue)
+                    {
+                        autoValueType = Assembly.ShortType;
+                        code.Push((short)valueIndex);
+                    }
+                    else if (int.MaxValue >= valueIndex && valueIndex >= int.MinValue)
+                    {
+                        autoValueType = Assembly.Int32Type;
+                        code.Push((int)valueIndex);
+                    }
+                    else
+                    {
+                        autoValueType = Assembly.Int64Type;
+                        code.Push(valueIndex);
+                    }
+
+                    CastTypes(staticInitializer, autoValueType, valueType, code, null, context);
                 }
                 else
                 {
@@ -316,7 +338,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             code.LoadInstance();
             code.LoadField(instanceValueField);
-            
+
             if (DSharpObjectTypeInfo.TryFindGetHashCode(instanceValueFieldType, out var getHashCodeMethod))
             {
                 code.Call(getHashCodeMethod);
@@ -361,7 +383,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 code.LoadField(field);
                 code.LoadInstanceField(description.InstanceValueField);
                 code.PopOffset(1);
-                
+
                 if (isNumber)
                 {
                     code.Equals();

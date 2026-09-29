@@ -1222,6 +1222,11 @@ namespace DialogMaker.Core.Scripting.Runtime
 
                 result += ')';
 
+                if (method.IsStatic)
+                {
+                    result = "static " + result;
+                }
+
                 return result;
             }
         }
@@ -1273,9 +1278,8 @@ namespace DialogMaker.Core.Scripting.Runtime
                 }
                 if (member is IDSharpMethodInfo method)
                 {
-                    if (!method.IsSealed && (method.OverrideMethod != null ||
-                                             method.IsVirtual ||
-                                             !tryToDefault && method.IsAbstract))
+                    if (!method.IsSealed && 
+                        (method.IsAbstract || (method.IsVirtual && !tryToDefault)))
                     {
                         return DSharpMethodCallingType.Virtual;
                     }
@@ -1284,9 +1288,8 @@ namespace DialogMaker.Core.Scripting.Runtime
                 }
                 if (member is IDSharpPropertyInfo property)
                 {
-                    if (!property.IsSealed && (property.OverrideProperty != null ||
-                                               property.IsVirtual ||
-                                               !tryToDefault && property.IsAbstract))
+                    if (!property.IsSealed &&
+                        (property.IsAbstract || (property.IsVirtual && !tryToDefault)))
                     {
                         return DSharpMethodCallingType.Virtual;
                     }

@@ -1,6 +1,6 @@
-namespace System;
-
 using Internal.System.Runtime;
+
+namespace System;
 
 public class Type : IEquatable<Type>
 {

@@ -1,6 +1,7 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using System.Diagnostics.CodeAnalysis;
+using static DialogMaker.Core.Scripting.Compiler.DSharpVariablesVisitor;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -27,22 +28,22 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// Add variable to current scope
         /// </summary>
         /// <param name="name">Variable name</param>
-        /// <param name="node">Node that represent variable or it name</param>
+        /// <param name="declaration">Node that represent variable or it name</param>
         /// <exception cref="DSharpCompilerException">Variable with same name already declared in current scope</exception>
-        public void AddVariable(string name, AstNode node)
+        public void AddVariable(string name, CaptureDeclaration declaration)
         {
             if (CurrentScope == null)
             {
-                CurrentScope = new(node, true);
+                CurrentScope = new(declaration.Node, true);
                 RootScope = CurrentScope;
-                Scopes.Add(node, CurrentScope);
+                Scopes.Add(declaration.Node, CurrentScope);
             }
             else if (CurrentScope.ContainsInCurrentScope(name))
             {
-                throw new DSharpCompilerException($"Variable \"{name}\" with same name already declared in current scope", node);
+                return;
             }
 
-            CurrentScope.Variables.Add(name, node);
+            CurrentScope.Variables.Add(name, declaration);
         }
         /// <summary>
         /// Reset visitor
@@ -144,7 +145,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             /// <summary>
             /// Scope variables
             /// </summary>
-            public Dictionary<string, AstNode> Variables { get; } = [];
+            public Dictionary<string, CaptureDeclaration> Variables { get; } = [];
 
             /// <summary>
             /// Check variable on containing in current scope.

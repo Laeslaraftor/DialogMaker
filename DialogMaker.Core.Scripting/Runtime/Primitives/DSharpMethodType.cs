@@ -3,7 +3,7 @@
     /// <summary>
     /// Type of method
     /// </summary>
-    public enum DSharpMethodType
+    public enum DSharpMethodType : byte
     {
         /// <summary>
         /// Default method. This is just regular method

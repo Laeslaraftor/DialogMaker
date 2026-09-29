@@ -11,6 +11,8 @@ public class Program
         MegaGovno
     }
 
+    private static int _counter = 0;
+
     public static void Main()
     {
         List<Exception> exceptions = new();
@@ -138,18 +140,25 @@ public class Program
 
         Console.WriteLine();
         
+        string capturedText = "first captured value";
+
         void LocalFunction()
         {
-            Console.WriteLine("Message from local function");
+            Console.WriteLine(capturedText);
+            capturedText = "second captured text";
             OtherLocalFunction();
 
             void OtherLocalFunction()
             {
-                Console.WriteLine("Message from another local function");
+                _counter++;
+                Console.WriteLine(capturedText);
+                capturedText = "third captured value!";
             }
         } 
 
         LocalFunction();
+
+        Console.WriteLine(capturedText);
         IPlayer player = new ValuePlayer("zeWhite");
 
         for (int i = 0; i < 5; i++)
@@ -178,6 +187,8 @@ public class Program
 
         Console.WriteLine("Selection 1: " + Selector<Enemy>(player, "Гавёшка"));
         Console.WriteLine("Selection 2: " + Selector<IPlayer>(player, "Гавёшка"));
+        Enemy enemy = new("Evil zeBlack");
+        enemy.PrintMessage();
 
         Console.WriteLine();
 
@@ -371,7 +382,15 @@ public class Player : IPlayer
 
     public virtual void PrintMessage()
     {
-        Console.WriteLine(Name);
+        int counter = 0;
+
+        void PrintName()
+        {
+            counter++;
+            Console.WriteLine(ToString());
+        }
+        
+        PrintName();
     }
     public override string ToString()
     {

@@ -1,13 +1,54 @@
+using System.Native;
+using Internal.System.Runtime;
+
 namespace System.Reflection;
 
 public class MethodInfo : MemberInfo
 {
-    public override string Name => throw new NotImplementedException();
-    public override Type? DeclaringType => throw new NotImplementedException();
-    public Type? ReturnType { get; }
-
-    public object? Invoke(object? instance, object?[]? args)
+    internal MethodInfo(Pointer<RuntimeMethodInfo> runtimeMethodInfo)
     {
-        return null;
+        RuntimeMethodInfo = runtimeMethodInfo;
+        _methodInfo = runtimeMethodInfo[0];
+    }
+
+    internal Pointer<RuntimeMethodInfo> RuntimeMethodInfo { get; }
+    public override string Name
+    {
+        get
+        {
+            field ??= new(_methodInfo.Name.ToSpan());
+            return field;
+        }
+    }
+    public override Type? DeclaringType
+    {
+        get
+        {
+            if (field == null && !_methodInfo.DeclaringType.IsNull)
+            {
+                field = new(_methodInfo.DeclaringType[0]);
+            }
+
+            return field;
+        }
+    }
+    public Type? ReturnType
+    {
+        get
+        {
+            if (field == null && !_methodInfo.ReturnType.IsNull)
+            {
+                field = new(_methodInfo.ReturnType[0]);
+            }
+
+            return field;
+        }
+    }
+
+    private readonly RuntimeMethodInfo _methodInfo;
+
+    public object? Invoke(object? instance, object?[]? parameters)
+    {
+        return Delegate.Invoke(RuntimeMethodInfo, instance, parameters);
     }
 }

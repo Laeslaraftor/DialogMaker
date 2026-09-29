@@ -927,6 +927,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 newProperty.IsSealed = property.IsSealed;
                 newProperty.IsAbstract = property.IsAbstract;
                 newProperty.IsVirtual = property.IsVirtual;
+                newProperty.PropertyType = GetTypeToken(ReplaceGenericParameters(property.PropertyType, replacedTypes));
                 newProperty.OverrideProperty = property.OverrideProperty;
                 newProperty.OriginalProperty = property;
                 newProperty.CanRead = property.CanRead;

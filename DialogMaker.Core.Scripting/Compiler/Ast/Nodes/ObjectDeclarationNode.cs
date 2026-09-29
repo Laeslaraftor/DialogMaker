@@ -545,7 +545,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 while (!stream.Check(DSharpTokenType.LeftBrace) &&
                        !stream.Check(DSharpTokenType.Where))
                 {
-                    var type = TypeInfoNode.Parse(stream, false, false);
+                    var type = TypeInfoNode.Parse(stream, objectType == DSharpObjectType.Enum, false);
                     type.Parent = node;
                     node.BaseTypes.Add(type);
 

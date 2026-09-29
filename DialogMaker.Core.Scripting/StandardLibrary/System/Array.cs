@@ -1,10 +1,14 @@
-namespace System;
-
 using System.Collections.Generic;
 
-public sealed class Array<T> : IEnumerable<T>
+namespace System;
+
+public abstract class Array
 {
-    public int Length => GetLength();
+    public abstract int Length { get; }
+}
+public sealed class Array<T> : Array, IEnumerable<T>
+{
+    public override int Length => GetLength();
     public T this[int index]
     {
         get => GetItem(index);

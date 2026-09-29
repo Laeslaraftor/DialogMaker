@@ -3,6 +3,11 @@
 	int variable = 0;
 	bool isEnabled = false;
 	
+	if (isEnabled)
+	{
+		variable = 0;
+	}
+	
 	void Increment() 
 	{
 		string text = string.Empty;

@@ -27,14 +27,14 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 foreach (var parameter in invokable.Parameters)
                 {
-                    CurrentScope?.Variables.Add(parameter.Name, parameter);
+                    CurrentScope?.Variables.Add(parameter.Name, new(parameter, parameter.Type, null));
                 }
             }
             else if (node.Parent is DelegateExpressionNode delegateNode)
             {
                 foreach (var parameter in delegateNode.Parameters)
                 {
-                    CurrentScope?.Variables.Add(parameter.Name, parameter);
+                    CurrentScope?.Variables.Add(parameter.Name, new(parameter, parameter.Type, null));
                 }
             }
         }
@@ -43,9 +43,9 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             base.VisitVariableNode(node);
 
-            if (!NotEmpty)
+            if (!NotEmpty && node.Type != null)
             {
-                AddVariable(node.Name, node);
+                AddVariable(node.Name, new(node, node.Type, node.Initializer));
             }
         }
         public override void VisitOutExpressionNode(OutExpressionNode node)
@@ -58,7 +58,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     if (node.Type != null)
                     {
-                        AddVariable(node.Identifier.Name, node.Identifier);
+                        AddVariable(node.Identifier.Name, new(node.Identifier, node.Type, null));
                     }
                 }
                 else
@@ -71,9 +71,9 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             base.VisitIsTypeExpressionNode(node);
 
-            if (!NotEmpty && node.DestinationIdentifier != null)
+            if (!NotEmpty && node.DestinationIdentifier != null && node.DestinationType != null)
             {
-                AddVariable(node.DestinationIdentifier.Name, node.DestinationIdentifier);
+                AddVariable(node.DestinationIdentifier.Name, new(node.DestinationIdentifier, node.DestinationType, null));
             }
         }
         public override void VisitIdentifierExpressionNode(IdentifierExpressionNode node)
@@ -152,7 +152,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// </summary>
         /// <param name="variableName">Name of captured variable</param>
         /// <param name="declaration">Captured variable declaration</param>
-        public class Capture(string variableName, AstNode declaration)
+        public class Capture(string variableName, CaptureDeclaration declaration)
         {
             /// <summary>
             /// Name of captured variable
@@ -161,12 +161,19 @@ namespace DialogMaker.Core.Scripting.Compiler
             /// <summary>
             /// Captured variable declaration
             /// </summary>
-            public AstNode Declaration { get; } = declaration;
+            public CaptureDeclaration Declaration { get; } = declaration;
             /// <summary>
             /// Scopes and it's references to current variable
             /// </summary>
             public Dictionary<Scope, List<AstNode>> Scopes { get; } = [];
         }
+        /// <summary>
+        /// Captured variable declaration
+        /// </summary>
+        /// <param name="Node">Node that declared variable</param>
+        /// <param name="Type">Type of variable</param>
+        /// <param name="Initializer">Variable initializer</param>
+        public record struct CaptureDeclaration(AstNode Node, TypeInfoNode? Type, ExpressionNode? Initializer);
 
         #endregion
     }
