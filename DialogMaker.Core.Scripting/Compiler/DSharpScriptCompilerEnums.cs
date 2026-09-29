@@ -282,7 +282,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 if (info.Value.Initializer == null)
                 {
                     code.Push(valueIndex);
-                    CastTypes(staticInitializer, Assembly.Int32Type, valueType, code, null, context);
+                    }
                 }
                 else
                 {
