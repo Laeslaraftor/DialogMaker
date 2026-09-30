@@ -303,7 +303,8 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 if (type.IsAbstract)
                 {
-                    foreach (var member in type.GetDeclarations())
+                    foreach (var member in type.GetDeclarations(m => m is IDSharpMethodInfo method && method.IsAbstract ||
+                                                                     m is IDSharpPropertyInfo property && property.IsAbstract))
                     {
                         yield return member;
                     }
@@ -1382,6 +1383,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                     {
                         throw new ArgumentException($"Invalid conditional expression: {expression}", nameof(expression));
                     }
+                    if (conditionalExpression.TrueExpression.IsNullExpression())
+                    {
+                        return conditionalExpression.FalseExpression.GetExpressionType(assembly, context);
+                    }
+                    else if (conditionalExpression.FalseExpression.IsNullExpression())
+                    {
+                        return conditionalExpression.TrueExpression.GetExpressionType(assembly, context);
+                    }
 
                     return conditionalExpression.TrueExpression.GetNearestCommonTypeWith(assembly, context, conditionalExpression.FalseExpression);
                 }
@@ -1401,6 +1410,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                     if (selectNotNullExpression.Left == null || selectNotNullExpression.Right == null)
                     {
                         throw new ArgumentException($"Invalid expression: {expression}", nameof(expression));
+                    }
+                    if (selectNotNullExpression.Left.IsNullExpression())
+                    {
+                        return selectNotNullExpression.Right.GetExpressionType(assembly, context);
+                    }
+                    else if (selectNotNullExpression.Right.IsNullExpression())
+                    {
+                        return selectNotNullExpression.Left.GetExpressionType(assembly, context);
                     }
 
                     return selectNotNullExpression.Left.GetNearestCommonTypeWith(assembly, context, selectNotNullExpression.Right);

@@ -38,7 +38,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
                 throw new InvalidOperationException($"Executor not specified for \"{Operation}\"");
             }
 #endif
-
             // Console.WriteLine($"{context.CurrentMethod->ToString()}: {Operation}:{context.InstructionIndex}");
 
             return Executor(this, ref context);

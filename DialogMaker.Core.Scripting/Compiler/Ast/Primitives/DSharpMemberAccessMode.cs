@@ -10,6 +10,10 @@
         /// </summary>
         Reference,
         /// <summary>
+        /// Access to member throw reference if it not null (?.)
+        /// </summary>
+        NotNullReference,
+        /// <summary>
         /// Access to member through pointer (->)
         /// </summary>
         Pointer

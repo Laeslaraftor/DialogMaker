@@ -269,17 +269,29 @@ namespace DialogMaker.Core.Scripting.Compiler
                 return 0;
             }
 
-            bool startCheckReferencesValue = _uselessCombinationOptimizationCheckReferences;
-            _uselessCombinationOptimizationCheckReferences = false;
-            int offset = OptimizeUselessCombinations(builder, _uselessPopCombinationsRange, referenceIndex, 1);
-            _uselessCombinationOptimizationCheckReferences = startCheckReferencesValue;
+            int offset = 0;
 
-            if (offset == 0)
+            if (_uselessCombinationOptimizationCheckReferences)
             {
-                return 0;
+                bool startCheckReferencesValue = _uselessCombinationOptimizationCheckReferences;
+                _uselessCombinationOptimizationCheckReferences = false;
+                offset = OptimizeUselessCombinations(builder, _uselessPopCombinationsRange, referenceIndex, 1);
+                _uselessCombinationOptimizationCheckReferences = startCheckReferencesValue;
+
+                if (offset == 0)
+                {
+                    return 0;
+                }
             }
 
-            ReplaceInstructionReferences(builder, instructions.IndexOf(popInstruction));
+            int popInstructionIndex = instructions.IndexOf(popInstruction);
+
+            if (popInstructionIndex == -1)
+            {
+                return offset;
+            }
+
+            ReplaceInstructionReferences(builder, popInstructionIndex);
 
             return 1 + offset;
         }

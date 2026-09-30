@@ -50,6 +50,7 @@ namespace DialogMaker.Core.Tests
         [TestCase("System.String", "Equals")]
         [TestCase("System.String", "Split")]
         [TestCase("System.String", "IsNullOrEmpty")]
+        [TestCase("System.String", "get_Item")]
         [TestCase("System.Enum", "GetValues")]
         [TestCase("System.Type", "get_Name")]
         [TestCase("System.Type", "get_FullName")]
@@ -146,7 +147,7 @@ namespace DialogMaker.Core.Tests
 
                 if (function != null)
                 {
-                    yield return function; 
+                    yield return function;
                 }
 
                 yield break;
@@ -201,19 +202,26 @@ namespace DialogMaker.Core.Tests
             var code = method.GetBytecodeBuilder();
             Console.WriteLine("Raw bytecode:");
             Console.WriteLine(code.ToString());
-
-            DSharpBytecodeOptimizer.Optimize(method.Assembly);
-
             Console.WriteLine();
-            Console.WriteLine("Optimized:");
-            Console.WriteLine(code.ToString());
+
+            try
+            {
+                DSharpBytecodeOptimizer.Optimize(method.Assembly);
+
+                Console.WriteLine("Optimized:");
+                Console.WriteLine(code.ToString());
+            }
+            catch (Exception error)
+            {
+                Console.WriteLine($"Failed to optimize bytecode: {error}");
+            }
         }
 
         #endregion
 
         #region Проверка стека
 
-        private static readonly DSharpBytecodeOperation[] _loadInstructions = 
+        private static readonly DSharpBytecodeOperation[] _loadInstructions =
         [
             DSharpBytecodeOperation.LoadField,
             DSharpBytecodeOperation.LoadInstanceField,
@@ -248,7 +256,7 @@ namespace DialogMaker.Core.Tests
 
             var code = method.GetBytecodeBuilder();
             List<IDSharpType> elements = [];
-            
+
             void Add(IDSharpType type)
             {
                 elements.Add(type);

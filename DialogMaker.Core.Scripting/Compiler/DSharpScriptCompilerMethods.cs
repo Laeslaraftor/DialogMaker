@@ -592,7 +592,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 if (!info.Value.IsAssignableTo(methodReturnType))
                 {
-                    throw new DSharpCompilerException($"Returning value must be with the same type with current method or function. Type that returns: {info.Key}, but required: {methodReturnType}.{Environment.NewLine}", info.Key);
+                    throw new DSharpCompilerException($"Returning value must be with the same type with current method or function. Type that returns: {info.Value}, but required: {methodReturnType}.{Environment.NewLine}", info.Key);
                 }
             }
 
@@ -2060,9 +2060,11 @@ namespace DialogMaker.Core.Scripting.Compiler
                     code.PopOffset(1);
                 }
 
+                var argsContext = GetContext(context, method);
+
                 foreach (var arg in arrayExpression.Arguments)
                 {
-                    CompileValueExpression(method, arg, ref settings, null, context);
+                    CompileValueExpression(method, arg, ref settings, null, argsContext);
                 }
 
                 IDSharpIndexerInfo indexer;
@@ -3364,12 +3366,15 @@ namespace DialogMaker.Core.Scripting.Compiler
             bool canUseBase = true;
             bool lastAccessedAsLocalMember = false;
 
-            void CheckPointerAccessAvailability(MemberAccessExpressionNode node, bool canAccessThroughPointer, string message = "current expression")
+            void CheckPointerAccessAvailability(MemberAccessExpressionNode node, bool canAccess, string message = "current expression")
             {
-                if (node.AccessMode == DSharpMemberAccessMode.Pointer &&
-                    !canAccessThroughPointer)
+                bool isPointer = node.AccessMode == DSharpMemberAccessMode.Pointer;
+
+                if ((isPointer ||
+                    node.AccessMode == DSharpMemberAccessMode.NotNullReference) &&
+                    !canAccess)
                 {
-                    throw new DSharpCompilerException($"Access through pointer is not available for {message}", node);
+                    throw new DSharpCompilerException($"Access through {(isPointer ? "pointer" : "not null validation")} is not available for {message}", node);
                 }
             }
 

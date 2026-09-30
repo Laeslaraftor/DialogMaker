@@ -26,6 +26,13 @@ public sealed class Array<T> : Array, IEnumerable<T>
 
     public static readonly T[] Empty = new T[0];
 
+    public static void Fill(T[] array, T value)
+    {
+        for (int i = 0; i < array.Length; i++)
+        {
+            array[i] = value;
+        }
+    }
     public static void Copy(T[] source, T[] destination)
     {
         Copy(source, 0, destination, 0, Math.Min(source.Length, destination.Length));

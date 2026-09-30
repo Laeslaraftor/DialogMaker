@@ -13,6 +13,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
     /// <param name="parent">Parent scope</param>
     public class DSharpCompilerMethodScope(DSharpMethodBuilder method, DSharpCompilerScope? parent) : DSharpCompilerScope(method.Assembly, parent)
     {
+
         /// <summary>
         /// Method that contains current scope
         /// </summary>

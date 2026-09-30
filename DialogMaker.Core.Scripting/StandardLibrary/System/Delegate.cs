@@ -1,49 +1,15 @@
-using System.Linq;
 using System.Native;
 using System.Reflection;
 using Internal.System.Runtime;
 
 namespace System;
 
-public class Delegate
+public abstract class Delegate
 {
-    public Delegate(MethodInfo methodInfo, object? target)
-    {
-        _methodInfo = methodInfo;
-        _runtimeMethodInfo = methodInfo.RuntimeMethodInfo;
-        Target = target;
-    }
-    public Delegate(nint runtimeMethodInfo, object? target)
-    {
-        _runtimeMethodInfo = runtimeMethodInfo;
-    }
+    public abstract MethodInfo? MethodInfo { get; }
+    public abstract object? Target { get; }
 
-    public MethodInfo? MethodInfo
-    {
-        get
-        {
-            if (_methodInfo == null)
-            {
-                if (_runtimeMethodInfo == 0)
-                {
-                    throw new InvalidOperationException("Runtime method information not provided!");
-                }
-
-                _methodInfo = new(_runtimeMethodInfo);
-            }
-
-            return _methodInfo;
-        }
-    }
-    public object? Target { get; }
-
-    private readonly Pointer<RuntimeMethodInfo> _runtimeMethodInfo;
-    private MethodInfo? _methodInfo;
-
-    public object? DynamicInvoke(params object?[]? parameters)
-    {
-        return Invoke(_runtimeMethodInfo, Target, parameters);
-    }
+    public abstract object? DynamicInvoke(params object?[]? parameters);
 
     internal static object? Invoke(Pointer<RuntimeMethodInfo> runtimeMethodInfo, object? instance, params object?[]? parameters)
     {

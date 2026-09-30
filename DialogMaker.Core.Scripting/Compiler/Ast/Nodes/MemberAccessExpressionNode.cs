@@ -112,8 +112,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         public static bool IsAccess(AstParserStream stream, int offset = 0)
         {
             return stream.Check(DSharpTokenType.Dot, offset) ||
-                   stream.Check(DSharpTokenType.Greater, offset + 1) &&
-                   stream.Check(DSharpTokenType.Minus, offset);
+                   (stream.Check(DSharpTokenType.Dot, offset + 1) &&
+                   stream.Check(DSharpTokenType.Question, offset)) ||
+                   (stream.Check(DSharpTokenType.Greater, offset + 1) &&
+                   stream.Check(DSharpTokenType.Minus, offset));
         }
         public static bool TryParseAccessMode(AstParserStream stream, out DSharpMemberAccessMode mode)
         {
@@ -148,6 +150,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 if (eat)
                 {
                     token = stream.Eat(DSharpTokenType.Dot);
+                }
+
+                return true;
+            }
+            else if (stream.Check(DSharpTokenType.Question) && stream.Check(DSharpTokenType.Dot, 1))
+            {
+                mode = DSharpMemberAccessMode.NotNullReference;
+
+                if (eat)
+                {
+                    token = stream.Eat(DSharpTokenType.Question);
+                    stream.Eat(DSharpTokenType.Dot);
                 }
 
                 return true;

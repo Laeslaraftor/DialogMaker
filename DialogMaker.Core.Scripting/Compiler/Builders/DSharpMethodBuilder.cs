@@ -290,7 +290,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
             set;
         }
-        public override bool IsDeclaration => IsAbstract || IsExtern || !HasBody;
+        public override bool IsDeclaration => IsAbstract || IsExtern || DeclaringType?.ObjectType == DSharpObjectType.Interface && !HasBody;
         public bool HasBody
         {
             get

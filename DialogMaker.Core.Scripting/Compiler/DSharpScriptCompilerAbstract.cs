@@ -40,22 +40,25 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 Validate(method);
             }
+
+            CheckImplementation(type);
         }
         private void CheckImplementation(DSharpTypeBuilder type)
         {
             if (type.BaseTypes.Count > 0)
             {
-                bool haveEmptyConstructor = false;
+                int constructorsCount = 0;
+                bool haveEmptyConstructorOrNotExists = false;
 
                 foreach (var baseType in type.GetBaseTypes().Where(t => t.ObjectType == DSharpObjectType.Class))
                 {
-                    int constructorsCount = 0;
+                    constructorsCount = 0;
 
                     foreach (var constructor in baseType.GetConstructors())
                     {
                         if (constructor.GetParameters().Length == 0)
                         {
-                            haveEmptyConstructor = true;
+                            haveEmptyConstructorOrNotExists = true;
                             break;
                         }
 
@@ -64,15 +67,19 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     if (constructorsCount == 0)
                     {
-                        haveEmptyConstructor = true;
+                        haveEmptyConstructorOrNotExists = true;
                     }
-                    if (haveEmptyConstructor)
+                    if (haveEmptyConstructorOrNotExists)
                     {
                         break;
                     }
                 }
 
-                if (!haveEmptyConstructor)
+                if (constructorsCount == 0)
+                {
+                    haveEmptyConstructorOrNotExists = true;
+                }
+                if (!haveEmptyConstructorOrNotExists)
                 {
                     bool allInvokesBaseConstructor = true;
 

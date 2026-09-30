@@ -71,7 +71,9 @@ namespace DialogMaker.Core.Scripting.Compiler
         public readonly bool CanAccessTo(IDSharpMemberInfo member)
         {
             if (member.DeclaringType == null &&
-                member.Access == DSharpAccessModifier.Public)
+                member.Access == DSharpAccessModifier.Public ||
+                member.Access == DSharpAccessModifier.Internal && 
+                member.Assembly == Assembly)
             {
                 return true;
             }

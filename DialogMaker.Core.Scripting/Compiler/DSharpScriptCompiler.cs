@@ -160,7 +160,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         public override string ToString()
         {
-            return Script?.ToString() ?? base.ToString();
+            return Script?.ToString() ?? base.ToString() ?? string.Empty;
         }
 
         [Obsolete("Not implemented yet")]
@@ -261,6 +261,30 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             return scope;
+        }
+
+        private DSharpCompilerContext GetContext(DSharpCompilerContext context, DSharpMethodBuilder method)
+        {
+            var scope = context.Scope;
+
+            while (scope != null)
+            {
+                if (scope is DSharpCompilerMethodScope methodScope &&
+                    methodScope.Method == method)
+                {
+                    context.Scope = scope;
+                    context.CurrentMember = method;
+
+                    return context;
+                }
+
+                scope = scope.Parent;
+            }
+
+            context.Scope = GetScope(method);
+            context.CurrentMember = method;
+
+            return context;
         }
 
         #endregion
