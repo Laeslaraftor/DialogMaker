@@ -926,7 +926,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                         if (baseType is DSharpTypeBuilder baseTypeBuilder &&
                             !_createdTypes.ContainsKey(baseTypeBuilder))
                         {
-                            TypeToSetupRequested?.Invoke(this, new(baseTypeBuilder));
+                            try
+                            {
+                                TypeToSetupRequested?.Invoke(this, new(baseTypeBuilder));
+                            }
+                            catch
+                            {
+                                typesToSetupBases.Add(type, declaration);
+                                throw;
+                            }
                         }
                     }
 

@@ -166,6 +166,7 @@ public class Program
             player.PrintMessage();
         }
 
+        TestRandom();
 
         var playerType = player.GetType();
         Console.WriteLine(playerType.ToString());
@@ -220,6 +221,24 @@ public class Program
         TestExceptionHandling();
     }
 
+    private static void TestRandom()
+    {
+        var random = Random.Shared;
+
+        lock (random)
+        {
+            Console.WriteLine();
+            Console.WriteLine("Random values:");
+
+            for (int i = 0; i < 5; i++)
+            {
+                int value = random.Next(100);
+                Console.WriteLine(value);
+            }
+
+            Console.WriteLine();
+        }
+    }
     private static object Selector<T>(object? value1, object value2)
     {
         return (value1 as T) ?? value2;

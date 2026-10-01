@@ -1393,6 +1393,65 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 code.Instructions.Add(endInstruction);
             }
+            else if (statement is LockStatementNode lockStatement)
+            {
+                if (lockStatement.ValueExpression == null)
+                {
+                    throw new DSharpCompilerException("Lock statement should contains locking value expression", statement);
+                }
+                if (lockStatement.Body == null)
+                {
+                    throw new DSharpCompilerException("Lock statement should contains body", statement);
+                }
+
+                var valueExpression = lockStatement.ValueExpression;
+                IDSharpType? valueType = null;
+
+                try
+                {
+                    var member = valueExpression.GetExpressionType(Assembly, context);
+
+                    if (member != null && member.TryGetTypeOrReturnType(out var returnType))
+                    {
+                        valueType = returnType;
+                    }
+                }
+                catch (Exception error)
+                {
+                    throw new DSharpCompilerException("Unable to get type of value expression", valueExpression, error);
+                }
+
+                if (valueType == null)
+                {
+                    throw new DSharpCompilerException("Unable to get type of value expression", valueExpression);
+                }
+                if (valueType.IsValueType())
+                {
+                    throw new DSharpCompilerException("Only reference types can be locked", valueExpression);
+                }
+
+                CompileValueExpression(method, valueExpression, ref settings, null, context);
+
+                var valueVariable = CreateVariable(method, $"<>_lockValue_{valueExpression.Line}_{valueExpression.Column}", valueType, null, ref settings, context);
+                context.HasFinally = true;
+
+                code.StartTrying();
+                var catchReference = code.RegisterTypedCatch(Assembly.ExceptionType);
+                var finallyReference = code.RegisterFinally();
+                code.StoreLocal(valueVariable);
+                code.Lock();
+                code.Pop();
+                CompileStatement(method, lockStatement.Body, depth + 1, code, ref settings, context);
+                code.Finally();
+                var endReference = code.Jump();
+                catchReference.ReferencedInstruction = code.Finally();
+                code.Throw();
+                finallyReference.ReferencedInstruction = code.LoadLocal(valueVariable);
+                code.Unlock();
+                code.Pop();
+                code.Return();
+                endReference.ReferencedInstruction = code.StopTrying();
+            }
             else if (statement is not InvokableStatementNode)
             {
                 throw new DSharpCompilerException($"Invalid statement in current context ({statement.GetType().Name})", statement);
@@ -1783,6 +1842,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 context.CurrentMember = method;
                 bool removeInstance = false;
                 Dictionary<int, DSharpMemberSearchResult>? outputParameters = null;
+                var argsContext = GetContext(context, method);
 
                 void CompileArgument(int index, ExpressionNode expression, ref DSharpMethodCompileSettings settings)
                 {
@@ -1855,7 +1915,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                         return;
                     }
 
-                    CompileValueExpression(method, expression, ref settings, null, context);
+                    CompileValueExpression(method, expression, ref settings, null, argsContext);
                 }
 
                 if (!calledMethod.IsStatic)
@@ -2893,17 +2953,53 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new DSharpCompilerException("Right expression can not be null", expression);
                 }
 
-                CompileValueExpression(method, selectNotNullExpressionNode.Left, ref settings, expression, context);
+                var leftExpression = selectNotNullExpressionNode.Left;
+                IDSharpType? leftExpressionType = null;
 
-                code.Push(null);
-                code.NotEquals();
+                try
+                {
+                    var member = leftExpression.GetExpressionType(Assembly, context);
+
+                    if (member != null && member.TryGetTypeOrReturnType(out var returnType))
+                    {
+                        leftExpressionType = returnType;
+                    }
+                }
+                catch (Exception error)
+                {
+                    throw new DSharpCompilerException("Unable to get left expression value", leftExpression, error);
+                }
+
+                if (leftExpressionType == null)
+                {
+                    throw new DSharpCompilerException("Unable to get left expression value", leftExpression);
+                }
+
+                CompileValueExpression(method, leftExpression, ref settings, expression, context);
+
+                int popAmount = 2;
+                bool firstIsNullable = false;
+
+                if (leftExpressionType.GenericTemplate == Assembly.NullableType)
+                {
+                    firstIsNullable = true;
+                    var nullableInfo = DSharpNullableType.Create(leftExpressionType);
+                    code.LoadPropertyOrField(nullableInfo.HasValueProperty);
+                }
+                else
+                {
+                    code.Push(null);
+                    code.NotEquals();
+                    popAmount = 3;
+                }
+
                 var skipInstruction = code.JumpIfTrue();
-                code.PopRepeat(3);
+                code.PopRepeat(popAmount);
 
                 CompileValueExpression(method, selectNotNullExpressionNode.Right, ref settings, expression, context);
 
                 code.SkipNext();
-                skipInstruction.ReferencedInstruction = code.PopRepeat(2);
+                skipInstruction.ReferencedInstruction = firstIsNullable ? code.Pop() : code.PopRepeat(2);
 
                 return null;
             }
@@ -3014,7 +3110,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 if (IsLogicalMath(@operator))
                 {
-                    CompileExpressionValueWithRequestedType(method, Assembly.BoolType, code, expression, ref settings, binaryExpression, context);
+                    CompileExpressionValueWithRequestedType(method, Assembly.BoolType, code, expression, ref settings, null, context);
                     return Assembly.BoolType;
                 }
 
@@ -3025,7 +3121,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new InvalidOperationException($"Unable to get type of side expression: {expression}");
                 }
 
-                CompileValueExpression(method, expression, ref settings, binaryExpression, context);
+                CompileValueExpression(method, expression, ref settings, null, context);
 
                 return valueType;
             }
@@ -3044,7 +3140,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                         throw new InvalidOperationException($"Incomplete binary expression pair: left or right side of expression not provided: {binaryExpression}");
                     }
 
-                    var valueType = CompileBinaryExpression(method, code, pair.Operator, pair.Left, pair.Right, ref settings, binaryExpression, context);
+                    var valueType = CompileBinaryExpression(method, code, pair.Operator, pair.Left, pair.Right, ref settings, null, context);
                     compiledExpressionTypes.Add(valueType);
                 }
                 else if (pair.Type == DSharpBinaryExpressionCompiler.BinaryPairCompileType.CompileLeftBeforeRight)
@@ -3080,7 +3176,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                         throw new InvalidOperationException($"Unable to get type of left side expression: {pair.Left}");
                     }
 
-                    valueType = CompileBinaryExpression(method, code, pair.Operator, valueType, compiledExpressionTypes[^1], ref settings, binaryExpression, context);
+                    valueType = CompileBinaryExpression(method, code, pair.Operator, valueType, compiledExpressionTypes[^1], ref settings, null, context);
 
                     if (jumpInstructions != null && jumpInstructions.TryGetValue(pair.Left, out var jumpInstruction))
                     {
@@ -3101,7 +3197,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     if (IsLogicalMath(pair.Operator))
                     {
-                        CastTypes(method, leftType, Assembly.BoolType, code, binaryExpression, context);
+                        CastTypes(method, leftType, Assembly.BoolType, code, null, context);
                     }
                     if (pair.Operator == DSharpBinaryOperator.LogicalAnd)
                     {
@@ -3116,7 +3212,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     compiledExpressionTypes.Add(valueType);
 
-                    valueType = CompileBinaryExpression(method, code, pair.Operator, leftType, valueType, ref settings, binaryExpression, context);
+                    valueType = CompileBinaryExpression(method, code, pair.Operator, leftType, valueType, ref settings, null, context);
                     jumpInstruction?.ReferencedInstruction = code.Empty();
 
                     compiledExpressionTypes.Add(valueType);

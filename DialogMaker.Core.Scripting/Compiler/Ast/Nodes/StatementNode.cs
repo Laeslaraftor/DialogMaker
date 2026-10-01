@@ -51,6 +51,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 return UsingVariableStatementNode.Parse(stream);
             }
+            if (stream.Check(DSharpTokenType.Lock))
+            {
+                return LockStatementNode.Parse(stream);
+            }
             if (stream.Check(DSharpTokenType.Void))
             {
                 if (!ObjectDeclarationNode.TryStartParseMember(stream, out var memberInfo))

@@ -16,6 +16,33 @@ public class HashSet<T> : IEnumerable<T>
 
     public int Count { get; private set; }
     public int Capacity => _buckets.Length;
+    public T this[int index]
+    {
+        get
+        {
+            int count = 0;
+
+            for (int i = 0; i < _buckets.Length; i++)
+            {
+                int slotIndex = _buckets[i];
+
+                while (slotIndex != -1)
+                {
+                    var item = _slots[slotIndex];
+                    
+                    if (count >= index)
+                    {
+                        return item.Item;
+                    }
+
+                    count++;
+                    slotIndex = item.Next;
+                }
+            }
+
+            throw new IndexOutOfRangeException();
+        }
+    }
 
     private int[] _buckets;
     private ItemInfo[] _slots;
@@ -25,8 +52,7 @@ public class HashSet<T> : IEnumerable<T>
     public void Clear() => Clear(true);
     public bool Contains(T item)
     {
-        var hashCode = item == null ? 0 : item.GetHashCode();
-        int index = hashCode & (_buckets.Length - 1);
+        int index = GetIndex(item, out int hashCode);
         int slotIndex = _buckets[index];
 
         while (slotIndex != -1)
@@ -45,10 +71,8 @@ public class HashSet<T> : IEnumerable<T>
     }
     public bool Remove(T item)
     {
-        var hashCode = item == null ? 0 : item.GetHashCode();
-        int index = hashCode & (_buckets.Length - 1);
+        int index = GetIndex(item, out int hashCode);
         int slotIndex = _buckets[index];
-        
         int previousSlotIndex = -1;
 
         while (slotIndex != -1)
@@ -79,7 +103,7 @@ public class HashSet<T> : IEnumerable<T>
     }
     public IEnumerator<T> GetEnumerator()
     {
-        throw new NotImplementedException();
+        return new Enumerator(this);
     }
 
     private bool Add(T item, bool countAndResize)
@@ -89,19 +113,13 @@ public class HashSet<T> : IEnumerable<T>
             ResizeIfNeed();
         }
 
-        var hashCode = item == null ? 0 : item.GetHashCode();
-        int index = hashCode & (_buckets.Length - 1);
+        int index = GetIndex(item, out int hashCode);
         int slotIndex = _buckets[index];
         ItemInfo slot;
        
         if (slotIndex == -1)
         {
-            slot = new()
-            {
-                HashCode = -1,
-                Next = -1
-            };
-
+            slot = ItemInfo.Empty;
             slotIndex = GetFreeSlot();
         }
         else
@@ -109,10 +127,11 @@ public class HashSet<T> : IEnumerable<T>
             slot = _slots[slotIndex];
         }
 
-        if (slot.HashCode == -1)
+        if (slot.IsEmpty)
         {
             slot.HashCode = hashCode;
             slot.Item = item;
+            slot.IsEmpty = false;
             _slots[slotIndex] = slot;
 
             if (countAndResize)
@@ -145,7 +164,8 @@ public class HashSet<T> : IEnumerable<T>
         {
             HashCode = hashCode,
             Item = item,
-            Next = -1
+            Next = -1,
+            IsEmpty = false
         };
 
         if (countAndResize)
@@ -219,12 +239,15 @@ public class HashSet<T> : IEnumerable<T>
     }
     private void AddFreeSlot(int index)
     {
-        _slots[index] = new()
-        {
-            HashCode = -1,
-            Next = _firstFreeSlotIndex
-        };
+        var slot = ItemInfo.Empty;
+        slot.Next = _firstFreeSlotIndex;
+        _slots[index] = slot;
         _firstFreeSlotIndex = index;
+    }
+    private int GetIndex(T item, out int hashCode)
+    {
+        hashCode = item == null ? 0 : item.GetHashCode();
+        return hashCode % (_buckets.Length - 1);
     }
 
     private struct ItemInfo
@@ -232,11 +255,13 @@ public class HashSet<T> : IEnumerable<T>
         public int HashCode;
         public int Next;
         public T Item;
+        public bool IsEmpty;
 
         public static readonly ItemInfo Empty = new()
         {
             HashCode = -1,
-            Next = -1
+            Next = -1,
+            IsEmpty = true
         };
     }
     private class Enumerator : IEnumerator<T>
@@ -284,6 +309,8 @@ public class HashSet<T> : IEnumerable<T>
         }
         public void Reset()
         {
+            Current = null;
+            _nextSlotIndex = -1;
             _lastBucketIndex = -1;
         }
     }

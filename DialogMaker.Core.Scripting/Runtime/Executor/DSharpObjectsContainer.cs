@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+﻿using Acly.Data;
+using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
 using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
@@ -6,16 +7,34 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     /// <summary>
     /// Objects instances container
     /// </summary>
-    public unsafe class DSharpObjectsContainer(IDSharpAssembly assembly, DSharpVmMemoryManager memoryManager, DSharpRuntimeInformationProvider runtimeInformationProvider) : Disposable
+    public unsafe class DSharpObjectsContainer : Disposable
     {
+        public DSharpObjectsContainer(IDSharpAssembly assembly, DSharpVmMemoryManager memoryManager, DSharpRuntimeInformationProvider runtimeInformationProvider)
+        {
+            Assembly = assembly;
+            _runtimeInformationProvider = runtimeInformationProvider;
+            _memoryManager = memoryManager;
+            _waitersPool = new(CreateWaiterThread);
+            _resetEventsFabric = _resetEventsPool.GetElement;
+        }
+
         /// <summary>
         /// D# assembly
         /// </summary>
-        public IDSharpAssembly Assembly { get; } = assembly;
+        public IDSharpAssembly Assembly { get; }
 
+        private readonly Dictionary<nint, WaiterThread> _lockedObjectsWaiters = [];
         private readonly List<nint> _objects = [];
-        private readonly DSharpRuntimeInformationProvider _runtimeInformationProvider = runtimeInformationProvider;
-        private readonly DSharpVmMemoryManager _memoryManager = memoryManager;
+        private readonly DSharpRuntimeInformationProvider _runtimeInformationProvider;
+        private readonly DSharpVmMemoryManager _memoryManager;
+        private readonly ElementsPool<WaiterThread> _waitersPool;
+        private readonly ElementsPool<AutoResetEvent> _resetEventsPool = new();
+        private readonly Func<AutoResetEvent> _resetEventsFabric;
+#if NET9_0_OR_GREATER
+        private readonly Lock _lockerLock = new();
+#else
+        private readonly object _lockerLock = new();
+#endif
 
         #region Controls
 
@@ -339,6 +358,192 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
         #endregion
 
+        #region Locking
+
+        /// <summary>
+        /// Lock object instance
+        /// </summary>
+        /// <param name="instance">Object instance to locking</param>
+        /// <returns>Is locked</returns>
+        public bool Lock(DSharpObject* instance)
+        {
+            if (instance == null)
+            {
+                return false;
+            }
+
+            int currentThreadId = Environment.CurrentManagedThreadId;
+            DSharpObjectLockInfo* lockInfo = instance->LockInfo;
+
+            if (lockInfo != null && lockInfo->OwnerThreadId == currentThreadId)
+            {
+                lockInfo->RecursiveCount++;
+                return false;
+            }
+            else if (lockInfo == null)
+            {
+                lockInfo = _memoryManager.Allocate<DSharpObjectLockInfo>(DSharpMemoryBlockType.TypeInformation);
+                *lockInfo = new()
+                {
+                    OwnerThreadId = currentThreadId
+                };
+                instance->LockInfo = lockInfo;
+
+                return false;
+            }
+
+            var waiterInfo = _waitersPool.GetElement();
+            waiterInfo.ThreadId = currentThreadId;
+            waiterInfo.Locked = true;
+            waiterInfo.Next = null;
+            waiterInfo.Last = null;
+
+            lock (_lockerLock)
+            {
+                if (_lockedObjectsWaiters.TryGetValue((nint)instance, out var firstWaiter))
+                {
+                    if (firstWaiter.Next == null)
+                    {
+                        firstWaiter.Next = waiterInfo;
+                        firstWaiter.Last = waiterInfo;
+                    }
+                    else
+                    {
+                        firstWaiter.Last?.Next = waiterInfo;
+                        firstWaiter.Last = waiterInfo;
+                    }
+                }
+                else
+                {
+                    _lockedObjectsWaiters.Add((nint)instance, waiterInfo);
+                }
+            }
+
+            bool isMulticore = Environment.IsMulticoreProcessor;
+            int iterationsCount = 0;
+            AutoResetEvent? resetEvent = null;
+
+            while (true)
+            {
+                if (isMulticore)
+                {
+                    Thread.SpinWait(100);
+                }
+                else
+                {
+                    Thread.Sleep(0);
+                }
+
+                iterationsCount++;
+
+                if (!waiterInfo.Locked)
+                {
+                    break;
+                }
+                if (iterationsCount >= 20)
+                {
+                    lock (waiterInfo)
+                    {
+                        if (!waiterInfo.Locked)
+                        {
+                            break;
+                        }
+
+                        resetEvent = waiterInfo.RequestLockSleep();
+                    }
+
+                    resetEvent.WaitOne();
+                    break;
+                }
+            }
+
+            if (resetEvent != null)
+            {
+                _resetEventsPool.Free(resetEvent);
+            }
+
+            waiterInfo.Clear();
+            _waitersPool.Free(waiterInfo);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Unlock object instance
+        /// </summary>
+        /// <param name="instance">Object instance to unlocking</param>
+        /// <returns>Is object successfully unlocked</returns>
+        public bool Unlock(DSharpObject* instance)
+        {
+            if (instance == null)
+            {
+                return false;
+            }
+
+            int currentThreadId = Environment.CurrentManagedThreadId;
+            var lockInfo = instance->LockInfo;
+            nint instanceAddress = (nint)instance;
+
+            if (lockInfo == null || lockInfo->OwnerThreadId != currentThreadId)
+            {
+                return false;
+            }
+            if (lockInfo->RecursiveCount > 0)
+            {
+                lockInfo->RecursiveCount--;
+                return false;
+            }
+            lock (_lockerLock)
+            {
+                if (_lockedObjectsWaiters.TryGetValue(instanceAddress, out var waiter))
+                {
+                    *lockInfo = new()
+                    {
+                        OwnerThreadId = waiter.ThreadId
+                    };
+                    var nextWaiter = waiter.Next;
+
+                    if (nextWaiter != null)
+                    {
+                        nextWaiter.Last = waiter.Last;
+                        _lockedObjectsWaiters[instanceAddress] = nextWaiter;
+                    }
+                    else
+                    {
+                        _lockedObjectsWaiters.Remove(instanceAddress);
+                    }
+
+                    lock (waiter)
+                    {
+                        var resetEvent = waiter.ResetEvent;
+
+                        if (resetEvent == null)
+                        {
+                            waiter.Locked = false;
+                        }
+                        else
+                        {
+                            resetEvent.Reset();
+                        }
+                    }
+
+                    return true;
+                }
+            }
+
+            instance->LockInfo = null;
+            _memoryManager.Free(lockInfo);
+
+            return true;
+        }
+
+        private WaiterThread CreateWaiterThread()
+        {
+            return new(_resetEventsFabric);
+        }
+
+        #endregion
+
         #region Disposing
 
         protected override void Dispose(bool isDisposing)
@@ -395,7 +600,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             if (isArray)
             {
                 obj->Attributes |= DSharpObjectAttributes.Array;
-            } 
+            }
 
             int sizeForData = buffer.Length - sizeof(DSharpObject);
             byte* objectDataBuffer = DSharpObject.GetData(obj);
@@ -478,6 +683,35 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
 
             return false;
+        }
+
+        #endregion
+
+        #region Structs
+
+        private class WaiterThread(Func<AutoResetEvent> resetEventFabric)
+        {
+            public int ThreadId;
+            public bool Locked;
+            public AutoResetEvent? ResetEvent;
+            public WaiterThread? Next;
+            public WaiterThread? Last;
+
+            private readonly Func<AutoResetEvent> _resetEventFabric = resetEventFabric;
+
+            public void Clear()
+            {
+                ResetEvent = null;
+                Next = null;
+                Last = null;
+            }
+            public AutoResetEvent RequestLockSleep()
+            {
+                var resetEvent = _resetEventFabric();
+                ResetEvent = resetEvent;
+
+                return resetEvent;
+            }
         }
 
         #endregion

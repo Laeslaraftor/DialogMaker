@@ -304,6 +304,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         [Keyword("using")]
         Using,
         /// <summary>
+        /// Lock keyword
+        /// </summary>
+        [Keyword("lock")]
+        Lock,
+        /// <summary>
         /// This keyword
         /// </summary>
         [Keyword("this")]

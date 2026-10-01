@@ -26,7 +26,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
         {
             if (methodInfo.DeclaringType.Namespace == "System")
             {
-                if (methodInfo.DeclaringType.Name == "Array")
+                if (methodInfo.DeclaringType.Name == nameof(Array))
                 {
                     if (methodInfo.Name == "GetLength")
                     {
@@ -140,7 +140,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                         }
                     }
                 }
-                else if (methodInfo.DeclaringType.Name == "Console")
+                else if (methodInfo.DeclaringType.Name == nameof(Console))
                 {
                     if (methodInfo.Name == "WriteLine")
                     {
@@ -157,6 +157,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                     else if (methodInfo.Name == "Clear")
                     {
                         return ConsoleClear;
+                    }
+                }
+                else if (methodInfo.DeclaringType.Name == nameof(Environment))
+                {
+                    if (methodInfo.Name == "GetTickCount")
+                    {
+                        return EnvironmentGetTickCount;
+                    }
+                    else if (methodInfo.Name == "GetNewLine")
+                    {
+                        return EnvironmentGetNewLine;
                     }
                 }
             }
@@ -904,6 +915,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
         {
             Console.Clear();
             return null;
+        }
+
+        #endregion
+
+        #region Envinronment
+
+        private static DSharpExternalMethodResult? EnvironmentGetNewLine(DSharpExternalCallingArgs _)
+        {
+            return Environment.NewLine;
+        }
+        private static DSharpExternalMethodResult? EnvironmentGetTickCount(DSharpExternalCallingArgs _)
+        {
+            return Environment.TickCount;
         }
 
         #endregion

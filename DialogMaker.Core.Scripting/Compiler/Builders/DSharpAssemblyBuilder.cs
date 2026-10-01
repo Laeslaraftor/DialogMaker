@@ -226,7 +226,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                field ??= GetTypeToken(DSharpBuildInTypes.Nullable);
+                field ??= GetTypeToken(NullableType);
                 return field;
             }
         }
@@ -419,7 +419,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                field ??= (IDSharpType)GetType(NullableToken);
+                field ??= NullableTypeInfo.Type;
                 return field;
             }
         }
@@ -500,6 +500,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             get
             {
                 field ??= DSharpEnumType.Create(this);
+                return field;
+            }
+        }
+        public DSharpNullableType NullableTypeInfo
+        {
+            get
+            {
+                field ??= DSharpNullableType.Create(this);
                 return field;
             }
         }
@@ -711,125 +719,133 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             int i = 0;
             var genericTypes = genericType.GetGenericTypes();
 
-            foreach (var parameter in genericTypes)
+            try
             {
-                if (!replacedTypes.TryGetValue(parameter, out var replacedGenericType))
+                foreach (var parameter in genericTypes)
                 {
-                    throw new InvalidOperationException($"Type for replacing generic type \"{parameter}\" in \"{genericType}\" not provided");
+                    if (!replacedTypes.TryGetValue(parameter, out var replacedGenericType))
+                    {
+                        throw new InvalidOperationException($"Type for replacing generic type \"{parameter}\" in \"{genericType}\" not provided");
+                    }
+                    if (!parameter.CanReplaceGenericType(replacedGenericType))
+                    {
+                        throw new ArgumentException($"Generic type {parameter} can not be replaced by {replacedGenericType}");
+                    }
+
+                    newType.GenericParameters.Add(GetTypeToken(replacedGenericType));
+                    replacedMembers.Add(parameter, replacedGenericType);
+                    i++;
                 }
-                if (!parameter.CanReplaceGenericType(replacedGenericType))
+                foreach (var genericTypeBaseType in genericType.GetBaseTypes())
                 {
-                    throw new ArgumentException($"Generic type {parameter} can not be replaced by {replacedGenericType}");
+                    var currentBaseType = ReplaceGenericParameters(genericTypeBaseType, replacedTypes);
+                    newType.AddBaseType(GetTypeToken(currentBaseType));
                 }
-
-                newType.GenericParameters.Add(GetTypeToken(replacedGenericType));
-                replacedMembers.Add(parameter, replacedGenericType);
-                i++;
-            }
-            foreach (var genericTypeBaseType in genericType.GetBaseTypes())
-            {
-                var currentBaseType = ReplaceGenericParameters(genericTypeBaseType, replacedTypes);
-                newType.AddBaseType(GetTypeToken(currentBaseType));
-            }
-            foreach (var field in genericType.GetFields())
-            {
-                var newField = newType.CreateField(field.Name);
-                newField.IsReadOnly = field.IsReadOnly;
-                newField.IsStatic = field.IsStatic;
-                newField.Access = field.Access;
-                newField.RawValue = field.RawValue;
-                newField.OriginalField = field;
-
-                replacedMembers.Add(field, newField);
-            }
-            foreach (var property in genericType.GetProperties())
-            {
-                var newProperty = newType.CreateProperty(property.Name);
-                SetupProperty(newProperty, property);
-
-                replacedMembers.Add(property, newProperty);
-            }
-            foreach (var indexer in genericType.GetIndexers())
-            {
-                var newIndexer = newType.CreateIndexer();
-                SetupProperty(newIndexer, indexer);
-                SetupParameters(newIndexer.Parameters, indexer.GetParameters());
-
-                replacedMembers.Add(newIndexer, indexer);
-            }
-            foreach (var @operator in genericType.GetCastOperators())
-            {
-                DSharpOperatorBuilder newOperator;
-
-                if (@operator.Type == DSharpOperatorType.Implicit)
+                foreach (var field in genericType.GetFields())
                 {
-                    newOperator = newType.CreateImplicitOperator();
+                    var newField = newType.CreateField(field.Name);
+                    newField.IsReadOnly = field.IsReadOnly;
+                    newField.IsStatic = field.IsStatic;
+                    newField.Access = field.Access;
+                    newField.RawValue = field.RawValue;
+                    newField.OriginalField = field;
+
+                    replacedMembers.Add(field, newField);
                 }
-                else
+                foreach (var property in genericType.GetProperties())
                 {
-                    newOperator = newType.CreateExplicitOperator();
+                    var newProperty = newType.CreateProperty(property.Name);
+                    SetupProperty(newProperty, property);
+
+                    replacedMembers.Add(property, newProperty);
                 }
-
-                SetupOperator(newOperator, @operator);
-
-                replacedMembers.Add(newOperator, newOperator);
-            }
-            foreach (var @operator in genericType.GetOperators())
-            {
-                DSharpOperatorBuilder newOperator;
-
-                if (@operator.BinaryOperator != null)
+                foreach (var indexer in genericType.GetIndexers())
                 {
-                    newOperator = newType.CreateOperator(@operator.BinaryOperator.Value);
+                    var newIndexer = newType.CreateIndexer();
+                    SetupProperty(newIndexer, indexer);
+                    SetupParameters(newIndexer.Parameters, indexer.GetParameters());
+
+                    replacedMembers.Add(newIndexer, indexer);
                 }
-                else
+                foreach (var @operator in genericType.GetCastOperators())
                 {
-                    newOperator = newType.CreateOperator(@operator.UnaryOperator.GetValueOrDefault());
+                    DSharpOperatorBuilder newOperator;
+
+                    if (@operator.Type == DSharpOperatorType.Implicit)
+                    {
+                        newOperator = newType.CreateImplicitOperator();
+                    }
+                    else
+                    {
+                        newOperator = newType.CreateExplicitOperator();
+                    }
+
+                    SetupOperator(newOperator, @operator);
+
+                    replacedMembers.Add(newOperator, newOperator);
                 }
-
-                SetupOperator(newOperator, @operator);
-
-                replacedMembers.Add(newOperator, newOperator);
-            }
-            foreach (var method in genericType.GetMethods())
-            {
-                if (method.MethodType != DSharpMethodType.Default)
+                foreach (var @operator in genericType.GetOperators())
                 {
-                    continue;
-                }
+                    DSharpOperatorBuilder newOperator;
 
-                var newMethod = newType.CreateMethod(method.Name);
-                ProcessMethod(newMethod, method);
-            }
-            foreach (var constructor in genericType.GetConstructors())
-            {
-                if (replacedMembers.ContainsKey(constructor))
+                    if (@operator.BinaryOperator != null)
+                    {
+                        newOperator = newType.CreateOperator(@operator.BinaryOperator.Value);
+                    }
+                    else
+                    {
+                        newOperator = newType.CreateOperator(@operator.UnaryOperator.GetValueOrDefault());
+                    }
+
+                    SetupOperator(newOperator, @operator);
+
+                    replacedMembers.Add(newOperator, newOperator);
+                }
+                foreach (var method in genericType.GetMethods())
                 {
-                    continue;
+                    if (method.MethodType != DSharpMethodType.Default)
+                    {
+                        continue;
+                    }
+
+                    var newMethod = newType.CreateMethod(method.Name);
+                    ProcessMethod(newMethod, method);
+                }
+                foreach (var constructor in genericType.GetConstructors())
+                {
+                    if (replacedMembers.ContainsKey(constructor))
+                    {
+                        continue;
+                    }
+
+                    var newConstructor = newType.CreateConstructor();
+                    ProcessMethod(newConstructor, constructor);
+                }
+                foreach (var childType in genericType.GetChildrenTypes())
+                {
+                    ReplaceTypes(childType, newType, replacedTypes);
                 }
 
-                var newConstructor = newType.CreateConstructor();
-                ProcessMethod(newConstructor, constructor);
+                if (genericType.Finalizer != null)
+                {
+                    var newFinalizer = newType.CreateFinalizer();
+                    ProcessMethod(newFinalizer, genericType.Finalizer);
+                }
+                if (genericType.Initializer != null)
+                {
+                    var newInitializer = newType.CreateInitializer(false);
+                    ProcessMethod(newInitializer, genericType.Initializer);
+                }
+                if (genericType.StaticInitializer != null)
+                {
+                    var newStaticInitializer = newType.CreateInitializer(true);
+                    ProcessMethod(newStaticInitializer, genericType.StaticInitializer);
+                }
             }
-            foreach (var childType in genericType.GetChildrenTypes())
+            catch
             {
-                ReplaceTypes(childType, newType, replacedTypes);
-            }
-
-            if (genericType.Finalizer != null)
-            {
-                var newFinalizer = newType.CreateFinalizer();
-                ProcessMethod(newFinalizer, genericType.Finalizer);
-            }
-            if (genericType.Initializer != null)
-            {
-                var newInitializer = newType.CreateInitializer(false);
-                ProcessMethod(newInitializer, genericType.Initializer);
-            }
-            if (genericType.StaticInitializer != null)
-            {
-                var newStaticInitializer = newType.CreateInitializer(true);
-                ProcessMethod(newStaticInitializer, genericType.StaticInitializer);
+                assemblyBuilder.RemoveType(newType);
+                throw;
             }
 
             void SetupImplementations<T>(T[] implementations, Action<T> addImplementation)

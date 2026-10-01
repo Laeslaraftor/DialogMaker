@@ -5,6 +5,7 @@ using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -1013,6 +1014,12 @@ namespace DialogMaker.Core.Scripting.Compiler
                 var firstType = GetType(firstExpressionType, expression);
                 var secondType = GetType(secondExpressionType, other);
 
+                if (firstType.GenericTemplate == assembly.NullableType)
+                {
+                    var nullableValueProperty = DSharpNullableType.GetValueProperty(firstType);
+                    return nullableValueProperty.PropertyType.GetNearestCommonType(secondType);
+                }
+
                 return firstType.GetNearestCommonType(secondType);
             }
 
@@ -1465,6 +1472,11 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                     else
                     {
+                        if (leftTypeInfo.IsPointFloating())
+                        {
+                            return leftType;
+                        }
+
                         return rightType;
                     }
                 }

@@ -10,6 +10,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     /// </summary>
     public static unsafe class RuntimeExtensions
     {
+        private static bool? _isMulticoreProcessor;
+
         extension(DSharpVmMemoryManager memoryManager)
         {
             /// <summary>
@@ -75,6 +77,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 result = null;
                 return false;
             }
+        }
+        extension(Environment)
+        {
+            internal static bool IsMulticoreProcessor
+            {
+                get
+                {
+                    _isMulticoreProcessor ??= Environment.ProcessorCount > 1;
+                    return _isMulticoreProcessor.Value;
+                }
+            }
+
         }
 
         /// <summary>

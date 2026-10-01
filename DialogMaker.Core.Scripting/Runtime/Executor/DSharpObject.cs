@@ -96,6 +96,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// Count of references to this object
         /// </summary>
         public uint ReferencesCount;
+        /// <summary>
+        /// Information about instance locking
+        /// </summary>
+        public DSharpObjectLockInfo* LockInfo;
 
         public override string ToString()
         {

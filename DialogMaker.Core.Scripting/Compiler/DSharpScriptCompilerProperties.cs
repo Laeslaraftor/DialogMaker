@@ -27,6 +27,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 field = declaringTypeBuilder.CreateField(ValueFieldNamePrefix + property.Name);
                 field.FieldType = property.PropertyType;
                 field.Access = DSharpAccessModifier.Private;
+                field.IsStatic = property.IsStatic;
                 _propertyFields.Add(property, field);
             }
 

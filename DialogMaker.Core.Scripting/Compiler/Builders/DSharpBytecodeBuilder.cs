@@ -820,12 +820,29 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         }
 
         /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.Lock"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction Lock()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Lock);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.Unlock"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction Unlock()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Unlock);
+        }
+
+        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIndexed"/>
         /// </summary>
         /// <returns></returns>
         public Instruction JumpIndexed()
         {
-            return CreateInstruction<ReferenceInstruction>(this, DSharpBytecodeOperation.JumpIndexed);
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.JumpIndexed);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.Jump"/>

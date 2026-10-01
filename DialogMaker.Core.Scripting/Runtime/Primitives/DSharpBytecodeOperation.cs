@@ -229,6 +229,27 @@ namespace DialogMaker.Core.Scripting.Runtime
         [RequestsStackValues(-1)]
         [Executor(typeof(DSharpCallInstructionExecutor))]
         Call,
+        /// <summary>
+        /// Lock last value in stack.
+        /// It throws exception if stack value is null or it was not reference type.
+        /// If this value already locked then it stops current thread or just wait until it not unlocked
+        /// Stack:
+        /// 0: value
+        /// </summary>
+        [ArgsCount(0)]
+        [RequestsStackValues(1)]
+        [Executor(typeof(DSharpLockInstructionExecutor))]
+        Lock,
+        /// <summary>
+        /// Lock last value in stack.
+        /// It throws exception if stack value is null or it was not reference type.
+        /// Stack:
+        /// 0: value
+        /// </summary>
+        [ArgsCount(0)]
+        [RequestsStackValues(1)]
+        [Executor(typeof(DSharpUnlockInstructionExecutor))]
+        Unlock,
 
         /// <summary>
         /// Jump to instruction on index that stores in stack last value

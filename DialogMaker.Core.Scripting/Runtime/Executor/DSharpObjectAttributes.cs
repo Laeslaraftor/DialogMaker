@@ -4,7 +4,7 @@
     /// D# object attributes
     /// </summary>
     [Flags]
-    public enum DSharpObjectAttributes : short
+    public enum DSharpObjectAttributes : byte
     {
         /// <summary>
         /// Empty attribute
