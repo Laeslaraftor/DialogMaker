@@ -427,6 +427,7 @@ public class Enemy : Player
     public override void PrintMessage()
     {
         base.PrintMessage();
+        Name?.GetHashCode();
         Console.WriteLine("Фигня №1");
     }
 }

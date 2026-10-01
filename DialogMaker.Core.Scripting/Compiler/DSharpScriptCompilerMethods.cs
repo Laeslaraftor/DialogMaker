@@ -3448,6 +3448,84 @@ namespace DialogMaker.Core.Scripting.Compiler
                 code.PopOffset(1);
             }
         }
+        private bool CompileNullSkipping(DSharpBytecodeBuilder code, IDSharpMemberInfo? currentMember, AssignSettingRefHandler<IDSharpMemberInfo?> compile, ref DSharpMethodCompileSettings settings, out IDSharpMemberInfo? compiledMember)
+        {
+            compiledMember = null;
+
+            if (currentMember == null)
+            {
+                return false;
+            }
+
+            DSharpBytecodeBuilder.ReferenceInstruction? skipInstruction;
+            DSharpNullableType? currentValueNullableInfo = null;
+
+            if (currentMember.TryGetTypeOrReturnType(out var returnType))
+            {
+                if (returnType.GenericTemplate == Assembly.NullableType)
+                {
+                    currentValueNullableInfo = DSharpNullableType.Create(returnType);
+                    code.LoadPropertyOrField(currentValueNullableInfo.HasValueProperty);
+                }
+                else
+                {
+                    code.Push(null);
+                    code.NotEquals();
+                }
+
+                skipInstruction = code.JumpIfFalse();
+
+                if (currentValueNullableInfo != null)
+                {
+                    code.Pop();
+                    code.LoadPropertyOrField(currentValueNullableInfo.ValueProperty);
+                    code.PopOffset(1);
+                }
+                else
+                {
+                    code.PopRepeat(2);
+                }
+            }
+            else
+            {
+                return false;
+            }
+
+            var expressionMember = compile(ref settings)
+                        ?? throw new InvalidOperationException("Unable to get type of expression");
+            compiledMember = expressionMember;
+
+            if (!expressionMember.TryGetTypeOrReturnType(out var expressionReturnType))
+            {
+                throw new InvalidOperationException("Unable to find value type");
+            }
+
+            DSharpNullableType? returnNullableInfo = null;
+
+            if (expressionReturnType.IsValueType())
+            {
+                var nullableType = Assembly.CreateNullable(expressionReturnType);
+                returnNullableInfo = DSharpNullableType.Create(nullableType);
+
+                code.Push(true);
+                code.New(returnNullableInfo.Constructor);
+                code.PopPreviousTwo();
+            }
+
+            var skipSkipping = code.Jump();
+            skipInstruction.ReferencedInstruction = code.PopRepeat(currentValueNullableInfo != null ? 1 : 2);
+
+            if (returnNullableInfo != null)
+            {
+                code.Push(false);
+                code.New(returnNullableInfo.Constructor);
+                code.PopPreviousTwo();
+            }
+
+            skipSkipping.ReferencedInstruction = code.Empty();
+
+            return true;
+        }
         private IDSharpMemberInfo? CompileMemberAccessExpression(DSharpMethodBuilder method, MemberAccessExpressionNode memberAccessExpression, MemberAccessExpressionEndPointHandler endPointHandler, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context = default)
         {
             var startDoNotCompileEndPointMemberValue = settings.DoNotCompileEndPointMember;
@@ -3531,8 +3609,26 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 else
                 {
-                    var expressionMember = CompileValueExpression(method, currentMemberAccess.Target!, ref settings, previousTarget, context)
-                        ?? throw new InvalidOperationException($"Unable to get type of expression: {currentMemberAccess.Target}");
+                    bool previousTargetRemoved = false;
+                    IDSharpMemberInfo? expressionMember;
+
+                    if (currentMemberAccess.AccessMode == DSharpMemberAccessMode.NotNullReference &&
+                        CompileNullSkipping(code, currentMember, (ref settings) =>
+                        {
+                            return CompileValueExpression(method, currentMemberAccess.Target!, ref settings, previousTarget, context)
+                                ?? throw new InvalidOperationException($"Unable to get type of expression: {currentMemberAccess.Target}");
+                        }, ref settings, out expressionMember))
+                    {
+                        previousTargetRemoved = true;
+                    }
+                    else
+                    {
+                        expressionMember = CompileValueExpression(method, currentMemberAccess.Target!, ref settings, previousTarget, context);
+                    }
+                    if (expressionMember == null)
+                    {
+                        throw new InvalidOperationException($"Unable to get type of expression: {currentMemberAccess.Target}");
+                    }
 
                     if (settings.NextNonVirtualizedAccess &&
                         expressionMember.DeclaringType != context.CurrentMember)
@@ -3540,7 +3636,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                         throw new InvalidOperationException($"Unable to find \"{currentMemberAccess.Target}\" at \"{context.CurrentMember}\"");
                     }
 
-                    if (previousTarget != null)
+                    if (!previousTargetRemoved && previousTarget != null)
                     {
                         code.PopOffset(1);
                     }
@@ -3635,7 +3731,17 @@ namespace DialogMaker.Core.Scripting.Compiler
                 throw new InvalidOperationException($"Incomplete expression: {currentMemberAccess}");
             }
 
-            var result = endPointHandler(previousTarget, currentMemberAccess.Member, ref settings, context);
+            IDSharpMemberInfo? result;
+
+            if (currentMemberAccess.AccessMode != DSharpMemberAccessMode.NotNullReference ||
+                !CompileNullSkipping(code, currentMember, (ref settings) =>
+                {
+                    return endPointHandler(previousTarget, currentMemberAccess.Member, ref settings, context);
+                }, ref settings, out result))
+            {
+                result = endPointHandler(previousTarget, currentMemberAccess.Member, ref settings, context);
+            }
+
             settings.DoNotCompileEndPointMember = startDoNotCompileEndPointMemberValue;
 
             if (result != null && result.IsStatic &&

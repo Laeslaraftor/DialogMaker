@@ -1124,6 +1124,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             if (type.IsValueType())
             {
+                if (type.GenericTemplate == NullableType)
+                {
+                    return type;
+                }
+
                 return FillGeneric(NullableType, type);
             }
 
