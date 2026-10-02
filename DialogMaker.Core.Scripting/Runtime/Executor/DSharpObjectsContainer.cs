@@ -367,7 +367,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <returns>Is locked</returns>
         public bool Lock(DSharpObject* instance)
         {
-            if (instance == null)
+            if (instance == null || !instance->IsReferenceObject)
             {
                 return false;
             }

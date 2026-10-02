@@ -1,8 +1,10 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Text;
 
 namespace DialogMaker.Core.Scripting.Compiler
@@ -72,7 +74,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             if (member.DeclaringType == null &&
                 member.Access == DSharpAccessModifier.Public ||
-                member.Access == DSharpAccessModifier.Internal && 
+                member.Access == DSharpAccessModifier.Internal &&
                 member.Assembly == Assembly)
             {
                 return true;
@@ -260,10 +262,6 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             result = null;
 
-            if (CurrentMember == null && TypeResolver == null && Assembly == null)
-            {
-                return false;
-            }
             if (expression is IdentifierExpressionNode identifier)
             {
                 if (CurrentMember is IDSharpMethodInfo method)
@@ -311,6 +309,11 @@ namespace DialogMaker.Core.Scripting.Compiler
                      TryResolveMember(expression, out var resolvedMember) &&
                      resolvedMember.MemberInfo.TryGetReturnType(out result))
             {
+                if (Assembly != null && resolvedMember.IsNullable && result.IsValueType())
+                {
+                    result = Assembly.CreateNullable(result);
+                }
+
                 return true;
             }
             if (TypeResolver != null)
@@ -501,6 +504,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 var member = memberSearchResult.MemberInfo;
+                var assembly = Assembly;
 
                 if (member is not IDSharpType)
                 {
@@ -514,9 +518,33 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                 }
 
+                var typeMember = (IDSharpType)member;
+
+                if (assembly != null &&
+                    memberSearchResult.IsNullable && typeMember.IsValueType())
+                {
+                    typeMember = assembly.CreateNullable(typeMember);
+                }
+                if (assembly != null && typeMember.GenericTemplate == assembly.NullableType &&
+                    memberAccess.AccessMode == DSharpMemberAccessMode.NotNullReference)
+                {
+                    member = typeMember.GetGenericParameters().FirstOrDefault();
+                }
+
                 DSharpCompilerContext context = new(this, member);
 
-                return context.TryResolveMember(memberAccess.Member, out result);
+                if (!context.TryResolveMember(memberAccess.Member, out result))
+                {
+                    return false;
+                }
+                if (memberAccess.HasAnyNotNullAccess() &&
+                    result.MemberInfo.TryGetTypeOrReturnType(out var resultType) &&
+                    resultType.IsValueType())
+                {
+                    result = new(result, true);
+                }
+
+                return true;
             }
 
             if (result.IsEmpty && TypeResolver != null)

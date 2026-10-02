@@ -989,9 +989,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                     var newReturnType = ReplaceGenericParameters(method.ReturnType, replacedTypes);
                     newMethod.ReturnType = GetTypeToken(newReturnType);
                 }
-
-                newMethod.OverrideMethod = method.OverrideMethod;
-
                 if (newMethod.MethodType != DSharpMethodType.Getter &&
                     newMethod.MethodType != DSharpMethodType.Setter)
                 {
@@ -1022,6 +1019,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                     SetupParameters(newMethod.Parameters, method.GetParameters());
                     SetupImplementations(method.GetImplementedMethods(), newMethod.AddImplementedMethod);
                 }
+
+                newMethod.OverrideMethod = method.OverrideMethod;
 
                 replacedMembers.Add(method, newMethod);
             }

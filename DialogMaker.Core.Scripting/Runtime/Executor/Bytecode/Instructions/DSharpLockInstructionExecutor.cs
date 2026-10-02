@@ -22,6 +22,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             {
                 return error;
             }
+            if (!instance->IsReferenceObject)
+            {
+                return context.ThrowExecutionException($"Unable to lock object \"{instance->Type->ToString()}\". Lock available only for reference types and object that stored in heap!");
+            }
 
             context.ObjectsContainer.Lock(instance);
 

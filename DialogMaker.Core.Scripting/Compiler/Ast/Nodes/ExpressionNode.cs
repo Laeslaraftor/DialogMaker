@@ -105,9 +105,21 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 };
 
                 target.Parent = memberAccess;
-                memberAccess.Member.Parent = memberAccess;
 
-                target = memberAccess;
+                if (memberAccess.Member is SelectNotNullExpressionNode selectNotNullMember)
+                {
+                    memberAccess.Member = selectNotNullMember.Left;
+                    memberAccess.Member?.Parent = memberAccess;
+                    selectNotNullMember.Left = memberAccess;
+                    selectNotNullMember.Parent = memberAccess.Parent;
+                    memberAccess.Parent = selectNotNullMember;
+                    target = selectNotNullMember;
+                }
+                else
+                {
+                    memberAccess.Member.Parent = memberAccess;
+                    target = memberAccess;
+                }
             }
             while (MemberAccessExpressionNode.IsAccess(stream));
 
@@ -141,7 +153,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
             }
 
-            return memberAccess;
+            if (stream.Check(DSharpTokenType.IfNull))
+            {
+                return SelectNotNullExpressionNode.Parse(stream, target);
+            }
+
+            return target;
         }
         /// <summary>
         /// Parse member access or raw type name with possibility of method calling, array access, type checking

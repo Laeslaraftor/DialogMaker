@@ -1460,9 +1460,17 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         #endregion
 
-        #region Expressions
+        #region Delegates
 
         private delegate T? AssignSettingRefHandler<T>(ref DSharpMethodCompileSettings settings);
+        private delegate void InstructionHandler<T>(T instruction)
+            where T : DSharpBytecodeBuilder.Instruction;
+        private delegate void EndPointSkipInstructionHandler<T>(T instruction, bool instanceLoaded)
+            where T : DSharpBytecodeBuilder.Instruction;
+
+        #endregion
+
+        #region Expressions
 
         private IDSharpMemberInfo? CompileExpression(DSharpMethodBuilder method, ExpressionNode expression, ref DSharpMethodCompileSettings settings, ExpressionNode? parentExpression = null, DSharpCompilerContext context = default)
         {
@@ -1616,7 +1624,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                         throw new InvalidOperationException($"Unable to get value type of left expression: {expression}");
                     }
 
-                    IDSharpMemberInfo? member = CompileEndPointMember(method, code, assignExpression.Left, assignExpression, ref settings, context)
+                    DSharpBytecodeBuilder.Instruction? skipInstruction = null;
+                    bool instanceLoaded = false;
+
+                    IDSharpMemberInfo? member = CompileEndPointMember(method, code, assignExpression.Left, assignExpression, (instruction, instance) =>
+                    {
+                        skipInstruction = instruction;
+                        instanceLoaded = instance;
+                    }, ref settings, context)
                         ?? throw new ArgumentException($"Unable to find member: {assignExpression.Left}", nameof(expression));
 
                     if (!member.TryGetReturnType(out var returnType))
@@ -1636,7 +1651,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                         member = propertyField;
                     }
 
-                    return CompileExpression(leftSideType, (ref settings) =>
+                    var resultMember = CompileExpression(leftSideType, (ref settings) =>
                     {
                         code.StorePropertyOrField(member, settings.NextNonVirtualizedAccess);
                         settings.NextNonVirtualizedAccess = false;
@@ -1652,6 +1667,18 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                         return member;
                     }, ref settings);
+
+                    if (skipInstruction != null)
+                    {
+                        code.Instructions.Remove(skipInstruction);
+
+                        var skip = code.Jump();
+                        code.Instructions.Add(skipInstruction);
+                        code.Pop();
+                        skip.ReferencedInstruction = code.Empty();
+                    }
+
+                    return resultMember;
                 }
             }
             else if (expression is IncrementExpressionNode incrementExpression)
@@ -1865,6 +1892,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                             {
                                 throw new DSharpCompilerException("Unable to get member return type", outParameterExpression.Identifier);
                             }
+                            if (member.IsNullable && type.IsValueType())
+                            {
+                                type = Assembly.CreateNullable(type);
+                            }
                         }
                         else
                         {
@@ -2022,7 +2053,16 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                 }
 
-                if (!calledMethod.IsStatic && method.IsStatic &&
+                bool parentCallingWasReturning = false;
+
+                if (parentExpression is CallExpressionNode &&
+                    settings.LastMethodCallingInfo != null &&
+                    settings.LastMethodCallingInfo.TryGetValue(parentExpression, out var parentCalling))
+                {
+                    parentCallingWasReturning = parentCalling.Method.ReturnType != null;
+                }
+
+                if (!parentCallingWasReturning && !calledMethod.IsStatic && method.IsStatic &&
                      parentExpression is not IdentifierExpressionNode &&
                      parentExpression is not MemberAccessExpressionNode &&
                      parentExpression is not ArrayAccessExpressionNode &&
@@ -3528,6 +3568,10 @@ namespace DialogMaker.Core.Scripting.Compiler
         }
         private IDSharpMemberInfo? CompileMemberAccessExpression(DSharpMethodBuilder method, MemberAccessExpressionNode memberAccessExpression, MemberAccessExpressionEndPointHandler endPointHandler, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context = default)
         {
+            return CompileMemberAccessExpression(method, memberAccessExpression, endPointHandler, null, ref settings, context);
+        }
+        private IDSharpMemberInfo? CompileMemberAccessExpression(DSharpMethodBuilder method, MemberAccessExpressionNode memberAccessExpression, MemberAccessExpressionEndPointHandler endPointHandler, InstructionHandler<DSharpBytecodeBuilder.Instruction>? skipHandler, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context = default)
+        {
             var startDoNotCompileEndPointMemberValue = settings.DoNotCompileEndPointMember;
             settings.DoNotCompileEndPointMember = false;
 
@@ -3539,6 +3583,8 @@ namespace DialogMaker.Core.Scripting.Compiler
             bool canUseThis = true;
             bool canUseBase = true;
             bool lastAccessedAsLocalMember = false;
+            bool currentMemberExtractedFromNullable = false;
+            List<DSharpBytecodeBuilder.ReferenceInstruction> skipInstructions = [];
 
             void CheckPointerAccessAvailability(MemberAccessExpressionNode node, bool canAccess, string message = "current expression")
             {
@@ -3558,6 +3604,49 @@ namespace DialogMaker.Core.Scripting.Compiler
                 bool currentIsBase = false;
                 bool currentIsThis = false;
                 bool accessedAsLocalMember = false;
+                currentMemberExtractedFromNullable = false;
+
+                IDSharpMemberInfo CompileNotNull(IDSharpMemberInfo member, ref bool extractedType)
+                {
+                    if (member.TryGetTypeOrReturnType(out var memberReturnType))
+                    {
+                        if (!memberReturnType.IsValueType())
+                        {
+                            code.Push(null);
+                            code.Equals();
+                            var skip = code.JumpIfFalse();
+                            code.PopRepeat(previousTarget != null ? 4 : 3); // equals + push(null) + value +- previousValue
+                            code.Push(null);
+                            var skipToEnd = code.Jump();
+                            skipInstructions.Add(skipToEnd);
+                            skip.ReferencedInstruction = code.PopRepeat(2);
+                        }
+                        else if (memberReturnType.GenericTemplate == Assembly.NullableType)
+                        {
+                            var nullableInfo = DSharpNullableType.Create(memberReturnType);
+                            code.LoadPropertyOrField(nullableInfo.HasValueProperty);
+                            var skip = code.JumpIfTrue();
+                            code.PopRepeat(previousTarget != null ? 3 : 2);
+                            code.Push(null);
+                            var skipToEnd = code.Jump();
+                            skipInstructions.Add(skipToEnd);
+                            skip.ReferencedInstruction = code.Pop();
+                            code.LoadPropertyOrField(nullableInfo.ValueProperty);
+                            code.PopOffset(1);
+
+                            extractedType = true;
+
+                            return nullableInfo.MemberType;
+                        }
+                        else
+                        {
+                            CheckPointerAccessAvailability(currentMemberAccess, false);
+                        }
+
+                    }
+
+                    return member;
+                }
 
                 if (currentMember is IDSharpType previousType)
                 {
@@ -3606,28 +3695,21 @@ namespace DialogMaker.Core.Scripting.Compiler
                     accessedAsLocalMember = true;
 
                     code.LoadLocal(localMember);
+
+                    if (currentMemberAccess.AccessMode == DSharpMemberAccessMode.NotNullReference)
+                    {
+                        currentType = CompileNotNull(localMember.Type, ref currentMemberExtractedFromNullable);
+                    }
                 }
                 else
                 {
                     bool previousTargetRemoved = false;
-                    IDSharpMemberInfo? expressionMember;
+                    IDSharpMemberInfo? expressionMember = CompileValueExpression(method, currentMemberAccess.Target!, ref settings, previousTarget, context)
+                        ?? throw new InvalidOperationException($"Unable to get type of expression: {currentMemberAccess.Target}");
 
-                    if (currentMemberAccess.AccessMode == DSharpMemberAccessMode.NotNullReference &&
-                        CompileNullSkipping(code, currentMember, (ref settings) =>
-                        {
-                            return CompileValueExpression(method, currentMemberAccess.Target!, ref settings, previousTarget, context)
-                                ?? throw new InvalidOperationException($"Unable to get type of expression: {currentMemberAccess.Target}");
-                        }, ref settings, out expressionMember))
+                    if (currentMemberAccess.AccessMode == DSharpMemberAccessMode.NotNullReference)
                     {
-                        previousTargetRemoved = true;
-                    }
-                    else
-                    {
-                        expressionMember = CompileValueExpression(method, currentMemberAccess.Target!, ref settings, previousTarget, context);
-                    }
-                    if (expressionMember == null)
-                    {
-                        throw new InvalidOperationException($"Unable to get type of expression: {currentMemberAccess.Target}");
+                        expressionMember = CompileNotNull(expressionMember, ref currentMemberExtractedFromNullable);
                     }
 
                     if (settings.NextNonVirtualizedAccess &&
@@ -3731,15 +3813,48 @@ namespace DialogMaker.Core.Scripting.Compiler
                 throw new InvalidOperationException($"Incomplete expression: {currentMemberAccess}");
             }
 
-            IDSharpMemberInfo? result;
+            IDSharpMemberInfo? result = endPointHandler(previousTarget, currentMemberAccess.Member, ref settings, context);
 
-            if (currentMemberAccess.AccessMode != DSharpMemberAccessMode.NotNullReference ||
-                !CompileNullSkipping(code, currentMember, (ref settings) =>
-                {
-                    return endPointHandler(previousTarget, currentMemberAccess.Member, ref settings, context);
-                }, ref settings, out result))
+            if (skipInstructions.Count > 0 &&
+                result != null && result.TryGetTypeOrReturnType(out var resultType))
             {
-                result = endPointHandler(previousTarget, currentMemberAccess.Member, ref settings, context);
+                DSharpBytecodeBuilder.Instruction? endingInstruction = null;
+
+                if (!startDoNotCompileEndPointMemberValue)
+                {
+                    DSharpNullableType? nullableType = null;
+
+                    if (resultType.GenericTemplate == Assembly.NullableType)
+                    {
+                        nullableType = DSharpNullableType.Create(resultType);
+                    }
+                    else if (resultType.IsValueType())
+                    {
+                        nullableType = DSharpNullableType.Create(Assembly.CreateNullable(resultType));
+                    }
+                    if (nullableType != null)
+                    {
+                        result = nullableType.Type;
+                        code.Push(true);
+                        code.New(nullableType.Constructor);
+                        code.PopPreviousTwo();
+
+                        var skip = code.Jump();
+                        code.Push(false);
+                        code.New(nullableType.Constructor);
+                        code.PopPreviousTwo();
+                        skip.ReferencedInstruction = code.Empty();
+                    }
+                }
+
+                endingInstruction ??= code.Empty();
+
+                foreach (var skipInstruction in skipInstructions)
+                {
+                    skipInstruction.ReferencedInstruction = endingInstruction;
+                }
+
+                skipHandler?.Invoke(endingInstruction);
             }
 
             settings.DoNotCompileEndPointMember = startDoNotCompileEndPointMemberValue;
@@ -3755,6 +3870,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             if (result != null && !result.IsStatic &&
                 !lastAccessedAsLocalMember &&
                 currentMember is IDSharpType &&
+                !currentMemberExtractedFromNullable &&
                 previousTarget is not ThisExpressionNode &&
                 previousTarget is not BaseExpressionNode &&
                 previousTarget is not ArrayAccessExpressionNode &&
@@ -3767,12 +3883,18 @@ namespace DialogMaker.Core.Scripting.Compiler
         }
         private IDSharpMemberInfo? CompileEndPointMember(DSharpMethodBuilder method, DSharpBytecodeBuilder code, ExpressionNode expression, ExpressionNode? parentExpression, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context)
         {
+            return CompileEndPointMember(method, code, expression, parentExpression, null, ref settings, context);
+        }
+        private IDSharpMemberInfo? CompileEndPointMember(DSharpMethodBuilder method, DSharpBytecodeBuilder code, ExpressionNode expression, ExpressionNode? parentExpression, EndPointSkipInstructionHandler<DSharpBytecodeBuilder.Instruction>? skipInstructionHandler, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context)
+        {
             bool startDoNotCompileEndPointMember = settings.DoNotCompileEndPointMember;
             settings.DoNotCompileEndPointMember = true;
             IDSharpMemberInfo? member;
 
             if (expression is MemberAccessExpressionNode leftMemberAccess)
             {
+                bool instanceLoaded = false;
+
                 member = CompileMemberAccessExpression(method, leftMemberAccess, (p, e, ref s, c) =>
                 {
                     c.ParentExpression = p;
@@ -3781,6 +3903,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                         p is BaseExpressionNode)
                     {
                         code.LoadInstance();
+                        instanceLoaded = true;
                     }
 
                     try
@@ -3796,6 +3919,9 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
 
                     throw new InvalidOperationException($"Unable to resolve member: {e}");
+                }, i =>
+                {
+                    skipInstructionHandler?.Invoke(i, instanceLoaded);
                 }, ref settings, context);
             }
             else

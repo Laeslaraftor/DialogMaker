@@ -216,6 +216,7 @@ public class Program
         Console.WriteLine();
 
         TestOutputs();
+        TestNullable();
 
         // last exception should be unhandled
         TestExceptionHandling();
@@ -330,6 +331,39 @@ public class Program
             Console.WriteLine("zeBlack не ответил");
         }
     }
+    private static void TestNullable()
+    {
+        Console.WriteLine();
+        Console.WriteLine("==== Nullable ====");
+        Console.WriteLine();
+
+        Container? container = null;
+
+        Console.WriteLine(container?.Name ?? "Null name");
+        Console.WriteLine(container?.Id.ToString() ?? "Id is null");
+        container?.Name = "Name to null";
+
+        container = new()
+        {
+            Id = 10,
+            NullableId = null
+        };
+
+        container?.Name = "Container name";
+
+        Console.WriteLine(container?.Name ?? "Null name");
+        Console.WriteLine((container?.GetHashCode()).GetType().Name ?? "Null type name");
+        Console.WriteLine(container?.Id.ToString() ?? "Id still is null");
+        Console.WriteLine(container.NullableId?.ToString() ?? "Nullable id is null");
+
+        container.NullableId = 123;
+
+        Console.WriteLine(container.NullableId?.ToString() ?? "Nullable id is still null");
+
+        Console.WriteLine();
+        Console.WriteLine("==================");
+        Console.WriteLine();
+    }
 
     private static bool TryGetZeBlack(string value, out string? result)
     {
@@ -344,6 +378,12 @@ public class Program
     }
 }
 
+public class Container
+{
+    public string? Name;
+    public int Id;
+    public int? NullableId;
+}
 public class DisposableObject : IDisposable
 {
     public DisposableObject(string name)
@@ -426,8 +466,7 @@ public class Enemy : Player
 
     public override void PrintMessage()
     {
-        base.PrintMessage();
-        Name?.GetHashCode();
+        base.PrintMessage();        
         Console.WriteLine("Фигня №1");
     }
 }

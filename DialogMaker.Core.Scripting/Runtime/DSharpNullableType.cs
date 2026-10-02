@@ -3,12 +3,16 @@
     /// <summary>
     /// Information about D# System.Nullable`1 type
     /// </summary>
-    public class DSharpNullableType(IDSharpType type, IDSharpPropertyInfo hasValueProperty, IDSharpPropertyInfo valueProperty, IDSharpMethodInfo constructor)
+    public class DSharpNullableType(IDSharpType type, IDSharpType memberType, IDSharpPropertyInfo hasValueProperty, IDSharpPropertyInfo valueProperty, IDSharpMethodInfo constructor)
     {
         /// <summary>
         /// Nullable type
         /// </summary>
         public IDSharpType Type { get; } = type;
+        /// <summary>
+        /// Type that stored in nullable
+        /// </summary>
+        public IDSharpType MemberType { get; } = memberType;
         /// <summary>
         /// Property that indicated value existence
         /// </summary>
@@ -46,8 +50,10 @@
             var valueProperty = GetValueProperty(type);
             var constructor = type.GetConstructors().FirstOrDefault()
                 ?? throw new ArgumentException($"Type \"{type}\" not contains required constructor (T value, bool hasValue)");
+            var memberType = (type.GetGenericParameters().FirstOrDefault() ?? type.GetGenericTypes().FirstOrDefault())
+                ?? throw new ArgumentException($"Type \"{type}\" not contains generic parameter");
 
-            return new(type, hasValueProperty, valueProperty, constructor);
+            return new(type, memberType, hasValueProperty, valueProperty, constructor);
         }
         /// <summary>
         /// Get property that contains value

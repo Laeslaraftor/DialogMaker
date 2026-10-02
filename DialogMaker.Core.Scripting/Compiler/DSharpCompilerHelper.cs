@@ -5,7 +5,6 @@ using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -914,9 +913,16 @@ namespace DialogMaker.Core.Scripting.Compiler
                         {
                             expressionType = expression.GetExpressionType(assembly, context);
                         }
+#if DEBUG
                         catch
                         {
+                            throw;
+#else
+                        catch (Exception error)
+                        {
+                            Console.WriteLine(error);
                             return false;
+#endif
                         }
 
                         if (expressionType == null || !expressionType.TryGetTypeOrReturnType(out var returnType))
@@ -1217,10 +1223,27 @@ namespace DialogMaker.Core.Scripting.Compiler
                     if (resolveResult.MethodCallingInfo != null &&
                         resolveResult.MethodCallingInfo.Method.ReturnType != null)
                     {
-                        return resolveResult.MethodCallingInfo.GetReturnType(assembly);
+                        var methodReturnType = resolveResult.MethodCallingInfo.GetReturnType(assembly);
+
+                        if (methodReturnType != null &&
+                            context.Assembly != null &&
+                            resolveResult.IsNullable && 
+                            methodReturnType.IsValueType())
+                        {
+                            methodReturnType = context.Assembly.CreateNullable(methodReturnType);
+                        }
+
+                        return methodReturnType;
                     }
                     if (resolveResult.MemberInfo.TryGetReturnType(out var returnType))
                     {
+                        if (context.Assembly != null &&
+                            resolveResult.IsNullable && 
+                            returnType.IsValueType())
+                        {
+                            return context.Assembly.CreateNullable(returnType);
+                        }
+
                         return returnType;
                     }
 
@@ -1902,6 +1925,29 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 result = DSharpLiteralValue.FromObject(Convert.ChangeType(currentNumber, requiredMinMax.Type));
                 return true;
+            }
+        }
+        extension(MemberAccessExpressionNode memberAccessExpression)
+        {
+            /// <summary>
+            /// Check member access expression on any not null access (?.)
+            /// </summary>
+            /// <returns>Is any not null access existed</returns>
+            public bool HasAnyNotNullAccess()
+            {
+                ExpressionNode? member = memberAccessExpression;
+
+                while (member is MemberAccessExpressionNode memberExpression)
+                {
+                    if (memberAccessExpression.AccessMode == DSharpMemberAccessMode.NotNullReference)
+                    {
+                        return true;
+                    }
+
+                    member = memberExpression.Member;
+                }
+
+                return false;
             }
         }
         extension<T>(T obj)
