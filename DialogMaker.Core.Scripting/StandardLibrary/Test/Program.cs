@@ -371,6 +371,7 @@ public class Program
         Console.WriteLine("==== Pointers ====");
         Console.WriteLine();
 
+        void* nullPointer = null;
         int value = 0;    
         int* firstPointer = &value;
 

@@ -34,8 +34,10 @@ public struct Pointer<T> where T : struct
         Pointer.WriteValue(_address + offsetInBytes, value);
     }
 
-    public static implicit operator Pointer<T>(nint address) => new Pointer<T>(address);
-    public static implicit operator nint(Pointer<T> pointer) => pointer._address;
+    public static explicit operator Pointer<T>(nint address) => new Pointer<T>(address);
+    public static explicit operator Pointer<T>(Pointer pointer) => new Pointer<T>((nint)pointer);
+    public static explicit operator Pointer(Pointer<T> pointer) => new Pointer(pointer._address);
+    public static explicit operator nint(Pointer<T> pointer) => pointer._address;
     public static Pointer<T> operator +(Pointer<T> pointer, long offset) => new Pointer<T>(pointer._address + offset);
     public static Pointer<T> operator -(Pointer<T> pointer, long offset) => new Pointer<T>(pointer._address - offset);
 }

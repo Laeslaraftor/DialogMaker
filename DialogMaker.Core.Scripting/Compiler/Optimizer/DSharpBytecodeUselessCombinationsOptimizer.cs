@@ -112,6 +112,20 @@ namespace DialogMaker.Core.Scripting.Compiler
                 ],
                 UselessCombinationRemoveJumpScope
             ),
+            new(
+                [
+                    new(DSharpBytecodeOperation.GetAddress, true),
+                    new(DSharpBytecodeOperation.New, true),
+                    new(DSharpBytecodeOperation.PopOffset, typeof(IndexInstruction), exactArguments: 1u),
+                    new(DSharpBytecodeOperation.LoadInstanceField, true),
+                    new(DSharpBytecodeOperation.New, true),
+                    new(DSharpBytecodeOperation.PopPreviousTwo),
+                    new(DSharpBytecodeOperation.LoadInstanceField, true),
+                    new(DSharpBytecodeOperation.ReadOnAddress, true),
+                    new(DSharpBytecodeOperation.PopPreviousTwo)
+                ],
+                UselessCombinationRemovePointerConverting
+            ),
         ]);
         private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _finalUselessOperations = new([
             DSharpBytecodeOperation.Pop,
@@ -196,6 +210,29 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         #region Дополнительно
 
+        private static int UselessCombinationRemovePointerConverting(UselessCombination uselessCombination, DSharpBytecodeBuilder builder, int startIndex)
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                builder.Instructions.RemoveAt(startIndex + 1);
+            }
+
+
+            if (builder.Instructions.Count > startIndex + 2 &&
+                builder.Instructions[startIndex + 3].Operation == DSharpBytecodeOperation.Return)
+            {
+                ReplaceInstructionReferences(builder, startIndex + 2);
+                return 7;
+            }
+
+            var instructionToRemove = builder.Instructions[startIndex + 2];
+            IndexInstruction popOffset = new(builder, DSharpBytecodeOperation.PopOffset, 1);
+            builder.Instructions[startIndex + 2] = popOffset;
+
+            ReplaceInstructionReferences(builder, instructionToRemove, popOffset);
+
+            return 6;
+        }
         private static int UselessCombinationRemoveJumpScope(UselessCombination uselessCombination, DSharpBytecodeBuilder builder, int startIndex)
         {
             ReplaceInstructionReferences(builder, startIndex);
@@ -379,7 +416,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         #endregion
 
-        #region Структуры
+        #region Structs
 
         private readonly struct UselessCombination(InstructionDefinition[] definitions, Func<UselessCombination, DSharpBytecodeBuilder, int, int> remover)
         {
@@ -454,15 +491,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                 return true;
             }
         }
-        private class InstructionDefinition(IEnumerable<DSharpBytecodeOperation>? operations, Type? instructionType, int sameArgsTo = -1, InstructionDefinition? referencesInstruction = null)
+        private class InstructionDefinition(IEnumerable<DSharpBytecodeOperation>? operations, Type? instructionType, int sameArgsTo = -1, InstructionDefinition? referencesInstruction = null, bool anyInstructionType = false)
             : IEquatable<Instruction>
         {
             public InstructionDefinition(DSharpBytecodeOperation operation, Type? instructionType, int sameArgsTo = -1, InstructionDefinition? referencesInstruction = null)
                 : this([operation], instructionType, sameArgsTo, referencesInstruction)
             {
             }
-            public InstructionDefinition(DSharpBytecodeOperation operation)
-                : this([operation], typeof(Instruction))
+            public InstructionDefinition(DSharpBytecodeOperation operation, bool anyInstructionType = false)
+                : this([operation], typeof(Instruction), anyInstructionType: anyInstructionType)
             {
             }
             public InstructionDefinition(DSharpBytecodeOperation operation, Type instructionType, params object[] exactArguments)
@@ -480,21 +517,17 @@ namespace DialogMaker.Core.Scripting.Compiler
             public int SameArgsTo { get; } = sameArgsTo;
             public ReadOnlyCollection<object>? ExactArguments { get; }
             public InstructionDefinition? ReferencesInstruction { get; } = referencesInstruction;
+            public bool AnyInstructionType { get; } = anyInstructionType;
 
-            /// <summary>
-            /// <inheritdoc/>
-            /// </summary>
-            /// <param name="other"><inheritdoc/></param>
-            /// <returns><inheritdoc/></returns>
-            public bool Equals(Instruction other)
+            public bool Equals(Instruction? other)
             {
-                if (Operations.Count == 0 && InstructionType == null)
+                if (other == null || Operations.Count == 0 && InstructionType == null)
                 {
                     return true;
                 }
 
                 bool result = Operations.Contains(other.Operation) &&
-                              other.GetType() == InstructionType;
+                              (AnyInstructionType || other.GetType() == InstructionType);
 
                 if (ReferencesInstruction != null)
                 {

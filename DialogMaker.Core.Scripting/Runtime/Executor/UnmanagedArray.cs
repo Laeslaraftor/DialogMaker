@@ -26,7 +26,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <summary>
         /// Is items null pointer or length less or equals then 0;
         /// </summary>
-        public bool IsNull => _items == null || _length <= 0;
+        public bool IsNull => _items == null || 0 >= _length;
         /// <summary>
         /// Length of array
         /// </summary>

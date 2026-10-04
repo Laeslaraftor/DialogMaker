@@ -1,6 +1,6 @@
-namespace Internal.System.Runtime;
-
 using System.Native;
+
+namespace Internal.System.Runtime;
 
 internal static class CompilerServices
 {
@@ -14,7 +14,6 @@ internal static class CompilerServices
             return 0;
         }
 
-        Pointer pointer = address;
-        return pointer.Read<nint>();
+        return *(nint*)address;
     }
 }

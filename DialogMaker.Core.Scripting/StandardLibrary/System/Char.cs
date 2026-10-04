@@ -7,4 +7,5 @@ public struct Char
         Span<char> values = stackalloc char[] { this };
         return new(values);
     }
+    public override int GetHashCode() => (int)this;
 }

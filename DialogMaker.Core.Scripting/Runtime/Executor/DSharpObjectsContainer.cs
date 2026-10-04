@@ -609,7 +609,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             {
                 return obj;
             }
-            if (data.Length == 0 && sizeForData > 0)
+            if (data.IsNull && sizeForData > 0)
             {
                 RuntimeExtensions.FillZero(objectDataBuffer, sizeForData);
                 return obj;

@@ -113,7 +113,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                                                       DSharpTokenType.Divide,
                                                       DSharpTokenType.And,
                                                       DSharpTokenType.Or,
-                                                      DSharpTokenType.Mod);
+                                                      DSharpTokenType.Mod,
+                                                      DSharpTokenType.Xor);
         }
         public static ExpressionNode ParseShift(AstParserStream stream)
         {

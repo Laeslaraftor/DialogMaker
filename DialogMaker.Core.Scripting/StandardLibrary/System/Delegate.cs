@@ -29,7 +29,7 @@ public abstract class Delegate
             throw new ArgumentException("Provided parameters count not match to method parameters. Required " + availableParametersCount + " parameter, but got " + parameters.Length);
         }
 
-        return __Invoke(runtimeMethodInfo, instance, parameters);
+        return __Invoke((nint)runtimeMethodInfo, instance, parameters);
     }
 
     // implemeted by compiler

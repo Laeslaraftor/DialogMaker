@@ -4,7 +4,6 @@ using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
-using static DialogMaker.Core.Scripting.Compiler.DSharpCaptureInfo;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -3700,6 +3699,20 @@ namespace DialogMaker.Core.Scripting.Compiler
             if (castAvailability == DSharpCastAvailability.No)
             {
                 throw new InvalidOperationException($"Unable to cast \"{targetType}\" to \"{requestedType}\"");
+            }
+            if (targetType.GenericTemplate == Assembly.TypedPointerType &&
+                requestedType.GenericTemplate == Assembly.TypedPointerType)
+            {
+                var targetPointer = DSharpPointerType.Create(targetType);
+                var destinationPointer = DSharpPointerType.Create(requestedType);
+                var startDisableAccessCheck = code.DisableAccessCheck;
+                code.DisableAccessCheck = true;
+                code.LoadPropertyOrField(targetPointer.AddressField);
+                code.DisableAccessCheck = startDisableAccessCheck;
+                code.New(destinationPointer.Constructor);
+                code.PopPreviousTwo();
+
+                return;
             }
             if (@operator == null)
             {

@@ -6,9 +6,13 @@ public struct Boolean
     {
         if (this)
         {
-            return "True";
+            return TrueString;
         }
         
-        return "False";
+        return FalseString;
     }
+    public override int GetHashCode() => this ? 1 : 0;
+
+    private static readonly string TrueString = "True";
+    private static readonly string FalseString = "False";
 }

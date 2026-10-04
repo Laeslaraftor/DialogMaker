@@ -363,6 +363,16 @@ namespace DialogMaker.Core.Scripting.Runtime
                     return DSharpCastAvailability.Explicit;
                 }
 
+                var typeGenericTemplateFullName = type.GenericTemplate?.FullName;
+                var destinationGenericTemplateFullName = destination.GenericTemplate?.FullName;
+
+                if (typeGenericTemplateFullName == DSharpBuildInTypes.Extra.TypedPointer &&
+                    destinationGenericTemplateFullName == DSharpBuildInTypes.Extra.TypedPointer)
+                {
+                    castOperator = null;
+                    return DSharpCastAvailability.Explicit;
+                }
+
                 if (type.GenericTemplate != null && type.GenericTemplate == destination.GenericTemplate)
                 {
                     var typeGenerics = type.GetGenericParameters();

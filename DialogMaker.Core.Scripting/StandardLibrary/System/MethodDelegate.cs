@@ -14,7 +14,7 @@ public class MethodDelegate : Delegate
     }
     public MethodDelegate(nint runtimeMethodInfo, object? target)
     {
-        _runtimeMethodInfo = runtimeMethodInfo;
+        _runtimeMethodInfo = (RuntimeMethodInfo*)runtimeMethodInfo;
         Target = target;
     }
 

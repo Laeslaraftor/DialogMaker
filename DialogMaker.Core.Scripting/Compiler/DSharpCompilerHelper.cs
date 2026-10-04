@@ -619,8 +619,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                        @operator == DSharpBinaryOperator.LogicalLess ||
                        @operator == DSharpBinaryOperator.LogicalLessOrEquals ||
                        @operator == DSharpBinaryOperator.LogicalGreater ||
-                       @operator == DSharpBinaryOperator.LogicalGreaterOrEquals ||
-                       @operator == DSharpBinaryOperator.LogicalXor;
+                       @operator == DSharpBinaryOperator.LogicalGreaterOrEquals;
             }
         }
         extension(IfStatementNode ifStatement)
@@ -1218,42 +1217,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                 }
 
-                if (context.TryResolveMember(expression, out var resolveResult))
-                {
-                    if (resolveResult.MethodCallingInfo != null &&
-                        resolveResult.MethodCallingInfo.Method.ReturnType != null)
-                    {
-                        var methodReturnType = resolveResult.MethodCallingInfo.GetReturnType(assembly);
-
-                        if (methodReturnType != null &&
-                            context.Assembly != null &&
-                            resolveResult.IsNullable && 
-                            methodReturnType.IsValueType())
-                        {
-                            methodReturnType = context.Assembly.CreateNullable(methodReturnType);
-                        }
-
-                        return methodReturnType;
-                    }
-                    if (resolveResult.MemberInfo.TryGetReturnType(out var returnType))
-                    {
-                        if (context.Assembly != null &&
-                            resolveResult.IsNullable && 
-                            returnType.IsValueType())
-                        {
-                            return context.Assembly.CreateNullable(returnType);
-                        }
-
-                        return returnType;
-                    }
-
-                    return resolveResult.MemberInfo;
-                }
-                else if (expression.TrySimplifyToLiteral(out var literal))
-                {
-                    return assembly.GetType(literal.Type);
-                }
-                else if (expression is UnaryExpressionNode unaryExpression)
+                if (expression is UnaryExpressionNode unaryExpression)
                 {
                     if (unaryExpression.Operand == null)
                     {
@@ -1274,8 +1238,82 @@ namespace DialogMaker.Core.Scripting.Compiler
                             throw new InvalidOperationException($"NOT operator requires boolean value, got \"{operandMember}\": {expression}");
                         }
                     }
+                    else if (unaryExpression.Operator == DSharpUnaryOperator.AddressOf)
+                    {
+                        DSharpMemberSearchResult memberSearchResult;
+
+                        try
+                        {
+                            if (!context.TryResolveMember(unaryExpression.Operand, out memberSearchResult))
+                            {
+                                throw new DSharpCompilerException("Unable to resolve member for getting address", unaryExpression.Operand);
+                            }
+                        }
+                        catch (Exception error)
+                        {
+                            throw new DSharpCompilerException("Unable to resolve member for getting address", unaryExpression.Operand, error);
+                        }
+
+                        if (memberSearchResult.ParameterInfo == null &&
+                            memberSearchResult.MemberInfo is not IDSharpFieldInfo)
+                        {
+                            throw new DSharpCompilerException($"Getting address available only for variables and fields, got \"{memberSearchResult.MemberInfo}\"", unaryExpression.Operand);
+                        }
+
+                        operandMember = assembly.CreatePointer(memberSearchResult.ParameterInfo?.Type ??
+                                                               ((IDSharpFieldInfo)memberSearchResult.MemberInfo).FieldType);
+                    }
+                    else if (unaryExpression.Operator == DSharpUnaryOperator.Dereference)
+                    {
+                        if (operandMember == null ||
+                            !operandMember.TryGetTypeOrReturnType(out var returnType))
+                        {
+                            throw new DSharpCompilerException("Unable to get operand return type", unaryExpression.Operand);
+                        }
+                        if (returnType.GenericTemplate != assembly.TypedPointerType)
+                        {
+                            throw new DSharpCompilerException($"Dereference available only for typed pointers, but got type \"{returnType}\"", unaryExpression.Operand);
+                        }
+
+                        operandMember = returnType.GetGenericParameters().First();
+                    }
 
                     return operandMember;
+                }
+                else if (context.TryResolveMember(expression, out var resolveResult))
+                {
+                    if (resolveResult.MethodCallingInfo != null &&
+                        resolveResult.MethodCallingInfo.Method.ReturnType != null)
+                    {
+                        var methodReturnType = resolveResult.MethodCallingInfo.GetReturnType(assembly);
+
+                        if (methodReturnType != null &&
+                            context.Assembly != null &&
+                            resolveResult.IsNullable &&
+                            methodReturnType.IsValueType())
+                        {
+                            methodReturnType = context.Assembly.CreateNullable(methodReturnType);
+                        }
+
+                        return methodReturnType;
+                    }
+                    if (resolveResult.MemberInfo.TryGetReturnType(out var returnType))
+                    {
+                        if (context.Assembly != null &&
+                            resolveResult.IsNullable &&
+                            returnType.IsValueType())
+                        {
+                            return context.Assembly.CreateNullable(returnType);
+                        }
+
+                        return returnType;
+                    }
+
+                    return resolveResult.MemberInfo;
+                }
+                else if (expression.TrySimplifyToLiteral(out var literal))
+                {
+                    return assembly.GetType(literal.Type);
                 }
                 else if (expression is BinaryExpressionNode binaryExpression)
                 {

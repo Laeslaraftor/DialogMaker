@@ -39,7 +39,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         /// <param name="stream">Abstract syntax tree parser stream</param>
         /// <returns>Parsed cast expression</returns>
-        public static CastExpressionNode Parse(AstParserStream stream)
+        public static ExpressionNode Parse(AstParserStream stream)
         {
             stream.Eat(DSharpTokenType.LeftParen);
             TypeInfoNode type = TypeInfoNode.Parse(stream, true, true);
@@ -50,8 +50,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 Expression = ParseExpression(stream)
             };
 
-            type.Parent = result; ;
-            result.Expression.Parent = result;
+            type.Parent = result;
+
+            if (result.Expression is BinaryExpressionNode binaryExpression)
+            {
+                result.Expression = binaryExpression.Left;
+                result.Expression?.Parent = result;
+                binaryExpression.Left = result;
+                result.Parent = binaryExpression;
+                binaryExpression.Parent = null;
+
+                return binaryExpression;
+            }
+            else
+            {
+                result.Expression.Parent = result;
+            }
 
             return result;
         }

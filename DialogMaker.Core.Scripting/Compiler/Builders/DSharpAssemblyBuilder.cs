@@ -197,6 +197,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
+        public DSharpTypeToken VoidToken
+        {
+            get
+            {
+                field ??= GetTypeToken(VoidType);
+                return field;
+            }
+        }
         public DSharpTypeToken ArrayBaseToken
         {
             get
@@ -419,6 +427,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             get
             {
                 field ??= (IDSharpType)GetType(TypeToken);
+                return field;
+            }
+        }
+        public IDSharpType VoidType
+        {
+            get
+            {
+                field ??= GetType(DSharpBuildInTypes.Void);
                 return field;
             }
         }
@@ -1182,9 +1198,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         }
         public IDSharpType CreatePointer(IDSharpType elementType)
         {
-            if (!elementType.IsValueType())
+            if (elementType == VoidType)
             {
-                throw new ArgumentException($"Unable to create pointer for reference type \"{elementType}\"");
+                return PointerType;
             }
 
             return FillGeneric(TypedPointerTypeInfo.Type, elementType);

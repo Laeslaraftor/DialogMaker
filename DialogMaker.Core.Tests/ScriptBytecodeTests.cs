@@ -47,6 +47,7 @@ namespace DialogMaker.Core.Tests
         [TestCase("System.Object", "Equals")]
         [TestCase("System.Object", "ReferenceEquals")]
         [TestCase("System.Byte", "init")]
+        [TestCase("System.Int64", "GetHashCode")]
         [TestCase("System.String", "Equals")]
         [TestCase("System.String", "Split")]
         [TestCase("System.String", "IsNullOrEmpty")]
@@ -56,6 +57,7 @@ namespace DialogMaker.Core.Tests
         [TestCase("System.Type", "get_FullName")]
         [TestCase("System.Type", "get_Namespace")]
         [TestCase("System.Type", "get_DeclaringType")]
+        [TestCase("System.BitConverter", "Int64BitsToDouble")]
         [TestCase("System.Collections.Generic.List`1", "Add")]
         [TestCase("System.Collections.Generic.List`1", "set_Count")]
         [TestCase("System.Collections.Generic.List`1", "get_Capacity")]
@@ -77,6 +79,7 @@ namespace DialogMaker.Core.Tests
         [TestCase("System.Random", "Next")]
         [TestCase("System.Reflection.MetadataTokenType", "ctor")]
         [TestCase("System.Reflection.MetadataTokenType", "init")]
+        [TestCase("Internal.System.Runtime.CompilerServices", "GetObjectTypeToken")]
         [TestCase("Player.<>_Capture384_5", "PrintName")]
         [TestCase("Player", "PrintMessage")]
         [TestCase("Enemy", "PrintMessage")]
@@ -204,6 +207,20 @@ namespace DialogMaker.Core.Tests
         private static void ReadCode(DSharpMethodBuilder method)
         {
             var code = method.GetBytecodeBuilder();
+            Console.WriteLine("Variables:");
+
+            foreach (var variable in code.Method.Parameters.Union(code.LocalVariables))
+            {
+                IDSharpType? type = null;
+
+                if (variable.Type != null)
+                {
+                    type = (IDSharpType)method.Assembly.GetType(variable.Type);
+                }
+
+                Console.WriteLine($"{variable.Mode.ToString().ToLower()} {type} {variable.Name};");
+            }
+
             Console.WriteLine("Raw bytecode:");
             Console.WriteLine(code.ToString());
             Console.WriteLine();
