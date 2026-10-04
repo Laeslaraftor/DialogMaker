@@ -14,6 +14,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public bool IsNullable { get; set; }
         /// <summary>
+        /// Pointer depth
+        /// </summary>
+        public int PointerDepth { get; set; }
+        /// <summary>
         /// Amount of array dimensions. Type is not array when value equals 0
         /// </summary>
         public int ArrayDimensions { get; set; }
@@ -26,7 +30,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public List<TypeInfoNode> GenericParameters { get; set; } = [];
 
-        #region Управление
+        #region Controls
 
         public virtual string GetSimpleFullName() => Name;
         public string GetFullName(bool simplifyGenerics, bool nullable)
@@ -35,7 +39,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             if (nullable && IsNullable)
             {
-                result += "?";
+                result += '?';
             }
 
             result += GenericParameters.GetGenericsName(simplifyGenerics);
@@ -48,9 +52,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
                     if (nullable && arrayNullable)
                     {
-                        result += "?";
+                        result += '?';
                     }
                 }
+            }
+
+            for (int i = 0; i < PointerDepth; i++)
+            {
+                result += '*';
             }
 
             return result;
@@ -63,7 +72,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
         #endregion
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Check token type is standard type identifier
@@ -115,14 +124,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         {
             var current = stream.Peek(offset) ?? throw new Exception("Unable to read type identifier");
             endOffset = -1;
+            int voidPointerOffset = -1;
 
             if (!IsStandardTypeIdentifier(current.Type) &&
-                current.Type != DSharpTokenType.Identifier)
+                current.Type != DSharpTokenType.Identifier &&
+                !IsVoidPointer(stream, offset, out voidPointerOffset))
             {
                 return false;
             }
 
-            int extraOffset = 1;
+            int extraOffset = voidPointerOffset != -1 ? voidPointerOffset : 1;
 
             if (stream.Check(DSharpTokenType.Question, offset + 1))
             {
@@ -134,6 +145,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             if (endOffset == -1)
             {
                 endOffset = offset + extraOffset;
+            }
+            while (stream.Check(DSharpTokenType.Multiply, endOffset))
+            {
+                endOffset++;
             }
 
             return true;
@@ -158,8 +173,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
 
                 var primaryTypeToken = stream.Eat(current.Type);
-
                 result = new(primaryTypeToken);
+            }
+            else if (IsVoidPointer(stream, 0, out _))
+            {
+                var primaryTypeToken = stream.Eat(current.Type);
+                result = new(primaryTypeToken);
+
+                while (stream.Check(DSharpTokenType.Multiply))
+                {
+                    result.PointerDepth++;
+                    stream.Eat(DSharpTokenType.Multiply);
+                }
             }
             else
             {
@@ -212,10 +237,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 return false;
             }
 
-            result.IsNullable = CheckNullable();
             ParseGenericParameters(stream, result.GenericParameters, true);
+            result.IsNullable = CheckNullable();
             result.GenericParameters.SetParent(result);
 
+            while (stream.Check(DSharpTokenType.Multiply))
+            {
+                stream.Eat(DSharpTokenType.Multiply);
+                result.PointerDepth++;
+            }
             if (skipArrayCheck)
             {
                 return result;
@@ -290,6 +320,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     {
                         break;
                     }
+
+                    continue;
                 }
 
                 if (CanParseIdentifier(stream, offset, out var identifiedEndOffset))
@@ -297,6 +329,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     offset = identifiedEndOffset;
                     typesCount++;
                     identifierParsed = true;
+                    previousIsDot = false;
                 }
                 else
                 {
@@ -411,12 +444,44 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             stream.Eat(DSharpTokenType.Greater);
         }
+        /// <summary>
+        /// Parse generic parameter start with current token
+        /// </summary>
+        /// <param name="stream">Abstract syntax tree parser stream</param>
+        /// <param name="checkExistence">Check on parameters existence</param>
         public static List<TypeInfoNode> ParseGenericParameters(AstParserStream stream, bool checkExistence = false)
         {
             List<TypeInfoNode> buffer = [];
             ParseGenericParameters(stream, buffer, checkExistence);
 
             return buffer;
+        }
+
+        private static bool IsVoidPointer(AstParserStream stream, int offset, out int endOffset)
+        {
+            endOffset = -1;
+
+            if (!stream.Check(DSharpTokenType.Void, offset))
+            {
+                return false;
+            }
+
+            bool anyPointer = false;
+            int pointerDepth = 0;
+            
+            while (stream.Check(DSharpTokenType.Multiply, offset + 1 + pointerDepth))
+            {
+                pointerDepth++;
+                anyPointer = true;
+            }
+
+            if (!anyPointer)
+            {
+                return false;
+            }
+
+            endOffset = 1 + pointerDepth;
+            return true;
         }
 
         #endregion

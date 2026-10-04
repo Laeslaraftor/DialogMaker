@@ -73,6 +73,7 @@ namespace DialogMaker.Core.Tests
         [TestCase("Program", "TestOutputs")]
         [TestCase("Program", "TestRandom")]
         [TestCase("Program", "TestNullable")]
+        [TestCase("Program", "TestPointers")]
         [TestCase("System.Random", "Next")]
         [TestCase("System.Reflection.MetadataTokenType", "ctor")]
         [TestCase("System.Reflection.MetadataTokenType", "init")]

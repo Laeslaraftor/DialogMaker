@@ -350,8 +350,27 @@ namespace DialogMaker.Core.Scripting.Compiler
             if (expression is ParenContainedExpressionNode parentContained)
             {
                 expression = parentContained.GetContent();
-            }
 
+                if (TryResolveMember(expression, out result))
+                {
+                    return true;
+                }
+                if (Assembly == null)
+                {
+                    return false;
+                }
+
+                var expressionType = expression.GetExpressionType(Assembly, this);
+
+                if (expressionType == null)
+                {
+                    return false;
+                }
+
+                result = new(expressionType);
+
+                return true;
+            }
             if (expression is IdentifierExpressionNode identifier)
             {
                 var name = identifier.GetName(true);
@@ -484,6 +503,36 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 return TryResolveMember(awaitExpression.Expression, out result);
             }
+            else if (expression is TypeOfExpressionNode)
+            {
+                if (Assembly == null)
+                {
+                    return false;
+                }
+
+                result = new(Assembly.TypeType);
+                return true;
+            }
+            else if (expression is SizeOfExpressionNode)
+            {
+                if (Assembly == null)
+                {
+                    return false;
+                }
+
+                result = new(Assembly.Int32Type);
+                return true;
+            }
+            else if (expression is NameOfExpressionNode)
+            {
+                if (Assembly == null)
+                {
+                    return false;
+                }
+
+                result = new(Assembly.StringType);
+                return true;
+            }
             else if (expression is CallExpressionNode callExpression)
             {
                 result = new(FindMethod(callExpression));
@@ -575,7 +624,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             if (typeExpression is IdentifierExpressionNode identifier)
             {
-                if (TryResolveType(identifier.Name, identifier.GenericParameters, 0, [], false, out result))
+                if (TryResolveType(identifier.Name, identifier.GenericParameters, 0, 0, [], false, out result))
                 {
                     name = identifier.GetName(false);
                     return true;
@@ -605,7 +654,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 while (true);
 
-                if (endPointIdentifier != null && TryResolveType(memberAccessName, endPointIdentifier.GenericParameters, 0, [], false, out result))
+                if (endPointIdentifier != null && TryResolveType(memberAccessName, endPointIdentifier.GenericParameters, 0, 0, [], false, out result))
                 {
                     name = memberAccessFull;
                     return true;
@@ -672,7 +721,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             catch (Exception error)
             {
-                if (Assembly != null && TryResolveType(identifier.Name, identifier.GenericParameters, 0, [], true, out var result))
+                if (Assembly != null && TryResolveType(identifier.Name, identifier.GenericParameters, 0, 0, [], true, out var result))
                 {
                     return Assembly.GetType(result);
                 }
@@ -1343,9 +1392,9 @@ namespace DialogMaker.Core.Scripting.Compiler
         private readonly bool TryResolveType(TypeInfoNode typeInfo, bool simplifyGenerics, [NotNullWhen(true)] out DSharpTypeToken? result)
         {
             bool[] nullables = [.. typeInfo.ArrayNullability, typeInfo.IsNullable];
-            return TryResolveType(typeInfo.GetSimpleFullName(), typeInfo.GenericParameters, typeInfo.ArrayDimensions, nullables, simplifyGenerics, out result);
+            return TryResolveType(typeInfo.GetSimpleFullName(), typeInfo.GenericParameters, typeInfo.PointerDepth, typeInfo.ArrayDimensions, nullables, simplifyGenerics, out result);
         }
-        private readonly bool TryResolveType(string typeName, List<TypeInfoNode> generics, int arrayDimension, bool[] nullables, bool simplifyGenerics, [NotNullWhen(true)] out DSharpTypeToken? result)
+        private readonly bool TryResolveType(string typeName, List<TypeInfoNode> generics, int pointerDepth, int arrayDimension, bool[] nullables, bool simplifyGenerics, [NotNullWhen(true)] out DSharpTypeToken? result)
         {
             result = null;
             List<DSharpTypeToken> genericParameters = [];
@@ -1397,7 +1446,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 return false;
             }
-            if (Scope.TryResolveType(typeName, arrayDimension, nullables, out var resultType, genericParametersTypes))
+            if (Scope.TryResolveType(typeName, pointerDepth, arrayDimension, nullables, out var resultType, genericParametersTypes))
             {
                 result = Assembly.GetTypeToken(resultType);
                 return true;

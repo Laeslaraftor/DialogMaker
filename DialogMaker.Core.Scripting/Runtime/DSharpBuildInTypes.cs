@@ -41,6 +41,14 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// </summary>
             public static readonly DSharpBuildInTypeInfo IEnumerator = new("System.Collections.IEnumerator");
             /// <summary>
+            /// Type that represents pointer with unknown type (void*)
+            /// </summary>
+            public static readonly DSharpBuildInTypeInfo Pointer = new("System.Native.Pointer");
+            /// <summary>
+            /// Type that represents typed pointer
+            /// </summary>
+            public static readonly DSharpBuildInTypeInfo TypedPointer = new("System.Native.Pointer`1");
+            /// <summary>
             /// Class with static helper methods for
             /// </summary>
             public static readonly DSharpBuildInTypeInfo RuntimeHelper = new("Internal.System.Runtime.RuntimeHelper");

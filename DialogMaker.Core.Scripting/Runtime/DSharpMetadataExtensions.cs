@@ -497,6 +497,46 @@ namespace DialogMaker.Core.Scripting.Runtime
             {
                 unaryOperator = null;
 
+                if (@operator == DSharpUnaryOperator.Dereference)
+                {
+                    if (unaryOperator != null)
+                    {
+                        outputType = unaryOperator.ReturnType;
+                        return true;
+                    }
+                    if (type.GenericTemplate == type.Assembly.GetType(DSharpBuildInTypes.Extra.TypedPointer))
+                    {
+                        outputType = type.GetGenericParameters().First();
+                        return true;
+                    }
+
+                    outputType = null;
+
+                    return false;
+                }
+                else if (@operator == DSharpUnaryOperator.AddressOf)
+                {
+                    if (unaryOperator != null)
+                    {
+                        outputType = unaryOperator.ReturnType;
+                    }
+                    else
+                    {
+                        string fullName = DSharpBuildInTypes.Extra.Pointer.FullName + $"<{type}>";
+
+                        if (!type.Assembly.TryGetType(fullName, out outputType))
+                        {
+                            if (type.Assembly is not DSharpAssemblyBuilder assemblyBuilder)
+                            {
+                                throw new InvalidOperationException($"Can not create pointer type");
+                            }
+
+                            outputType = assemblyBuilder.CreatePointer(type);
+                        }
+                    }
+
+                    return true;
+                }
                 if (DSharpBuildInTypes.TryGetInfo(type, out var typeInfo) &&
                     (@operator == DSharpUnaryOperator.Not && typeInfo == DSharpBuildInTypes.Boolean ||
                     @operator != DSharpUnaryOperator.Not && typeInfo.IsNumber()))

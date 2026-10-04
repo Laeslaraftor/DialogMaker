@@ -43,7 +43,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// <exception cref="ArgumentException">Specified type can not replace generic type</exception>
         public bool TryResolveType(string name, [NotNullWhen(true)] out IDSharpType? result, params IList<IDSharpType>? genericTypes)
         {
-            return TryResolveType(name, 0, [], out result, genericTypes);
+            return TryResolveType(name, 0, 0, [], out result, genericTypes);
         }
         /// <summary>
         /// Try to resolve type in current and parent scope
@@ -55,7 +55,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// <param name="genericTypes">List of types for searching generic types</param>
         /// <returns>Is type resolved</returns>
         /// <exception cref="ArgumentException">Specified type can not replace generic type</exception>
-        public bool TryResolveType(string name, int arrayDimensions, bool[] nullables, [NotNullWhen(true)] out IDSharpType? result, params IList<IDSharpType>? genericTypes)
+        public bool TryResolveType(string name, int pointerDepth, int arrayDimensions, bool[] nullables, [NotNullWhen(true)] out IDSharpType? result, params IList<IDSharpType>? genericTypes)
         {
             if (Assembly.TryGetStandardType(name, out var standardTypeToken))
             {
@@ -152,12 +152,23 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
 
                         return nullables[dimension];
                     }
+                    int PointerDepth()
+                    {
+                        return dimension != 0 ? 0 : pointerDepth;
+                    }
 
                     while (dimension < arrayDimensions)
                     {
                         if (IsNullable())
                         {
                             type = Assembly.CreateNullable(type);
+                        }
+
+                        int pointerDepth = PointerDepth();
+
+                        for (int i = 0; i < pointerDepth; i++)
+                        {
+                            type = Assembly.CreatePointer(type);
                         }
 
                         type = Assembly.CreateArray(type);
@@ -168,7 +179,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
                 }
                 if (nullables.Length > 0 && nullables[0])
                 {
-                    return Assembly.CreateNullable(type);
+                    type = Assembly.CreateNullable(type);
+                }
+
+                for (int i = 0; i < pointerDepth; i++)
+                {
+                    type = Assembly.CreatePointer(type);
                 }
 
                 return type;

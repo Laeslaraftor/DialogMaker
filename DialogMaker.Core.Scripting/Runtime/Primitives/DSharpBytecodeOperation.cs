@@ -205,20 +205,49 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </remarks>
         [ArgsCount(1)]
         [RequestsStackValues(1)]
+        [Executor(typeof(DSharpReadOnAddressInstructionExecutor))]
         ReadOnAddress,
+        /// <summary>
+        /// Read value on address that placed on last stack value with field offset.
+        /// First argument is field metadata token. It works like <c>pointer->Field</c>
+        /// Stack:
+        /// 0: address
+        /// </summary>
+        /// <remarks>
+        /// <c>Not implemented yet</c>
+        /// </remarks>
+        [ArgsCount(1)]
+        [RequestsStackValues(1)]
+        [Executor(typeof(DSharpReadFieldOnAddressInstructionExecutor))]
+        ReadFieldOnAddress,
         /// <summary>
         /// Write value that placed on last stack value on address before value.
         /// First argument is type metadata token. It works like <c>*pointer = value</c>
         /// Stack:
-        /// 0: value
-        /// 1: address
+        /// 0: address
+        /// 1: value
         /// </summary>
         /// <remarks>
         /// <c>Not implemented yet</c>
         /// </remarks>
         [ArgsCount(1)]
         [RequestsStackValues(2)]
+        [Executor(typeof(DSharpStoreOnAddressInstructionExecutor))]
         StoreOnAddress,
+        /// <summary>
+        /// Write value with field offset that placed on last stack value on address before value.
+        /// First argument is field metadata token. It works like <c>pointer->Field = value</c>
+        /// Stack:
+        /// 0: address
+        /// 1: value
+        /// </summary>
+        /// <remarks>
+        /// <c>Not implemented yet</c>
+        /// </remarks>
+        [ArgsCount(1)]
+        [RequestsStackValues(2)]
+        [Executor(typeof(DSharpStoreFieldOnAddressInstructionExecutor))]
+        StoreFieldOnAddress,
 
         /// <summary>
         /// Call function or static method.

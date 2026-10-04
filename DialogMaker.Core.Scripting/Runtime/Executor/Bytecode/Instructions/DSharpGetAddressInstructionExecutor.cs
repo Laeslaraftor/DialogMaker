@@ -17,6 +17,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
 
             var member = (DSharpGetAddressMember)instruction.Arguments[0];
+            nint valueAddress;
 
             if (member == DSharpGetAddressMember.Variable)
             {
@@ -25,40 +26,44 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
                 if (variable->ParameterInfo.Type->IsValueType)
                 {
-                    if (variable->Buffer.ValueType == DSharpStackValueType.Reference)
+                    var instance = variable->Buffer.ReadAsObject();
+
+                    if (instance == null)
                     {
-                        var obj = variable->Buffer.ReadAsObject();
-                        context.Stack.PushReference(obj, true, true);
+                        valueAddress = variable->Buffer.StackPointer + sizeof(DSharpObject);
                     }
                     else
                     {
-                        context.Stack.PushReference(variable->Buffer.StackPointer, true);
+                        valueAddress = (nint)DSharpObject.GetData(instance);
                     }
                 }
                 else
                 {
-                    var field = (DSharpRuntimeFieldInfo*)instruction.Arguments[0];
-                    void* fieldPointer;
-
-                    if (field->IsStatic)
-                    {
-                        fieldPointer = field->GetDataPointer(null);
-                    }
-                    else
-                    {
-                        var instance = GetInstance(context, 0, out error);
-
-                        if (instance == null)
-                        {
-                            return error;
-                        }
-
-                        fieldPointer = field->GetDataPointer(instance);
-                    }
-
-                    context.Stack.PushReference((nint)fieldPointer, true);
+                    valueAddress = variable->Buffer.StackPointer;
                 }
             }
+            else
+            {
+                var field = (DSharpRuntimeFieldInfo*)instruction.Arguments[0];
+
+                if (field->IsStatic)
+                {
+                    valueAddress = (nint)field->GetDataPointer(null);
+                }
+                else
+                {
+                    var instance = GetInstance(context, 0, out error);
+
+                    if (instance == null)
+                    {
+                        return error;
+                    }
+
+                    valueAddress = (nint)field->GetDataPointer(instance);
+                }
+            }
+
+            context.Stack.PushStructure(context.TypesProvider.IntPtr, new UnmanagedArray<byte>((byte*)&valueAddress, sizeof(nint)));
 
             return DSharpMethodExecutionCallback.Complete();
         }

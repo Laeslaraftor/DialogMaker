@@ -1,4 +1,6 @@
-﻿namespace DialogMaker.Core.Scripting.Runtime
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
     /// Interface of D# assembly
@@ -43,5 +45,12 @@
         public IDSharpType GetType(string fullName);
         public List<IDSharpType> GetTypes(string fullName);
         public List<IDSharpType> GetTypes(string? @namespace, string name);
+        /// <summary>
+        /// Try to get type by full name
+        /// </summary>
+        /// <param name="fullName">Full name of required type</param>
+        /// <param name="result">Type with equals full name</param>
+        /// <returns>Is type was successfully found</returns>
+        public bool TryGetType(string fullName, [NotNullWhen(true)] out IDSharpType? result);
     }
 }

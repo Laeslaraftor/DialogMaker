@@ -4,11 +4,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 {
     public partial class DSharpBytecodeBuilder
     {
-        public class ParameterInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation, IDSharpParameterInfo parameter)
-            : Instruction(builder, operation)
+        public class GetVariableAddressInstruction(DSharpBytecodeBuilder builder, IDSharpParameterInfo variable) 
+            : GetAddressInstruction(builder, DSharpGetAddressMember.Variable)
         {
-            public IDSharpParameterInfo Parameter { get; set; } = parameter;
-            public override int SizeInBytes => base.SizeInBytes + sizeof(uint);
+            public IDSharpParameterInfo Variable { get; set; } = variable;
+            public override int SizeInBytes => base.SizeInBytes + sizeof(int);
 
             #region Controls
 
@@ -16,20 +16,19 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             {
                 base.Write(stream);
 
-                int index = BytecodeBuilder.GetVariableIndex(Parameter);
+                int index = BytecodeBuilder.GetVariableIndex(Variable);
 
                 if (index == -1)
                 {
                     throw new InvalidOperationException($"Unable to write local variable that not exists in current method \"{BytecodeBuilder.Method}\"");
                 }
 
-                stream.Write((uint)index);
+                stream.Write(index);
             }
-
             public override Instruction Copy(DSharpBytecodeBuilder builder)
             {
-                int index = BytecodeBuilder.Method.Parameters.IndexOf(Parameter);
-                IDSharpParameterInfo parameter = Parameter;
+                int index = BytecodeBuilder.Method.Parameters.IndexOf(Variable);
+                IDSharpParameterInfo parameter = Variable;
 
                 if (index != -1)
                 {
@@ -40,7 +39,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 }
                 else
                 {
-                    index = BytecodeBuilder.LocalVariables.IndexOf(Parameter);
+                    index = BytecodeBuilder.LocalVariables.IndexOf(Variable);
 
                     if (builder.LocalVariables.Count > index)
                     {
@@ -48,16 +47,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                     }
                 }
 
-                return new ParameterInstruction(builder, Operation, parameter);
+                return new GetVariableAddressInstruction(builder, parameter);
             }
             public override object[] GetArguments()
             {
-                return [Parameter];
+                return [Member, Variable];
             }
 
             public override string ToString()
             {
-                return $"{Operation} [{Parameter?.Name}]";
+                return $"{Operation} [{Member}{(Variable != null ? ", " + Variable.Name : string.Empty)}]";
             }
 
             #endregion

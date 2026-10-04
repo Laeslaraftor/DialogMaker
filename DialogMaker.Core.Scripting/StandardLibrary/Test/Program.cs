@@ -217,6 +217,7 @@ public class Program
 
         TestOutputs();
         TestNullable();
+        TestPointers();
 
         // last exception should be unhandled
         TestExceptionHandling();
@@ -364,6 +365,31 @@ public class Program
         Console.WriteLine("==================");
         Console.WriteLine();
     }
+    private static void TestPointers()
+    {
+        Console.WriteLine();
+        Console.WriteLine("==== Pointers ====");
+        Console.WriteLine();
+
+        int value = 0;    
+        int* firstPointer = &value;
+
+        Console.WriteLine("Start first pointer value: " + (*firstPointer).ToString());
+
+        value = 10;
+
+        Console.WriteLine("Middle first pointer value: " + (*firstPointer).ToString());
+
+        *firstPointer = 20;
+
+        Console.WriteLine("End first pointer value: " + (*firstPointer).ToString());
+
+        Console.WriteLine("First pointer type: " + typeof(void*).Name);
+
+        Console.WriteLine();
+        Console.WriteLine("==================");
+        Console.WriteLine();
+    }
 
     private static bool TryGetZeBlack(string value, out string? result)
     {
@@ -378,6 +404,10 @@ public class Program
     }
 }
 
+public struct ValuesStorage
+{
+    public int Value;
+}
 public class Container
 {
     public string? Name;

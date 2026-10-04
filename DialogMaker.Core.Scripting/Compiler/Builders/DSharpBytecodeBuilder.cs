@@ -3,6 +3,7 @@ using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
 using DialogMaker.Core.Scripting.Runtime.Executor;
+using System.Data.Common;
 using System.Text;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
@@ -56,6 +57,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 }
             }
         }
+        /// <summary>
+        /// Flag for disabling member access checking/
+        /// </summary>
+        public bool DisableAccessCheck { get; set; }
         int IDSharpMethodBytecode.InstructionsCount => Instructions.Count;
 
         private readonly DSharpCompilerContext _context = new()
@@ -67,8 +72,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         private bool _isWriting;
         private MemoryStream? _sizeMemoryStream;
 
-        #region Управление
+        #region Controls
 
+        /// <summary>
+        /// Clear bytecode and variables
+        /// </summary>
         public void Clear()
         {
             Instructions.Clear();
@@ -259,6 +267,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                         genericCallInstruction.AccessedMember = ReplaceMember(genericCallInstruction.AccessedMember);
                     }
                 }
+                else if (instruction is GetFieldAddressInstruction getFieldAddressInstruction)
+                {
+                    getFieldAddressInstruction?.Field = (IDSharpFieldInfo)ReplaceMember(getFieldAddressInstruction.Field);
+                }
             }
         }
         /// <summary>
@@ -281,6 +293,27 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
 
             return result;
+        }
+        /// <summary>
+        /// Get variable or parameter index
+        /// </summary>
+        /// <param name="variable">Variable or parameter</param>
+        /// <returns>Index of variable or parameter</returns>
+        public int GetVariableIndex(IDSharpParameterInfo variable)
+        {
+            int index = Method.Parameters.IndexOf(variable);
+
+            if (index == -1)
+            {
+                index = LocalVariables.IndexOf(variable);
+
+                if (index != -1)
+                {
+                    index += Method.Parameters.Count;
+                }
+            }
+
+            return index;
         }
 
         /// <summary>
@@ -324,7 +357,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
         #endregion
 
-        #region Загрузка и выгрузка значений
+        #region Loading and storing values
 
         /// <summary>
         /// Add comment to bytecode. Comments will not writes to result bytecode
@@ -762,7 +795,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
         #endregion
 
-        #region Вызовы и переходы
+        #region Calling and jumping
 
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.Call"/>
@@ -1004,7 +1037,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
         #endregion
 
-        #region Логика
+        #region Logic
 
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.Equals"/>
@@ -1081,7 +1114,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
         #endregion
 
-        #region Математика
+        #region Math
 
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.Add"/>
@@ -1163,10 +1196,58 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Decrement);
         }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.GetAddress"/>
+        /// </summary>
+        /// <returns></returns>
+        public GetVariableAddressInstruction GetAddress(IDSharpParameterInfo variable)
+        {
+            return CreateInstruction<GetVariableAddressInstruction>(this, variable);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.GetAddress"/>
+        /// </summary>
+        /// <returns></returns>
+        public GetFieldAddressInstruction GetAddress(IDSharpFieldInfo field)
+        {
+            return CreateInstruction<GetFieldAddressInstruction>(this, field);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.ReadOnAddress"/>
+        /// </summary>
+        /// <returns></returns>
+        public TypeInstruction ReadOnAddress(IDSharpType readType)
+        {
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.ReadOnAddress, readType);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.ReadFieldOnAddress"/>
+        /// </summary>
+        /// <returns></returns>
+        public TypeInstruction ReadFieldOnAddress(IDSharpFieldInfo field)
+        {
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.ReadFieldOnAddress, field);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.StoreOnAddress"/>
+        /// </summary>
+        /// <returns></returns>
+        public TypeInstruction StoreOnAddress(IDSharpType valueType)
+        {
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreOnAddress, valueType);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.StoreFieldOnAddress"/>
+        /// </summary>
+        /// <returns></returns>
+        public TypeInstruction StoreFieldOnAddress(IDSharpFieldInfo field)
+        {
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreFieldOnAddress, field);
+        }
 
         #endregion
 
-        #region Операторы
+        #region Operators
 
         /// <summary>
         /// Add unary operation
@@ -1226,7 +1307,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
         #endregion
 
-        #region Дополнительно
+        #region Extra
 
         /// <summary>
         /// Resolve expression type
@@ -1326,7 +1407,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         }
         private void CheckAccess(IDSharpMemberInfo member)
         {
-            if (!_context.CanAccessTo(member))
+            if (!DisableAccessCheck && !_context.CanAccessTo(member))
             {
                 _context.ThrowCanNotAccessException(member);
             }

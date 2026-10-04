@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
-using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
@@ -36,7 +35,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         }
         IReadOnlyCollection<IDSharpType> IDSharpAssembly.Types => Types;
 
-        #region Встроенные типы
+        #region Build-in types
 
         public DSharpTypeToken Int32Token
         {
@@ -254,6 +253,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
+        public DSharpTypeToken PointerToken
+        {
+            get
+            {
+                field ??= GetTypeToken(PointerType);
+                return field;
+            }
+        }
+        public DSharpTypeToken TypedPointerToken
+        {
+            get
+            {
+                field ??= GetTypeToken(TypedPointerType);
+                return field;
+            }
+        }
         public IDSharpType StringType => StringTypeInfo.Type;
         public IDSharpType Int32Type
         {
@@ -439,6 +454,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
+        public IDSharpType PointerType
+        {
+            get
+            {
+                field ??= PointerTypeInfo.Type;
+                return field;
+            }
+        }
+        public IDSharpType TypedPointerType
+        {
+            get
+            {
+                field ??= TypedPointerTypeInfo.Type;
+                return field;
+            }
+        }
         public DSharpArrayType ArrayBaseType
         {
             get
@@ -511,6 +542,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
+        public DSharpPointerType PointerTypeInfo
+        {
+            get
+            {
+                field ??= DSharpPointerType.Create(this, false);
+                return field;
+            }
+        }
+        public DSharpPointerType TypedPointerTypeInfo
+        {
+            get
+            {
+                field ??= DSharpPointerType.Create(this, true);
+                return field;
+            }
+        }
 
         #endregion
 
@@ -523,7 +570,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         private readonly List<DSharpTypeToken> _propertiesDefinitions = [];
         private readonly List<DSharpTypeToken> _operatorsDefinitions = [];
 
-        #region Управление
+        #region Controls
 
         internal DSharpTypeToken AllocateMetadataToken(DSharpMetadataTokenType type)
         {
@@ -1133,6 +1180,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             return type;
         }
+        public IDSharpType CreatePointer(IDSharpType elementType)
+        {
+            if (!elementType.IsValueType())
+            {
+                throw new ArgumentException($"Unable to create pointer for reference type \"{elementType}\"");
+            }
+
+            return FillGeneric(TypedPointerTypeInfo.Type, elementType);
+        }
 
         private T CreateMember<T>(DSharpMetadataTokenType tokenType, IList<T> members, Func<DSharpTypeToken, T> fabric)
         {
@@ -1387,24 +1443,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         }
         public IDSharpType GetType(string fullName)
         {
-            IDSharpType? type = _types.FirstOrDefault(t => t.FullName == fullName);
-
-            if (type != null)
+            if (!TryGetType(fullName, out var type))
             {
-                return type;
+                throw new ArgumentException($"Unknown type: {fullName}", nameof(fullName));
             }
 
-            foreach (var assembly in References)
-            {
-                type = assembly.Types.FirstOrDefault(t => t.FullName == fullName);
-
-                if (type != null)
-                {
-                    return type;
-                }
-            }
-
-            return type ?? throw new ArgumentException($"Unknown type: {fullName}", nameof(fullName));
+            return type;
         }
         public IDSharpType GetType(DSharpLiteralType literalType)
         {
@@ -1560,6 +1604,27 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
 
             return result;
+        }
+        public bool TryGetType(string fullName, [NotNullWhen(true)] out IDSharpType? result)
+        {
+            result = _types.FirstOrDefault(t => t.FullName == fullName);
+
+            if (result != null)
+            {
+                return true;
+            }
+
+            foreach (var assembly in References)
+            {
+                result = assembly.Types.FirstOrDefault(t => t.FullName == fullName);
+
+                if (result != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         #endregion

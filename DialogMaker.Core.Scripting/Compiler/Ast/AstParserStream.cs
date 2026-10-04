@@ -33,6 +33,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
         public bool Check(params DSharpTokenType[] types) => types.Contains(Current?.Type ?? DSharpTokenType.EndOfFile);
         public bool CheckAll<T>(ImmutableArray<T> values) where T : struct
         {
+            return CheckAll(values, out _);
+        }
+        public bool CheckAll<T>(ImmutableArray<T> values, out T passedToken) where T : struct
+        {
+            passedToken = default;
+
             foreach (var value in values)
             {
                 var numberValue = (int)Convert.ChangeType(value, typeof(int));
@@ -40,6 +46,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
 
                 if (Check(typedValue))
                 {
+                    passedToken = value;
                     return true;
                 }
             }

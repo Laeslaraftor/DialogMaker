@@ -28,10 +28,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
         /// <summary>
         /// Operator for getting reference to variable or field (<![CDATA[&someVariable]]>)
         /// </summary>
-        AddressOf = DSharpTokenType.Multiply,
+        AddressOf = DSharpTokenType.And,
         /// <summary>
         /// Operator for accessing to value through address (<c>*pointer</c> or <c>*pointer = value</c>)
         /// </summary>
-        Dereference = DSharpTokenType.And,
+        Dereference = DSharpTokenType.Multiply,
     }
 }

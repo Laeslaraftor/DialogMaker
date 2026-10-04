@@ -58,13 +58,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 stream.ThrowPositionException("Invalid token");
             }
 
-            if (stream.CheckAll(DSharpUnaryOperatorHelper.Values))
+            if (stream.CheckAll(DSharpUnaryOperatorHelper.Values, out var @operator))
             {
                 var operatorToken = stream.Eat(stream.Current.Type);
                 var operand = Parse(stream);
                 UnaryExpressionNode unaryExpression = new(operatorToken)
                 {
-                    Operator = (DSharpUnaryOperator)operatorToken.Type,
+                    Operator = @operator,
                     Operand = operand,
                 };
                 operand.Parent = unaryExpression;

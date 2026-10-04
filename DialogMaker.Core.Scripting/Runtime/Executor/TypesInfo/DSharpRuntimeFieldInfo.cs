@@ -286,6 +286,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                    field.Name.Length * sizeof(char);
         }
 
+        /// <summary>
+        /// Get field data offset
+        /// </summary>
+        /// <param name="field">Field for getting it data offset</param>
+        /// <returns>Data offset is bytes</returns>
+        /// <exception cref="InvalidOperationException">Unable to find data offset for field</exception>
+        public static int GetOffset(DSharpRuntimeFieldInfo* field)
+        {
+            if (field->DeclaringType->TryGetFieldOffset(field->MetadataToken, out var offset))
+            {
+                return offset;
+            }
+
+            throw new InvalidOperationException($"Unable to find data offset for field: {field->ToString()}");
+        }
+
         #endregion
     }
 }

@@ -61,7 +61,7 @@ namespace DialogMaker.Core.Scripting.Runtime
 
             return result;
         }
-        public bool TryGetType(string fullName, [NotNullWhen(true)] out DSharpType? result)
+        public bool TryGetType(string fullName, [NotNullWhen(true)] out IDSharpType? result)
         {
             result = Types.FirstOrDefault(t => t.FullName == fullName);
             return result != null;
