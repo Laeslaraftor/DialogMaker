@@ -4,6 +4,7 @@ using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
+using System.Diagnostics;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -2317,12 +2318,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 var argsContext = GetContext(context, method);
-
-                foreach (var arg in arrayExpression.Arguments)
-                {
-                    CompileValueExpression(method, arg, ref settings, null, argsContext);
-                }
-
+                IDSharpType resultType;
+                DSharpPointerType? pointerTypeInfo = null;
                 IDSharpIndexerInfo indexer;
 
                 try
@@ -2334,16 +2331,56 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new InvalidOperationException($"Unable to find indexer: {arrayExpression}", error);
                 }
 
-                if (!indexer.CanRead)
+                if (indexer.DeclaringType?.GenericTemplate == Assembly.TypedPointerType)
                 {
-                    throw new InvalidOperationException($"Unable to get value from \"{indexer}\" because it have not getter");
+                    pointerTypeInfo = DSharpPointerType.Create(indexer.DeclaringType);
+                }
+                if (pointerTypeInfo == null)
+                {
+                    foreach (var arg in arrayExpression.Arguments)
+                    {
+                        CompileValueExpression(method, arg, ref settings, null, argsContext);
+                    }
+
+                    if (!indexer.CanRead)
+                    {
+                        throw new InvalidOperationException($"Unable to get value from \"{indexer}\" because it have not getter");
+                    }
+
+                    code.LoadPropertyOrField(indexer, settings.NextNonVirtualizedAccess);
+                    code.PopOffsetRepeat(1, 2);
+                    resultType = indexer.PropertyType;
+                }
+                else
+                {
+                    if (pointerTypeInfo.ValueType == null)
+                    {
+                        throw new DSharpCompilerException($"Unexpected pointer type was got \"{pointerTypeInfo.Type}\"", arrayExpression.Array);
+                    }
+                    if (arrayExpression.Arguments.Count != 1)
+                    {
+                        throw new DSharpCompilerException("Pointer indexer requires element index as single parameter", arrayExpression);
+                    }
+
+                    var arg = arrayExpression.Arguments[0];
+
+                    code.LoadPropertyOrField(pointerTypeInfo.AddressField);
+                    code.LoadTypeSize(pointerTypeInfo.ValueType);
+
+                    CompileExpressionValueWithRequestedType(method, Assembly.Int32Type, code, arg, ref settings, null, argsContext);
+
+                    code.Multiply();
+                    code.PopPreviousTwo();
+                    code.Add();
+                    code.ReadOnAddress(pointerTypeInfo.ValueType);
+                    code.PopOffsetRepeat(1, 4);
+
+                    resultType = pointerTypeInfo.ValueType;
                 }
 
-                code.LoadPropertyOrField(indexer, settings.NextNonVirtualizedAccess);
-                code.PopOffsetRepeat(1, 2);
                 settings.LastOperationIsReturnsValue = true;
 
-                return indexer.PropertyType;
+                return resultType;
             }
             else if (expression.TrySimplifyToLiteral(out var literal))
             {
@@ -3259,6 +3296,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 var pointerType = Assembly.CreatePointer(expressionType);
                 var pointerInfo = DSharpPointerType.Create(pointerType);
+
                 DSharpMemberSearchResult memberSearchResult;
 
                 try
@@ -3279,6 +3317,41 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     code.GetAddress(memberSearchResult.ParameterInfo);
                 }
+                else if (memberSearchResult.MemberInfo is IDSharpIndexerInfo pointerIndexer)
+                {
+                    var valueMember = CompileValueExpression(method, expression, ref settings, null, context);
+
+                    if (pointerIndexer.PropertyType != valueMember)
+                    {
+                        throw new DSharpCompilerException($"Type that returned by pointer indexer \"{valueMember}\" not match to \"{pointerIndexer.PropertyType}\"", expression);
+                    }
+                    if (code.Instructions.Count > 2 &&
+                            code.Instructions[^1] is DSharpBytecodeBuilder.OffsetCountInstruction popOffsetRepeatInstruction &&
+                            code.Instructions[^2] is DSharpBytecodeBuilder.TypeInstruction readOnAddressInstruction &&
+                            popOffsetRepeatInstruction.Operation == DSharpBytecodeOperation.PopOffsetRepeat &&
+                            readOnAddressInstruction.Operation == DSharpBytecodeOperation.ReadOnAddress &&
+                            popOffsetRepeatInstruction.Count == 4 && popOffsetRepeatInstruction.Offset == 1 &&
+                            readOnAddressInstruction.MemberInfo == pointerInfo.ValueType)
+                    {
+                        code.Instructions.RemoveAt(code.Instructions.Count - 2);
+                        var startAddMode = code.InstructionsAddMode;
+                        var startInsertIndex = code.InstructionsInsertIndex;
+
+                        code.InstructionsAddMode = DSharpBytecodeInstructionAddMode.Index;
+                        code.InstructionsInsertIndex = code.Instructions.Count - 1;
+
+                        code.New(pointerInfo.Constructor);
+
+                        code.InstructionsAddMode = startAddMode;
+                        code.InstructionsInsertIndex = startInsertIndex;
+
+                        return pointerType;
+                    }
+                    else
+                    {
+                        throw new DSharpCompilerException($"Unable to compile getting address from pointer indexer", expression);
+                    }
+                }
                 else
                 {
                     var endPointMember = CompileEndPointMember(method, code, expression, null, (_, _) =>
@@ -3288,9 +3361,9 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     if (endPointMember is not IDSharpFieldInfo fieldToGettingAddress)
                     {
-                        throw new DSharpCompilerException($"Getting address available only for variables and fields, got \"{endPointMember}\"", expression);
+                        throw new DSharpCompilerException($"Getting address available only for variables, fields and pointer indexer, got \"{endPointMember}\"", expression);
                     }
-
+ 
                     removeInstance = !fieldToGettingAddress.IsStatic;
                     code.GetAddress(fieldToGettingAddress);
                 }

@@ -1,6 +1,6 @@
 namespace System.Native;
 
-public struct Pointer<T> where T : struct
+public struct Pointer<T>
 {
     public Pointer(nint address)
     {
@@ -9,31 +9,14 @@ public struct Pointer<T> where T : struct
 
     public T this[int offset]
     {
-        get => Pointer.ReadValue<T>(_address + sizeof(T) * offset);
-        set => Pointer.WriteValue(_address + sizeof(T) * offset, value);
+        get => throw new InvalidOperationException("Indexer getter was implemented by compiler");
+        set => throw new InvalidOperationException("Indexer setter was implemented by compiler");
     }
 
     public bool IsNull => _address == 0;
 
     private readonly nint _address;
     
-    public TValue Read<TValue>() where TValue : struct
-    {
-        return Pointer.ReadValue<TValue>(_address);
-    }
-    public TValue Read<TValue>(int offsetInBytes) where TValue : struct
-    {
-        return Pointer.ReadValue<TValue>(_address + offsetInBytes);
-    }
-    public void Write<TValue>(TValue value) where TValue : struct
-    {
-        Pointer.WriteValue(_address, value);
-    }
-    public void Write<TValue>(int offsetInBytes, TValue value) where TValue : struct
-    {
-        Pointer.WriteValue(_address + offsetInBytes, value);
-    }
-
     public static explicit operator Pointer<T>(nint address) => new Pointer<T>(address);
     public static explicit operator Pointer<T>(Pointer pointer) => new Pointer<T>((nint)pointer);
     public static explicit operator Pointer(Pointer<T> pointer) => new Pointer(pointer._address);

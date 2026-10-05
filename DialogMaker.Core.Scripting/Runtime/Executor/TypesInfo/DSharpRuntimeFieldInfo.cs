@@ -245,18 +245,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                     return offset;
                 }
 
-                throw new InvalidOperationException($"Unable to find data offset for static field: {MetadataToken}");
+                throw new InvalidOperationException($"Unable to find data offset for static field: {MetadataToken} ({Name})");
             }
             if (instance == null)
             {
-                throw new ArgumentException($"Unable to get instance field offset without object instance: {MetadataToken}");
+                throw new ArgumentException($"Unable to get instance field offset without object instance: {MetadataToken} ({Name})");
             }
             if (instance->Type->TryGetFieldOffset(MetadataToken, out var instanceOffset))
             {
                 return instanceOffset;
             }
 
-            throw new InvalidOperationException($"Unable to get instance field ({MetadataToken}) offset at {instance->Type->ToString()}");
+            throw new InvalidOperationException($"Unable to get instance field ({Name}: {MetadataToken}) offset at {instance->Type->ToString()}");
         }
         
         private DSharpObject* GetValuePointer(DSharpObject* instance)

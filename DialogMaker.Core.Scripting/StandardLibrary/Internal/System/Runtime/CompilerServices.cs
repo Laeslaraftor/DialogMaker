@@ -14,6 +14,8 @@ internal static class CompilerServices
             return 0;
         }
 
-        return *(nint*)address;
+        var pointer = (nint*)address;
+
+        return pointer[0];
     }
 }

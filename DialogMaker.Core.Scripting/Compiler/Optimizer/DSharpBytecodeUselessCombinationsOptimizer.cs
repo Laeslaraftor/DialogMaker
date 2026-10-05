@@ -25,6 +25,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             DSharpBytecodeOperation.LoadProperty,
             DSharpBytecodeOperation.LoadIndexer
         ]);
+        private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _potentialLoadMemberOperations = new([.. _loadMemberOperations.Append(DSharpBytecodeOperation.Call)]);
         private static readonly Range _uselessPopCombinationsRange = new(0, 5);
         private static readonly ReadOnlyCollection<UselessCombination> _uselessCombinations = new([
             new(
@@ -42,20 +43,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                     new(_loadMemberOperations, typeof(TypeInstruction)),
                 ],
                 UselessCombinationRemoveNextTwo
-            ),
-            new(
-                [
-                    new(DSharpBytecodeOperation.PopOffset, typeof(IndexInstruction)),
-                    new(DSharpBytecodeOperation.Return),
-                ],
-                UselessCombinationRemoveFirst
-            ),
-            new(
-                [
-                    new(DSharpBytecodeOperation.PopOffsetRepeat, typeof(OffsetCountInstruction)),
-                    new(DSharpBytecodeOperation.Return),
-                ],
-                UselessCombinationRemoveFirst
             ),
             new(
                 [
@@ -126,6 +113,37 @@ namespace DialogMaker.Core.Scripting.Compiler
                 ],
                 UselessCombinationRemovePointerConverting
             ),
+            new(
+                [
+                    InstructionDefinition.Any,
+                    new(DSharpBytecodeOperation.Call, typeof(CallingInstruction)),
+                    new(DSharpBytecodeOperation.PopOffset, typeof(IndexInstruction), exactArguments: 1u),
+                    new(DSharpBytecodeOperation.LoadInstanceField, typeof(TypeInstruction)),
+                    new(DSharpBytecodeOperation.ReadOnAddress, typeof(TypeInstruction))
+                ],
+                UselessCombinationRemovePointerCreatingBeforeReading
+            ),
+            new(
+                [
+                    new(DSharpBytecodeOperation.PopOffset, typeof(IndexInstruction)),
+                    new(DSharpBytecodeOperation.Return),
+                ],
+                UselessCombinationRemoveFirst
+            ),
+            new(
+                [
+                    new(DSharpBytecodeOperation.PopOffsetRepeat, typeof(OffsetCountInstruction)),
+                    new(DSharpBytecodeOperation.Return),
+                ],
+                UselessCombinationRemoveFirst
+            ),
+            new(
+                [
+                    new(DSharpBytecodeOperation.PopPreviousTwo),
+                    new(DSharpBytecodeOperation.Return),
+                ],
+                UselessCombinationRemoveFirst
+            )
         ]);
         private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _finalUselessOperations = new([
             DSharpBytecodeOperation.Pop,
@@ -208,8 +226,57 @@ namespace DialogMaker.Core.Scripting.Compiler
             return offset;
         }
 
-        #region Дополнительно
+        #region Optimizations
 
+        private static int UselessCombinationRemovePointerCreatingBeforeReading(UselessCombination uselessCombination, DSharpBytecodeBuilder builder, int startIndex)
+        {
+            var loadAddressInstruction = builder.Instructions[startIndex];
+            IDSharpType loadedAddressType;
+
+            if (loadAddressInstruction is ParameterInstruction parameterInstruction)
+            {
+                loadedAddressType = parameterInstruction.Parameter.Type;
+            }
+            else if (loadAddressInstruction is CallingInstruction callingInstruction)
+            {
+                if (callingInstruction.AccessedMember.TryGetReturnType(out var returnType))
+                {
+                    loadedAddressType = returnType;
+                }
+
+                return 0;
+            }
+            else if (loadAddressInstruction is TypeInstruction typeInstruction &&
+                     typeInstruction.MemberInfo is IDSharpFieldInfo fieldInfo)
+            {
+                loadedAddressType = fieldInfo.FieldType;
+            }
+            else
+            {
+                return 0;
+            }
+            if (loadedAddressType != builder.Method.Assembly.NIntType ||
+                builder.Instructions[startIndex + 1] is not CallingInstruction creatingPointerInstruction ||
+                creatingPointerInstruction.AccessedMember is not IDSharpMethodInfo method ||
+                method.ReturnType?.GenericTemplate != builder.Method.Assembly.TypedPointerType)
+            {
+                return 0;
+            }
+
+            var pointerTypeInfo = DSharpPointerType.Create(method.ReturnType);
+
+            if (builder.Instructions[startIndex + 3] is not TypeInstruction loadAddressFieldInstruction ||
+                loadAddressFieldInstruction.MemberInfo != pointerTypeInfo.AddressField ||
+                builder.Instructions[startIndex + 4] is not TypeInstruction readAddressInstruction ||
+                readAddressInstruction.MemberInfo != pointerTypeInfo.ValueType)
+            {
+                return 0;
+            }
+
+            builder.Instructions.RemoveRange(startIndex + 1, 3);
+
+            return 3;
+        }
         private static int UselessCombinationRemovePointerConverting(UselessCombination uselessCombination, DSharpBytecodeBuilder builder, int startIndex)
         {
             for (int i = 0; i < 6; i++)
@@ -500,6 +567,10 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             public InstructionDefinition(DSharpBytecodeOperation operation, bool anyInstructionType = false)
                 : this([operation], typeof(Instruction), anyInstructionType: anyInstructionType)
+            {
+            }
+            public InstructionDefinition(IEnumerable<DSharpBytecodeOperation>? operations, bool anyInstructionType = false)
+                : this(operations, typeof(Instruction), anyInstructionType: anyInstructionType)
             {
             }
             public InstructionDefinition(DSharpBytecodeOperation operation, Type instructionType, params object[] exactArguments)

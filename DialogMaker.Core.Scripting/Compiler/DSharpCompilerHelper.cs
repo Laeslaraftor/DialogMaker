@@ -1254,14 +1254,21 @@ namespace DialogMaker.Core.Scripting.Compiler
                             throw new DSharpCompilerException("Unable to resolve member for getting address", unaryExpression.Operand, error);
                         }
 
-                        if (memberSearchResult.ParameterInfo == null &&
-                            memberSearchResult.MemberInfo is not IDSharpFieldInfo)
+                        if (memberSearchResult.ParameterInfo != null ||
+                            memberSearchResult.MemberInfo is IDSharpFieldInfo)
                         {
-                            throw new DSharpCompilerException($"Getting address available only for variables and fields, got \"{memberSearchResult.MemberInfo}\"", unaryExpression.Operand);
+                            operandMember = assembly.CreatePointer(memberSearchResult.ParameterInfo?.Type ??
+                                                                   ((IDSharpFieldInfo)memberSearchResult.MemberInfo).FieldType);
                         }
-
-                        operandMember = assembly.CreatePointer(memberSearchResult.ParameterInfo?.Type ??
-                                                               ((IDSharpFieldInfo)memberSearchResult.MemberInfo).FieldType);
+                        else if (memberSearchResult.MemberInfo is IDSharpIndexerInfo indexer &&
+                                 indexer.DeclaringType?.GenericTemplate == assembly.TypedPointerType)
+                        {
+                            operandMember = indexer.DeclaringType;
+                        }
+                        else
+                        {
+                            throw new DSharpCompilerException($"Getting address available only for variables, fields and pointer indexer, got \"{memberSearchResult.MemberInfo}\"", unaryExpression.Operand);
+                        }
                     }
                     else if (unaryExpression.Operator == DSharpUnaryOperator.Dereference)
                     {

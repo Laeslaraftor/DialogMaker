@@ -387,6 +387,8 @@ public class Program
 
         Console.WriteLine("First pointer type: " + typeof(void*).Name);
 
+        firstPointer = &firstPointer[0]; // top 5 most useless lines in the world
+
         Console.WriteLine();
         Console.WriteLine("==================");
         Console.WriteLine();
