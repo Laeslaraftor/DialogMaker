@@ -47,6 +47,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
                 return variableStatement;
             }
+            if (stream.Check(DSharpTokenType.Unsafe))
+            {
+                return UnsafeStatementNode.Parse(stream);
+            }
             if (stream.Check(DSharpTokenType.Using))
             {
                 return UsingVariableStatementNode.Parse(stream);

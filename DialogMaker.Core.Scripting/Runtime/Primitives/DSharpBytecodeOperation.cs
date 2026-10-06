@@ -200,9 +200,6 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// Stack:
         /// 0: address
         /// </summary>
-        /// <remarks>
-        /// <c>Not implemented yet</c>
-        /// </remarks>
         [ArgsCount(1)]
         [RequestsStackValues(1)]
         [Executor(typeof(DSharpReadOnAddressInstructionExecutor))]
@@ -213,9 +210,6 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// Stack:
         /// 0: address
         /// </summary>
-        /// <remarks>
-        /// <c>Not implemented yet</c>
-        /// </remarks>
         [ArgsCount(1)]
         [RequestsStackValues(1)]
         [Executor(typeof(DSharpReadFieldOnAddressInstructionExecutor))]
@@ -227,9 +221,6 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// 0: address
         /// 1: value
         /// </summary>
-        /// <remarks>
-        /// <c>Not implemented yet</c>
-        /// </remarks>
         [ArgsCount(1)]
         [RequestsStackValues(2)]
         [Executor(typeof(DSharpStoreOnAddressInstructionExecutor))]
@@ -241,9 +232,6 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// 0: address
         /// 1: value
         /// </summary>
-        /// <remarks>
-        /// <c>Not implemented yet</c>
-        /// </remarks>
         [ArgsCount(1)]
         [RequestsStackValues(2)]
         [Executor(typeof(DSharpStoreFieldOnAddressInstructionExecutor))]

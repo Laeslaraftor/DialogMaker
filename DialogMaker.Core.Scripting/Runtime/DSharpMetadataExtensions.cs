@@ -1162,6 +1162,9 @@ namespace DialogMaker.Core.Scripting.Runtime
         }
         extension(IDSharpMethodInfo method)
         {
+            /// <summary>
+            /// Is extension method
+            /// </summary>
             public bool IsExtension
             {
                 get
@@ -1179,6 +1182,9 @@ namespace DialogMaker.Core.Scripting.Runtime
                     return method.GetParameters().FirstOrDefault()?.Mode == DSharpMethodParameterMode.This;
                 }
             }
+            /// <summary>
+            /// Is this method has params
+            /// </summary>
             public bool HasParams
             {
                 get
@@ -1199,6 +1205,11 @@ namespace DialogMaker.Core.Scripting.Runtime
                 }
             }
 
+            /// <summary>
+            /// Create string that represents current method with provided replaced types.
+            /// </summary>
+            /// <param name="replacedTypes">Replaced types that will be used for replacing generic types, return type and parameters types</param>
+            /// <returns>String that represents current method</returns>
             public string ToString(IDictionary<IDSharpType, IDSharpType>? replacedTypes)
             {
                 string result = " ";
@@ -1282,6 +1293,11 @@ namespace DialogMaker.Core.Scripting.Runtime
         }
         extension(IDSharpParameterInfo parameter)
         {
+            /// <summary>
+            /// Create string that represents current parameter with provided replaced types.
+            /// </summary>
+            /// <param name="replacedTypes">Replaced types that will be used for replacing parameter type</param>
+            /// <returns>String that represents current parameter</returns>
             public string ToString(IDictionary<IDSharpType, IDSharpType>? replacedTypes)
             {
                 string result = string.Empty;
@@ -1348,6 +1364,25 @@ namespace DialogMaker.Core.Scripting.Runtime
                 }
 
                 return DSharpMethodCallingType.Default;
+            }
+            /// <summary>
+            /// Is current member unsafe recursive.
+            /// This count declaring types unsafe flag
+            /// </summary>
+            /// <returns>Return <c>True</c> if this member is unsafe</returns>
+            public bool IsUnsafeRecursive()
+            {
+                while (member != null)
+                {
+                    if (member.IsUnsafe)
+                    {
+                        return true;
+                    }
+
+                    member = member.DeclaringType;
+                }
+
+                return false;
             }
         }
     }

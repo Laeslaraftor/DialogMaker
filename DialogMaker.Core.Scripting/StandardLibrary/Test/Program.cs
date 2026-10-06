@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Internal.System.Runtime;
 
-public class Program
+public unsafe class Program
 {
     public enum ProgramType
     {
@@ -374,6 +374,7 @@ public class Program
         void* nullPointer = null;
         int value = 0;    
         int* firstPointer = &value;
+        int** secondPointer = &firstPointer;
 
         Console.WriteLine("Start first pointer value: " + (*firstPointer).ToString());
 
@@ -381,13 +382,16 @@ public class Program
 
         Console.WriteLine("Middle first pointer value: " + (*firstPointer).ToString());
 
-        *firstPointer = 20;
+        firstPointer[0] += 20;
+        **secondPointer += 30;
 
         Console.WriteLine("End first pointer value: " + (*firstPointer).ToString());
 
         Console.WriteLine("First pointer type: " + typeof(void*).Name);
 
         firstPointer = &firstPointer[0]; // top 5 most useless lines in the world
+
+        Console.WriteLine("Value after useless line: " + (*firstPointer).ToString());
 
         Console.WriteLine();
         Console.WriteLine("==================");

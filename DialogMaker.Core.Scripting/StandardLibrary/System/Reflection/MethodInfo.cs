@@ -3,7 +3,7 @@ using Internal.System.Runtime;
 
 namespace System.Reflection;
 
-public class MethodInfo : MemberInfo
+public unsafe class MethodInfo : MemberInfo
 {
     internal MethodInfo(Pointer<RuntimeMethodInfo> runtimeMethodInfo)
     {

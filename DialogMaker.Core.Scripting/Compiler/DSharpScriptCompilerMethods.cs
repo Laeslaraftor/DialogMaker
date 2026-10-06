@@ -4,7 +4,6 @@ using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
-using System.Diagnostics;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -721,6 +720,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                     {
                         throw new DSharpCompilerException($"Unknown variable type: {variable}", variableNode);
                     }
+                }
+
+                var variableType = variableTypeGetter();
+
+                if (variableType == Assembly.PointerType ||
+                    variableType.GenericTemplate == Assembly.TypedPointerType)
+                {
+                    context.CheckUnsafe(statement);
                 }
 
                 return new(variable as IDSharpParameterInfo, variableClosure, variable as DSharpFieldBuilder);
@@ -1453,6 +1460,17 @@ namespace DialogMaker.Core.Scripting.Compiler
                 code.Return();
                 endReference.ReferencedInstruction = code.StopTrying();
             }
+            else if (statement is UnsafeStatementNode unsafeStatement)
+            {
+                if (unsafeStatement.Body == null)
+                {
+                    throw new DSharpCompilerException("Unsafe statement should contains body", statement);
+                }
+
+                context.IsUnsafe = true;
+
+                CompileStatement(method, unsafeStatement.Body, depth + 1, code, ref settings, context);
+            }
             else if (statement is not InvokableStatementNode)
             {
                 throw new DSharpCompilerException($"Invalid statement in current context ({statement.GetType().Name})", statement);
@@ -1675,11 +1693,36 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     var indexerSetterParameters = indexer.Setter.GetParameters();
                     var valueType = indexerSetterParameters[0].Type;
+                    DSharpPointerType? pointerTypeInfo = null;
 
-                    CompileValueExpression(method, arrayAccess.Array, ref settings, parentExpression, context);
+                    if (indexer.DeclaringType?.GenericTemplate == Assembly.TypedPointerType)
+                    {
+                        context.CheckUnsafe(arrayAccess);
+                        pointerTypeInfo = DSharpPointerType.Create(indexer.DeclaringType);
+
+                        if (arrayAccess.Arguments.Count != 1)
+                        {
+                            throw new DSharpCompilerException("Pointer indexer requires index", arrayAccess);
+                        }
+                    }
+                    else
+                    {
+                        CompileValueExpression(method, arrayAccess.Array, ref settings, parentExpression, context);
+                    }
 
                     CompileExpression<object>(indexer.PropertyType, (ref settings) =>
                     {
+                        if (pointerTypeInfo != null)
+                        {
+                            CompileValueExpression(method, arrayAccess.Array, ref settings, parentExpression, context);
+                            var stackValues = CompilePointerIndexer(method, code, arrayAccess.Arguments[0], pointerTypeInfo, ref settings, context);
+                            code.PopOffsetRepeat(1, stackValues - 1);
+                            code.StoreOnAddress(pointerTypeInfo.ValueType!);
+                            code.PopRepeat(2);
+
+                            return null;
+                        }
+
                         for (int i = 0; i < arrayAccess.Arguments.Count; i++)
                         {
                             var requestedType = indexerSetterParameters[i + 1].Type;
@@ -1699,17 +1742,90 @@ namespace DialogMaker.Core.Scripting.Compiler
                     {
                         throw new DSharpCompilerException("Incomplete unary expression", unaryPointer);
                     }
-                    if (unaryPointer.Operand is IdentifierExpressionNode identifierOperand)
-                    {
-                        forcePointerWriting = true;
 
-                        if (CompileIdentifier(identifierOperand, ref settings))
+                    context.CheckUnsafe(unaryPointer);
+
+                    int dereferenceCount = 1;
+                    ExpressionNode operand = unaryPointer.Operand;
+
+                    while (operand is UnaryExpressionNode innerUnary)
+                    {
+                        if (innerUnary.Operator != DSharpUnaryOperator.Dereference)
                         {
-                            return null;
+                            throw new DSharpCompilerException($"Invalid operator \"{innerUnary.Operator}\", available only dereference", innerUnary);
                         }
 
-                        forcePointerWriting = false;
+                        dereferenceCount++;
+                        operand = innerUnary.Operand
+                            ?? throw new DSharpCompilerException("Incomplete expression: required operand for unary expression", innerUnary);
                     }
+                    if (!context.TryResolveMember(operand, out var operandMember))
+                    {
+                        throw new DSharpCompilerException("Unable to resolve member for assignment", operand);
+                    }
+                    if (!operandMember.MemberInfo.TryGetTypeOrReturnType(out var memberReturnType))
+                    {
+                        throw new DSharpCompilerException($"Unable to get type of member \"{(operandMember.ParameterInfo?.ToString() ?? operandMember.MemberInfo.ToString())}\"", operand);
+                    }
+
+                    int nestedPointerCount = DSharpPointerType.CountNesting(Assembly.TypedPointerType, memberReturnType);
+
+                    if (nestedPointerCount != dereferenceCount)
+                    {
+                        throw new DSharpCompilerException($"Member type pointer nesting not match to assignment pointer depth. Assignment depth: {dereferenceCount}, pointer nesting: {nestedPointerCount}.", assignExpression);
+                    }
+
+                    DSharpPointerType pointerTypeInfo = DSharpPointerType.Create(memberReturnType);
+                    IDSharpType rootValueType = DSharpPointerType.GetRootValueType(Assembly.TypedPointerType, memberReturnType);
+
+                    if (assignExpression.Operator == DSharpAssignmentOperator.Assign)
+                    {
+                        CompileExpressionValueWithRequestedType(method, rootValueType, code, assignExpression.Right!, ref settings, null, context);
+                    }
+
+                    var result = CompileValueExpression(method, operand, ref settings, null, context);
+
+                    code.LoadPropertyOrField(pointerTypeInfo.AddressField);
+
+                    for (int i = 0; i < nestedPointerCount - 1; i++)
+                    {
+                        code.ReadOnAddress(Assembly.NIntType);
+                    }
+
+                    code.PopOffsetRepeat(1, nestedPointerCount);
+                    DSharpBytecodeBuilder.ReferenceInstruction? skipInstruction = null;
+
+                    if (assignExpression.Operator == DSharpAssignmentOperator.AssignIfNull)
+                    {
+                        code.ReadOnAddress(rootValueType);
+                        code.Push(null);
+                        code.Equals();
+                        var jumpToAssignment = code.JumpIfTrue();
+                        code.PopRepeat(4); // equals + push + read + address
+                        skipInstruction = code.Jump();
+                        jumpToAssignment.ReferencedInstruction = code.PopRepeat(3);
+
+                        CompileExpressionValueWithRequestedType(method, rootValueType, code, assignExpression.Right!, ref settings, null, context);
+
+                        code.StackMove(0, 1);
+                    }
+                    else if (assignExpression.Operator != DSharpAssignmentOperator.Assign)
+                    {
+                        var binaryOperator = GetBinaryOperator();
+                        code.ReadOnAddress(rootValueType);
+                        CompileExpressionValueWithRequestedType(method, rootValueType, code, assignExpression.Right!, ref settings, null, context);
+                        var operatorType = CompileBinaryExpression(method, code, binaryOperator, rootValueType, rootValueType, ref settings, null, context);
+
+                        CastTypes(method, operatorType, rootValueType, code, assignExpression, context);
+
+                        code.StackMove(0, 1);
+                    }
+
+                    code.StoreOnAddress(rootValueType);
+                    code.PopRepeat(2);
+                    skipInstruction?.ReferencedInstruction = code.Empty();
+
+                    return result;
                 }
                 else
                 {
@@ -1719,6 +1835,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     if (leftExpression is UnaryExpressionNode leftUnaryExpression &&
                         leftUnaryExpression.Operator == DSharpUnaryOperator.AddressOf)
                     {
+                        context.CheckUnsafe(leftUnaryExpression);
                         leftIsPointerAssignment = true;
                         leftExpression = leftUnaryExpression.Operand
                             ?? throw new DSharpCompilerException("Incomplete unary expression", leftUnaryExpression);
@@ -2353,6 +2470,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 else
                 {
+                    context.CheckUnsafe(arrayExpression);
+
                     if (pointerTypeInfo.ValueType == null)
                     {
                         throw new DSharpCompilerException($"Unexpected pointer type was got \"{pointerTypeInfo.Type}\"", arrayExpression.Array);
@@ -2364,14 +2483,8 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     var arg = arrayExpression.Arguments[0];
 
-                    code.LoadPropertyOrField(pointerTypeInfo.AddressField);
-                    code.LoadTypeSize(pointerTypeInfo.ValueType);
+                    CompilePointerIndexer(method, code, arg, pointerTypeInfo, ref settings, argsContext);
 
-                    CompileExpressionValueWithRequestedType(method, Assembly.Int32Type, code, arg, ref settings, null, argsContext);
-
-                    code.Multiply();
-                    code.PopPreviousTwo();
-                    code.Add();
                     code.ReadOnAddress(pointerTypeInfo.ValueType);
                     code.PopOffsetRepeat(1, 4);
 
@@ -3294,6 +3407,8 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             if (unaryOperator == DSharpUnaryOperator.AddressOf)
             {
+                context.CheckUnsafe(expression);
+
                 var pointerType = Assembly.CreatePointer(expressionType);
                 var pointerInfo = DSharpPointerType.Create(pointerType);
 
@@ -3363,7 +3478,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     {
                         throw new DSharpCompilerException($"Getting address available only for variables, fields and pointer indexer, got \"{endPointMember}\"", expression);
                     }
- 
+
                     removeInstance = !fieldToGettingAddress.IsStatic;
                     code.GetAddress(fieldToGettingAddress);
                 }
@@ -3388,6 +3503,8 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             if (unaryOperator == DSharpUnaryOperator.Dereference)
             {
+                context.CheckUnsafe(expression);
+
                 if (expressionType.GenericTemplate != Assembly.TypedPointerType)
                 {
                     throw new DSharpCompilerException($"Dereference can be applied only for typed pointers, but type is \"{expressionType}\"", expression);
@@ -3756,11 +3873,11 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             return result;
         }
-        private void CastTypes(DSharpMethodBuilder method, IDSharpType targetType, IDSharpType requestedType, DSharpBytecodeBuilder code, ExpressionNode? parentExpression = null, DSharpCompilerContext context = default)
+        private DSharpCastAvailability CastTypes(DSharpMethodBuilder method, IDSharpType targetType, IDSharpType requestedType, DSharpBytecodeBuilder code, ExpressionNode? parentExpression = null, DSharpCompilerContext context = default)
         {
             if (requestedType == targetType)
             {
-                return;
+                return DSharpCastAvailability.No;
             }
 
             var castAvailability = targetType.CanCastTo(requestedType, out var @operator);
@@ -3772,6 +3889,11 @@ namespace DialogMaker.Core.Scripting.Compiler
             if (castAvailability == DSharpCastAvailability.No)
             {
                 throw new InvalidOperationException($"Unable to cast \"{targetType}\" to \"{requestedType}\"");
+            }
+            if (requestedType == Assembly.PointerType ||
+                requestedType.GenericTemplate == Assembly.TypedPointerType)
+            {
+                context.CheckUnsafe(parentExpression);
             }
             if (targetType.GenericTemplate == Assembly.TypedPointerType &&
                 requestedType.GenericTemplate == Assembly.TypedPointerType)
@@ -3785,13 +3907,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                 code.New(destinationPointer.Constructor);
                 code.PopPreviousTwo();
 
-                return;
+                return DSharpCastAvailability.Explicit;
             }
             if (@operator == null)
             {
                 if (castAvailability == DSharpCastAvailability.Implicit)
                 {
-                    return;
+                    return DSharpCastAvailability.Implicit;
                 }
 
                 code.Cast(requestedType);
@@ -3801,6 +3923,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                 code.CallAuto(@operator.Method);
                 code.PopOffset(1);
             }
+
+            return DSharpCastAvailability.Explicit;
         }
         private bool CompileNullSkipping(DSharpBytecodeBuilder code, IDSharpMemberInfo? currentMember, AssignSettingRefHandler<IDSharpMemberInfo?> compile, ref DSharpMethodCompileSettings settings, out IDSharpMemberInfo? compiledMember)
         {
@@ -4377,6 +4501,30 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             return false;
+        }
+        private int CompilePointerIndexer(DSharpMethodBuilder method, DSharpBytecodeBuilder code, ExpressionNode arg, DSharpPointerType pointerTypeInfo, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context)
+        {
+            if (pointerTypeInfo.ValueType == null)
+            {
+                throw new ArgumentException("Compiling pointer indexer requires typed pointer", nameof(pointerTypeInfo));
+            }
+
+            code.LoadPropertyOrField(pointerTypeInfo.AddressField);
+            code.LoadTypeSize(pointerTypeInfo.ValueType);
+
+            CompileExpressionValueWithRequestedType(method, Assembly.Int32Type, code, arg, ref settings, null, context);
+
+            code.Multiply();
+            code.PopPreviousTwo();
+            code.Add();
+
+            // stack stores:
+            // 0: destination address
+            // 1: offset
+            // 2: address
+            // 3: pointer structure
+
+            return 4;
         }
 
         #endregion

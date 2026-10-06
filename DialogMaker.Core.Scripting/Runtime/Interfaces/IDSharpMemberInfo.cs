@@ -1,6 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
-
-namespace DialogMaker.Core.Scripting.Runtime
+﻿namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
     /// Interface of D# member
@@ -35,5 +33,9 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// This flag indicates that current member requiers implementation
         /// </summary>
         public bool IsDeclaration { get; }
+        /// <summary>
+        /// Is member unsafe. Unsafe member can works with pointers
+        /// </summary>
+        public bool IsUnsafe { get; }
     }
 }

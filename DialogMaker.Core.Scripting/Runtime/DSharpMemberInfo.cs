@@ -14,6 +14,8 @@ namespace DialogMaker.Core.Scripting.Runtime
 
         public bool IsDeclaration => throw new NotImplementedException();
 
+        public bool IsUnsafe => throw new NotImplementedException();
+
         IDSharpType? IDSharpMemberInfo.DeclaringType => DeclaringType;
         IDSharpAssembly IDSharpMemberInfo.Assembly => Assembly;
     }

@@ -1,6 +1,6 @@
 namespace System;
 
-public static class BitConverter
+public static unsafe class BitConverter
 {
     public static double Int64BitsToDouble(long value)
     {

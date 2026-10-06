@@ -4,7 +4,7 @@ using Internal.System.Runtime;
 
 namespace System;
 
-public abstract class Delegate
+public abstract unsafe class Delegate
 {
     public abstract MethodInfo? MethodInfo { get; }
     public abstract object? Target { get; }

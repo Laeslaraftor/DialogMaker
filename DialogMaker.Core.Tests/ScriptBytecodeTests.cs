@@ -211,14 +211,7 @@ namespace DialogMaker.Core.Tests
 
             foreach (var variable in code.Method.Parameters.Union(code.LocalVariables))
             {
-                IDSharpType? type = null;
-
-                if (variable.Type != null)
-                {
-                    type = (IDSharpType)method.Assembly.GetType(variable.Type);
-                }
-
-                Console.WriteLine($"{variable.Mode.ToString().ToLower()} {type} {variable.Name};");
+                Console.WriteLine(variable.ToString(null));
             }
 
             Console.WriteLine("Raw bytecode:");

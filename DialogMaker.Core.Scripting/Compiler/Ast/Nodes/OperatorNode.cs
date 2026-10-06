@@ -90,6 +90,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     return null;
                 }
 
+                result.IsUnsafe = memberInfo.IsUnsafe;
                 result.ReturnType = memberInfo.Type;
                 result.Identifier.Parent = result;
                 result.ReturnType?.Parent = result;

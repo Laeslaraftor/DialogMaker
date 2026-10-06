@@ -56,6 +56,48 @@
             return new(type, valueType, constructor, addressField);
         }
 
+        /// <summary>
+        /// Count pointer nesting
+        /// </summary>
+        /// <param name="typedPointerType">Typed pointer type info</param>
+        /// <param name="type">Type for counting pointer nesting</param>
+        /// <returns>Pointer nesting amount</returns>
+        public static int CountNesting(IDSharpType typedPointerType, IDSharpType type)
+        {
+            int count = 0;
+
+            while (type.GenericTemplate == typedPointerType)
+            {
+                type = type.GetGenericParameters().First();
+                count++;
+            }
+
+            return count;
+        }
+        /// <summary>
+        /// Get root type of value
+        /// </summary>
+        /// <param name="typedPointerType">Typed pointer type info</param>
+        /// <param name="type">Type for finding root value type</param>
+        /// <returns>Root value type</returns>
+        public static IDSharpType GetRootValueType(IDSharpType typedPointerType, IDSharpType type)
+        {
+            int count = 0;
+
+            while (type.GenericTemplate == typedPointerType)
+            {
+                type = type.GetGenericParameters().First();
+                count++;
+            }
+
+            if (count == 0)
+            {
+                throw new ArgumentException($"Provided type is not pointer \"type\"", nameof(type));
+            }
+
+            return type;
+        }
+
         #endregion
     }
 }

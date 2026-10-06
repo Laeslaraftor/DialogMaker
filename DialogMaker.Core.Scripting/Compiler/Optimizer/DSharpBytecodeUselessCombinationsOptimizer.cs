@@ -125,6 +125,14 @@ namespace DialogMaker.Core.Scripting.Compiler
             ),
             new(
                 [
+                    new(DSharpBytecodeOperation.Push, typeof(LiteralInstruction), new DSharpLiteralValue(0)),
+                    new(DSharpBytecodeOperation.Multiply),
+                    new(DSharpBytecodeOperation.PopPreviousTwo)
+                ],
+                UselessCombinationRemoveMultiplyByOne
+            ),
+            new(
+                [
                     new(DSharpBytecodeOperation.PopOffset, typeof(IndexInstruction)),
                     new(DSharpBytecodeOperation.Return),
                 ],
@@ -228,6 +236,48 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         #region Optimizations
 
+        private static int UselessCombinationRemoveMultiplyByOne(UselessCombination uselessCombination, DSharpBytecodeBuilder builder, int startIndex)
+        {
+            if (builder.Instructions[startIndex] is not LiteralInstruction literalInstruction ||
+                !literalInstruction.Value.IsNumber)
+            {
+                return 0;
+            }
+
+            int multiplyValue = -1;
+
+            try
+            {
+                multiplyValue = literalInstruction.Value.AsNumber<int>();
+            }
+            catch
+            {
+            }
+
+            if (multiplyValue == 0)
+            {
+                if (0 >= startIndex || builder.Instructions[startIndex - 1] is not TypeInstruction)
+                {
+                    return 0;
+                }
+
+                ReplaceInstructionReferences(builder, startIndex - 1);
+
+                for (int i = 0; i < 2; i++)
+                {
+                    ReplaceInstructionReferences(builder, startIndex);
+                }
+            }
+            else if (multiplyValue == 1)
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    ReplaceInstructionReferences(builder, startIndex);
+                }
+            }
+
+            return 3;
+        }
         private static int UselessCombinationRemovePointerCreatingBeforeReading(UselessCombination uselessCombination, DSharpBytecodeBuilder builder, int startIndex)
         {
             var loadAddressInstruction = builder.Instructions[startIndex];

@@ -54,6 +54,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public bool IsReadOnly { get; set; }
         /// <summary>
+        /// Unsafe flag
+        /// </summary>
+        public bool IsUnsafe { get; set; }
+        /// <summary>
         /// Member mode
         /// </summary>
         public DSharpObjectMemberMode Mode { get; set; }
@@ -94,7 +98,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 Mode = memberInfo.Mode,
                 IsOverride = memberInfo.IsOverride,
                 IsSealed = memberInfo.IsSealed,
-                Type = memberInfo.Type
+                Type = memberInfo.Type,
+                IsUnsafe = memberInfo.IsUnsafe
             };
 
             memberInfo.Identifier.Parent = field;

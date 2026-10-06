@@ -34,6 +34,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// Is root scope. Root scope contains method parameters as variables
         /// </summary>
         public bool IsRoot { get; set; }
+        public override bool IsUnsafe => RecursiveCheck<bool?>(scope =>
+        {
+            if (scope is DSharpCompilerMethodScope methodScope &&
+                methodScope.IsRoot)
+            {
+                return methodScope.Method.IsUnsafeRecursive();
+            }
+
+            return null;
+        }) ?? false;
 
         public override void Clear(bool recursive = true)
         {

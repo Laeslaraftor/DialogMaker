@@ -47,7 +47,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 Identifier = memberInfo.Identifier,
                 Attributes = memberInfo.Attributes,
                 Access = memberInfo.AccessModifier,
-                IsStatic = memberInfo.IsStatic
+                IsStatic = memberInfo.IsStatic,
+                IsUnsafe = memberInfo.IsUnsafe
             };
 
             ParseParameters(stream, constructor.Parameters, allowModes: false);

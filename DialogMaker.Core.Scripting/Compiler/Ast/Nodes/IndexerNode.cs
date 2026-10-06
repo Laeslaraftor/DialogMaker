@@ -41,7 +41,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 Mode = memberInfo.Mode,
                 IsOverride = memberInfo.IsOverride,
                 IsSealed = memberInfo.IsSealed,
-                Type = memberInfo.Type
+                Type = memberInfo.Type,
+                IsUnsafe = memberInfo.IsUnsafe
             };
 
             InvokableNode.ParseParameters(stream, indexer.Parameters, DSharpTokenType.LeftBracket, DSharpTokenType.RightBracket, false);

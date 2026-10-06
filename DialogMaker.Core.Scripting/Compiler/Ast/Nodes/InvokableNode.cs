@@ -18,6 +18,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public List<AttributeNode>? Attributes { get; set; }
         /// <summary>
+        /// Is unsafe invokable
+        /// </summary>
+        public bool IsUnsafe { get; set; }
+        /// <summary>
         /// Parameter to invoke or call this node
         /// </summary>
         public List<ParameterExpressionNode> Parameters { get; set; } = [];

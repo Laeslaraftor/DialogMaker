@@ -716,6 +716,38 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     whileStatement.ForEachStatement(handler);
                 }
+                else if (statement is LockStatementNode lockStatement)
+                {
+                    lockStatement.ForEachStatement(handler);
+                }
+                else if (statement is UnsafeStatementNode unsafeStatement)
+                {
+                    unsafeStatement.ForEachStatement(handler);
+                }
+            }
+        }
+        extension(UnsafeStatementNode forStatement)
+        {
+            /// <summary>
+            /// Handle all statements in current block.
+            /// It automatically handle other statements blocks
+            /// </summary>
+            /// <param name="handler">Statement handler. It should return value for continuing enumeration (true) or for stopping (false)</param>
+            public void ForEachStatement(Func<StatementNode, StatementsEnumerationAction> handler)
+            {
+                forStatement.Body?.ForEachStatement(handler);
+            }
+        }
+        extension(LockStatementNode forStatement)
+        {
+            /// <summary>
+            /// Handle all statements in current block.
+            /// It automatically handle other statements blocks
+            /// </summary>
+            /// <param name="handler">Statement handler. It should return value for continuing enumeration (true) or for stopping (false)</param>
+            public void ForEachStatement(Func<StatementNode, StatementsEnumerationAction> handler)
+            {
+                forStatement.Body?.ForEachStatement(handler);
             }
         }
         extension(ForStatementNode forStatement)
@@ -974,6 +1006,18 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                     else if (statement is BlockStatementNode otherBlockStatement &&
                              otherBlockStatement.AllPathReturns(assembly, returnTypes, context))
+                    {
+                        return true;
+                    }
+                    else if (statement is LockStatementNode lockBlockStatement &&
+                             lockBlockStatement.Body != null &&
+                             lockBlockStatement.Body.AllPathReturns(assembly, returnTypes, context))
+                    {
+                        return true;
+                    }
+                    else if (statement is UnsafeStatementNode unsafeBlockStatement &&
+                             unsafeBlockStatement.Body != null &&
+                             unsafeBlockStatement.Body.AllPathReturns(assembly, returnTypes, context))
                     {
                         return true;
                     }

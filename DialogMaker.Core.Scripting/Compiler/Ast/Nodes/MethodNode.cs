@@ -68,7 +68,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 IsStatic = memberInfo.IsStatic,
                 IsOverride = memberInfo.IsOverride,
                 IsSealed = memberInfo.IsSealed,
-                Mode = memberInfo.Mode
+                Mode = memberInfo.Mode,
+                IsUnsafe = memberInfo.IsUnsafe,
             };
 
             ParseParameters(stream, method.Parameters);

@@ -2,7 +2,7 @@ using System.Native;
 
 namespace Internal.System.Runtime;
 
-internal static class CompilerServices
+internal static unsafe class CompilerServices
 {
     public static extern nint GetObjectAddress(object obj);
     public static nint GetObjectTypeToken(object obj)

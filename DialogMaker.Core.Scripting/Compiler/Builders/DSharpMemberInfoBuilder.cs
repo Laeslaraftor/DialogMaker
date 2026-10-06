@@ -56,13 +56,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// Access modifier of this member
         /// </summary>
         public virtual DSharpAccessModifier Access { get; set; } = DSharpAccessModifier.Private;
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
         public abstract bool IsDeclaration { get; }
+        public virtual bool IsUnsafe { get; set; }
 
         DSharpMetadataToken IDSharpMemberInfo.MetadataToken => MetadataToken;
         IDSharpAssembly IDSharpMemberInfo.Assembly => Assembly;
+
 
         #region Управление
 

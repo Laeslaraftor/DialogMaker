@@ -34,6 +34,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             NowInCatchBlock = context.NowInCatchBlock;
             NowInFinallyBlock = context.NowInFinallyBlock;
             CaptureInfo = context.CaptureInfo;
+            IsUnsafe = context.IsUnsafe;
 
             if (context.Compiler != null && context.CurrentMember != currentMember)
             {
@@ -67,9 +68,32 @@ namespace DialogMaker.Core.Scripting.Compiler
         public bool NowInFinallyBlock { get; set; }
         public DSharpCompilerScope? Scope { get; set; }
         public DSharpCaptureInfo? CaptureInfo { get; set; }
+        public bool IsUnsafe
+        {
+            readonly get => Scope?.IsUnsafe ?? field;
+            set;
+        }
 
         #region Доступ
 
+        /// <summary>
+        /// Check current context on unsafe flag and throw exception when it sets as <c>False</c>
+        /// </summary>
+        /// <param name="node">Current node</param>
+        /// <exception cref="DSharpCompilerException">Using pointers available only in unsafe context</exception>
+        public readonly void CheckUnsafe(AstNode node)
+        {
+            if (!IsUnsafe)
+            {
+                throw new DSharpCompilerException("Using pointers available only in unsafe context", node);
+            }
+        }
+
+        /// <summary>
+        /// Check access availability to specified member from current context
+        /// </summary>
+        /// <param name="member">Accessible member</param>
+        /// <returns>Is member can be accessed from current context</returns>
         public readonly bool CanAccessTo(IDSharpMemberInfo member)
         {
             if (member.DeclaringType == null &&

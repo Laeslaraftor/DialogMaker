@@ -199,6 +199,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             type.Access = declaration.Access;
             type.IsSealed = declaration.IsSealed;
             type.Namespace = _currentNamespace;
+            type.IsUnsafe = declaration.IsUnsafe;
 
             if (declaration.Type == DSharpObjectType.Enum)
             {
@@ -289,6 +290,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             field.Access = fieldNode.Access;
             field.IsStatic = fieldNode.IsStatic;
             field.IsReadOnly = fieldNode.IsReadOnly;
+            field.IsUnsafe = fieldNode.IsUnsafe;
 
             if (fieldNode.Initializer?.TrySimplifyToLiteral(out var rawValue) == true)
             {
@@ -500,6 +502,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             @operator.Type = operatorNode.OperatorType;
             @operator.BinaryOperator = operatorNode.BinaryOperator;
             @operator.UnaryOperator = operatorNode.UnaryOperator;
+            @operator.IsUnsafe = operatorNode.IsUnsafe;
 
             _createdOperators.Add(@operator, operatorNode);
         }
@@ -520,6 +523,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             var constructor = declareType.CreateConstructor(constructorNode.IsStatic);
             constructor.Access = constructorNode.Access;
+            constructor.IsUnsafe = constructorNode.IsUnsafe;
             _createdConstructors.Add(constructor, constructorNode);
         }
         private void CreateEnumFields(DSharpCompilerEnumDescription description)
@@ -576,6 +580,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             property.CanWrite = fieldNode.CanWrite;
             property.GetterAccess = fieldNode.GetterAccess;
             property.SetterAccess = fieldNode.SetterAccess;
+            property.IsUnsafe = fieldNode.IsUnsafe;
 
             if (!property.IsAbstract)
             {

@@ -20,6 +20,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// Parent scope
         /// </summary>
         public DSharpCompilerScope? Parent { get; } = parent;
+        /// <summary>
+        /// Is unsafe scope
+        /// </summary>
+        public virtual bool IsUnsafe => Parent?.IsUnsafe ?? false;
 
         /// <summary>
         /// Clear scope
@@ -637,7 +641,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// <returns>Created variable or <c>null</c> if variable with same name already exists in current scope</returns>
         protected abstract IDSharpParameterInfo? CreateLocalVariable(string name, IDSharpType type);
 
-        private T? RecursiveCheck<T>(Func<DSharpCompilerScope, T?> handler)
+        /// <summary>
+        /// Check scopes recursively
+        /// </summary>
+        /// <typeparam name="T">Type of returning value</typeparam>
+        /// <param name="handler">Scope handler</param>
+        /// <returns>First value that returned by handler</returns>
+        protected T? RecursiveCheck<T>(Func<DSharpCompilerScope, T?> handler)
         {
             DSharpCompilerScope? scope = this;
             T? result = default;

@@ -1,9 +1,9 @@
-namespace Internal.System.Runtime;
-
 using System;
 using System.Native;
 
-internal static class RuntimeHelper
+namespace Internal.System.Runtime;
+
+internal static unsafe class RuntimeHelper
 {
     public static Type CreateType(nint token)
     {

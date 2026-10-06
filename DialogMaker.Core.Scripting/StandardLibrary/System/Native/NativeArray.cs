@@ -1,6 +1,6 @@
 namespace System.Native;
 
-public struct NativeArray<T> where T : struct
+public unsafe struct NativeArray<T> where T : struct
 {
     public NativeArray(Pointer<T> items, int length)
     {

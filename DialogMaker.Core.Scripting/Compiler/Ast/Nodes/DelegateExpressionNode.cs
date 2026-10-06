@@ -9,6 +9,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     public partial class DelegateExpressionNode(DSharpToken token) : ExpressionNode(token)
     {
         /// <summary>
+        /// Is unsafe delegate
+        /// </summary>
+        public bool IsUnsafe { get; set; }
+        /// <summary>
         /// Input parameters of delegate
         /// </summary>
         public List<ParameterExpressionNode> Parameters { get; set; } = [];
@@ -26,15 +30,17 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Is current tokens is delegate expression</returns>
         public static bool IsDelegate(AstParserStream stream)
         {
-            if ((stream.Check(DSharpTokenType.Delegate) && stream.Check(DSharpTokenType.LeftBrace, 1)) ||
-                (stream.Check(DSharpTokenType.Delegate) && stream.Check(DSharpTokenType.LeftParen, 1)) ||
-                (stream.Check(DSharpTokenType.Identifier) && stream.Check(DSharpTokenType.Lambda, 1)))
+            int unsafeOffset = stream.Check(DSharpTokenType.Unsafe) ? 1 : 0;
+
+            if ((stream.Check(DSharpTokenType.Delegate, unsafeOffset) && stream.Check(DSharpTokenType.LeftBrace, unsafeOffset + 1)) ||
+                (stream.Check(DSharpTokenType.Delegate, unsafeOffset) && stream.Check(DSharpTokenType.LeftParen, unsafeOffset + 1)) ||
+                (stream.Check(DSharpTokenType.Identifier, unsafeOffset) && stream.Check(DSharpTokenType.Lambda, unsafeOffset + 1)))
             {
                 return true;
             }
-            if (stream.Check(DSharpTokenType.LeftParen))
+            if (stream.Check(DSharpTokenType.LeftParen, unsafeOffset))
             {
-                int offset = 1;
+                int offset = unsafeOffset + 1;
 
                 while (!stream.Check(DSharpTokenType.RightParen, offset))
                 {
@@ -74,7 +80,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             DelegateExpressionNode result;
             bool isLambda = false;
+            bool isUnsafe = false;
 
+            if (stream.Check(DSharpTokenType.Unsafe))
+            {
+                stream.Eat(DSharpTokenType.Unsafe);
+                isUnsafe = true;
+            }
             if (stream.Check(DSharpTokenType.Delegate))
             {
                 var token = stream.Eat(DSharpTokenType.Delegate);
@@ -126,6 +138,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 result.Body = body;
             }
 
+            result.IsUnsafe = isUnsafe;
             result.Body.Parent = result;
 
             return result;

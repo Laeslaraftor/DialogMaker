@@ -2,7 +2,7 @@ using Internal.System.Runtime;
 
 namespace System;
 
-public class Type : IEquatable<Type>
+public unsafe class Type : IEquatable<Type>
 {
     internal Type(RuntimeTypeInfo typeInfo)
     {

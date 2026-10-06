@@ -107,6 +107,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         [Keyword("enum")]
         Enum,
         /// <summary>
+        /// Unsafe keyword
+        /// </summary>
+        [Keyword("unsafe")]
+        Unsafe,
+        /// <summary>
         /// Operator keyword
         /// </summary>
         [Keyword("operator")]

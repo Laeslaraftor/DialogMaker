@@ -34,6 +34,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public bool IsStatic { get; set; }
         /// <summary>
+        /// Is unsafe type
+        /// </summary>
+        public bool IsUnsafe { get; set; }
+        /// <summary>
         /// Base types of this object
         /// </summary>
         public List<TypeInfoNode> BaseTypes { get; set; } = [];
@@ -236,7 +240,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
                 else if (currentToken.Type == DSharpTokenType.Override)
                 {
-                    if (memberInfo.IsStatic)
+                    if (memberInfo.IsOverride)
                     {
                         stream.ThrowPositionException("Multiple override modifiers");
                     }
@@ -256,12 +260,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
                 else if (currentToken.Type == DSharpTokenType.Sealed)
                 {
-                    if (memberInfo.IsStatic)
+                    if (memberInfo.IsSealed)
                     {
                         stream.ThrowPositionException("Multiple sealed modifiers");
                     }
 
                     memberInfo.IsSealed = true;
+                    eatToken = true;
+                }
+                else if (currentToken.Type == DSharpTokenType.Unsafe)
+                {
+                    if (memberInfo.IsUnsafe)
+                    {
+                        stream.ThrowPositionException("Multiple unsafe modifiers");
+                    }
+
+                    memberInfo.IsUnsafe = true;
                     eatToken = true;
                 }
                 else if (currentToken.Type == DSharpTokenType.Static)
@@ -459,6 +473,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 return stream.Check(DSharpTokenType.Sealed, offset);
             }
+            bool IsUnsafe(int offset)
+            {
+                return stream.Check(DSharpTokenType.Unsafe, offset);
+            }
 
             if (IsDeclarationKeyword(0))
             {
@@ -469,10 +487,21 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             return isAccessModifier && IsDeclarationKeyword(1) ||
                    IsStatic(0) && IsDeclarationKeyword(1) ||
+                   IsUnsafe(0) && IsStatic(1) && IsDeclarationKeyword(2) ||
+                   IsStatic(0) && IsUnsafe(1) && IsDeclarationKeyword(2) ||
                    IsMemberMode(stream) && IsDeclarationKeyword(1) ||
+                   IsUnsafe(0) && IsMemberMode(stream, 1) && IsDeclarationKeyword(2) ||
+                   IsMemberMode(stream) && IsUnsafe(1) && IsDeclarationKeyword(2) ||
+                   isAccessModifier && IsUnsafe(1) && IsSealed(2) && IsDeclarationKeyword(3) ||
+                   isAccessModifier && IsSealed(1) && IsUnsafe(2) && IsDeclarationKeyword(3) ||
+                   isAccessModifier && IsUnsafe(1) && IsDeclarationKeyword(2) ||
                    isAccessModifier && IsSealed(1) && IsDeclarationKeyword(2) ||
                    isAccessModifier && IsStatic(1) && IsDeclarationKeyword(2) ||
-                   isAccessModifier && IsMemberMode(stream, 1) && IsDeclarationKeyword(2);
+                   isAccessModifier && IsMemberMode(stream, 1) && IsDeclarationKeyword(2) ||
+                   isAccessModifier && IsUnsafe(1) && IsMemberMode(stream, 2) && IsDeclarationKeyword(3) ||
+                   isAccessModifier && IsMemberMode(stream, 1) && IsUnsafe(2) && IsDeclarationKeyword(3) ||
+                   isAccessModifier && IsUnsafe(1) && IsStatic(2) && IsDeclarationKeyword(3) ||
+                   isAccessModifier && IsStatic(1) && IsUnsafe(2) && IsDeclarationKeyword(3);
         }
         /// <summary>
         /// Parse object node starts with current token
@@ -486,6 +515,25 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             bool memberModeParsed = TryParseMemberMode(stream, out var memberMode);
             bool isSealed = false;
             bool isStatic = false;
+            bool isUnsafe = false;
+
+            void ParseUnsafe()
+            {
+                if (stream.Check(DSharpTokenType.Unsafe))
+                {
+                    if (!isUnsafe)
+                    {
+                        isUnsafe = true;
+                        stream.Eat(DSharpTokenType.Unsafe);
+                    }
+                    else
+                    {
+                        stream.ThrowPositionException("Type already marked as unsafe");
+                    }
+                }
+            }
+
+            ParseUnsafe();
 
             if (memberModeParsed && memberMode == DSharpObjectMemberMode.Virtual)
             {
@@ -497,11 +545,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 stream.Eat(DSharpTokenType.Sealed);
                 isSealed = true;
             }
+
+            ParseUnsafe();
+
             if (stream.Check(DSharpTokenType.Static))
             {
                 stream.Eat(DSharpTokenType.Static);
                 isStatic = true;
             }
+
+            ParseUnsafe();
 
             DSharpObjectType objectType = DSharpObjectType.Class;
 
@@ -533,7 +586,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 IsAbstract = memberMode == DSharpObjectMemberMode.Abstract,
                 IsSealed = isSealed,
                 Access = access,
-                IsStatic = isStatic
+                IsStatic = isStatic,
+                IsUnsafe = isUnsafe
             };
 
             identifier.Parent = node;
@@ -755,6 +809,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             /// Is member readonly
             /// </summary>
             public bool IsReadOnly { get; set; }
+            /// <summary>
+            /// Is member unsafe
+            /// </summary>
+            public bool IsUnsafe { get; set; }
             /// <summary>
             /// Member's return type
             /// </summary>
