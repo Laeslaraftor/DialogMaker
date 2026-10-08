@@ -24,7 +24,7 @@ public unsafe class MethodInfo : MemberInfo
     {
         get
         {
-            if (field == null && !_methodInfo.DeclaringType.IsNull)
+            if (field == null && _methodInfo.DeclaringType != null)
             {
                 field = new(_methodInfo.DeclaringType[0]);
             }
@@ -36,7 +36,7 @@ public unsafe class MethodInfo : MemberInfo
     {
         get
         {
-            if (field == null && !_methodInfo.ReturnType.IsNull)
+            if (field == null && _methodInfo.ReturnType != null)
             {
                 field = new(_methodInfo.ReturnType[0]);
             }

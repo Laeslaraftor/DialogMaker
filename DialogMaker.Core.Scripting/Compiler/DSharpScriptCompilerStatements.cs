@@ -29,6 +29,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         private readonly Dictionary<DSharpIndexerBuilder, IndexerNode> _createdIndexers = [];
         private readonly Dictionary<DSharpOperatorBuilder, OperatorNode> _createdOperators = [];
         private readonly Dictionary<DSharpMethodBuilder, ConstructorNode> _createdConstructors = [];
+        private readonly Dictionary<DSharpMethodBuilderParameter, ParameterExpressionNode> _createdParameters = [];
         private readonly List<DSharpCompilerEnumDescription> _enumTypes = [];
         private readonly List<DSharpTypeBuilder> _types = [];
         private Dictionary<IDSharpType, ObjectDeclarationNode>? _typesToSetupBases;
@@ -642,6 +643,11 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         private void ResolveParameters(List<ParameterExpressionNode> variables, IList<DSharpMethodBuilderParameter> parameters, DSharpCompilerContext context)
         {
+            foreach (var parameter in parameters)
+            {
+                _createdParameters.Remove(parameter);
+            }
+
             parameters.Clear();
 
             foreach (var parameter in variables)
@@ -651,12 +657,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new InvalidOperationException($"Parameter must have a type: {parameter}");
                 }
 
-                parameters.Add(new(Assembly)
+                DSharpMethodBuilderParameter parameterBuilder = new(Assembly)
                 {
                     Name = parameter.Name,
                     Mode = parameter.Mode,
                     TypeGetter = () => context.ResolveType(parameter.Type)
-                });
+                };
+
+                _createdParameters.Add(parameterBuilder, parameter);
+                parameters.Add(parameterBuilder);
             }
         }
 

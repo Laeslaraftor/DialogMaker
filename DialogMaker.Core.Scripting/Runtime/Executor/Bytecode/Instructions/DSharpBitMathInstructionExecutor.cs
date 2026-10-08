@@ -7,12 +7,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// </summary>
     public abstract class DSharpBitMathInstructionExecutor : DSharpMathInstructionExecutor
     {
-        protected override decimal PerformMathOperation(decimal left, decimal right)
+        protected override decimal PerformMathOperation(decimal left, decimal right, ref DSharpExecutionContext context, out DSharpMethodExecutionCallback? error)
         {
             var leftBigInt = ToBigInteger(left);
             var rightBigInt = ToBigInteger(right);
 
-            return (decimal)PerformMathOperation(leftBigInt, rightBigInt);
+            return (decimal)PerformMathOperation(leftBigInt, rightBigInt, ref context, out error);
         }
         protected override bool CanPerform(DSharpStack.FrameInfo left, DSharpStack.FrameInfo right, DSharpExecutionContext context)
         {
@@ -25,9 +25,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// <param name="left">Left value</param>
         /// <param name="right">Right value</param>
         /// <returns>Result of math operation</returns>
-        protected abstract BigInteger PerformMathOperation(BigInteger left, BigInteger right);
+        protected abstract BigInteger PerformMathOperation(BigInteger left, BigInteger right, ref DSharpExecutionContext context, out DSharpMethodExecutionCallback? error);
 
-        private BigInteger ToBigInteger(decimal value)
+        private static BigInteger ToBigInteger(decimal value)
         {
             if (value > ulong.MaxValue)
             {

@@ -527,6 +527,21 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             CheckAccess(type);
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.NewStackArray, type);
         }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.MakeObject"/>
+        /// </summary>
+        /// <param name="type">Type of creating object</param>
+        /// <returns></returns>
+        public TypeInstruction MakeObject(IDSharpType type)
+        {
+            if (type.IsStatic)
+            {
+                throw new ArgumentException($"Unable to create array of static types");
+            }
+
+            CheckAccess(type);
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.MakeObject, type);
+        }
 
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.LoadLocal"/>
@@ -1221,28 +1236,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.ReadOnAddress, readType);
         }
         /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.ReadFieldOnAddress"/>
-        /// </summary>
-        /// <returns></returns>
-        public TypeInstruction ReadFieldOnAddress(IDSharpFieldInfo field)
-        {
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.ReadFieldOnAddress, field);
-        }
-        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.StoreOnAddress"/>
         /// </summary>
         /// <returns></returns>
         public TypeInstruction StoreOnAddress(IDSharpType valueType)
         {
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreOnAddress, valueType);
-        }
-        /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.StoreFieldOnAddress"/>
-        /// </summary>
-        /// <returns></returns>
-        public TypeInstruction StoreFieldOnAddress(IDSharpFieldInfo field)
-        {
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.StoreFieldOnAddress, field);
         }
 
         #endregion

@@ -23,11 +23,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         public static UnsafeStatementNode Parse(AstParserStream stream)
         {
             var token = stream.Eat(DSharpTokenType.Unsafe);
-
-            return new(token)
-            { 
+            UnsafeStatementNode result = new(token)
+            {
                 Body = BlockStatementNode.Parse(stream, DSharpStatementType.Code)
             };
+
+            result.Body.Parent = result;
+            
+            return result;
         }
 
         #endregion

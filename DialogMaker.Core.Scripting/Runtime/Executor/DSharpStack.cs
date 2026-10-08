@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
 {
@@ -344,6 +345,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             executor->MethodInfo = methodInfo;
 
             return executor;
+        }
+        public FrameInfo PushRedirectObject(DSharpRuntimeTypeInfo* type, nint dataAddress)
+        {
+            var frame = AllocateSized(DSharpStackValueType.Structure, sizeof(DSharpObject));
+            frame->IsNumber = type->BuildInValueTypeIndex != -1;
+            DSharpObject* instance = (DSharpObject*)frame->StackPointer;
+            *instance = new()
+            {
+                Type = type,
+                Attributes = DSharpObjectAttributes.StoredInBuffer |
+                             DSharpObjectAttributes.Initialized |
+                             DSharpObjectAttributes.RedirectData,
+                Extra = (void*)dataAddress
+            };
+
+            return *frame;
         }
         public FrameInfo* PushStructureRef(DSharpRuntimeTypeInfo* type, bool asArray = false) => CreateStructure(type, new(0, 0), asArray);
         public FrameInfo PushStructure(DSharpRuntimeTypeInfo* type, bool asArray = false) => *CreateStructure(type, new(0, 0), asArray);
@@ -1007,6 +1024,20 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             public static bool ValueEquals(FrameInfo left, FrameInfo right)
             {
+                static bool IsNull(FrameInfo frame)
+                {
+                    if (0 >= frame.Size)
+                    {
+                        return true;
+                    }
+
+                    var instance = frame.ReadAsObject();
+
+                    return instance == null ||
+                           frame.ValueType == DSharpStackValueType.Structure &&
+                           RuntimeExtensions.IsEmpty(DSharpObject.GetData(instance), DSharpObject.GetSize(instance));
+                }
+
                 if (left.ValueType == right.ValueType)
                 {
                     if (left.ValueType == DSharpStackValueType.Null)
@@ -1020,12 +1051,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 {
                     return StackValueEquals(left, right);
                 }
-                else if (left.ValueType == DSharpStackValueType.Null && right.Size > 0)
+                else if (left.ValueType == DSharpStackValueType.Null)
                 {
+                    return IsNull(right);
                     return RuntimeExtensions.IsEmpty((void*)right.StackPointer, right.Size);
                 }
-                else if (right.ValueType == DSharpStackValueType.Null && left.Size > 0)
+                else if (right.ValueType == DSharpStackValueType.Null)
                 {
+                    return IsNull(left);
                     return RuntimeExtensions.IsEmpty((void*)left.StackPointer, left.Size);
                 }
                 else if (left.IsNumber && right.IsNumber)

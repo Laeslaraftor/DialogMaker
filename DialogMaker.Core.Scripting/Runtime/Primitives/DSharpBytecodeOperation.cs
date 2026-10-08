@@ -205,16 +205,6 @@ namespace DialogMaker.Core.Scripting.Runtime
         [Executor(typeof(DSharpReadOnAddressInstructionExecutor))]
         ReadOnAddress,
         /// <summary>
-        /// Read value on address that placed on last stack value with field offset.
-        /// First argument is field metadata token. It works like <c>pointer->Field</c>
-        /// Stack:
-        /// 0: address
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(1)]
-        [Executor(typeof(DSharpReadFieldOnAddressInstructionExecutor))]
-        ReadFieldOnAddress,
-        /// <summary>
         /// Write value that placed on last stack value on address before value.
         /// First argument is type metadata token. It works like <c>*pointer = value</c>
         /// Stack:
@@ -225,17 +215,6 @@ namespace DialogMaker.Core.Scripting.Runtime
         [RequestsStackValues(2)]
         [Executor(typeof(DSharpStoreOnAddressInstructionExecutor))]
         StoreOnAddress,
-        /// <summary>
-        /// Write value with field offset that placed on last stack value on address before value.
-        /// First argument is field metadata token. It works like <c>pointer->Field = value</c>
-        /// Stack:
-        /// 0: address
-        /// 1: value
-        /// </summary>
-        [ArgsCount(1)]
-        [RequestsStackValues(2)]
-        [Executor(typeof(DSharpStoreFieldOnAddressInstructionExecutor))]
-        StoreFieldOnAddress,
 
         /// <summary>
         /// Call function or static method.
@@ -583,5 +562,17 @@ namespace DialogMaker.Core.Scripting.Runtime
         [RequestsStackValues(0)]
         [Executor(typeof(DSharpEmptyInstructionExecutor))]
         Empty,
+        /// <summary>
+        /// Create object that stores it ows data by pointer that placed in last value in stack.
+        /// First argument is type of creating object. 
+        /// Provided pointer should points to buffer with size equals or higher then specified object type.
+        /// It creates object at stack without calling any constructors
+        /// Stack:
+        /// 0: pointer to data
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(1)]
+        [Executor(typeof(DSharpMakeObjectInstructionExecutor))]
+        MakeObject,
     }
 }

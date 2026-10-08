@@ -2,7 +2,7 @@ namespace System.Native;
 
 public unsafe struct NativeArray<T> where T : struct
 {
-    public NativeArray(Pointer<T> items, int length)
+    public NativeArray(T* items, int length)
     {
         _items = items;
         _length = length;
@@ -31,7 +31,7 @@ public unsafe struct NativeArray<T> where T : struct
         }
     }
 
-    private readonly Pointer<T> _items;
+    private readonly T* _items;
     private readonly int _length;
 
     public Span<T> ToSpan() => new Span<T>((nint)_items, _length);

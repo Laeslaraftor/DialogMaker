@@ -225,6 +225,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 return field;
             }
         }
+        public DSharpRuntimeTypeInfo* ArrayBase
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = GetRuntimeInfo(DSharpBuildInTypes.Extra.ArrayBase);
+                }
+
+                return field;
+            }
+        }
 
         // DSharpRuntimeTypeInfo**
         private readonly Dictionary<DSharpMetadataToken, Pointer<Pointer<DSharpRuntimeTypeInfo>>> _types = [];
@@ -579,16 +591,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 CreatePropertyInfo(info, properties[i], info->Properties.GetItemReference(i), ref builder);
             }
 
-            int fieldOffset;
-
-            if (type.Namespace == "System" && type.Name == "Array")
-            {
-                fieldOffset = sizeof(DSharpArray);
-            }
-            else
-            {
-                fieldOffset = sizeof(DSharpObject);
-            }
+            int fieldOffset = 0;
 
             for (int i = 0; i < fields.Count; i++)
             {

@@ -224,6 +224,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 #endif
             return ThrowExecutionException(exception.ToString());
         }
+        /// <summary>
+        /// Throw divide by zero exception
+        /// </summary>
+        public DSharpMethodExecutionCallback ThrowDivideByZeroException()
+        {
+            var throwMethod = TypesProvider.RuntimeHelperType.ThrowDivideByZeroExceptionMethod;
+            var runtimeThrowMethod = TypesProvider.GetMethod(throwMethod.MetadataToken);
+            var args = DSharpCallInstructionExecutor.CreateArguments(this, runtimeThrowMethod);
+
+            return DSharpMethodExecutionCallback.Call(null, runtimeThrowMethod, args);
+        }
 
         /// <summary>
         /// Get type by metadata token. 

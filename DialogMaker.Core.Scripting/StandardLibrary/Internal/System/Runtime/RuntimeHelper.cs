@@ -7,13 +7,14 @@ internal static unsafe class RuntimeHelper
 {
     public static Type CreateType(nint token)
     {
-        Pointer<RuntimeTypeInfo> typePointer = new(token);
-        var typeInfo = typePointer[0];
-
-        return new Type(typeInfo);
+        return new Type(*(RuntimeTypeInfo*)token);
     }
     public static void ThrowExecutionEngineException(string message)
     {
         throw new ExecutionEngineException(message);
+    }
+    public static void ThrowDivideByZeroException()
+    {
+        throw new DivideByZeroException();
     }
 }

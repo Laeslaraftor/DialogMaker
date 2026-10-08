@@ -25,6 +25,10 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// </summary>
             public static readonly DSharpBuildInTypeInfo Array = new("System.Array`1");
             /// <summary>
+            /// Types that was base of all arrays
+            /// </summary>
+            public static readonly DSharpBuildInTypeInfo ArrayBase = new("System.Array");
+            /// <summary>
             /// Base type of all enums
             /// </summary>
             public static readonly DSharpBuildInTypeInfo Enum = new("System.Enum");

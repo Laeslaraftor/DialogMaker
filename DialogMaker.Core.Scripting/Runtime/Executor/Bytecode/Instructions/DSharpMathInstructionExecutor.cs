@@ -49,7 +49,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 return context.ThrowExecutionException($"Unable to perform math operation: unsupported right value \"{right.ValueType}\"");
             }
 
-            var resultValue = PerformMathOperation(leftValue.Value, rightValue.Value);
+            var resultValue = PerformMathOperation(leftValue.Value, rightValue.Value, ref context, out var mathError);
+
+            if (mathError != null)
+            {
+                return mathError.Value;
+            }
+
             var bigger = GetBigger(left, right);
 
             if (!context.Stack.Push(bigger.ObjectType, resultValue))
@@ -74,7 +80,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// <param name="left">Left value</param>
         /// <param name="right">Right value</param>
         /// <returns>Result of math operation</returns>
-        protected abstract decimal PerformMathOperation(decimal left, decimal right);
+        protected abstract decimal PerformMathOperation(decimal left, decimal right, ref DSharpExecutionContext context, out DSharpMethodExecutionCallback? error);
         /// <summary>
         /// Perform math operation between two boolean values
         /// </summary>

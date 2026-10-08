@@ -29,6 +29,12 @@
         /// <summary>
         /// Object initialized
         /// </summary>
-        Initialized = 1 << 5
+        Initialized = 1 << 5,
+        /// <summary>
+        /// Object whose data exists outside D# scope.
+        /// Pointer to data contains in <see cref="DSharpObject.LockInfo"/>,
+        /// it means that this object can not be locked
+        /// </summary>
+        RedirectData = 1 << 6,
     }
 }

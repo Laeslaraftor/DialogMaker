@@ -1144,6 +1144,15 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     return parenContainedExpression.Expression.GetExpressionType(assembly, context);
                 }
+                else if (expression is RefExpressionNode refExpression)
+                {
+                    if (refExpression.ReferencedExpression == null)
+                    {
+                        throw new InvalidOperationException($"Incomplete expression: {expression}");
+                    }
+
+                    return refExpression.ReferencedExpression.GetExpressionType(assembly, context);
+                }
                 else if (expression is NameOfExpressionNode)
                 {
                     return assembly.StringType;

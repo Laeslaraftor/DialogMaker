@@ -3,7 +3,7 @@
     /// <summary>
     /// Class that describes runtime helper class
     /// </summary>
-    public class DSharpRuntimeHelperType(IDSharpType type, IDSharpMethodInfo createTypeMethod, IDSharpMethodInfo throwExecutionEngineException)
+    public class DSharpRuntimeHelperType(IDSharpType type, IDSharpMethodInfo createTypeMethod, IDSharpMethodInfo throwExecutionEngineException, IDSharpMethodInfo throwDivideByZeroException)
     {
         /// <summary>
         /// RuntimeHelper type
@@ -17,6 +17,10 @@
         /// Method for throwing execution engine exception
         /// </summary>
         public IDSharpMethodInfo ThrowExecutionEngineExceptionMethod { get; } = throwExecutionEngineException;
+        /// <summary>
+        /// Method for throwing divide by zero exception
+        /// </summary>
+        public IDSharpMethodInfo ThrowDivideByZeroExceptionMethod { get; } = throwDivideByZeroException;
 
         #region Constants
 
@@ -25,9 +29,13 @@
         /// </summary>
         public const string CreateTypeMethodName = "CreateType";
         /// <summary>
-        /// Name of method for creating type information instance
+        /// Name of method for throwing execution engine exception
         /// </summary>
         public const string ThrowExecutionEngineExceptionMethodName = "ThrowExecutionEngineException";
+        /// <summary>
+        /// Name of method for throwing divide by zero exception
+        /// </summary>
+        public const string ThrowDivideByZeroExceptionMethodName = "ThrowDivideByZeroException";
 
         #endregion
 
@@ -43,8 +51,9 @@
             var type = assembly.GetType(DSharpBuildInTypes.Extra.RuntimeHelper);
             var createTypeMethod = type.GetMethod(CreateTypeMethodName);
             var throwExecutionEngineException = type.GetMethod(ThrowExecutionEngineExceptionMethodName);
+            var throwDivideByZeroException = type.GetMethod(ThrowDivideByZeroExceptionMethodName);
 
-            return new(type, createTypeMethod, throwExecutionEngineException);
+            return new(type, createTypeMethod, throwExecutionEngineException, throwDivideByZeroException);
         }
 
         #endregion

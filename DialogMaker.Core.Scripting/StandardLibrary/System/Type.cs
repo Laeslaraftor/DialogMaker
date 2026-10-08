@@ -69,7 +69,7 @@ public unsafe class Type : IEquatable<Type>
     {
         get
         {
-            if (field == null && !_typeInfo.DeclaringType.IsNull)
+            if (field == null && _typeInfo.DeclaringType != null)
             {
                 field = new(_typeInfo.DeclaringType[0]);
             }

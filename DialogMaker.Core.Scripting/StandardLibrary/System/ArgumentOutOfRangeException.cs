@@ -1,6 +1,6 @@
 namespace System;
 
-public class ArgumentOutOfRangeException : Exception
+public class ArgumentOutOfRangeException : SystemException
 {
     public ArgumentOutOfRangeException() : base()
     {

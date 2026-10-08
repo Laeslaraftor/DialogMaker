@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
@@ -128,11 +129,26 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
 
             genericParametersCount /= 2;
-            var variablesSize = sizeof(DSharpExecutionLocalVariable) * parametersCount;
-            var argsFrame = *context.Stack.Push(DSharpStackValueType.MethodParametersBuffer, variablesSize +
+            int refVariablesExtraSize = 0;
+
+            for (int i = 0; i < parametersCount; i++)
+            {
+                var parameterInfo = methodInfo->ParametersType[i];
+
+                if (parameterInfo.Mode != DSharpMethodParameterMode.Ref)
+                {
+                    continue;
+                }
+
+                refVariablesExtraSize += parameterInfo.Type->IsValueType ? sizeof(DSharpObject) : sizeof(nint);
+            }
+
+            int variablesSize = sizeof(DSharpExecutionLocalVariable) * parametersCount;
+            var argsFrame = *context.Stack.Push(DSharpStackValueType.MethodParametersBuffer, variablesSize + refVariablesExtraSize +
                                                                                              sizeof(UnmanagedPair<Pointer<DSharpRuntimeTypeInfo>, Pointer<DSharpRuntimeTypeInfo>>) * genericParametersCount);
             UnmanagedArray<DSharpExecutionLocalVariable> arguments = new(argsFrame.StackPointer, parametersCount);
-            UnmanagedDictionary<Pointer<DSharpMetadataToken>, Pointer<DSharpMetadataToken>> generics = new(argsFrame.StackPointer + variablesSize, genericParametersCount);
+            UnmanagedDictionary<Pointer<DSharpMetadataToken>, Pointer<DSharpMetadataToken>> generics = new(argsFrame.StackPointer + variablesSize + refVariablesExtraSize, genericParametersCount);
+            MemoryBuilder refParametersBuilder = new(argsFrame.StackPointer + variablesSize, refVariablesExtraSize);
 
             for (int i = 0; i < parametersCount; i++)
             {
@@ -140,6 +156,36 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 var frame = context.Stack.PeekOnlyValues(peekOffset);
                 var parameterInfo = methodInfo->ParametersType[i];
                 parameterInfo.Type = context.ReplaceType(parameterInfo.Type);
+
+                if (parameterInfo.Mode == DSharpMethodParameterMode.Ref)
+                {
+                    var addressPointer = frame.ReadAsObject();
+                    nint buffer;
+
+                    if (parameterInfo.Type->IsValueType)
+                    {
+                        buffer = refParametersBuilder.Allocate(sizeof(DSharpObject));
+                        frame.ValueType = DSharpStackValueType.Structure;
+                        frame.IsNumber = parameterInfo.Type->Converter != null;
+                        var obj = (DSharpObject*)buffer;
+                        *obj = new()
+                        {
+                            Type = parameterInfo.Type,
+                            Attributes = DSharpObjectAttributes.StoredInBuffer |
+                                         DSharpObjectAttributes.Initialized |
+                                         DSharpObjectAttributes.RedirectData,
+                            Extra = (void*)DSharpObjectConverter.ToIntPtr(addressPointer)
+                        };
+                    }
+                    else
+                    {
+                        buffer = DSharpObjectConverter.ToIntPtr(addressPointer);
+                        frame.ValueType = DSharpStackValueType.Reference;
+                        frame.IsNumber = false;
+                    }
+
+                    frame.StackPointer = buffer;
+                }
 
                 arguments[i] = new()
                 {

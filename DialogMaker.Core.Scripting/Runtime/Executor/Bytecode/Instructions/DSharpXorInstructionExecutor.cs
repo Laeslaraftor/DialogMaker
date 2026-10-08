@@ -17,8 +17,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         {
             return left ^ right;
         }
-        protected override BigInteger PerformMathOperation(BigInteger left, BigInteger right)
+        protected override BigInteger PerformMathOperation(BigInteger left, BigInteger right, ref DSharpExecutionContext context, out DSharpMethodExecutionCallback? error)
         {
+            error = null;
             return left ^ right;
         }
 

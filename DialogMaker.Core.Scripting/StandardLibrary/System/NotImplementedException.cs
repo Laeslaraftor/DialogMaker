@@ -1,6 +1,6 @@
 namespace System;
 
-public class NotImplementedException : Exception
+public class NotImplementedException : SystemException
 {
     public NotImplementedException() : base("Type or member not implemented yet")
     {

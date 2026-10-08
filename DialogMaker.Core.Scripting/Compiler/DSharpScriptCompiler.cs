@@ -72,6 +72,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             _createdGlobalVariablesRawValueExpressions.Clear();
             _propertyFields.Clear();
             _propertiesWithCustomAccessors.Clear();
+            _createdParameters.Clear();
             _currentNamespace = null;
             _typesToSetupBases = null;
         }

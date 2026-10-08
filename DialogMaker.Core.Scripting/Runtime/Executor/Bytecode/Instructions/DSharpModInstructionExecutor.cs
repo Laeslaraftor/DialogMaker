@@ -12,8 +12,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return &InstanceExecute;
         }
 
-        protected override decimal PerformMathOperation(decimal left, decimal right)
+        protected override decimal PerformMathOperation(decimal left, decimal right, ref DSharpExecutionContext context, out DSharpMethodExecutionCallback? error)
         {
+            error = null;
             return left % right;
         }
         protected override bool PerformMathOperation(bool left, bool right)

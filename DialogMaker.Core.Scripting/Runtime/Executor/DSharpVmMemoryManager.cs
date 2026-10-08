@@ -76,7 +76,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 }
                 else if (!TryTakeMemoryFromLargerSizes(roundedSize, out address))
                 {
-                    address = Marshal.AllocHGlobal(roundedSize);
+                    address = AllocateUnmanagedMemory(roundedSize);
                     AllocatedMemory += roundedSize;
                 }
 
@@ -282,14 +282,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             {
                 foreach (var address in stack)
                 {
-                    Marshal.FreeHGlobal(address);
+                    FreeUnmanagedMemory(address);
                 }
 
                 stack.Clear();
             }
             foreach (var address in _usedBlocks.Keys)
             {
-                Marshal.FreeHGlobal(address);
+                FreeUnmanagedMemory(address);
             }
 
             _freeBlocks.Clear();
@@ -297,6 +297,35 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             UsedMemory = 0;
             FreeMemory = 0;
             AllocatedMemory = 0;
+        }
+
+        #endregion
+
+        #region Static
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static nint AllocateUnmanagedMemory(int size)
+        {
+#if NET6_0_OR_GREATER
+            unsafe
+            {
+                return (nint)NativeMemory.Alloc((nuint)size);
+            }
+#else
+            return Marshal.AllocHGlobal(size);
+#endif
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void FreeUnmanagedMemory(nint address)
+        {
+#if NET6_0_OR_GREATER
+            unsafe
+            {
+                NativeMemory.Free((void*)address);
+            }
+#else
+            Marshal.FreeHGlobal(address);
+#endif
         }
 
         #endregion

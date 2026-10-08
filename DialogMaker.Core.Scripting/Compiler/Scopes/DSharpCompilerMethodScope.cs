@@ -1,5 +1,7 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Runtime;
+using System.Collections.ObjectModel;
+using static DialogMaker.Core.Scripting.Compiler.Scopes.DSharpCompilerMethodScope;
 
 namespace DialogMaker.Core.Scripting.Compiler.Scopes
 {
@@ -205,6 +207,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
             /// Variable that contains instance of type instance
             /// </summary>
             public DSharpMethodBuilderParameter ClosureContainer { get; } = instanceVariable;
+            /// <summary>
+            /// Captured parameters as fields
+            /// </summary>
+            public Dictionary<DSharpMethodBuilderParameter, DSharpFieldBuilder> CapturedParameters { get; } = [];
 
             /// <summary>
             /// Create field for containing calling object instance.

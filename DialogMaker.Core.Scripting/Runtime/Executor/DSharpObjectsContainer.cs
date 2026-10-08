@@ -367,7 +367,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <returns>Is locked</returns>
         public bool Lock(DSharpObject* instance)
         {
-            if (instance == null || !instance->IsReferenceObject)
+            if (instance == null || 
+                !instance->IsReferenceObject ||
+                instance->Attributes.HasFlag(DSharpObjectAttributes.RedirectData))
             {
                 return false;
             }
@@ -475,7 +477,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <returns>Is object successfully unlocked</returns>
         public bool Unlock(DSharpObject* instance)
         {
-            if (instance == null)
+            if (instance == null || 
+                instance->Attributes.HasFlag(DSharpObjectAttributes.RedirectData))
             {
                 return false;
             }

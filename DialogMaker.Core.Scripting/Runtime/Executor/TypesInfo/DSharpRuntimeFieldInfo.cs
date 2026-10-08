@@ -212,7 +212,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             }
             else
             {
-                data = (byte*)instance;
+                data = DSharpObject.GetData(instance);
             }
 
             int offset = GetOffset(instance);

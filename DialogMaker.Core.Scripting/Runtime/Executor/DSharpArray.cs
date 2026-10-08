@@ -75,7 +75,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte* GetItem(DSharpArray* array, int index)
         {
-            var itemSize = array->Size / array->Length;
+            int length = array->Length;
+            int itemSize = length > 0 ? array->Size / length : 0;
             return DSharpObject.GetData((DSharpObject*)array) + itemSize * index;
         }
         /// <summary>
@@ -98,7 +99,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         public static Indexer<T> GetIndexer<T>(DSharpArray* array)
             where T : unmanaged
         {
-            var itemSize = array->Size / array->Length;
+            int length = array->Length;  
+            int itemSize = length > 0 ? array->Size / length : 0;
             var data = DSharpObject.GetData((DSharpObject*)array);
             return new(data, itemSize, array->Length);
         }

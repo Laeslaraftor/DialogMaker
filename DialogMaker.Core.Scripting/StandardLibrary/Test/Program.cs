@@ -215,9 +215,18 @@ public unsafe class Program
         Console.WriteLine("Long size: " + GetGenericObject<long>().Size);
         Console.WriteLine();
 
+        int testCounter = 1;
+        Player valuePlayerForRef = new("Cudicorn");
+
+        Console.WriteLine("Start counter value: " + testCounter);
+
         TestOutputs();
+        TestCaptures(10);
         TestNullable();
+        TestReferenceArgs(ref testCounter, ref valuePlayerForRef);
         TestPointers();
+
+        Console.WriteLine("End counter value: " + testCounter);
 
         // last exception should be unhandled
         TestExceptionHandling();
@@ -332,6 +341,45 @@ public unsafe class Program
             Console.WriteLine("zeBlack не ответил");
         }
     }
+    private static void TestCaptures(int argValue)
+    {
+        void Increment()
+        {
+            argValue++;
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("==== Captures ====");
+        Console.WriteLine();
+
+        Console.WriteLine("Start arg: " + argValue);
+
+        Increment();
+
+        argValue++;
+
+        Console.WriteLine("End arg: " + argValue);
+
+        Console.WriteLine();
+        Console.WriteLine("==================");
+        Console.WriteLine();
+    }
+    private static void TestReferenceArgs(ref int counter, ref IPlayer player)
+    {
+        Console.WriteLine();
+        Console.WriteLine("==== Reference args ====");
+        Console.WriteLine();
+
+        player.PrintMessage();
+
+        counter++;
+
+        Console.WriteLine("Middle counter value: " + counter);
+
+        Console.WriteLine();
+        Console.WriteLine("========================");
+        Console.WriteLine();
+    }
     private static void TestNullable()
     {
         Console.WriteLine();
@@ -375,6 +423,10 @@ public unsafe class Program
         int value = 0;    
         int* firstPointer = &value;
         int** secondPointer = &firstPointer;
+        ValuesStorage storage = new()
+        {
+            Value = 6767
+        };
 
         Console.WriteLine("Start first pointer value: " + (*firstPointer).ToString());
 
@@ -386,12 +438,15 @@ public unsafe class Program
         **secondPointer += 30;
 
         Console.WriteLine("End first pointer value: " + (*firstPointer).ToString());
-
-        Console.WriteLine("First pointer type: " + typeof(void*).Name);
+        Console.WriteLine("Pointer type full name: " + typeof(void*).FullName);
 
         firstPointer = &firstPointer[0]; // top 5 most useless lines in the world
 
         Console.WriteLine("Value after useless line: " + (*firstPointer).ToString());
+
+        ValuesStorage* storagePointer = &storage;
+
+        Console.WriteLine("Value from storage: " + storagePointer->Value.ToString());
 
         Console.WriteLine();
         Console.WriteLine("==================");

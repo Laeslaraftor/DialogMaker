@@ -3,7 +3,7 @@ using System.Native;
 
 namespace Internal.System.Runtime;
 
-internal struct RuntimeMethodInfo
+internal unsafe struct RuntimeMethodInfo
 {
     public MetadataToken MetadataToken;
     public NativeArray<char> Name;
@@ -14,7 +14,7 @@ internal struct RuntimeMethodInfo
     public bool IsStatic;
     public bool IsExtern;
     public bool IsSealed;
-    public Pointer<RuntimeTypeInfo> DeclaringType;
-    public Pointer<RuntimeTypeInfo> ReturnType;
+    public RuntimeTypeInfo* DeclaringType;
+    public RuntimeTypeInfo* ReturnType;
     public NativeArray<RuntimeMethodParameterInfo> Parameters;
 }

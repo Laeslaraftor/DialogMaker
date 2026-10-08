@@ -35,6 +35,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             NowInFinallyBlock = context.NowInFinallyBlock;
             CaptureInfo = context.CaptureInfo;
             IsUnsafe = context.IsUnsafe;
+            AccessThroughPointer = context.AccessThroughPointer;
 
             if (context.Compiler != null && context.CurrentMember != currentMember)
             {
@@ -73,6 +74,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             readonly get => Scope?.IsUnsafe ?? field;
             set;
         }
+        public bool AccessThroughPointer { get; set; }
 
         #region Доступ
 
@@ -593,15 +595,19 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 var typeMember = (IDSharpType)member;
 
-                if (assembly != null &&
-                    memberSearchResult.IsNullable && typeMember.IsValueType())
+                if (assembly != null)
                 {
-                    typeMember = assembly.CreateNullable(typeMember);
-                }
-                if (assembly != null && typeMember.GenericTemplate == assembly.NullableType &&
-                    memberAccess.AccessMode == DSharpMemberAccessMode.NotNullReference)
-                {
-                    member = typeMember.GetGenericParameters().FirstOrDefault();
+                    if (memberSearchResult.IsNullable && typeMember.IsValueType())
+                    {
+                        typeMember = assembly.CreateNullable(typeMember);
+                    }
+                    else if (typeMember.GenericTemplate == assembly.NullableType &&
+                             memberAccess.AccessMode == DSharpMemberAccessMode.NotNullReference ||
+                             typeMember.GenericTemplate == assembly.TypedPointerType &&
+                             memberAccess.AccessMode == DSharpMemberAccessMode.Pointer)
+                    {
+                        member = typeMember.GetGenericParameters().FirstOrDefault();
+                    }
                 }
 
                 DSharpCompilerContext context = new(this, member);

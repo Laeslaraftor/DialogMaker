@@ -7,8 +7,6 @@ public struct Pointer
         _address = address;
     }
 
-    public bool IsNull => _address == 0;
-
     private readonly nint _address;
 
     public static explicit operator Pointer(nint address) => new Pointer(address);

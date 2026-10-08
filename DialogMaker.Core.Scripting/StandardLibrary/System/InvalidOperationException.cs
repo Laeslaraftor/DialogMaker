@@ -1,6 +1,6 @@
 namespace System;
 
-public class InvalidOperationException : Exception
+public class InvalidOperationException : SystemException
 {
     public InvalidOperationException() : base("Invalid operation")
     {

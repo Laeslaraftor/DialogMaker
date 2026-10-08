@@ -1,6 +1,6 @@
 namespace System;
 
-public class ExecutionEngineException : Exception
+public class ExecutionEngineException : SystemException
 {
     public ExecutionEngineException(string message) : base(message)
     {

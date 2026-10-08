@@ -1,6 +1,6 @@
 namespace System;
 
-public class IndexOutOfRangeException : Exception
+public class IndexOutOfRangeException : SystemException
 {
     public IndexOutOfRangeException() : base("Index is out of range")
     {

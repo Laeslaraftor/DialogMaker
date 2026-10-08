@@ -1,5 +1,4 @@
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
-using Newtonsoft.Json.Linq;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {

@@ -325,7 +325,19 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             builder.Instructions.RemoveRange(startIndex + 1, 3);
 
-            return 3;
+            var startAddMode = builder.InstructionsAddMode;
+            var startInsertIndex = builder.InstructionsInsertIndex;
+
+            builder.InstructionsAddMode = DSharpBytecodeInstructionAddMode.Index;
+            builder.InstructionsInsertIndex = startIndex;
+
+            // For saving amount of values in stack
+            builder.Push(null);
+
+            builder.InstructionsAddMode = startAddMode;
+            builder.InstructionsInsertIndex = startInsertIndex;
+
+            return 4;
         }
         private static int UselessCombinationRemovePointerConverting(UselessCombination uselessCombination, DSharpBytecodeBuilder builder, int startIndex)
         {

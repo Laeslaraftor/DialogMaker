@@ -1,6 +1,6 @@
 namespace System;
 
-public class ArgumentNullException : Exception
+public class ArgumentNullException : SystemException
 {
     public ArgumentNullException() : base()
     {

@@ -83,6 +83,30 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// Is current object <c>string</c>
         /// </summary>
         public readonly bool IsString => Attributes.HasFlag(DSharpObjectAttributes.String);
+        /// <summary>
+        /// Information about instance locking
+        /// </summary>
+        public DSharpObjectLockInfo* LockInfo
+        {
+            readonly get
+            {
+                if (Attributes.HasFlag(DSharpObjectAttributes.RedirectData))
+                {
+                    throw new DSharpException("Unable to get lock information for object that contain their own data outside D# scope");
+                }
+
+                return (DSharpObjectLockInfo*)Extra;
+            }
+            set
+            {
+                if (Attributes.HasFlag(DSharpObjectAttributes.RedirectData))
+                {
+                    throw new DSharpException("Unable to set lock information for object that contain their own data outside D# scope");
+                }
+
+                Extra = value;
+            }
+        }
 
         /// <summary>
         /// Object type
@@ -97,9 +121,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// </summary>
         public uint ReferencesCount;
         /// <summary>
-        /// Information about instance locking
+        /// Reserved pointer. This stores lock information or data buffer
         /// </summary>
-        public DSharpObjectLockInfo* LockInfo;
+        public void* Extra;
 
         public override string ToString()
         {
@@ -262,6 +286,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte* GetData(DSharpObject* obj)
         {
+            if (obj->Attributes.HasFlag(DSharpObjectAttributes.RedirectData))
+            {
+                return (byte*)obj->Extra;
+            }
+
             if (obj->IsArray)
             {
                 return (byte*)obj + sizeof(DSharpArray);
