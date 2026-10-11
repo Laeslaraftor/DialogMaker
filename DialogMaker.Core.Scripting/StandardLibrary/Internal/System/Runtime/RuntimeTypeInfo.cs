@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace Internal.System.Runtime;
 
-internal struct RuntimeTypeInfo
+internal unsafe struct RuntimeTypeInfo
 {
     public MetadataToken MetadataToken;
     public ObjectType ObjectType;
@@ -14,8 +14,8 @@ internal struct RuntimeTypeInfo
     public bool IsGeneric;
     public NativeArray<char> Name;
     public NativeArray<char> Namespace;
-    public Pointer<RuntimeTypeInfo> BaseType;
-    public Pointer<RuntimeTypeInfo> DeclaringType;
+    public RuntimeTypeInfo* BaseType;
+    public RuntimeTypeInfo* DeclaringType;
     public NativeArray<Pointer<RuntimeTypeInfo>> GenericParameters;
     public NativeArray<Pointer<RuntimeTypeInfo>> Intefaces;
     public NativeArray<nint> Constructors;

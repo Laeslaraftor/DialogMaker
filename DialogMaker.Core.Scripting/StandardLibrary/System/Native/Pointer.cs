@@ -1,6 +1,6 @@
 namespace System.Native;
 
-public struct Pointer
+public unsafe struct Pointer
 {
     public Pointer(nint address)
     {

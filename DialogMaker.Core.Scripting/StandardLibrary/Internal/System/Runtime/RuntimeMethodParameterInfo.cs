@@ -2,9 +2,9 @@ using System.Native;
 
 namespace Internal.System.Runtime;
 
-internal struct RuntimeMethodParameterInfo
+internal unsafe struct RuntimeMethodParameterInfo
 {
     public NativeArray<char> Name;
-    public Pointer<RuntimeTypeInfo> Type;
+    public RuntimeTypeInfo* Type;
     public DSharpMethodParameterMode Mode;
 }

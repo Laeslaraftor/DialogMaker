@@ -92,6 +92,15 @@ namespace DialogMaker.Core.Scripting.Runtime
             {
                 return [.. type.GetOperators().Where(o => o.UnaryOperator == unaryOperator)];
             }
+            /// <summary>
+            /// Get enumeration of all callables that contains current type
+            /// </summary>
+            /// <returns>Enumeration of callables</returns>
+            public IEnumerable<IDSharpCallableMember> GetCallables() => type.GetMethods()
+                                                                            .Cast<IDSharpCallableMember>()
+                                                                            .Union(type.GetConstructors())
+                                                                            .Union(type.GetOperators())
+                                                                            .Union(type.GetIndexers());
 
             /// <summary>
             /// Check name existence in current type includes declaring types
@@ -987,6 +996,11 @@ namespace DialogMaker.Core.Scripting.Runtime
 
                 return new ReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo>(members);
             }
+            /// <summary>
+            /// Get dictionary of replaced generic types
+            /// </summary>
+            /// <returns>Replaced generic types</returns>
+            /// <exception cref="InvalidOperationException">Unable to get dictionary of types that replaced by type parameters because current type does not have template</exception>
             public ReadOnlyDictionary<IDSharpType, IDSharpType> GetReplacedTypes()
             {
                 if (type is DSharpTypeBuilder typeBuilder && typeBuilder._replacedTypes != null)
@@ -1010,6 +1024,11 @@ namespace DialogMaker.Core.Scripting.Runtime
                 return new(replacedTypes);
             }
 
+            /// <summary>
+            /// Try to get finalizer include base types
+            /// </summary>
+            /// <param name="result">Finalizer that was found</param>
+            /// <returns>Is finalizer was found successfully</returns>
             public bool TryGetInheritedFinalizer([NotNullWhen(true)] out IDSharpMethodInfo? result)
             {
                 static IDSharpMethodInfo? FindInBaseType(IDSharpType type, bool skipFirstCheck)
@@ -1160,51 +1179,58 @@ namespace DialogMaker.Core.Scripting.Runtime
                 return result;
             }
         }
-        extension(IDSharpMethodInfo method)
+        extension(IDSharpCallableMember callable)
         {
             /// <summary>
-            /// Is extension method
+            /// Is extension callable
             /// </summary>
-            public bool IsExtension
-            {
-                get
-                {
-                    if (method is DSharpMethodBuilder builder)
-                    {
-                        if (builder.Parameters.Count == 0)
-                        {
-                            return false;
-                        }
-
-                        return builder.Parameters[0].Mode == DSharpMethodParameterMode.This;
-                    }
-
-                    return method.GetParameters().FirstOrDefault()?.Mode == DSharpMethodParameterMode.This;
-                }
-            }
+            public bool IsExtension => callable.ParametersCount != 0 && callable.GetParameters().FirstOrDefault()?.Mode == DSharpMethodParameterMode.This;
             /// <summary>
-            /// Is this method has params
+            /// Is this callable has params
             /// </summary>
             public bool HasParams
             {
                 get
                 {
-                    if (method is DSharpMethodBuilder builder)
+                    if (callable.ParametersCount == 0)
                     {
-                        if (builder.Parameters.Count == 0)
-                        {
-                            return false;
-                        }
-
-                        return builder.Parameters[^1].Mode == DSharpMethodParameterMode.Params;
+                        return false;
                     }
 
-                    var parameters = method.GetParameters();
+                    var parameters = callable.GetParameters();
 
-                    return parameters.Length != 0 && parameters[^1].Mode == DSharpMethodParameterMode.Default;
+                    return parameters.Length != 0 && parameters[^1].Mode == DSharpMethodParameterMode.Params;
                 }
             }
 
+            /// <summary>
+            /// <inheritdoc cref="IDSharpMethodInfo.GetReplacedTypesByGenericParameters(DSharpAssemblyBuilder, IDSharpType[])"/>
+            /// </summary>
+            /// <param name="assemblyBuilder"><inheritdoc cref="IDSharpMethodInfo.GetReplacedTypesByGenericParameters(DSharpAssemblyBuilder, IDSharpType[])"/></param>
+            /// <param name="genericParameters"><inheritdoc cref="IDSharpMethodInfo.GetReplacedTypesByGenericParameters(DSharpAssemblyBuilder, IDSharpType[])"/></param>
+            /// <returns><inheritdoc cref="IDSharpMethodInfo.GetReplacedTypesByGenericParameters(DSharpAssemblyBuilder, IDSharpType[])"/></returns>
+            public Dictionary<IDSharpMemberInfo, IDSharpMemberInfo> GetReplacedTypesByGenericParameters(DSharpAssemblyBuilder assemblyBuilder, IDSharpType[] genericParameters)
+            {
+                Dictionary<IDSharpMemberInfo, IDSharpMemberInfo>? result = null;
+
+                foreach (var method in callable.GetMethods())
+                {
+                    var replacedMembers = method.GetReplacedTypesByGenericParameters(assemblyBuilder, genericParameters);
+
+                    if (result == null)
+                    {
+                        result = replacedMembers;
+                        continue;
+                    }
+
+                    foreach (var info in replacedMembers)
+                    {
+                        result.TryAdd(info.Key, info.Value);
+                    }
+                }
+
+                return result ?? [];
+            }
             /// <summary>
             /// Create string that represents current method with provided replaced types.
             /// </summary>
@@ -1214,12 +1240,12 @@ namespace DialogMaker.Core.Scripting.Runtime
             {
                 string result = " ";
 
-                if (method.DeclaringType != null)
+                if (callable.DeclaringType != null)
                 {
-                    result += method.DeclaringType.FullName + ".";
+                    result += callable.DeclaringType.FullName + ".";
                 }
 
-                result += method.Name;
+                result += callable.Name;
 
                 IDSharpType ReplaceType(IDSharpType type)
                 {
@@ -1232,17 +1258,17 @@ namespace DialogMaker.Core.Scripting.Runtime
                     return type;
                 }
 
-                if (method.ReturnType == null)
+                if (callable.ReturnType == null)
                 {
                     result = DSharpBuildInTypes.Void.ShortName + result;
                 }
                 else
                 {
-                    result = ReplaceType(method.ReturnType) + result;
+                    result = ReplaceType(callable.ReturnType) + result;
                 }
 
-                var parameters = method.GetParameters();
-                var genericParameters = method.GetGenericParameters();
+                var parameters = callable.GetParameters();
+                var genericParameters = callable.GetGenericParameters();
 
                 if (genericParameters.Length > 0)
                 {
@@ -1283,12 +1309,27 @@ namespace DialogMaker.Core.Scripting.Runtime
 
                 result += ')';
 
-                if (method.IsStatic)
+                if (callable.IsStatic)
                 {
                     result = "static " + result;
                 }
 
                 return result;
+            }
+            /// <summary>
+            /// Match method type to current callable
+            /// </summary>
+            /// <param name="methodType">Method type for comparison</param>
+            /// <returns>Is current callable matching to specified method type</returns>
+            public bool MatchType(DSharpMethodType methodType)
+            {
+                if (callable is IDSharpMethodInfo method)
+                {
+                    return method.MethodType == methodType;
+                }
+
+                return callable is IDSharpOperatorInfo && methodType == DSharpMethodType.Operator ||
+                       callable is IDSharpIndexerInfo && methodType == DSharpMethodType.Default;
             }
         }
         extension(IDSharpParameterInfo parameter)

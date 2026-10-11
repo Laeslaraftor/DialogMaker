@@ -216,7 +216,7 @@ public unsafe class Program
         Console.WriteLine();
 
         int testCounter = 1;
-        Player valuePlayerForRef = new("Cudicorn");
+        IPlayer valuePlayerForRef = new Player("Cudicorn");
 
         Console.WriteLine("Start counter value: " + testCounter);
 

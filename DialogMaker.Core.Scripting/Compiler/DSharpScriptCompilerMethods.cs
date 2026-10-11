@@ -1718,8 +1718,12 @@ namespace DialogMaker.Core.Scripting.Compiler
                         throw new ArgumentException($"Incomplete expression: {arrayAccess}");
                     }
 
-                    var indexer = GetArrayIndexer(method, arrayAccess, context);
+                    var indexerCallingInfo = GetArrayIndexer(method, arrayAccess, context);
 
+                    if (indexerCallingInfo.Callable is not IDSharpIndexerInfo indexer)
+                    {
+                        throw context.UnexpectedCallable("indexer", indexerCallingInfo, arrayAccess);
+                    }
                     if (indexer.Setter == null)
                     {
                         throw new InvalidOperationException($"Unable to assign value without setter: {expression}");
@@ -2155,102 +2159,23 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 var startCurrentMember = context.CurrentMember;
                 DSharpMethodCallingInfo calledMethodInfo;
-                IDSharpMethodInfo calledMethod;
 
                 try
                 {
                     calledMethodInfo = context.FindMethod(callExpression, method);
-                    calledMethod = calledMethodInfo.Method;
                 }
                 catch (Exception error)
                 {
-                    throw new InvalidOperationException($"Unable to resolve method: {expression}", error);
+                    throw new DSharpCompilerException($"Unable to resolve method", callExpression.Callee, error);
+                }
+
+                if (calledMethodInfo.Callable is not IDSharpMethodInfo calledMethod)
+                {
+                    throw new DSharpCompilerException($"Unexpected callable member was resolved instead of method: \"{calledMethodInfo.Callable}\"", callExpression.Callee);
                 }
 
                 context.CurrentMember = method;
                 bool removeInstance = false;
-                Dictionary<int, DSharpMemberSearchResult>? outputParameters = null;
-                var argsContext = GetContext(context, method);
-                argsContext.ParentExpression = expression;
-                var callingParameterTypes = calledMethodInfo.GetCallingParameterTypes();
-
-                void CompileArgument(int index, ExpressionNode expression, ref DSharpMethodCompileSettings settings)
-                {
-                    if (expression is OutExpressionNode outParameterExpression)
-                    {
-                        DSharpMemberSearchResult member;
-                        IDSharpType type;
-
-                        if (outParameterExpression.Identifier == null)
-                        {
-                            throw new DSharpCompilerException("Output parameter should contains identifier", expression);
-                        }
-                        if (outParameterExpression.Type == null)
-                        {
-                            if (!context.TryResolveMember(outParameterExpression.Identifier, out member))
-                            {
-                                throw new DSharpCompilerException("Unable to resolve output member", outParameterExpression.Identifier);
-                            }
-                            if (!member.MemberInfo.TryGetTypeOrReturnType(out type!) || type == null)
-                            {
-                                throw new DSharpCompilerException("Unable to get member return type", outParameterExpression.Identifier);
-                            }
-                            if (member.IsNullable && type.IsValueType())
-                            {
-                                type = Assembly.CreateNullable(type);
-                            }
-                        }
-                        else
-                        {
-                            var parameters = calledMethodInfo.Parameters;
-
-                            if (index >= parameters.Count || 0 > index)
-                            {
-                                throw new DSharpCompilerException($"Invalid output parameter index: {index}", expression);
-                            }
-
-                            var currentParameter = parameters[index]
-                                ?? throw new DSharpCompilerException($"Invalid output parameter should have type", expression);
-
-                            if (outParameterExpression.Type.Name == DSharpAssemblyBuilder.VarName)
-                            {
-                                type = currentParameter;
-                            }
-                            else
-                            {
-                                try
-                                {
-                                    type = (IDSharpType)Assembly.GetType(context.ResolveType(outParameterExpression.Type));
-                                }
-                                catch (Exception error)
-                                {
-                                    throw new DSharpCompilerException("Unable to resolve output parameter type", outParameterExpression.Type, error);
-                                }
-
-                                if (!currentParameter.IsAssignableTo(type))
-                                {
-                                    throw new DSharpCompilerException("Invalid output parameter type \"{type}\". Required same type or at least type that can be assigned to it", outParameterExpression.Type);
-                                }
-                            }
-
-                            if (outParameterExpression.Identifier is not IdentifierExpressionNode variableIdentifier)
-                            {
-                                throw new DSharpCompilerException("Output parameter should have simple identifier for creating variable", outParameterExpression.Identifier);
-                            }
-
-                            var variable = CreateVariable(method, outParameterExpression.Identifier.Name, type, null, ref settings, context);
-                            member = new(variable);
-                        }
-
-                        outputParameters ??= [];
-                        outputParameters.Add(index, member);
-
-                        code.PushSizedNull(type);
-                        return;
-                    }
-
-                    CompileValueExpression(method, expression, ref settings, null, argsContext);
-                }
 
                 if (!calledMethod.IsStatic)
                 {
@@ -2301,38 +2226,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                         }
                     }
                 }
-                if (calledMethod.HasParams)
-                {
-                    var paramsParameters = DSharpMethodCallingInfo.GetCallingParams(calledMethod, calledMethodInfo.Parameters);
-                    var paramsParam = calledMethod.GetParameters()[^1];
-                    var genericParameter = paramsParam.Type.GetGenericParameters().FirstOrDefault()
-                        ?? throw new DSharpCompilerException("Unable to call method with \"params\" parameter that not array and not span", expression);
-                    int normalParametersCount = callExpression.Arguments.Count - (paramsParameters?.Length ?? 0);
 
-                    for (int i = 0; i < normalParametersCount; i++)
-                    {
-                        CompileArgument(i, callExpression.Arguments[i], ref settings);
-                    }
-
-                    if (paramsParameters == null || paramsParameters.Length > 0)
-                    {
-                        var isStack = paramsParam.Type.GenericTemplate == Assembly.SpanType;
-
-                        CompileArrayCreation(method, code, genericParameter, isStack, callExpression.Arguments.Skip(normalParametersCount),
-                                                                                      callExpression, ref settings, context);
-                    }
-                }
-                else
-                {
-                    int index = 0;
-
-                    foreach (var arg in callExpression.Arguments)
-                    {
-                        CompileArgument(index, arg, ref settings);
-                        index++;
-                    }
-                }
-
+                Dictionary<int, DSharpMemberSearchResult>? outputParameters = CompileParameterExpressions(method, calledMethodInfo, callExpression, callExpression.Arguments, ref settings, context);
                 context.CurrentMember = startCurrentMember;
 
                 int popOffset = 0;
@@ -2362,7 +2257,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     settings.LastMethodCallingInfo != null &&
                     settings.LastMethodCallingInfo.TryGetValue(parentExpression, out var parentCalling))
                 {
-                    parentCallingWasReturning = parentCalling.Method.ReturnType != null;
+                    parentCallingWasReturning = parentCalling.Callable.ReturnType != null;
                 }
 
                 if (!parentCallingWasReturning && !calledMethod.IsStatic && method.IsStatic &&
@@ -2463,31 +2358,30 @@ namespace DialogMaker.Core.Scripting.Compiler
                     code.PopOffset(1);
                 }
 
-                var argsContext = GetContext(context, method);
-                argsContext.ParentExpression = expression;
                 IDSharpType resultType;
                 DSharpPointerType? pointerTypeInfo = null;
-                IDSharpIndexerInfo indexer;
+                DSharpMethodCallingInfo indexerCallingInfo;
 
                 try
                 {
-                    indexer = GetArrayIndexer(method, arrayExpression, context);
+                    indexerCallingInfo = GetArrayIndexer(method, arrayExpression, context);
                 }
                 catch (Exception error)
                 {
-                    throw new InvalidOperationException($"Unable to find indexer: {arrayExpression}", error);
+                    throw new DSharpCompilerException($"Unable to find indexer", arrayExpression, error);
                 }
 
+                if (indexerCallingInfo.Callable is not IDSharpIndexerInfo indexer)
+                {
+                    throw context.UnexpectedCallable("indexer", indexerCallingInfo, arrayExpression);
+                }
                 if (indexer.DeclaringType?.GenericTemplate == Assembly.TypedPointerType)
                 {
                     pointerTypeInfo = DSharpPointerType.Create(indexer.DeclaringType);
                 }
                 if (pointerTypeInfo == null)
                 {
-                    foreach (var arg in arrayExpression.Arguments)
-                    {
-                        CompileValueExpression(method, arg, ref settings, null, argsContext);
-                    }
+                    CompileParameterExpressions(method, indexerCallingInfo, arrayExpression, arrayExpression.Arguments, ref settings, context);
 
                     if (!indexer.CanRead)
                     {
@@ -2512,6 +2406,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
 
                     var arg = arrayExpression.Arguments[0];
+                    var argsContext = GetContext(context, method);
+                    argsContext.ParentExpression = expression;
 
                     CompilePointerIndexer(method, code, arg, pointerTypeInfo, ref settings, argsContext);
 
@@ -2597,10 +2493,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 else
                 {
-                    foreach (var parameter in newExpression.Parameters)
-                    {
-                        CompileValueExpression(method, parameter, ref settings, expression, context);
-                    }
+
 
                     var parameters = context.GetArgumentTypes(newExpression.Parameters);
                     DSharpCompilerContext typeContext = new(context, type);
@@ -2611,14 +2504,24 @@ namespace DialogMaker.Core.Scripting.Compiler
                         var stringTypeInfo = method.Assembly.StringTypeInfo;
                         var firstParameter = parameters[0];
                         constructorAlreadyCalled = true;
+                        IDSharpMethodInfo? methodConstructor = null;
 
                         if (stringTypeInfo.CharsArrayConstructor.GetParameters()[0].Type == firstParameter)
                         {
-                            code.Call(method.Assembly.StringTypeInfo.CharsArrayConstructor);
+                            methodConstructor = method.Assembly.StringTypeInfo.CharsArrayConstructor;
                         }
                         else if (stringTypeInfo.CharsSpanConstructor.GetParameters()[0].Type == firstParameter)
                         {
-                            code.Call(method.Assembly.StringTypeInfo.CharsSpanConstructor);
+                            methodConstructor = method.Assembly.StringTypeInfo.CharsSpanConstructor;
+                        }
+                        if (methodConstructor != null)
+                        {
+                            foreach (var parameter in newExpression.Parameters)
+                            {
+                                CompileValueExpression(method, parameter, ref settings, expression, context);
+                            }
+
+                            code.Call(methodConstructor);
                         }
                         else
                         {
@@ -2628,17 +2531,27 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     if (!constructorAlreadyCalled)
                     {
+                        DSharpMethodCallingInfo constructorCallingInfo;
+
                         try
                         {
-                            var constructor = typeContext.FindConstructor(parameters)
-                                ?? throw new ArgumentException($"Unable to find constructor with parameters {newExpression.Parameters.Count} at {type}:{Environment.NewLine} {expression}", nameof(expression));
+                            constructorCallingInfo = typeContext.FindConstructor(parameters)
+                                ?? throw new DSharpCompilerException($"Unable to find constructor with parameters {newExpression.Parameters.Count}", expression);
 
-                            code.New(constructor);
                         }
                         catch (Exception error)
                         {
-                            throw new InvalidOperationException($"Unable to find constructor at \"{type}\": {expression}", error);
+                            throw new DSharpCompilerException($"Unable to find constructor at \"{type}\"", expression, error);
                         }
+
+                        if (constructorCallingInfo.Callable is not IDSharpMethodInfo constructor)
+                        {
+                            throw context.UnexpectedCallable("constructor", constructorCallingInfo, newExpression);
+                        }
+
+                        CompileParameterExpressions(method, constructorCallingInfo, newExpression, newExpression.Parameters, ref settings, context);
+
+                        code.New(constructor);
                     }
                 }
 
@@ -3427,7 +3340,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             throw new DSharpCompilerException("Unable to compile expression", expression);
         }
-        private IDSharpIndexerInfo GetArrayIndexer(DSharpMethodBuilder method, ArrayAccessExpressionNode arrayExpression, DSharpCompilerContext context)
+        private DSharpMethodCallingInfo GetArrayIndexer(DSharpMethodBuilder method, ArrayAccessExpressionNode arrayExpression, DSharpCompilerContext context)
         {
             if (arrayExpression.Array == null)
             {
@@ -3442,7 +3355,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             else if (arrayType is not IDSharpType)
             {
-                throw new InvalidOperationException($"Unable to get type of array expression: {arrayExpression}");
+                throw new DSharpCompilerException($"Unable to get type of array expression", arrayExpression);
             }
 
             return context.FindIndexer(arrayExpression, method);
@@ -4306,9 +4219,9 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     if (settings.LastMethodCallingInfo?.TryGetValue(currentMemberAccess.Target!, out var callingInfo) == true &&
                         callingInfo.GenericParameters.Count > 0 &&
-                        callingInfo.Method.ReturnType != null)
+                        callingInfo.Callable.ReturnType != null)
                     {
-                        var returnType = callingInfo.Method.ReturnType;
+                        var returnType = callingInfo.Callable.ReturnType;
                         IDSharpType[] genericTypes;
 
                         if (returnType.GenericTemplate == null)
@@ -4705,6 +4618,162 @@ namespace DialogMaker.Core.Scripting.Compiler
             // 3: pointer structure
 
             return 4;
+        }
+        private Dictionary<int, DSharpMemberSearchResult>? CompileParameterExpressions(DSharpMethodBuilder method, DSharpMethodCallingInfo calledMethodInfo, ExpressionNode parent, IList<ExpressionNode> expressions, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context)
+        {
+            var code = method.GetBytecodeBuilder();
+            Dictionary<int, DSharpMemberSearchResult>? outputParameters = null;
+            var calledMethod = calledMethodInfo.Callable;
+            var argsContext = GetContext(context, method);
+            argsContext.ParentExpression = parent;
+            IDSharpType[]? replacedParameterTypes = null;
+
+            void CompileArgument(int index, ExpressionNode expression, ref DSharpMethodCompileSettings settings)
+            {
+                if (expression is OutExpressionNode outParameterExpression)
+                {
+                    DSharpMemberSearchResult member;
+                    IDSharpType type;
+
+                    if (outParameterExpression.Identifier == null)
+                    {
+                        throw new DSharpCompilerException("Output parameter should contains identifier", expression);
+                    }
+                    if (outParameterExpression.Type == null)
+                    {
+                        if (!context.TryResolveMember(outParameterExpression.Identifier, out member))
+                        {
+                            throw new DSharpCompilerException("Unable to resolve output member", outParameterExpression.Identifier);
+                        }
+                        if (!member.MemberInfo.TryGetTypeOrReturnType(out type!) || type == null)
+                        {
+                            throw new DSharpCompilerException("Unable to get member return type", outParameterExpression.Identifier);
+                        }
+                        if (member.IsNullable && type.IsValueType())
+                        {
+                            type = Assembly.CreateNullable(type);
+                        }
+                    }
+                    else
+                    {
+                        var parameters = calledMethodInfo.Parameters;
+
+                        if (index >= parameters.Count || 0 > index)
+                        {
+                            throw new DSharpCompilerException($"Invalid output parameter index: {index}", expression);
+                        }
+
+                        var currentParameter = parameters[index]
+                            ?? throw new DSharpCompilerException($"Invalid output parameter should have type", expression);
+
+                        if (outParameterExpression.Type.Name == DSharpAssemblyBuilder.VarName)
+                        {
+                            type = currentParameter;
+                        }
+                        else
+                        {
+                            try
+                            {
+                                type = (IDSharpType)Assembly.GetType(context.ResolveType(outParameterExpression.Type));
+                            }
+                            catch (Exception error)
+                            {
+                                throw new DSharpCompilerException("Unable to resolve output parameter type", outParameterExpression.Type, error);
+                            }
+
+                            if (!currentParameter.IsAssignableTo(type))
+                            {
+                                throw new DSharpCompilerException("Invalid output parameter type \"{type}\". Required same type or at least type that can be assigned to it", outParameterExpression.Type);
+                            }
+                        }
+
+                        if (outParameterExpression.Identifier is not IdentifierExpressionNode variableIdentifier)
+                        {
+                            throw new DSharpCompilerException("Output parameter should have simple identifier for creating variable", outParameterExpression.Identifier);
+                        }
+
+                        var variable = CreateVariable(method, outParameterExpression.Identifier.Name, type, null, ref settings, context);
+                        member = new(variable);
+                    }
+
+                    outputParameters ??= [];
+                    outputParameters.Add(index, member);
+
+                    code.PushSizedNull(type);
+                    return;
+                }
+                else if (expression is RefExpressionNode refParameterExpression)
+                {
+                    var parameters = calledMethodInfo.Parameters;
+
+                    if (index >= parameters.Count || 0 > index)
+                    {
+                        throw new DSharpCompilerException($"Invalid output parameter index: {index}", expression);
+                    }
+
+                    replacedParameterTypes ??= calledMethodInfo.GetCallingParameterTypes();
+                    var parameterType = replacedParameterTypes[index];
+
+                    if (parameterType != null)
+                    {
+                        IDSharpMemberInfo? expressionMember;
+
+                        try
+                        {
+                            expressionMember = refParameterExpression.GetExpressionType(Assembly, context);
+                        }
+                        catch (Exception error)
+                        {
+                            throw new DSharpCompilerException("Unable to get expression type", expression, error);
+                        }
+
+                        if (expressionMember == null || !expressionMember.TryGetTypeOrReturnType(out var memberType))
+                        {
+                            throw new DSharpCompilerException("Unable to get expression type", expression);
+                        }
+                        if (memberType != parameterType)
+                        {
+                            throw new DSharpCompilerException($"Provided reference should have exactly same type as parameter. Provided value is \"{memberType}\", but parameter is \"{parameterType}\"", expression);
+                        }
+                    }
+                }
+
+                CompileValueExpression(method, expression, ref settings, null, argsContext);
+            }
+
+            if (calledMethod.HasParams)
+            {
+                var paramsParameters = DSharpMethodCallingInfo.GetCallingParams(calledMethod, calledMethodInfo.Parameters);
+                var paramsParam = calledMethod.GetParameters()[^1];
+                var genericParameter = paramsParam.Type.GetGenericParameters().FirstOrDefault()
+                    ?? throw new DSharpCompilerException("Unable to call method with \"params\" parameter that not array and not span", parent);
+                int normalParametersCount = expressions.Count - (paramsParameters?.Length ?? 0);
+
+                for (int i = 0; i < normalParametersCount; i++)
+                {
+                    CompileArgument(i, expressions[i], ref settings);
+                }
+
+                if (paramsParameters == null || paramsParameters.Length > 0)
+                {
+                    var isStack = paramsParam.Type.GenericTemplate == Assembly.SpanType;
+
+                    CompileArrayCreation(method, code, genericParameter, isStack, expressions.Skip(normalParametersCount),
+                                                                                  parent, ref settings, context);
+                }
+            }
+            else
+            {
+                int index = 0;
+
+                foreach (var arg in expressions)
+                {
+                    CompileArgument(index, arg, ref settings);
+                    index++;
+                }
+            }
+
+            return outputParameters;
         }
 
         #endregion

@@ -3,6 +3,7 @@ using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
 {
@@ -15,17 +16,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
     public class DSharpOperatorBuilder(DSharpTypeBuilder declaringType, string name, DSharpTypeToken metadataToken)
         : DSharpMemberInfoBuilder(declaringType.Assembly, name, metadataToken), IDSharpOperatorInfo
     {
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
         public override IDSharpType DeclaringType { get; } = declaringType;
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
         public override bool IsDeclaration => false;
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
         public DSharpTypeToken? ReturnType
         {
             get
@@ -44,9 +36,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
             set;
         }
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
         public DSharpMethodBuilder Method
         {
             get
@@ -65,17 +54,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
         public DSharpOperatorType Type { get; set; }
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
         public DSharpBinaryOperator? BinaryOperator { get; set; }
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
         public DSharpUnaryOperator? UnaryOperator { get; set; }
         public IList<DSharpMethodBuilderParameter> Parameters
         {
@@ -107,6 +87,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return (IDSharpType)Assembly.GetType(ReturnType);
             }
         }
+        IDSharpType? IDSharpCallableMember.ReturnType => ((IDSharpOperatorInfo)this).ReturnType;
+        int IDSharpCallableMember.ParametersCount => Parameters.Count;
+        int IDSharpCallableMember.GenericParametersCount => 0;
+        bool IDSharpCallableMember.CanBeCalledDirectly => true;
+        IDSharpCallableMember? IDSharpCallableMember.OverridenCallable => Method.OverrideMethod;
 
         private bool _skipMethodCreateEvent;
 
@@ -125,15 +110,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             _ = ReturnType;
         }
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public IDSharpParameterInfo[] GetParameters() => [.. Parameters];
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
+        IDSharpType[] IDSharpCallableMember.GetGenericParameters() => [];
+        IEnumerable<IDSharpMethodInfo> IDSharpCallableMember.GetMethods()
+        {
+            yield return Method;
+        }
+
         public override string ToString()
         {
             string result = string.Empty;

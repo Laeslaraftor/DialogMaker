@@ -20,6 +20,14 @@ namespace DialogMaker.Core.Scripting.Runtime
 
         public IDSharpMethodBytecode? Bytecode => throw new NotImplementedException();
 
+        public int ParametersCount => throw new NotImplementedException();
+
+        public int GenericParametersCount => throw new NotImplementedException();
+
+        public IDSharpCallableMember? OverridenCallable => throw new NotImplementedException();
+
+        public bool CanBeCalledDirectly => throw new NotImplementedException();
+
         public void CopyBytecodeTo(DSharpBytecodeBuilder builder)
         {
             throw new NotImplementedException();
@@ -31,6 +39,11 @@ namespace DialogMaker.Core.Scripting.Runtime
         }
 
         public IDSharpMethodInfo[] GetImplementedMethods()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<IDSharpMethodInfo> GetMethods()
         {
             throw new NotImplementedException();
         }

@@ -6,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Runtime
     /// <summary>
     /// Interface of D# method
     /// </summary>
-    public interface IDSharpMethodInfo : IDSharpMemberInfo
+    public interface IDSharpMethodInfo : IDSharpMemberInfo, IDSharpCallableMember
     {
         /// <summary>
         /// Type of object that returns by method
@@ -47,12 +47,12 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// Get array of parameters for invoke current method
         /// </summary>
         /// <returns>Array of parameters for invoke current method</returns>
-        public IDSharpParameterInfo[] GetParameters();
+        public new IDSharpParameterInfo[] GetParameters();
         /// <summary>
         /// Get array of generic parameter that should be specified on invocation
         /// </summary>
         /// <returns>Array of generic parameter that should be specified on invocation</returns>
-        public IDSharpType[] GetGenericParameters();
+        public new IDSharpType[] GetGenericParameters();
         /// <summary>
         /// Get array of interfaces method declarations that implemented by current method
         /// </summary>

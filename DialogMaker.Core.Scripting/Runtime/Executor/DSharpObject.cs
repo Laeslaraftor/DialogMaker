@@ -117,10 +117,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// </summary>
         public DSharpObjectAttributes Attributes;
         /// <summary>
-        /// Count of references to this object
-        /// </summary>
-        public uint ReferencesCount;
-        /// <summary>
         /// Reserved pointer. This stores lock information or data buffer
         /// </summary>
         public void* Extra;

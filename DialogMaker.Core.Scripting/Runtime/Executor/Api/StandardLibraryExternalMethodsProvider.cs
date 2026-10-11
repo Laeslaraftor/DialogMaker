@@ -246,17 +246,6 @@
 
             if (valueArg.Buffer.ValueType == DSharpStackValueType.Reference)
             {
-                var oldValue = *(DSharpObject**)item;
-
-                if (oldValue != null)
-                {
-                    oldValue->ReferencesCount--;
-                }
-                if (value != null)
-                {
-                    value->ReferencesCount++;
-                }
-
                 *(DSharpObject**)item = value;
             }
             else
@@ -348,17 +337,6 @@
 
             if (valueArg.Buffer.ValueType == DSharpStackValueType.Reference)
             {
-                var oldValue = *(DSharpObject**)item;
-
-                if (oldValue != null)
-                {
-                    oldValue->ReferencesCount--;
-                }
-                if (value != null)
-                {
-                    value->ReferencesCount++;
-                }
-
                 *(DSharpObject**)item = value;
             }
             else

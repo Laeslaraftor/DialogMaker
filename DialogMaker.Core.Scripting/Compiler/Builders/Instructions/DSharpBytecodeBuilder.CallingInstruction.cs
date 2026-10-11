@@ -8,7 +8,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             : Instruction(builder, operation)
         {
             public CallingInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation, DSharpMethodCallingInfo callingInfo)
-                : this(builder, operation, callingInfo, callingInfo.Method)
+                : this(builder, operation, callingInfo, callingInfo.Callable)
             {
             }
             public CallingInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation, IDSharpMemberInfo accessedMember)
@@ -36,7 +36,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
                     if (CallingInfo != null)
                     {
-                        var replacedTypes = CallingInfo.Method.GetReplacedTypesByGenericParameters(BytecodeBuilder.Method.Assembly, [.. CallingInfo.GenericParameters.Values]);
+                        var replacedTypes = CallingInfo.Callable.GetReplacedTypesByGenericParameters(BytecodeBuilder.Method.Assembly, [.. CallingInfo.GenericParameters.Values]);
                         size += sizeof(int) + replacedTypes.Count * 2 * sizeof(DSharpMetadataToken);
                     }
 
@@ -54,13 +54,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 var callingInfo = CallingInfo;
                 var callingType = AccessedMember.GetRequiredCallingType(RequestDefaultCalling);
 
+                if (callingInfo != null && !callingInfo.Callable.CanBeCalledDirectly)
+                {
+                    throw new InvalidOperationException($"Direct calling is unavailable for \"{callingInfo}\"");
+                }
+
                 callingMethod.MetadataToken.Write(stream);
                 stream.Write(callingType);
                 stream.Write(callingInfo != null);
 
                 if (callingInfo != null)
                 {
-                    var replacedTypes = callingInfo.Method.GetReplacedTypesByGenericParameters(BytecodeBuilder.Method.Assembly, [.. callingInfo.GenericParameters.Values]);
+                    var replacedTypes = callingInfo.Callable.GetReplacedTypesByGenericParameters(BytecodeBuilder.Method.Assembly, [.. callingInfo.GenericParameters.Values]);
 
                     stream.Write(replacedTypes.Count);
 
@@ -107,7 +112,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             {
                 if (CallingInfo != null)
                 {
-                    return $"{Operation} [{(RequestDefaultCalling ? "default: " : string.Empty)}{CallingInfo.Method.ToString(CallingInfo.GenericParameters)}]";
+                    return $"{Operation} [{(RequestDefaultCalling ? "default: " : string.Empty)}{CallingInfo.Callable.ToString(CallingInfo.GenericParameters)}]";
                 }
 
                 return $"{Operation} [{(RequestDefaultCalling ? "default: " : string.Empty)}{AccessedMember}]";

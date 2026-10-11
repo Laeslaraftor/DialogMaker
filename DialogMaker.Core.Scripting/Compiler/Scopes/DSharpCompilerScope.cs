@@ -415,7 +415,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// </summary>
         /// <param name="method">Method that need to check on capturing</param>
         /// <returns>Is specified method was captured</returns>
-        public bool IsCapturedMethod(IDSharpMethodInfo method)
+        public bool IsCapturedMethod(IDSharpCallableMember method)
         {
             var methodScope = RecursiveCheck(scope =>
             {

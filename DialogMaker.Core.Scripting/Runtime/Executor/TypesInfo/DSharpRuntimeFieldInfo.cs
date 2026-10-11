@@ -141,18 +141,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             {
                 var currentValue = *(DSharpObject**)pointer;
 
-                if (currentValue != null)
+                if (value != null &&
+                    value->Placement == DSharpObjectPlacement.Buffer)
                 {
-                    currentValue->ReferencesCount--;
-                }
-                if (value != null)
-                {
-                    if (value->Placement == DSharpObjectPlacement.Buffer)
-                    {
-                        value = objectsContainer.Box(value);
-                    }
-
-                    value->ReferencesCount++;
+                    value = objectsContainer.Box(value);
                 }
 
                 *(DSharpObject**)pointer = value;
@@ -258,7 +250,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
             throw new InvalidOperationException($"Unable to get instance field ({Name}: {MetadataToken}) offset at {instance->Type->ToString()}");
         }
-        
+
         private DSharpObject* GetValuePointer(DSharpObject* instance)
         {
             byte* data = GetDataPointer(instance);

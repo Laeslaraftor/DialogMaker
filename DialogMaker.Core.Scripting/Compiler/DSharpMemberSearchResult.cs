@@ -15,7 +15,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
         }
         public DSharpMemberSearchResult(DSharpMethodCallingInfo methodCallingInfo, bool isNullable = false)
-            : this(methodCallingInfo.Method, isNullable, null, methodCallingInfo)
+            : this(methodCallingInfo.Callable, isNullable, null, methodCallingInfo)
         {
         }
         public DSharpMemberSearchResult(IDSharpParameterInfo parameterInfo)

@@ -1043,6 +1043,8 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             foreach (var info in _createdTypes)
             {
+                ValidateUnsafe(info.Key);
+
                 if (info.Key.ObjectType == DSharpObjectType.Interface)
                 {
                     ValidateInterface(info.Key);
@@ -1061,6 +1063,136 @@ namespace DialogMaker.Core.Scripting.Compiler
                         }
                     }
                 }
+            }
+        }
+
+        private void ValidateUnsafe(DSharpTypeBuilder type)
+        {
+            var pointer = Assembly.PointerType;
+            var typedPointer = Assembly.TypedPointerType;
+
+            void CheckTypeToken(IDSharpMemberInfo member, DSharpTypeToken? token, AstNode node)
+            {
+                if (token == null)
+                {
+                    throw new DSharpCompilerException($"Type not specified at \"{member}\"", node);
+                }
+                if (!member.IsUnsafeRecursive())
+                {
+                    CheckType(member, (IDSharpType)Assembly.GetType(token), node);
+                }
+            }
+            void CheckType(IDSharpMemberInfo member, IDSharpType type, AstNode node)
+            {
+                if (type == pointer || type.GenericTemplate == typedPointer)
+                {
+                    throw new DSharpCompilerException($"Pointers usage are forbidden for \"{member}\", it's can be used only in unsafe context", node);
+                }
+            }
+            void CheckParameters(IDSharpMemberInfo member, IEnumerable<DSharpMethodBuilderParameter> parameters, AstNode node)
+            {
+                if (member.IsUnsafeRecursive())
+                {
+                    return;
+                }
+
+                foreach (var parameter in parameters)
+                {
+                    AstNode parameterNode = node;
+
+                    if (_createdParameters.TryGetValue(parameter, out var createdParameterNode))
+                    {
+                        parameterNode = createdParameterNode;
+                    }
+                    if (parameter.Type == null)
+                    {
+                        throw new DSharpCompilerException($"Parameter \"{parameter.Name}\" at \"{member}\" should contains type", node);
+                    }
+
+                    CheckType(member, (IDSharpType)Assembly.GetType(parameter.Type), node);
+                }
+            }
+
+            foreach (var constructor in type.Constructors)
+            {
+                if (!_createdConstructors.TryGetValue(constructor, out var constructorNode))
+                {
+                    continue;
+                }
+
+                CheckParameters(constructor, constructor.Parameters, constructorNode);
+            }
+            foreach (var method in type.Methods)
+            {
+                if (!_createdMethods.TryGetValue(method, out var methodNode))
+                {
+                    continue;
+                }
+
+                CheckParameters(method, method.Parameters, methodNode);
+                
+                if (!methodNode.ReturnType.IsVoid())
+                {
+                    CheckTypeToken(method, method.ReturnType, methodNode.ReturnType!);
+                }
+            }
+            foreach (var @operator in type.Operators.Union(type.CastOperators))
+            {
+                if (!_createdOperators.TryGetValue(@operator, out var operatorNode))
+                {
+                    continue;
+                }
+
+                CheckParameters(@operator, @operator.Parameters, operatorNode);
+
+                if (@operator.ReturnType == null || operatorNode.ReturnType.IsVoid())
+                {
+                    throw new DSharpCompilerException($"Operator \"{@operator}\" should have return type", operatorNode);
+                }
+
+                CheckTypeToken(@operator, @operator.ReturnType, operatorNode.ReturnType!);
+            }
+            foreach (var indexer in type.Indexers)
+            {
+                if (!_createdIndexers.TryGetValue(indexer, out var indexerNode))
+                {
+                    continue;
+                }
+
+                CheckParameters(indexer, indexer.Parameters, indexerNode);
+
+                if (indexerNode.Type == null)
+                {
+                    throw new DSharpCompilerException($"Indexer \"{indexer}\" should have return type", indexerNode);
+                }
+
+                CheckTypeToken(indexer, indexer.PropertyType, indexerNode.Type);
+            }
+            foreach (var field in type.Fields)
+            {
+                if (!_createdFields.TryGetValue(field, out var fieldNode))
+                {
+                    continue;
+                }
+                if (fieldNode.Type == null)
+                {
+                    throw new DSharpCompilerException($"Field \"{field}\" should have containing value type", fieldNode);
+                }
+
+                CheckTypeToken(field, field.FieldType, fieldNode.Type);
+            }
+            foreach (var property in type.Properties)
+            {
+                if (!_createdProperties.TryGetValue(property, out var fieldNode))
+                {
+                    continue;
+                }
+                if (fieldNode.Type == null)
+                {
+                    throw new DSharpCompilerException($"Property \"{property}\" should have containing value type", fieldNode);
+                }
+
+                CheckTypeToken(property, property.PropertyType, fieldNode);
             }
         }
 

@@ -1,8 +1,13 @@
 ﻿using DialogMaker.Core.Scripting.Runtime;
+using System.ComponentModel;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
 {
-    public class DSharpMethodBuilderParameter(DSharpAssemblyBuilder assembly) : IDSharpParameterInfo
+    /// <summary>
+    /// Builder for calling parameter
+    /// </summary>
+    /// <param name="assembly">Assembly that contains calling member</param>
+    public class DSharpMethodBuilderParameter(DSharpAssemblyBuilder assembly) : IDSharpParameterInfo, INotifyPropertyChanged
     {
         public DSharpMethodBuilderParameter(DSharpMethodBuilderParameter other)
             : this(other.Assembly)
@@ -13,8 +18,24 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             TypeGetter = other.TypeGetter;
         }
 
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        /// <summary>
+        /// Assembly that contains calling member
+        /// </summary>
         public DSharpAssemblyBuilder Assembly { get; } = assembly;
-        public string? Name { get; set; }
+        public string? Name
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged(nameof(Name));
+                }
+            }
+        }
         public DSharpTypeToken? Type
         {
             get
@@ -26,11 +47,39 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
                 return TypeGetter?.Invoke();
             }
-            set;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged(nameof(Type));
+                }
+            }
         }
-        public DSharpMethodParameterMode Mode { get; set; }
-        public Func<DSharpTypeToken?>? TypeGetter { get; set; }
-
+        public DSharpMethodParameterMode Mode
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged(nameof(Mode));
+                }
+            }
+        }
+        public Func<DSharpTypeToken?>? TypeGetter
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged(nameof(TypeGetter));
+                }
+            }
+        }
 
         string IDSharpParameterInfo.Name => Name ?? string.Empty;
         IDSharpType IDSharpParameterInfo.Type
@@ -46,12 +95,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
         }
 
-        #region Управление
+        #region Controls
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             if (Type == null)
@@ -60,6 +105,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
 
             return $"{Assembly.GetType(Type)} {Name}";
+        }
+
+        #endregion
+
+        #region Events
+
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, ObservableObject.GetPropertyChangedEventArgs(propertyName));
         }
 
         #endregion

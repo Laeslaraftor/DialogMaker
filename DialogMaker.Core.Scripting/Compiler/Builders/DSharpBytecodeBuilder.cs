@@ -261,6 +261,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                     if (callingInfo != null)
                     {
                         genericCallInstruction.CallingInfo = callingInfo.ReplaceTypes(replacedMembers);
+                        genericCallInstruction.AccessedMember = genericCallInstruction.CallingInfo.Callable;
                     }
                     else
                     {
@@ -832,7 +833,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <returns></returns>
         public CallingInstruction Call(DSharpMethodCallingInfo info, DSharpMethodCallingType callingType = DSharpMethodCallingType.Virtual)
         {
-            CheckAccess(info.Method);
+            CheckAccess(info.Callable);
             var instruction = CreateInstruction<CallingInstruction>(this, DSharpBytecodeOperation.Call, info);
             instruction.RequestDefaultCalling = callingType == DSharpMethodCallingType.Default;
 
@@ -853,9 +854,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         }
         public CallingInstruction CallAuto(DSharpMethodCallingInfo info, bool isAwait = false, bool nextNonVirtualizedAccess = false)
         {
-            var method = info.Method;
-            bool isStatic = method.IsStatic ||
-                            method.DeclaringType == null;
+            if (!info.Callable.CanBeCalledDirectly)
+            {
+                throw new ArgumentException($"Direct calling is unavailable for \"{info.Callable}\"");
+            }
+
+            var method = info.Callable.GetMethods().First();
 
             if (info.GenericParameters.Count == 0)
             {

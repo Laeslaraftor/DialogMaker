@@ -1,6 +1,7 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast
 {
@@ -102,6 +103,24 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
 
                 return value;
             }
+        }
+
+        /// <summary>
+        /// Check current node on System.Void type
+        /// </summary>
+        /// <param name="typeInfoNode">Type node or null</param>
+        /// <returns>Returns true when specified node is null or System.Void</returns>
+        public static bool IsVoid([NotNullWhen(true)] this TypeInfoNode? typeInfoNode)
+        {
+            if (typeInfoNode == null)
+            {
+                return true;
+            }
+
+            var fullName = typeInfoNode.GetFullName(true, false);
+
+            return fullName == DSharpBuildInTypes.Void.ShortName ||
+                   fullName == DSharpBuildInTypes.Void.FullName;
         }
     }
 }

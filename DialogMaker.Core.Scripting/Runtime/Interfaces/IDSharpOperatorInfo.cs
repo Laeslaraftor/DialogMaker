@@ -5,7 +5,7 @@ namespace DialogMaker.Core.Scripting.Runtime
     /// <summary>
     /// Interface of D# operator
     /// </summary>
-    public interface IDSharpOperatorInfo : IDSharpMemberInfo
+    public interface IDSharpOperatorInfo : IDSharpMemberInfo, IDSharpCallableMember
     {
         /// <summary>
         /// Type of operator
@@ -32,6 +32,6 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// Get parameters of this operator
         /// </summary>
         /// <returns>Array of parameters</returns>
-        public IDSharpParameterInfo[] GetParameters();
+        public new IDSharpParameterInfo[] GetParameters();
     }
 }

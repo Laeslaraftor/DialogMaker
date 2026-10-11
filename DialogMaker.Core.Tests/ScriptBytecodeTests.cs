@@ -39,6 +39,8 @@ namespace DialogMaker.Core.Tests
             ReadFunctionOrMethod(assembly, typeName, functionName);
         }
         [TestCase("System.Array`1.Enumerator", "MoveNext")]
+        [TestCase("System.Array`1", "<>__InitializeStatics")]
+        [TestCase("System.Array<System.Exception>", "<>__InitializeStatics")]
         [TestCase("System.Array<System.String>", "init")]
         [TestCase("System.Array<System.String>.Enumerator", "init")]
         [TestCase("System.Span`1", "get_Length")]
@@ -199,7 +201,7 @@ namespace DialogMaker.Core.Tests
                 isAnyMethodFound = true;
 
                 Console.WriteLine();
-                Console.WriteLine(method);
+                Console.WriteLine($"{method} ({(DSharpMetadataToken)method.MetadataToken})");
                 ReadCode(method);
             }
 

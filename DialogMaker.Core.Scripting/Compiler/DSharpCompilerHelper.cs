@@ -492,14 +492,20 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
             }
             /// <summary>
-            /// Check method on containing in curren type or overriding it
+            /// Check method on containing in current type or overriding it
             /// </summary>
             /// <param name="method">Method to check</param>
             /// <param name="includeInterfaces">Include interfaces for checking</param>
             /// <param name="result">Method that was found</param>
             /// <returns>Is method was found successfully</returns>
-            public bool ContainsMethodOrOverride(IDSharpMethodInfo method, bool includeInterfaces, [NotNullWhen(true)] out IDSharpMethodInfo? result)
+            public bool ContainsMethodOrOverride(IDSharpCallableMember method, bool includeInterfaces, [NotNullWhen(true)] out IDSharpMethodInfo? result)
             {
+                if (method is not IDSharpMethodInfo)
+                {
+                    result = null;
+                    return false;
+                }
+
                 IDSharpMethodInfo? Find(IDSharpType type)
                 {
                     foreach (var typeMethod in type.GetMethods())
@@ -1343,7 +1349,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 else if (context.TryResolveMember(expression, out var resolveResult))
                 {
                     if (resolveResult.MethodCallingInfo != null &&
-                        resolveResult.MethodCallingInfo.Method.ReturnType != null)
+                        resolveResult.MethodCallingInfo.Callable.ReturnType != null)
                     {
                         var methodReturnType = resolveResult.MethodCallingInfo.GetReturnType(assembly);
 
@@ -1482,7 +1488,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 else if (expression is ArrayAccessExpressionNode arrayExpression)
                 {
                     var indexer = context.FindIndexer(arrayExpression);
-                    return indexer.PropertyType;
+                    return indexer.GetReturnType(assembly);
                 }
                 else if (expression is CastExpressionNode castExpression)
                 {

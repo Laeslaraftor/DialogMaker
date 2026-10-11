@@ -1,8 +1,11 @@
-﻿namespace DialogMaker.Core.Scripting.Runtime
+﻿using DialogMaker.Core.Scripting.CodeAnalyzer;
+
+namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
     /// Parameter mode
     /// </summary>
+    [GenerateInformation(EnumValuesInformation.OnlyValues)]
     public enum DSharpMethodParameterMode : byte
     {
         /// <summary>

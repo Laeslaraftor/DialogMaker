@@ -1,5 +1,4 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
-using System.Globalization;
 using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions

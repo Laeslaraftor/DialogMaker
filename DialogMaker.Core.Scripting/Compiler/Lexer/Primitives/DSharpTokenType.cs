@@ -29,6 +29,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         [Keyword("else")]
         Else,
         /// <summary>
+        /// Switch keyword
+        /// </summary>
+        [Keyword("switch")]
+        Switch,
+        /// <summary>
+        /// Case keyword
+        /// </summary>
+        [Keyword("case")]
+        Case,
+        /// <summary>
         /// While keyword
         /// </summary>
         [Keyword("while")]
@@ -53,6 +63,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// </summary>
         [Keyword("continue")]
         Continue,
+        /// <summary>
+        /// Goto keyword
+        /// </summary>
+        [Keyword("goto")]
+        Goto,
         /// <summary>
         /// Await keyword for waiting function or method. 
         /// This works only if function or method have some async operation (wait(number) or other await calling).
@@ -141,6 +156,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// </summary>
         [Keyword("null")]
         Null,
+        /// <summary>
+        /// Default keyword
+        /// </summary>
+        [Keyword("default")]
+        Default,
         /// <summary>
         /// As keyword. Works identical to C#
         /// </summary>

@@ -4,9 +4,19 @@ using System.Collections.Specialized;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
 {
-    public class DSharpIndexerBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder declaringType, string name, DSharpTypeToken metadataToken)
-        : DSharpPropertyBuilder(assembly, declaringType, name, metadataToken), IDSharpIndexerInfo
+    public class DSharpIndexerBuilder : DSharpPropertyBuilder, IDSharpIndexerInfo
     {
+        public DSharpIndexerBuilder(DSharpAssemblyBuilder assembly, DSharpTypeBuilder declaringType, string name, DSharpTypeToken metadataToken)
+            : base(assembly, declaringType, name, metadataToken)
+        {
+            _parametersValidator = DSharpParametersValidator.CreateWithSimpleModes();
+            _parametersValidator.Parameters = Parameters;
+        }
+        ~DSharpIndexerBuilder()
+        {
+            _parametersValidator.Dispose();
+        }
+
         public IList<DSharpMethodBuilderParameter> Parameters
         {
             get
@@ -22,6 +32,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
         }
 
+        int IDSharpCallableMember.ParametersCount => Parameters.Count;
+        int IDSharpCallableMember.GenericParametersCount => 0;
+        IDSharpType? IDSharpCallableMember.ReturnType => ((IDSharpPropertyInfo)this).PropertyType;
+        bool IDSharpCallableMember.CanBeCalledDirectly => false;
+        IDSharpCallableMember? IDSharpCallableMember.OverridenCallable => OverrideProperty as IDSharpCallableMember;
+
+        private readonly DSharpParametersValidator _parametersValidator;
+
         #region Управление
 
         internal override void Update()
@@ -35,6 +53,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         }
 
         public IDSharpParameterInfo[] GetParameters() => [.. Parameters];
+        IDSharpType[] IDSharpCallableMember.GetGenericParameters() => [];
+        IEnumerable<IDSharpMethodInfo> IDSharpCallableMember.GetMethods()
+        {
+            if (Getter != null)
+            {
+                yield return Getter;
+            }
+            if (Setter != null)
+            {
+                yield return Setter;
+            }
+        }
 
         public override string ToString()
         {
