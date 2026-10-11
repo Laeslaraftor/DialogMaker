@@ -1043,8 +1043,6 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             foreach (var info in _createdTypes)
             {
-                ValidateUnsafe(info.Key);
-
                 if (info.Key.ObjectType == DSharpObjectType.Interface)
                 {
                     ValidateInterface(info.Key);
@@ -1063,6 +1061,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                         }
                     }
                 }
+            }
+        }
+        public void ValidateUnsafeTypes()
+        {
+            foreach (var type in _createdTypes.Keys)
+            {
+                ValidateUnsafe(type);
             }
         }
 

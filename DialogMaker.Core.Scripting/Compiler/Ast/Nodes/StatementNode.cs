@@ -36,6 +36,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 return BlockStatementNode.Parse(stream, DSharpStatementType.Code);
             }
 
+            if (LabelStatementNode.IsLabel(stream))
+            {
+                return LabelStatementNode.Parse(stream);
+            }
             if (VariableNode.IsVariable(stream))
             {
                 var variable = VariableNode.ParseVariable(stream, null);
@@ -58,6 +62,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             if (stream.Check(DSharpTokenType.Lock))
             {
                 return LockStatementNode.Parse(stream);
+            }
+            if (stream.Check(DSharpTokenType.Switch))
+            {
+                return SwitchStatementNode.Parse(stream);
             }
             if (stream.Check(DSharpTokenType.Void))
             {
@@ -106,6 +114,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             if (stream.Check(DSharpTokenType.Continue))
             {
                 return ContinueStatementNode.Parse(stream);
+            }
+            if (stream.Check(DSharpTokenType.Goto))
+            {
+                return GotoStatementNode.Parse(stream);
             }
 
             var expression = ExpressionNode.ParseExpression(stream);

@@ -168,6 +168,17 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new InvalidOperationException($"Failed to compile script: {script}", error);
                 }
             }
+            foreach (var script in scriptsToCompile)
+            {
+                try
+                {
+                    script.ValidateUnsafeTypes();
+                }
+                catch (Exception error)
+                {
+                    throw new InvalidOperationException($"Failed to compile script: {script}", error);
+                }
+            }
         }
 
         #endregion

@@ -269,6 +269,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
                 return asExpression;
             }
+            else if (stream.Check(DSharpTokenType.Switch))
+            {
+                return SwitchExpressionNode.Parse(stream, left);
+            }
             else if (stream.Check(DSharpTokenType.Increment))
             {
                 var incrementToken = stream.Eat(DSharpTokenType.Increment);

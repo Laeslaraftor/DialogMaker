@@ -1,10 +1,12 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+﻿using DialogMaker.Core.Scripting.Compiler.Analyzers;
+using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -637,32 +639,32 @@ namespace DialogMaker.Core.Scripting.Compiler
             /// <param name="returnTypes">Buffer for writing types that returns</param>
             /// <param name="context">Compiler context</param>
             /// <returns>Is all paths returns some value</returns>
-            public bool AllPathReturns(DSharpAssemblyBuilder assembly, Dictionary<ExpressionNode, IDSharpType> returnTypes, DSharpCompilerContext context)
-            {
-                var currentStatement = ifStatement;
+            //public bool AllPathReturns(DSharpAssemblyBuilder assembly, Dictionary<ExpressionNode, IDSharpType> returnTypes, DSharpCompilerContext context)
+            //{
+            //    var currentStatement = ifStatement;
 
-                while (true)
-                {
-                    if (currentStatement.ThenBranch?.AllPathReturns(assembly, returnTypes, context) != true ||
-                        currentStatement.ElseBranch == null)
-                    {
-                        return false;
-                    }
-                    if (currentStatement.ElseBranch is IfStatementNode elseStatement)
-                    {
-                        currentStatement = elseStatement;
-                        continue;
-                    }
-                    else if (currentStatement.ElseBranch is BlockStatementNode elseBlockStatement)
-                    {
-                        return elseBlockStatement.AllPathReturns(assembly, returnTypes, context);
-                    }
+            //    while (true)
+            //    {
+            //        if (currentStatement.ThenBranch?.AllPathReturns(assembly, returnTypes, context) != true ||
+            //            currentStatement.ElseBranch == null)
+            //        {
+            //            return false;
+            //        }
+            //        if (currentStatement.ElseBranch is IfStatementNode elseStatement)
+            //        {
+            //            currentStatement = elseStatement;
+            //            continue;
+            //        }
+            //        else if (currentStatement.ElseBranch is BlockStatementNode elseBlockStatement)
+            //        {
+            //            return elseBlockStatement.AllPathReturns(assembly, returnTypes, context);
+            //        }
 
-                    break;
-                }
+            //        break;
+            //    }
 
-                return true;
-            }
+            //    return true;
+            //}
         }
         extension(StatementNode statement)
         {
@@ -829,6 +831,58 @@ namespace DialogMaker.Core.Scripting.Compiler
                 ifStatement.ElseBranch?.ForEachStatement(handler);
             }
         }
+        extension(StatementNode statement)
+        {
+            /// <summary>
+            /// Check all paths in current if statement for returning values
+            /// </summary>
+            /// <param name="assembly">Assembly builder for finding types</param>
+            /// <param name="returnTypes">Buffer for writing types that returns</param>
+            /// <param name="context">Compiler context</param>
+            /// <returns>Is all paths returns some value</returns>
+            public bool AllPathReturns(DSharpAssemblyBuilder assembly, Dictionary<ExpressionNode, IDSharpType> returnTypes, DSharpCompilerContext context)
+            {
+                bool allPathReturn = DSharpAstPathAnalyzer.AllPathReturns(statement, out var selectedStatements);
+
+                foreach (var selectedStatement in selectedStatements)
+                {
+                    if (selectedStatement is not ExpressionStatementNode expressionStatement ||
+                        expressionStatement.Expression == null ||
+                        expressionStatement.Expression is ThrowExpressionNode)
+                    {
+                        continue;
+                    }
+
+                    var expression = expressionStatement.Expression;
+                    IDSharpMemberInfo? expressionType;
+
+                    try
+                    {
+                        expressionType = expression.GetExpressionType(assembly, context);
+                    }
+#if DEBUG
+                    catch
+                    {
+                        throw;
+#else
+                    catch (Exception error)
+                    {
+                        Console.WriteLine(error);
+                        return false;
+#endif
+                    }
+
+                    if (expressionType == null || !expressionType.TryGetTypeOrReturnType(out var returnType))
+                    {
+                        return false;
+                    }
+
+                    returnTypes.Add(expression, returnType);
+                }
+
+                return allPathReturn;
+            }
+        }
         extension(TryStatementNode tryStatement)
         {
             /// <summary>
@@ -846,52 +900,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 tryStatement.FinallyBlock?.ForEachStatement(handler);
-            }
-
-            /// <summary>
-            /// Check all paths in current if statement for returning values
-            /// </summary>
-            /// <param name="assembly">Assembly builder for finding types</param>
-            /// <param name="returnTypes">Buffer for writing types that returns</param>
-            /// <param name="context">Compiler context</param>
-            /// <returns>Is all paths returns some value</returns>
-            public bool AllPathReturns(DSharpAssemblyBuilder assembly, Dictionary<ExpressionNode, IDSharpType> returnTypes, DSharpCompilerContext context)
-            {
-                if (tryStatement.TryBlock == null ||
-                    !tryStatement.TryBlock.AllPathReturns(assembly, returnTypes, context))
-                {
-                    return false;
-                }
-
-                foreach (var catchBlock in tryStatement.CatchBlocks)
-                {
-                    if (catchBlock.Statements == null)
-                    {
-                        continue;
-                    }
-                    if (catchBlock.ExceptionType == null)
-                    {
-                        return catchBlock.Statements.AllPathReturns(assembly, returnTypes, context);
-                    }
-
-                    IDSharpType exceptionType;
-
-                    try
-                    {
-                        exceptionType = (IDSharpType)assembly.GetType(context.ResolveType(catchBlock.ExceptionType));
-                    }
-                    catch
-                    {
-                        continue;
-                    }
-
-                    if (exceptionType == assembly.ExceptionType)
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
             }
         }
         extension(BlockStatementNode blockStatement)
@@ -918,118 +926,6 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     statement.ForEachStatement(handler);
                 }
-            }
-            /// <summary>
-            /// Check block on return values or throw exception on all paths
-            /// </summary>
-            /// <param name="assembly">Assembly builder for finding types</param>
-            /// <param name="returnTypes">Buffer for writing types that returns</param>
-            /// <param name="context">Compiler context</param>
-            /// <returns>Is block returns value or throw exception on all paths</returns>
-            public bool AllPathReturns(DSharpAssemblyBuilder assembly, Dictionary<ExpressionNode, IDSharpType> returnTypes, DSharpCompilerContext context)
-            {
-                bool ReturnsValue(ExpressionStatementNode expressionStatement, bool asLambda)
-                {
-                    var expression = expressionStatement.Expression;
-
-                    if (expression == null)
-                    {
-                        return false;
-                    }
-                    if (expression is ThrowExpressionNode)
-                    {
-                        return true;
-                    }
-                    if (asLambda && expression is not AssignmentExpressionNode &&
-                                    expression is not IncrementExpressionNode &&
-                                    expression is not DecrementExpressionNode)
-                    {
-                        IDSharpMemberInfo? expressionType;
-
-                        try
-                        {
-                            expressionType = expression.GetExpressionType(assembly, context);
-                        }
-#if DEBUG
-                        catch
-                        {
-                            throw;
-#else
-                        catch (Exception error)
-                        {
-                            Console.WriteLine(error);
-                            return false;
-#endif
-                        }
-
-                        if (expressionType == null || !expressionType.TryGetTypeOrReturnType(out var returnType))
-                        {
-                            return false;
-                        }
-
-                        returnTypes.Add(expression, returnType);
-
-                        return true;
-                    }
-
-                    return false;
-                }
-
-                if (blockStatement.Token.Type == DSharpTokenType.Lambda)
-                {
-                    if (blockStatement.Statements.Count == 0 ||
-                        blockStatement.Statements[0] is not ExpressionStatementNode firstExpressionStatement)
-                    {
-                        return false;
-                    }
-
-                    return ReturnsValue(firstExpressionStatement, true);
-                }
-
-                foreach (var statement in blockStatement.Statements)
-                {
-                    if (statement is ReturnStatementNode ||
-                        statement is ExpressionStatementNode expressionStatement &&
-                        ReturnsValue(expressionStatement, false))
-                    {
-                        return true;
-                    }
-                    else if (statement is IfStatementNode ifStatement &&
-                             ifStatement.AllPathReturns(assembly, returnTypes, context))
-                    {
-                        return true;
-                    }
-                    else if (statement is TryStatementNode tryStatement &&
-                             tryStatement.AllPathReturns(assembly, returnTypes, context))
-                    {
-                        return true;
-                    }
-                    else if (statement is UsingVariableStatementNode usingVariableStatement &&
-                             usingVariableStatement.Body != null &&
-                             usingVariableStatement.Body.AllPathReturns(assembly, returnTypes, context))
-                    {
-                        return true;
-                    }
-                    else if (statement is BlockStatementNode otherBlockStatement &&
-                             otherBlockStatement.AllPathReturns(assembly, returnTypes, context))
-                    {
-                        return true;
-                    }
-                    else if (statement is LockStatementNode lockBlockStatement &&
-                             lockBlockStatement.Body != null &&
-                             lockBlockStatement.Body.AllPathReturns(assembly, returnTypes, context))
-                    {
-                        return true;
-                    }
-                    else if (statement is UnsafeStatementNode unsafeBlockStatement &&
-                             unsafeBlockStatement.Body != null &&
-                             unsafeBlockStatement.Body.AllPathReturns(assembly, returnTypes, context))
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
             }
         }
         extension(ExpressionNode expression)

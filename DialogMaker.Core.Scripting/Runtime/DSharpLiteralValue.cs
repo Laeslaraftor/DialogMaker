@@ -517,7 +517,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                 throw new InvalidOperationException($"Unable to get information about type: {largerType}");
             }
 
-            var numberType = _standardAssembly.GetType(info.FullName, true);
+            var numberType = _standardAssembly.GetType(info.FullName, true)!;
             object value = 0;
 
             if (op == DSharpBinaryOperator.Plus)
@@ -545,7 +545,7 @@ namespace DialogMaker.Core.Scripting.Runtime
             }
             else if (op == DSharpBinaryOperator.Divide)
             {
-                value = n1.AsNumber<decimal>() * n2.AsNumber<decimal>();
+                value = n1.AsNumber<decimal>() / n2.AsNumber<decimal>();
             }
             else if (op == DSharpBinaryOperator.Mod)
             {
