@@ -64,11 +64,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         [Keyword("continue")]
         Continue,
         /// <summary>
-        /// Goto keyword
-        /// </summary>
-        [Keyword("goto")]
-        Goto,
-        /// <summary>
         /// Await keyword for waiting function or method. 
         /// This works only if function or method have some async operation (wait(number) or other await calling).
         /// Calling async method without this keyword starts new thread which execute called function or method,

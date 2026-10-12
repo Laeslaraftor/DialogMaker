@@ -7,6 +7,7 @@ using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -1452,8 +1453,64 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     return selectNotNullExpression.Left.GetNearestCommonTypeWith(assembly, context, selectNotNullExpression.Right);
                 }
+                else if (expression is SwitchExpressionNode switchExpression)
+                {
+                    List<IDSharpType> caseTypes = [];
+                    bool hasDefault = false;
+
+                    foreach (var caseExpression in switchExpression.Cases)
+                    {
+                        if (caseExpression.ValueExpression == null)
+                        {
+                            throw new DSharpCompilerException("Case should contains body", caseExpression);
+                        }
+
+                        hasDefault |= caseExpression.IsDefault;
+                        var type = caseExpression.ValueExpression.GetRealExpressionType(assembly, context);
+                        caseTypes.Add(type);
+                    }
+
+                    if (!hasDefault)
+                    {
+                        throw new DSharpCompilerException("Switch expression requires default case", expression);
+                    }
+                    if (caseTypes.Count == 0)
+                    {
+                        throw new DSharpCompilerException("Empty switch expression", expression);
+                    }
+
+                    return caseTypes.GetNearestCommonType();
+                }
 
                 throw new ArgumentException($"Unable to get type of expression: {expression}", nameof(expression));
+            }
+            /// <summary>
+            /// Get expression returning type or throw exception
+            /// </summary>
+            /// <param name="assembly">Assembly builder for finding types</param>
+            /// <param name="context">Compiler context</param>
+            /// <returns>Type of returning value</returns>
+            /// <exception cref="DSharpCompilerException">Unable to find value expression type</exception>
+            public IDSharpType GetRealExpressionType(DSharpAssemblyBuilder assembly, DSharpCompilerContext context = default)
+            {
+                IDSharpMemberInfo? valueMember;
+
+                try
+                {
+                    valueMember = expression.GetExpressionType(assembly, context);
+                }
+                catch (Exception error)
+                {
+                    throw new DSharpCompilerException("Unable to find value expression type", expression, error);
+                }
+
+                if (valueMember == null ||
+                    !valueMember.TryGetTypeOrReturnType(out var valueType))
+                {
+                    throw new DSharpCompilerException("Unable to find value expression type", expression);
+                }
+
+                return valueType;
             }
             public IDSharpType? VerifyAndUniteType(DSharpAssemblyBuilder assembly, ExpressionNode otherExpression, DSharpCompilerContext context = default)
             {

@@ -6,12 +6,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// Node that represents case statement
     /// </summary>
     /// <param name="token">Token that represents case keyword</param>
-    public partial class CaseStatementNode(DSharpToken token) : StatementNode(token)
+    public partial class CaseStatementNode(DSharpToken token) : StatementNode(token), ICaseNode
     {
         /// <summary>
         /// Expression of comparing value
         /// </summary>
-        public ExpressionNode? ValueExpression { get; set; }
+        public ExpressionNode? KeyExpression { get; set; }
         /// <summary>
         /// Case body
         /// </summary>
@@ -20,6 +20,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Is default case
         /// </summary>
         public bool IsDefault => Token.Type == DSharpTokenType.Default;
+        AstNode? ICaseNode.ValueNode => Body;
+
+        #region Controls
+
+        AstNode ICaseNode.AsNode() => this;
+
+        #endregion
 
         #region Static
 
@@ -27,9 +34,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Parse case statement starts with current token
         /// </summary>
         /// <param name="stream">Abstract syntax tree parser stream</param>
-        /// <param name="isLambda">Is lambda case required to parse</param>
         /// <returns>Parsed case statement</returns>
-        public static CaseStatementNode Parse(AstParserStream stream, bool isLambda)
+        public static CaseStatementNode Parse(AstParserStream stream)
         {
             DSharpToken token;
             ExpressionNode? valueExpression;
@@ -41,25 +47,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
             else
             {
-                if (isLambda)
-                {
-                    valueExpression = ExpressionNode.ParseExpression(stream);
-                    token = valueExpression.Token;
-                }
-                else
-                {
-                    token = stream.Eat(DSharpTokenType.Case);
-                    valueExpression = ExpressionNode.ParseExpression(stream);
-                }
+                token = stream.Eat(DSharpTokenType.Case);
+                valueExpression = ExpressionNode.ParseExpression(stream);
             }
 
-            var body = isLambda ? BlockStatementNode.Parse(stream, DSharpStatementType.Code, DSharpTokenType.Semicolon, DSharpTokenType.Lambda) :
-                                  BlockStatementNode.Parse(stream, DSharpStatementType.Code, false, DSharpTokenType.Colon, DSharpTokenType.RightBrace,
-                                                                                                                           DSharpTokenType.Case,
-                                                                                                                           DSharpTokenType.Default);
+            var body = BlockStatementNode.Parse(stream, DSharpStatementType.Code, false, DSharpTokenType.Colon, DSharpTokenType.RightBrace,
+                                                                                                                DSharpTokenType.Case,
+                                                                                                                DSharpTokenType.Default);
             CaseStatementNode caseStatement = new(token)
             {
-                ValueExpression = valueExpression,
+                KeyExpression = valueExpression,
                 Body = body
             };
 

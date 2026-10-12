@@ -225,6 +225,7 @@ public unsafe class Program
         TestNullable();
         TestReferenceArgs(ref testCounter, ref valuePlayerForRef);
         TestPointers();
+        TestSwitch();
 
         Console.WriteLine("End counter value: " + testCounter);
 
@@ -451,6 +452,52 @@ public unsafe class Program
         Console.WriteLine();
         Console.WriteLine("==================");
         Console.WriteLine();
+    }
+    private static void TestSwitch()
+    {
+        Console.WriteLine();
+        Console.WriteLine("Switch statement:");
+        Console.WriteLine();
+
+        TestSwitchStatement(0);
+        TestSwitchStatement(67);
+        TestSwitchStatement(100);
+
+        Console.WriteLine();
+        Console.WriteLine("Switch expression:");
+        Console.WriteLine();
+
+        Console.WriteLine(TestSwitchExpression(ProgramType.Default));
+        Console.WriteLine(TestSwitchExpression(ProgramType.MegaGovno));
+        Console.WriteLine(TestSwitchExpression((ProgramType)67));
+
+        Console.WriteLine();
+        Console.WriteLine("glina");
+        Console.WriteLine();
+    }
+    private static void TestSwitchStatement(int state)
+    {
+        switch (state)
+        {
+            case 0:
+                Console.WriteLine("Zero state");
+                break;
+            case 67:
+                Console.WriteLine("67s");
+                break;
+            default:
+                Console.WriteLine("Default state");
+                break;
+        }
+    }
+    private static string TestSwitchExpression(ProgramType type)
+    {
+        return type switch
+        {
+            ProgramType.Default => "Is default program",
+            ProgramType.MegaGovno => "MegaGovno!!!!!",
+            _ => "Дрисня"
+        };
     }
 
     private static bool TryGetZeBlack(string value, out string? result)

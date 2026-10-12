@@ -34,7 +34,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             if ((stream.Check(DSharpTokenType.Delegate, unsafeOffset) && stream.Check(DSharpTokenType.LeftBrace, unsafeOffset + 1)) ||
                 (stream.Check(DSharpTokenType.Delegate, unsafeOffset) && stream.Check(DSharpTokenType.LeftParen, unsafeOffset + 1)) ||
-                (stream.Check(DSharpTokenType.Identifier, unsafeOffset) && stream.Check(DSharpTokenType.Lambda, unsafeOffset + 1)))
+                (!stream.Check(DSharpTokenType.Dot, unsafeOffset - 1) && stream.Check(DSharpTokenType.Identifier, unsafeOffset) && stream.Check(DSharpTokenType.Lambda, unsafeOffset + 1)))
             {
                 return true;
             }

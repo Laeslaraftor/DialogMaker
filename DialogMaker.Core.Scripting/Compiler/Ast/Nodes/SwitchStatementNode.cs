@@ -39,7 +39,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             while (!stream.Check(DSharpTokenType.RightBrace))
             {
-                var caseStatement = CaseStatementNode.Parse(stream, false);
+                var caseStatement = CaseStatementNode.Parse(stream);
                 caseStatement.Parent = switchStatement;
 
                 switchStatement.Cases.Add(caseStatement);

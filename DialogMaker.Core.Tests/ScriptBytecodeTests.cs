@@ -79,6 +79,8 @@ namespace DialogMaker.Core.Tests
         [TestCase("Program", "TestNullable")]
         [TestCase("Program", "TestCaptures")]
         [TestCase("Program", "TestReferenceArgs")]
+        [TestCase("Program", "TestSwitchStatement")]
+        [TestCase("Program", "TestSwitchExpression")]
         [TestCase("Program.<>_Capture337_5", "Increment")]
         [TestCase("Program", "TestPointers")]
         [TestCase("System.Random", "Next")]

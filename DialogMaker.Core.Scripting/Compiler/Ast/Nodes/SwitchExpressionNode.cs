@@ -15,7 +15,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <summary>
         /// List of cases
         /// </summary>
-        public List<CaseStatementNode> Cases { get; set; } = [];
+        public List<CaseExpressionNode> Cases { get; set; } = [];
 
         #region Static
 
@@ -37,11 +37,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             while (!stream.Check(DSharpTokenType.RightBrace))
             {
-                var caseStatement = CaseStatementNode.Parse(stream, true);
-                stream.Eat(DSharpTokenType.Semicolon);
-
+                var caseStatement = CaseExpressionNode.Parse(stream);
                 caseStatement.Parent = switchExpression;
                 switchExpression.Cases.Add(caseStatement);
+
+                if (!stream.Check(DSharpTokenType.Comma))
+                {
+                    break;
+                }
+
+                stream.Eat(DSharpTokenType.Comma);
             }
 
             stream.Eat(DSharpTokenType.RightBrace);

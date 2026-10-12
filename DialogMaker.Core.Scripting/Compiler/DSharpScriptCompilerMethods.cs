@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+﻿using DialogMaker.Core.Scripting.Compiler.Analyzers;
+using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
@@ -519,9 +520,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                         {
                             if (variable.Declaration.Node == parameterNode)
                             {
-                                if (parameter.Mode == DSharpMethodParameterMode.Ref)
+                                if (parameter.Mode == DSharpMethodParameterMode.Ref ||
+                                    parameter.Mode == DSharpMethodParameterMode.Out)
                                 {
-                                    throw new DSharpCompilerException($"Ref parameters can not be captured, pass it in parameters.", variable.References);
+                                    throw new DSharpCompilerException($"{parameter.Mode} parameters can not be captured, pass it in parameters.", variable.References);
                                 }
 
                                 var field = captureInfo.Type.Fields.First(f => f.Name == variable.Name);
@@ -1121,7 +1123,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                 }
 
-                var enumeratorVariable = GetCustomVariable($"foreachEnumerator_{statement.Line}_{statement.Column}", getEnumeratorMethod.ReturnType!, ref settings);
+                var enumeratorVariable = GetCustomVariable($"<>enumerator_{statement.Line}_{statement.Column}", getEnumeratorMethod.ReturnType!, ref settings);
 
                 code.Call(getEnumeratorMethod);
                 code.PopOffset(1);
@@ -1504,6 +1506,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                 context.IsUnsafe = true;
 
                 CompileStatement(method, unsafeStatement.Body, depth + 1, code, ref settings, context);
+            }
+            else if (statement is SwitchStatementNode switchStatement)
+            {
+                if (switchStatement.ValueExpression == null)
+                {
+                    throw new DSharpCompilerException("Switch should contains value expression", statement);
+                }
+
+                CompileSwitch(method, code, switchStatement.ValueExpression, switchStatement.Cases, statement, ref settings, context);
             }
             else if (statement is not InvokableStatementNode)
             {
@@ -2020,7 +2031,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                      expression is CastExpressionNode ||
                      expression is AsExpressionNode ||
                      expression is DelegateExpressionNode ||
-                     expression is IsExpressionNode)
+                     expression is IsExpressionNode ||
+                     expression is SwitchExpressionNode)
             {
                 return CompileValueExpression(method, expression, ref settings, parentExpression, context);
             }
@@ -3336,6 +3348,16 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 return fieldMember;
+            }
+            else if (expression is SwitchExpressionNode switchExpression)
+            {
+                if (switchExpression.ValueExpression == null)
+                {
+                    throw new DSharpCompilerException("Switch should contains value expression", expression);
+                }
+
+                CompileSwitch(method, code, switchExpression.ValueExpression, switchExpression.Cases, expression, ref settings, context);
+                return null;
             }
 
             throw new DSharpCompilerException("Unable to compile expression", expression);
@@ -4774,6 +4796,103 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             return outputParameters;
+        }
+        private void CompileSwitch(DSharpMethodBuilder method, DSharpBytecodeBuilder code, ExpressionNode valueExpression, IEnumerable<ICaseNode> cases, AstNode parent, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context, int depth = -1)
+        {
+            if (!cases.Any())
+            {
+                AddWarning("Empty switch block", parent);
+                return;
+            }
+
+            IDSharpType GetAndValidateType(ExpressionNode expression, bool onlyConstantValue)
+            {
+                return valueExpression.GetRealExpressionType(Assembly, context);
+            }
+
+            var valueType = GetAndValidateType(valueExpression, false);
+
+            CompileValueExpression(method, valueExpression, ref settings, null, context);
+
+            var endInstruction = code.Empty(true);
+            code.Instructions.Remove(endInstruction);
+
+            var caseContext = context;
+            caseContext.CurrentLoopEndInstruction = endInstruction;
+            ICaseNode? defaultCase = null;
+            IDSharpMethodInfo? equalsMethod = valueType.IsValueType() ? null : Assembly.ObjectTypeInfo.EqualsMethod;
+
+            bool CompileCase(ICaseNode caseNode, ref DSharpMethodCompileSettings settings)
+            {
+                var valueNode = caseNode.ValueNode
+                    ?? throw new DSharpCompilerException("Case should contains value", caseNode.AsNode());
+
+                if (valueNode is StatementNode statement)
+                {
+                    CompileStatement(method, statement, null, depth, code, ref settings, caseContext);
+                    return false;
+                }
+                else if (valueNode is ExpressionNode expression)
+                {
+                    var member = CompileExpression(method, expression, ref settings, null, context);
+                    return DSharpExpressionAnalyzer.IsAlwaysReturnsValue(expression) ||
+                           (member != null && member.TryGetTypeOrReturnType(out _));
+                }
+
+                throw new DSharpCompilerException("Invalid case body", valueNode);
+            }
+
+            foreach (var caseNode in cases)
+            {
+                if (caseNode.IsDefault)
+                {
+                    if (defaultCase != null)
+                    {
+                        throw new DSharpCompilerException("Default case already exists", caseNode.AsNode());
+                    }
+
+                    defaultCase = caseNode;
+                    continue;
+                }
+
+                var keyExpression = caseNode.KeyExpression
+                    ?? throw new DSharpCompilerException("Value not specified", caseNode.AsNode());
+                var keyType = GetAndValidateType(keyExpression, true);
+
+                if (!keyType.IsAssignableTo(valueType))
+                {
+                    throw new DSharpCompilerException("Case value should have same type as switching value or at least can bt implicit casted", keyExpression);
+                }
+
+                CompileExpressionValueWithRequestedType(method, valueType, code, keyExpression, ref settings, null, caseContext);
+
+                if (equalsMethod != null)
+                {
+                    code.CallAuto(equalsMethod);
+                }
+                else
+                {
+                    code.Equals();
+                }
+
+                var skipToNext = code.JumpIfFalse();
+                code.PopRepeat(3);
+                bool returnsValue = CompileCase(caseNode, ref settings);
+
+                if (returnsValue)
+                {
+                    code.Jump(endInstruction);
+                }
+
+                skipToNext.ReferencedInstruction = code.PopRepeat(2);
+            }
+
+            if (defaultCase != null)
+            {
+                CompileCase(defaultCase, ref settings);
+            }
+
+            code.Instructions.Add(endInstruction);
         }
 
         #endregion
