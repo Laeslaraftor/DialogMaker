@@ -18,24 +18,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             var left = context.Stack.Peek(1);
             var right = context.Stack.Peek();
-            var leftType = left.ObjectType;
-            var rightType = right.ObjectType;
-
-            bool result;
-
-            if (leftType != rightType &&
-                leftType != null && rightType != null &&
-                leftType->Converter != null && rightType->Converter != null)
-            {
-                var leftDecimal = left.ReadAsDecimal();
-                var rightDecimal = right.ReadAsDecimal();
-
-                result = leftDecimal == rightDecimal;
-            }
-            else
-            {
-                result = DSharpStack.FrameInfo.ValueEquals(left, right);
-            }
+            bool result = Equals(left, right);
 
             context.Stack.Push(result);
 
@@ -62,6 +45,24 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// Global instance of <see cref="DSharpBytecodeOperation.Equals"/> operation executor
         /// </summary>
         public static readonly DSharpEqualsInstructionExecutor Instance = new();
+
+        internal static unsafe bool Equals(DSharpStack.FrameInfo left, DSharpStack.FrameInfo right)
+        {
+            var leftType = left.ObjectType;
+            var rightType = right.ObjectType;
+
+            if (leftType != rightType &&
+                leftType != null && rightType != null &&
+                leftType->Converter != null && rightType->Converter != null)
+            {
+                var leftDecimal = left.ReadAsDecimal();
+                var rightDecimal = right.ReadAsDecimal();
+
+                return leftDecimal == rightDecimal;
+            }
+
+            return DSharpStack.FrameInfo.ValueEquals(left, right);
+        }
 
         private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {

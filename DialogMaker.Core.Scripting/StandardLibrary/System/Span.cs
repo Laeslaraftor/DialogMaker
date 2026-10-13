@@ -77,7 +77,7 @@ public struct Span<T>
 
         return result;
     }
-    public Span<char> Slice(int startIndex, int length)
+    public Span<T> Slice(int startIndex, int length)
     {
         return new(_itemsPointer + sizeof(T) * startIndex, length);
     }

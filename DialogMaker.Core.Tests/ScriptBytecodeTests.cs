@@ -93,6 +93,7 @@ namespace DialogMaker.Core.Tests
         [TestCase("Enemy", "PrintMessage")]
         [TestCase("ValuePlayer", "PrintMessage")]
         [TestCase("ValuePlayer", "ctor")]
+        [TestCase("TestEnumerable", "GetEnumerator")]
         public static void PrintMethodBytecode(string? typeName, string methodName)
         {
             var assembly = ScriptCompilerTests.CompileStandardLibrary();

@@ -25,3 +25,16 @@
 	
 	isEnabled = false;
 }
+
+void LoopFunction()
+{
+	foreach (var value in enumerable)
+	{
+		void PrintValue()
+		{
+			Console.WriteLine(value);
+		}
+		
+		PrintValue();
+	}
+}

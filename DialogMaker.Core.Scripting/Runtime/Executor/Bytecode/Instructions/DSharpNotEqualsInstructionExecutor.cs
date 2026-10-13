@@ -18,7 +18,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             var left = context.Stack.Peek(1);
             var right = context.Stack.Peek();
-            bool result = !DSharpStack.FrameInfo.ValueEquals(left, right);
+            bool result = !DSharpEqualsInstructionExecutor.Equals(left, right);
 
             context.Stack.Push(result);
 

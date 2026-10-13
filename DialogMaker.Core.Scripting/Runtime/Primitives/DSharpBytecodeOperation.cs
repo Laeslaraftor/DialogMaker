@@ -361,6 +361,15 @@ namespace DialogMaker.Core.Scripting.Runtime
         [Executor(typeof(DSharpCastInstructionExecutor))]
         Cast,
         /// <summary>
+        /// Boxes last value is stack. 
+        /// If value is reference type nothing will happen.
+        /// It replaces last value with reference to object
+        /// </summary>
+        [ArgsCount(0)]
+        [RequestsStackValues(1)]
+        [Executor(typeof(DSharpBoxInstructionExecutor))]
+        Box,
+        /// <summary>
         /// Try to cast last value to stack to specified type.
         /// If cast is unavailable it return null, otherwise casted value
         /// </summary>

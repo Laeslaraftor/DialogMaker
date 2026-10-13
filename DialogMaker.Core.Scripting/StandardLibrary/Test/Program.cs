@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Internal.System.Runtime;
@@ -267,6 +268,35 @@ public unsafe class Program
             i++;
         }
 
+        Console.WriteLine("Test enumerable:");
+        TestEnumerable testEnumerable = new();
+
+        foreach (var value in testEnumerable)
+        {
+            void PrintValue()
+            {
+                Console.WriteLine(value);
+            }
+
+            PrintValue();
+        }
+
+        Console.WriteLine();
+        testEnumerable.ThrowException = true;
+
+        try
+        {
+            foreach (var value in testEnumerable)
+            {
+                Console.WriteLine(value);
+            }
+        }
+        catch (Exception error)
+        {
+            Console.WriteLine("Exception from foreach: " + error.Message);
+        }
+
+        Console.WriteLine();
         var firstValue = Enumerator.FirstOrDefault(values);
 
         if (firstValue != null)
@@ -513,6 +543,67 @@ public unsafe class Program
     }
 }
 
+public class TestEnumerable : IEnumerable
+{
+    public bool ThrowException;
+
+    public IEnumerator GetEnumerator()
+    {
+        return new Enumerator()
+        {
+            ThrowException = ThrowException
+        };
+    }
+
+    private class Enumerator : IEnumerator, IDisposable
+    {
+        public Enumerator()
+        {
+            Current = 0;
+        }
+
+        public object Current { get; private set; }
+        public bool ThrowException;
+
+        private int _counter;
+
+        public void Dispose()
+        {
+            Console.WriteLine("Enumerator disposed");
+        }
+
+        public bool MoveNext()
+        {
+            if (_counter >= 5)
+            {
+                if (ThrowException)
+                {
+                    throw new InvalidOperationException("Exception by enumerator");
+                }
+
+                return false;
+            }
+
+            if (ThrowException)
+            {
+                _counter += 2;
+            }
+            else
+            {
+                _counter++;
+            }
+
+            Current = _counter;
+
+            return true;
+        }
+
+        public void Reset()
+        {
+            _counter = 0;
+        }
+    }
+}
 public struct ValuesStorage
 {
     public int Value;

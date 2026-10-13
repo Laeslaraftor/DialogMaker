@@ -73,22 +73,28 @@ namespace DialogMaker.Core.Tests
         public static void TestGetCapturingInfo()
         {
             var script = DSharpAstParser.ParseScript(ScriptLexerTests.CapturingTestPath);
-            var firstStatement = script.Statements.FirstOrDefault();
 
-            if (firstStatement == null)
+            if (script.Statements.Count == 0)
             {
                 Debug.Fail("Script has no statements");
                 return;
             }
-            if (!DSharpCaptureInfo.TryFind(firstStatement, out var info))
-            {
-                Console.WriteLine("Capture info not found");
-                return;
-            }
 
-            foreach (var capture in info.Captures)
+            foreach (var statement in script.Statements)
             {
-                Console.WriteLine(capture);
+                if (!DSharpCaptureInfo.TryFind(statement, out var info))
+                {
+                    Console.WriteLine("Capture info not found");
+                    return;
+                }
+
+                foreach (var capture in info.Captures)
+                {
+                    Console.WriteLine(capture);
+                }
+
+                Console.WriteLine();
+                Console.WriteLine();
             }
         }
 

@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Scripting.Runtime.Executor;
+﻿using DialogMaker.Core.Scripting.Compiler.Builders;
+using DialogMaker.Core.Scripting.Runtime.Executor;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
@@ -279,7 +280,9 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <returns>Exception message</returns>
         public static string GetMessage(DSharpObject* exception)
         {
-            if (exception->Type->TryGetField("Message__value", out var field))
+            string fieldName = DSharpFieldBuilder.GetNameForProperty("Message");
+
+            if (exception->Type->TryGetField(fieldName, out var field))
             {
                 var size = field->FieldType->ItemSize;
                 byte* fieldBuffer = stackalloc byte[size];
@@ -295,7 +298,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                 return ToString(value);
             }
 
-            throw new ArgumentException($"Unable to find field with message value at {exception->ToString()}", nameof(exception));
+            throw new ArgumentException($"Unable to find field with message value at \"{exception->ToString()}\"", nameof(exception));
         }
 
         private static void CheckType(DSharpObject* obj, DSharpBuildInTypeInfo typeInfo, bool allowNull = true)
@@ -307,7 +310,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                     return;
                 }
 
-                throw new ArgumentException($"Null object", nameof(obj));
+                throw new ArgumentException("Null object", nameof(obj));
             }
             if (CompareString(obj->Type->Namespace, typeInfo.Namespace) &&
                 CompareString(obj->Type->Name, typeInfo.Name))

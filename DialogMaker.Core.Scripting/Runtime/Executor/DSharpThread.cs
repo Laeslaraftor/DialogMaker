@@ -317,13 +317,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                         methodExecutor->NowClosingTryCatchFinallyBlock = false;
                         exception = methodExecutor->UnhandledException;
                     }
-                    if (DSharpMethodExecutor.TryFindCatchBlockForException(methodExecutor, exception, out var catchBlock))
+                    if (DSharpMethodExecutor.TryFindCatchBlockForException(methodExecutor, exception, out var catchBlock) &&
+                        !catchBlock->AlreadyUsed)
                     {
-                        if (catchBlock.IsFinallyBlock)
+                        catchBlock->AlreadyUsed = true;
+
+                        if (catchBlock->IsFinallyBlock)
                         {
                             SetException(exception);
                             methodExecutor->NowClosingTryCatchFinallyBlock = true;
-                            methodExecutor->InstructionIndex = catchBlock.InstructionIndex;
+                            methodExecutor->InstructionIndex = catchBlock->InstructionIndex;
                             continueExecuting = true;
                             return true;
                         }
@@ -339,9 +342,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                         }
 
                         methodExecutor->HaveUnhandledException = false;
-                        methodExecutor->InstructionIndex = catchBlock.InstructionIndex;
+                        methodExecutor->InstructionIndex = catchBlock->InstructionIndex;
+                        stack.PushReference(exception);
 
-                        if (!methodExecutor->ContainsFinallyBlock(catchBlock.TryCatchFinallyBlockId))
+                        if (!methodExecutor->ContainsFinallyBlock(catchBlock->TryCatchFinallyBlockId, out _))
                         {
                             DSharpExecutionContext.EndTryCatchFinally(methodExecutor);
                         }

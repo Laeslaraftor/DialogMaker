@@ -21,8 +21,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             if (lastValue.ValueType == DSharpStackValueType.Reference)
             {
-                // todo: add type checking
                 exceptionInstance = (DSharpObject*)lastValue.ReadReference();
+
+                if (exceptionInstance != null &&
+                    !exceptionInstance->Type->IsInheritFrom(context.TypesProvider.Exception))
+                {
+                    return context.ThrowExecutionException($"Throwing available only for exceptions, but got \"{exceptionInstance->Type->ToString()}\"");
+                }
             }
 
             return DSharpMethodExecutionCallback.Throw(exceptionInstance);

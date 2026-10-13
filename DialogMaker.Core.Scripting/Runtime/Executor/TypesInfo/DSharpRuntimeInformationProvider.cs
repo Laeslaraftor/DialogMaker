@@ -225,13 +225,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 return field;
             }
         }
-        public DSharpRuntimeTypeInfo* ArrayBase
+        public DSharpRuntimeTypeInfo* Exception
         {
             get
             {
                 if (field == null)
                 {
-                    field = GetRuntimeInfo(DSharpBuildInTypes.Extra.ArrayBase);
+                    field = GetRuntimeInfo(DSharpBuildInTypes.Extra.Exception);
                 }
 
                 return field;

@@ -39,6 +39,15 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
         }
 
+        //public override void VisitForeachStatementNode(ForeachStatementNode node)
+        //{
+        //    base.VisitForeachStatementNode(node);
+
+        //    if (node.Variable != null)
+        //    {
+        //        VisitVariableNode(node.Variable);
+        //    }
+        //}
         public override void VisitVariableNode(VariableNode node)
         {
             base.VisitVariableNode(node);
@@ -132,7 +141,8 @@ namespace DialogMaker.Core.Scripting.Compiler
             while (parent != null)
             {
                 if (parent.Parent is MemberAccessExpressionNode memberAccess &&
-                    memberAccess.Member == parent)
+                    memberAccess.Member == parent &&
+                    parent is not CallExpressionNode)
                 {
                     return false;
                 }

@@ -155,5 +155,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             Span<byte> span = new(buffer, bufferSize);
             span.Clear();
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool Equals(void* left, void* right, int bufferSize)
+        {
+            ReadOnlySpan<byte> leftSpan = new(left, bufferSize);
+            ReadOnlySpan<byte> rightSpan = new(right, bufferSize);
+
+            return leftSpan.SequenceEqual(rightSpan);
+        }
     }
 }

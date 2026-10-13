@@ -799,6 +799,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.Cast, type);
         }
         /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.Box"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction Box()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Box);
+        }
+        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.As"/>
         /// </summary>
         /// <param name="type">Type to cast</param>

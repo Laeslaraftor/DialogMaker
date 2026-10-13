@@ -22,6 +22,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// </summary>
         public bool IsFinallyBlock;
         /// <summary>
+        /// Is current block already used. 
+        /// Every block can be used only once, 
+        /// otherwise infinite exceptions loop can be happen and it causes stack overflowing
+        /// </summary>
+        public bool AlreadyUsed;
+        /// <summary>
         /// Exception type that accepting by this catch block.
         /// Empty field means that this catch block accept all exceptions
         /// </summary>

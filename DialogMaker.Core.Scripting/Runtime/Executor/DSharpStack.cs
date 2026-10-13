@@ -1026,7 +1026,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             {
                 static bool IsNull(FrameInfo frame)
                 {
-                    if (0 >= frame.Size)
+                    if (0 >= frame.Size)    
                     {
                         return true;
                     }
@@ -1054,12 +1054,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 else if (left.ValueType == DSharpStackValueType.Null)
                 {
                     return IsNull(right);
-                    return RuntimeExtensions.IsEmpty((void*)right.StackPointer, right.Size);
                 }
                 else if (right.ValueType == DSharpStackValueType.Null)
                 {
                     return IsNull(left);
-                    return RuntimeExtensions.IsEmpty((void*)left.StackPointer, left.Size);
                 }
                 else if (left.IsNumber && right.IsNumber)
                 {
@@ -1068,17 +1066,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
                 return false;
             }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             private static bool StackValueEquals(FrameInfo left, FrameInfo right)
             {
-                for (int i = 0; i < left.Size; i++)
-                {
-                    if (left[i] != right[i])
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
+                return RuntimeExtensions.Equals((void*)left.StackPointer, (void*)right.StackPointer, Math.Min(left.Size, right.Size));
             }
         }
         [StructLayout(LayoutKind.Sequential)]

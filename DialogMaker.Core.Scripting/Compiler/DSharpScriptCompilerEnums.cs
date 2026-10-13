@@ -209,12 +209,27 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 throw new DSharpCompilerException("Enum instance value not found", description.DeclarationNode);
             }
+            if (description.InstanceValueField.FieldType == null)
+            {
+                throw new DSharpCompilerException("Instance field does not have type", description.DeclarationNode);
+            }
             if (description.ValueConstructor == null)
             {
                 throw new DSharpCompilerException("Enum value constructor not found", description.DeclarationNode);
             }
 
             var code = description.ExplicitEnumToValueOperator.Method.GetBytecodeBuilder();
+            var instanceValueFieldType = (IDSharpType)Assembly.GetType(description.InstanceValueField.FieldType);
+            Action<DSharpBytecodeBuilder> compareValues; 
+
+            if (instanceValueFieldType.IsValueType())
+            {
+                compareValues = code => code.Equals();
+            }
+            else
+            {
+                compareValues = code => code.Call(Assembly.ObjectTypeInfo.EqualsMethod);
+            }
 
             if (description.ValueFields != null)
             {
@@ -223,7 +238,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     code.LoadField(valueField);
                     code.LoadInstanceField(description.InstanceValueField);
                     code.LoadLocal(description.ExplicitEnumToValueOperator.Parameters[0]);
-                    code.Call(Assembly.ObjectTypeInfo.EqualsMethod);
+                    compareValues(code);
                     var skipInstruction = code.JumpIfFalse();
                     code.PopRepeat(3);
                     code.Return();

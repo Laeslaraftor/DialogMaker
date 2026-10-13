@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
@@ -86,20 +87,23 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// Check finally block containing on try-catch-finally block with specified id
         /// </summary>
         /// <param name="tryCatchFinallyId">try-catch-finally id</param>
+        /// <param name="result">Finally block description</param>
         /// <returns>Is finally block contains in try-catch-finally with specified id</returns>
-        public readonly bool ContainsFinallyBlock(int tryCatchFinallyId)
+        public readonly bool ContainsFinallyBlock(int tryCatchFinallyId, out DSharpTryCatchFinallyDescription* result)
         {
             for (int i = 0; i < TryCatchFinallyDescriptions.Count; i++)
             {
-                var description = TryCatchFinallyDescriptions[i];
+                var description = TryCatchFinallyDescriptions.GetItemReference(i);
 
-                if (description.TryCatchFinallyBlockId == tryCatchFinallyId &&
-                    description.IsFinallyBlock)
+                if (description->TryCatchFinallyBlockId == tryCatchFinallyId &&
+                    description->IsFinallyBlock)
                 {
+                    result = description;
                     return true;
                 }
             }
 
+            result = null;
             return false;
         }
         /// <summary>
@@ -108,28 +112,28 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <param name="exception">Exception for searching catch block that can handle it</param>
         /// <param name="result">Catch block that found</param>
         /// <returns>Is catch block found</returns>
-        public static bool TryFindCatchBlockForException(DSharpMethodExecutor* executor, DSharpObject* exception, out DSharpTryCatchFinallyDescription result)
+        public static bool TryFindCatchBlockForException(DSharpMethodExecutor* executor, DSharpObject* exception, out DSharpTryCatchFinallyDescription* result)
         {
             var descriptions = &executor->TryCatchFinallyDescriptions;
             var currentId = executor->CurrentTryCatchFinallyId;
 
-            DSharpTryCatchFinallyDescription? anyExceptionHandler = null;
-            DSharpTryCatchFinallyDescription? finallyBlock = null;
+            DSharpTryCatchFinallyDescription* anyExceptionHandler = null;
+            DSharpTryCatchFinallyDescription* finallyBlock = null;
 
             for (int i = descriptions->Count - 1; i >= 0; i--)
             {
-                var description = (*descriptions)[i];
+                var description = (*descriptions).GetItemReference(i);
 
-                if (description.TryCatchFinallyBlockId != currentId)
+                if (description->TryCatchFinallyBlockId != currentId)
                 {
                     continue;
                 }
-                if (description.ExceptionType == null)
+                if (description->ExceptionType == null)
                 {
                     anyExceptionHandler = description;
                     continue;
                 }
-                else if (description.IsFinallyBlock)
+                else if (description->IsFinallyBlock)
                 {
                     finallyBlock = description;
                     continue;
@@ -137,8 +141,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
                 var exceptionInstanceType = exception->Type;
 
-                if (exceptionInstanceType == description.ExceptionType ||
-                    exceptionInstanceType->IsInheritFrom(description.ExceptionType))
+                if (exceptionInstanceType == description->ExceptionType ||
+                    exceptionInstanceType->IsInheritFrom(description->ExceptionType))
                 {
                     result = description;
                     return true;
@@ -147,12 +151,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             if (anyExceptionHandler != null)
             {
-                result = anyExceptionHandler.Value;
+                result = anyExceptionHandler;
                 return true;
             }
             else if (finallyBlock != null)
             {
-                result = finallyBlock.Value;
+                result = finallyBlock;
                 return true;
             }
 

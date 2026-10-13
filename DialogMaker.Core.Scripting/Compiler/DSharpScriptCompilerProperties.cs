@@ -24,7 +24,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new DSharpCompilerException("Unable to create auto field for property that declared not in builder", _createdProperties[property]);
                 }
 
-                field = declaringTypeBuilder.CreateField(ValueFieldNamePrefix + property.Name);
+                field = declaringTypeBuilder.CreateField(DSharpFieldBuilder.GetNameForProperty(property));
                 field.FieldType = property.PropertyType;
                 field.Access = DSharpAccessModifier.Private;
                 field.IsStatic = property.IsStatic;
@@ -149,7 +149,6 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         #region Constants
 
-        private const string ValueFieldNamePrefix = "<>__backingField_";
         private const string FieldKeyword = "field";
 
         #endregion

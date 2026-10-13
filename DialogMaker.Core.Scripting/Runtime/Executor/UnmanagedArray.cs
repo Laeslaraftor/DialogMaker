@@ -202,6 +202,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         {
             return HashCode.Combine(_length, (nint)_items);
         }
+        public override string ToString()
+        {
+            if (typeof(T) == typeof(char))
+            {
+                return new((char*)_items, 0, _length);
+            }
+
+            return string.Join(", ", this.Select(i => i.ToString()));
+        }
 
         public static implicit operator ReadOnlySpan<T>(UnmanagedArray<T> array) => new(array._items, array._length);
         public static implicit operator T*(UnmanagedArray<T> array) => array._items;

@@ -49,6 +49,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         private readonly UnmanagedArray<T> _array = array;
         private int _count;
 
+        public readonly unsafe T* GetItemReference(int index) => _array.GetItemReference(index);
         /// <summary>
         /// Get index of specified item
         /// </summary>

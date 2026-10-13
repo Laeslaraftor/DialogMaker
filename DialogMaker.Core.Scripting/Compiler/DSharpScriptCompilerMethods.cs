@@ -5,6 +5,7 @@ using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
+using static DialogMaker.Core.Scripting.Compiler.DSharpCaptureInfo;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -1070,64 +1071,142 @@ namespace DialogMaker.Core.Scripting.Compiler
                     foreachStatement.EnumeratorExpression == null ||
                     foreachStatement.Body == null)
                 {
-                    throw new ArgumentException($"Incomplete foreach statement: {statement}", nameof(statement));
+                    throw new DSharpCompilerException($"Incomplete foreach statement", statement);
                 }
 
-                context.Scope = new DSharpCompilerMethodScope(method, context.Scope);
-                var expressionReturnType = foreachStatement.EnumeratorExpression.GetExpressionType(Assembly, context) as IDSharpType;
-                var expressionResult = CompileValueExpression(method, foreachStatement.EnumeratorExpression, ref settings, null, context);
+                DSharpCompilerMethodScope scope = new(method, context.Scope);
+                context.Scope = scope;
+                var expressionReturnType = foreachStatement.EnumeratorExpression.GetRealExpressionType(Assembly, context);
+                DSharpIEnumeratorType enumerator;
 
-                if (expressionReturnType == null)
+                if (expressionReturnType.IsAssignableTo(Assembly.IEnumeratorType.Type))
                 {
-                    throw new ArgumentException($"Unable to get return type of expression in foreach statement: {foreachStatement.EnumeratorExpression}", nameof(statement));
-                }
-
-                var returnTypeMethods = expressionReturnType.GetAllMembers(m => m is IDSharpMethodInfo &&
-                                                                                m.Access == DSharpAccessModifier.Public)
-                                                            .Cast<IDSharpMethodInfo>();
-                var getEnumeratorMethod = returnTypeMethods.FirstOrDefault(m => m.Name == "GetEnumerator" &&
-                                                                                m.ReturnType != null &&
-                                                                                m.ReturnType.IsAssignableTo(Assembly.IEnumeratorType.Type));
-
-                if (getEnumeratorMethod == null)
-                {
-                    throw new ArgumentException($"Unable to find public GetEnumerator method with \"{Assembly.IEnumeratorType}\" as return value in expression of foreach statement: {statement}", nameof(statement));
-                }
-
-                var enumerator = DSharpIEnumeratorType.Create(getEnumeratorMethod.ReturnType!);
-                IDSharpParameterInfo variable;
-
-                if (foreachStatement.Variable.Type?.Token.Type == DSharpTokenType.Var)
-                {
-                    variable = GetCustomVariable(foreachStatement.Variable.Name, enumerator.CurrentProperty.PropertyType, ref settings);
+                    CompileExpressionValueWithRequestedType(method, Assembly.IEnumeratorType.Type, code, foreachStatement.EnumeratorExpression, ref settings, null, context);
+                    enumerator = DSharpIEnumeratorType.Create(expressionReturnType);
                 }
                 else
                 {
-                    variable = GetVariable(foreachStatement.Variable, ref settings);
+                    CompileValueExpression(method, foreachStatement.EnumeratorExpression, ref settings, null, context);
 
-                    if (variable is not DSharpMethodBuilderParameter variableBuilder)
-                    {
-                        throw new InvalidOperationException($"Unable to create variable for foreach method because immutable variable was returned: {statement}");
-                    }
+                    var returnTypeMethods = expressionReturnType.GetAllMembers(m => m is IDSharpMethodInfo &&
+                                                                                    m.Access == DSharpAccessModifier.Public)
+                                                                .Cast<IDSharpMethodInfo>();
+                    var getEnumeratorMethod = returnTypeMethods.FirstOrDefault(m => m.Name == "GetEnumerator" &&
+                                                                                    m.ReturnType != null &&
+                                                                                    m.ReturnType.IsAssignableTo(Assembly.IEnumeratorType.Type))
+                        ?? throw new DSharpCompilerException($"Unable to find public GetEnumerator method with \"{Assembly.IEnumeratorType}\" as return value in expression of foreach statement", statement); ;
 
-                    if (variable.Type == null)
+                    enumerator = DSharpIEnumeratorType.Create(getEnumeratorMethod.ReturnType!);
+
+                    code.Call(getEnumeratorMethod);
+                    code.PopOffset(1);
+                }
+
+                var variableNode = foreachStatement.Variable;
+                Action storeToVariable;
+
+                if (scope.TryGetCapturedVariable(variableNode.Name, out var captureScope, out var variableField))
+                {
+                    if (variableNode.Type?.Token.Type == DSharpTokenType.Var)
                     {
-                        variableBuilder.Type = Assembly.ObjectToken;
+                        variableField.FieldType = Assembly.GetTypeToken(enumerator.CurrentProperty.PropertyType);
                     }
                     else
                     {
-                        if (!enumerator.CurrentProperty.PropertyType.IsAssignableTo(variable.Type))
+                        if (variableNode.Type == null)
                         {
-                            throw new ArgumentException($"Can not assign enumeration value to variable in foreach statement: {statement}", nameof(statement));
+                            throw new DSharpCompilerException("Foreach variable should contains type", variableNode);
+                        }
+
+                        try
+                        {
+                            variableField.FieldType = context.ResolveType(variableNode.Type);
+                        }
+                        catch (Exception error)
+                        {
+                            throw new DSharpCompilerException("Unable to resolve type", variableNode.Type, error);
+                        }
+
+                        var fieldType = (IDSharpType)Assembly.GetType(variableField.FieldType);
+
+                        if (!enumerator.CurrentProperty.PropertyType.IsAssignableTo(fieldType))
+                        {
+                            throw new DSharpCompilerException($"Can not assign enumeration value to variable in foreach statement", variableNode.Type);
                         }
                     }
+
+                    storeToVariable = () =>
+                    {
+                        CaptureAction(method, code, captureScope, variableNode, () =>
+                        {
+                            code.StackMove(0, 1);
+                            code.StoreField(variableField);
+                        });
+                    };
+                }
+                else
+                {
+                    IDSharpParameterInfo variable;
+
+                    if (foreachStatement.Variable.Type?.Token.Type == DSharpTokenType.Var)
+                    {
+                        variable = GetCustomVariable(foreachStatement.Variable.Name, enumerator.CurrentProperty.PropertyType, ref settings);
+                    }
+                    else
+                    {
+                        variable = GetVariable(foreachStatement.Variable, ref settings);
+
+                        if (variable is not DSharpMethodBuilderParameter variableBuilder)
+                        {
+                            throw new DSharpCompilerException($"Unable to create variable for foreach method because immutable variable was returned", variableNode);
+                        }
+
+                        if (variable.Type == null)
+                        {
+                            variableBuilder.Type = Assembly.ObjectToken;
+                        }
+                        else
+                        {
+                            if (!enumerator.CurrentProperty.PropertyType.IsAssignableTo(variable.Type))
+                            {
+                                throw new DSharpCompilerException($"Can not assign enumeration value to variable in foreach statement", ((AstNode?)variableNode.Type) ?? variableNode);
+                            }
+                        }
+                    }
+
+                    storeToVariable = () => code.StoreLocal(variable);
                 }
 
-                var enumeratorVariable = GetCustomVariable($"<>enumerator_{statement.Line}_{statement.Column}", getEnumeratorMethod.ReturnType!, ref settings);
+                var enumeratorVariable = GetCustomVariable($"<>enumerator_{statement.Line}_{statement.Column}", enumerator.Type, ref settings);
+                IDSharpMethodInfo disposeMethod = Assembly.IDisposableTypeInfo.DisposeMethod;
 
-                code.Call(getEnumeratorMethod);
-                code.PopOffset(1);
                 code.StoreLocal(enumeratorVariable);
+
+                context.HasFinally = true;
+                code.StartTrying();
+                var registerCatch = code.RegisterTypedCatch(Assembly.ExceptionType);
+                var registerFinally = code.RegisterFinally();
+                var skipBlocks = code.Jump();
+
+                // catch
+                registerCatch.ReferencedInstruction = code.Finally();
+                code.Throw();
+
+                // finally
+                registerFinally.ReferencedInstruction = code.LoadLocal(enumeratorVariable);
+                code.As(Assembly.IDisposableType);
+                code.Push(null);
+                code.Equals();
+                var skipDisposing = code.JumpIfTrue();
+                code.PopRepeat(2);
+                code.CallAuto(disposeMethod);
+                code.PopRepeat(2);
+                code.SkipNext();
+                skipDisposing.ReferencedInstruction = code.PopRepeat(4);
+                code.Return();
+
+                skipBlocks.ReferencedInstruction = code.Empty();
+
                 code.Call(enumerator.ResetMethod);
                 code.SkipNext();
                 var moveNextOperation = code.LoadLocal(enumeratorVariable);
@@ -1135,7 +1214,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 var skipIteration = code.JumpIfFalse();
                 code.Pop();
                 code.LoadPropertyOrField(enumerator.CurrentProperty);
-                code.StoreLocal(variable);
+                storeToVariable();
                 code.PopRepeat(2);
 
                 context.CurrentLoopStartInstruction = moveNextOperation;
@@ -1144,20 +1223,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                 code.Instructions.Remove(context.CurrentLoopEndInstruction);
                 CompileStatement(method, foreachStatement.Body, depth + 1, code, ref settings, context);
 
-                code.Instructions.Add(context.CurrentLoopStartInstruction);
-
                 code.Jump(moveNextOperation);
 
                 skipIteration.ReferencedInstruction = code.PopRepeat(2);
                 code.Instructions.Add(context.CurrentLoopEndInstruction);
 
-                if (DSharpIDisposableType.TryGetDisposeMethod(enumeratorVariable.Type, out var disposeMethod))
-                {
-                    code.LoadLocal(enumeratorVariable);
-                    code.Call(disposeMethod);
-                    code.Pop();
-                }
-
+                code.Finally();
+                code.StopTrying();
                 code.Push(null);
                 code.StoreLocal(enumeratorVariable);
                 code.Pop();
@@ -1298,7 +1370,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     DSharpBytecodeBuilder.Instruction start = code.Empty();
 
                     extra?.Invoke();
-                    CompileStatement(method, block, depth + depthOffset, code, ref settings, context);
+                    CompileStatement(method, block, depth + depthOffset, code, ref settings, context, false);
 
                     if (endJump)
                     {
@@ -1488,12 +1560,17 @@ namespace DialogMaker.Core.Scripting.Compiler
                 CompileStatement(method, lockStatement.Body, depth + 1, code, ref settings, context);
                 code.Finally();
                 var endReference = code.Jump();
+
+                // catch
                 catchReference.ReferencedInstruction = code.Finally();
                 code.Throw();
+
+                // finally
                 finallyReference.ReferencedInstruction = code.LoadLocal(valueVariable);
                 code.Unlock();
                 code.Pop();
                 code.Return();
+
                 endReference.ReferencedInstruction = code.StopTrying();
             }
             else if (statement is UnsafeStatementNode unsafeStatement)
@@ -1935,7 +2012,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                             throw new InvalidOperationException($"Property must contains declaring type {property}: {expression}");
                         }
 
-                        var propertyField = property.DeclaringType.GetFieldOrDefault(ValueFieldNamePrefix + property.Name)
+                        var propertyField = property.DeclaringType.GetFieldOrDefault(DSharpFieldBuilder.GetNameForProperty(property))
                             ?? throw new ArgumentException($"Unable to write value to property \"{property}\" because it have not setter: {expression}", nameof(expression));
                         member = propertyField;
                     }
@@ -2575,8 +2652,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     code.PopOffsetRepeat(1, newExpression.Parameters.Count);
                 }
-
-                context.CurrentMember = type;
 
                 foreach (var initializer in newExpression.PropertiesInitializer)
                 {
@@ -3846,7 +3921,8 @@ namespace DialogMaker.Core.Scripting.Compiler
             var originalTypeResolver = context.TypeResolver;
             context.TypeResolver = obj =>
             {
-                if (obj == null || obj == expression)
+                if (obj == null || obj == expression &&
+                    obj is not BinaryExpressionNode)
                 {
                     return requestedType;
                 }
@@ -3924,6 +4000,11 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 if (castAvailability == DSharpCastAvailability.Implicit)
                 {
+                    if (targetType.IsValueType() && !requestedType.IsValueType())
+                    {
+                        code.Box();
+                    }
+
                     return DSharpCastAvailability.Implicit;
                 }
 
@@ -4648,10 +4729,12 @@ namespace DialogMaker.Core.Scripting.Compiler
             var calledMethod = calledMethodInfo.Callable;
             var argsContext = GetContext(context, method);
             argsContext.ParentExpression = parent;
-            IDSharpType[]? replacedParameterTypes = null;
+            IDSharpType[] replacedParameterTypes = calledMethodInfo.GetCallingParameterTypes();
 
             void CompileArgument(int index, ExpressionNode expression, ref DSharpMethodCompileSettings settings)
             {
+                var parameterType = replacedParameterTypes[index];
+
                 if (expression is OutExpressionNode outParameterExpression)
                 {
                     DSharpMemberSearchResult member;
@@ -4733,34 +4816,28 @@ namespace DialogMaker.Core.Scripting.Compiler
                         throw new DSharpCompilerException($"Invalid output parameter index: {index}", expression);
                     }
 
-                    replacedParameterTypes ??= calledMethodInfo.GetCallingParameterTypes();
-                    var parameterType = replacedParameterTypes[index];
+                    IDSharpMemberInfo? expressionMember;
 
-                    if (parameterType != null)
+                    try
                     {
-                        IDSharpMemberInfo? expressionMember;
+                        expressionMember = refParameterExpression.GetExpressionType(Assembly, context);
+                    }
+                    catch (Exception error)
+                    {
+                        throw new DSharpCompilerException("Unable to get expression type", expression, error);
+                    }
 
-                        try
-                        {
-                            expressionMember = refParameterExpression.GetExpressionType(Assembly, context);
-                        }
-                        catch (Exception error)
-                        {
-                            throw new DSharpCompilerException("Unable to get expression type", expression, error);
-                        }
-
-                        if (expressionMember == null || !expressionMember.TryGetTypeOrReturnType(out var memberType))
-                        {
-                            throw new DSharpCompilerException("Unable to get expression type", expression);
-                        }
-                        if (memberType != parameterType)
-                        {
-                            throw new DSharpCompilerException($"Provided reference should have exactly same type as parameter. Provided value is \"{memberType}\", but parameter is \"{parameterType}\"", expression);
-                        }
+                    if (expressionMember == null || !expressionMember.TryGetTypeOrReturnType(out var memberType))
+                    {
+                        throw new DSharpCompilerException("Unable to get expression type", expression);
+                    }
+                    if (memberType != parameterType)
+                    {
+                        throw new DSharpCompilerException($"Provided reference should have exactly same type as parameter. Provided value is \"{memberType}\", but parameter is \"{parameterType}\"", expression);
                     }
                 }
 
-                CompileValueExpression(method, expression, ref settings, null, argsContext);
+                CompileExpressionValueWithRequestedType(method, parameterType, code, expression, ref settings, null, argsContext);
             }
 
             if (calledMethod.HasParams)
@@ -4893,6 +4970,25 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             code.Instructions.Add(endInstruction);
+        }
+        private void CaptureAction(DSharpMethodBuilder method, DSharpBytecodeBuilder code, DSharpCompilerMethodScope captureScope, AstNode node, Action variableHandler)
+        {
+            if (captureScope.Method == method)
+            {
+                if (captureScope.Closure == null)
+                {
+                    throw new DSharpCompilerException("Unable to load value from closure because scope does not contains it", node);
+                }
+
+                code.LoadLocal(captureScope.Closure.ClosureContainer);
+            }
+            else
+            {
+                code.LoadInstance();
+            }
+
+            variableHandler();
+            code.Pop();
         }
 
         #endregion
