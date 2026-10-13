@@ -133,23 +133,94 @@ namespace DialogMaker.Core.Scripting.Compiler
                         continue;
                     }
 
-                    if (!capture.Variables.TryGetValue(variableInfo.VariableName, out var variable))
+                    bool allVariablesInCurrentScope = true;
+
+                    if (!capture.Variables.TryGetValue(variableInfo.VariableName, out var variable) ||
+                        variable.Declaration.Node != variableInfo.Declaration.Node)
                     {
                         variable = new(variableInfo.VariableName, variableInfo.Declaration);
-                        capture.Variables.Add(variableInfo.VariableName, variable);
                     }
 
                     foreach (var reference in variableInfo.Scopes.SelectMany(i => i.Value))
                     {
-                        variable.References.Add(reference);
+                        if (!reference.Scope.ContainsInCurrentScope(reference.Name) ||
+                            variablesVisitor.CountVariablesCapture(variableInfo) > 1)
+                        {
+                            allVariablesInCurrentScope = false;
+                        }
+
+                        variable.References.Add(reference.Node);
+                    }
+
+                    if (!allVariablesInCurrentScope)
+                    {
+                        capture.Variables.Add(variableInfo.VariableName, variable);
                     }
                 }
 
-                captures.Add(capture);
+                if (capture.Variables.Count > 0)
+                {
+                    captures.Add(capture);
+                }
             }
 
             int i = 0;
             captures.Sort();
+
+            HashSet<Capture>? capturesToRemove = null;
+
+            foreach (var capture in captures)
+            {
+                foreach (var variable in capture.Variables.Values)
+                {
+                    foreach (var otherCapture in captures)
+                    {
+                        if (otherCapture == capture)
+                        {
+                            continue;
+                        }
+
+                        List<string>? variablesToRemove = null;
+
+                        foreach (var otherVariable in otherCapture.Variables.Values)
+                        {
+                            if (otherVariable.Declaration.Node != variable.Declaration.Node)
+                            {
+                                continue;
+                            }
+                            foreach (var reference in otherVariable.References)
+                            {
+                                variable.References.Add(reference);
+                            }
+
+                            variablesToRemove ??= [];
+                            variablesToRemove.Add(otherVariable.Name);
+                        }
+
+                        if (variablesToRemove != null)
+                        {
+                            foreach (var variableNameToRemove in variablesToRemove)
+                            {
+                                otherCapture.Variables.Remove(variableNameToRemove);
+                            }
+
+                            if (otherCapture.Variables.Count == 0)
+                            {
+                                capturesToRemove ??= [];
+                                capturesToRemove.Add(otherCapture);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (capturesToRemove != null)
+            {
+                foreach (var capture in capturesToRemove)
+                {
+                    captures.Remove(capture);
+                }
+            }
 
             while (i < captures.Count)
             {

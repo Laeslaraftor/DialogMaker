@@ -1,7 +1,6 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Builders;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Runtime;
-using System.Collections.ObjectModel;
-using static DialogMaker.Core.Scripting.Compiler.Scopes.DSharpCompilerMethodScope;
 
 namespace DialogMaker.Core.Scripting.Compiler.Scopes
 {
@@ -100,18 +99,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
                 throw new DSharpCompilerException($"Unable to variable for storing closure in \"{Method}\"", capture.Scope);
             }
 
+            Closure = new(Method.DeclaringType, type, capture, variable);
+
             if (type.DeclaringType != null)
             {
                 type.Access = DSharpAccessModifier.Private;
             }
-            foreach (var capturedVariable in capture.Variables.Keys)
+            foreach (var capturedVariable in capture.Variables.Values)
             {
-                var field = type.CreateField(capturedVariable);
+                var field = type.CreateField(capturedVariable.Name);
                 field.Access = DSharpAccessModifier.Public;
+                Closure.CapturedDeclaration.Add(capturedVariable.Declaration.Node, field);
             }
-
-            Closure = new(Method.DeclaringType, type, capture, variable);
-
             if (capture.HasInstance)
             {
                 Closure.GetOrCreateInstanceField();
@@ -211,6 +210,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
             /// Captured parameters as fields
             /// </summary>
             public Dictionary<DSharpMethodBuilderParameter, DSharpFieldBuilder> CapturedParameters { get; } = [];
+            /// <summary>
+            /// Variables definitions as fields
+            /// </summary>
+            public Dictionary<AstNode, DSharpFieldBuilder> CapturedDeclaration { get; } = [];
 
             /// <summary>
             /// Create field for containing calling object instance.

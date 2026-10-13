@@ -422,7 +422,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
 
             bool isMulticore = Environment.IsMulticoreProcessor;
-            int iterationsCount = 0;
+            int iterationsCount = isMulticore ? MulticoreWaitIterations : WaitIterations;
             AutoResetEvent? resetEvent = null;
 
             while (true)
@@ -433,16 +433,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 }
                 else
                 {
-                    Thread.Sleep(0);
+                    Thread.Yield();
                 }
 
-                iterationsCount++;
+                iterationsCount--;
 
                 if (!waiterInfo.Locked)
                 {
                     break;
                 }
-                if (iterationsCount >= 20)
+                if (0 >= iterationsCount)
                 {
                     lock (waiterInfo)
                     {
@@ -564,6 +564,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             _objects.Clear();
         }
+
+        #endregion
+
+        #region Constants
+
+        private const int MulticoreWaitIterations = 10;
+        private const int WaitIterations = 1;
 
         #endregion
 

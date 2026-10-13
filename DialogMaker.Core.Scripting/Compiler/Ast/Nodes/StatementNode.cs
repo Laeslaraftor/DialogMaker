@@ -99,6 +99,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 return TryStatementNode.Parse(stream);
             }
+            if (stream.Check(DSharpTokenType.Yield))
+            {
+                return YieldStatementNode.Parse(stream);
+            }
             if (stream.Check(DSharpTokenType.Return))
             {
                 return ReturnStatementNode.Parse(stream);

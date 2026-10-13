@@ -34,7 +34,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             if (CurrentScope == null)
             {
-                CurrentScope = new(declaration.Node, true);
+                CurrentScope = new(declaration.Node);
                 RootScope = CurrentScope;
                 Scopes.Add(declaration.Node, CurrentScope);
             }
@@ -68,7 +68,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             base.StartVisiting(node);
 
-            if (node is not BlockStatementNode)
+            if (!CanDeclareVariables(node))
             {
                 return;
             }
@@ -107,10 +107,27 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             base.EndVisiting(node);
 
-            if (node is BlockStatementNode)
+            if (CanDeclareVariables(node))
             {
                 CurrentScope = CurrentScope?.PreviousScope;
             }
+        }
+
+        #endregion
+
+        #region Static
+
+        /// <summary>
+        /// Check current ast node on variable define opportunity
+        /// </summary>
+        /// <param name="node">Ast node to check</param>
+        /// <returns>Is specified node can define variables</returns>
+        public static bool CanDeclareVariables(AstNode node)
+        {
+            return node is BlockStatementNode ||
+                   node is ForeachStatementNode ||
+                   node is ForStatementNode ||
+                   node is TryStatementNode.CatchBlock;
         }
 
         #endregion
@@ -122,7 +139,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// </summary>
         /// <param name="node">Node that represents scope beginning</param>
         /// <param name="forceRoot">Is scope forces to be root</param>
-        public class Scope(AstNode node, bool forceRoot = false)
+        public class Scope(AstNode node)
         {
             /// <summary>
             /// Node that represents scope beginning
@@ -131,9 +148,9 @@ namespace DialogMaker.Core.Scripting.Compiler
             /// <summary>
             /// Is root node. All invokable and delegate expression is root nodes
             /// </summary>
-            public bool IsRoot { get; } = forceRoot ||
-                                          node.Parent is InvokableNode ||
-                                          node.Parent is DelegateExpressionNode;
+            public bool IsRoot { get; } = node.Parent is InvokableNode ||
+                                          node.Parent is DelegateExpressionNode ||
+                                          node.Parent is FieldNode;
             /// <summary>
             /// Previous scope
             /// </summary>
@@ -217,6 +234,27 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 throw new InvalidOperationException("Unable to find root scope");
+            }
+            /// <summary>
+            /// Count roots for current scope
+            /// </summary>
+            /// <returns>Amount of roots</returns>
+            public int CountRoots()
+            {
+                var parent = this;
+                int count = 0;
+
+                while (parent != null)
+                {
+                    if (parent.IsRoot)
+                    {
+                        count++;
+                    }
+
+                    parent = parent.PreviousScope;
+                }
+
+                return count;
             }
         }
 

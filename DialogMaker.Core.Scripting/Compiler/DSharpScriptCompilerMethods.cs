@@ -5,7 +5,6 @@ using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
-using static DialogMaker.Core.Scripting.Compiler.DSharpCaptureInfo;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -153,7 +152,14 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             do
             {
-                CompileStatement(method, body, 0, code, ref settings, contextValue, rootContext);
+                if (body.Contains<YieldStatementNode>())
+                {
+                    method = CompileIterationMethod(method, body, ref settings, ref contextValue);
+                }
+                else
+                {
+                    CompileStatement(method, body, 0, code, ref settings, contextValue, rootContext);
+                }
 
                 bool anyMethodChangeSignature = false;
 
@@ -662,7 +668,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 Func<IDSharpType> variableTypeGetter;
 
                 if (context.Scope != null &&
-                    context.Scope.TryGetCapturedVariable(variableName, out var variableScope, out var variableField))
+                    context.Scope.TryGetCapturedVariable(variableNode, out var variableScope, out var variableField))
                 {
                     variableClosure = variableScope.Closure;
                     variable = variableField;
@@ -1012,17 +1018,9 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             else if (statement is ForStatementNode forStatement)
             {
-                if (forStatement.Initializer == null)
-                {
-                    throw new ArgumentException($"For statement should contains initializer: {statement}", nameof(statement));
-                }
                 if (forStatement.Condition == null)
                 {
                     throw new ArgumentException($"For statement should contains condition: {statement}", nameof(statement));
-                }
-                if (forStatement.Increment == null)
-                {
-                    throw new ArgumentException($"For statement should contains increment: {statement}", nameof(statement));
                 }
                 if (forStatement.Body == null)
                 {
@@ -1031,10 +1029,12 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 context.Scope = new DSharpCompilerMethodScope(method, context.Scope);
 
-                CompileStatement(method, forStatement.Initializer, forStatement, depth + 1, code, ref settings, context);
+                if (forStatement.Initializer != null)
+                {
+                    CompileStatement(method, forStatement.Initializer, forStatement, depth + 1, code, ref settings, context);
+                }
 
-                var conditionType = forStatement.Condition.GetExpressionType(Assembly, context) as IDSharpType
-                    ?? throw new ArgumentException($"Unable to get condition return type: {statement}", nameof(statement));
+                var conditionType = forStatement.Condition.GetRealExpressionType(Assembly, context);
 
                 if (!conditionType.IsAssignableTo(Assembly.BoolType))
                 {
@@ -1042,7 +1042,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 int startExpressionIndex = code.Instructions.Count;
-                CompileValueExpression(method, forStatement.Condition, ref settings, null, context);
+                CompileExpressionValueWithRequestedType(method, Assembly.BoolType, code, forStatement.Condition, ref settings, null, context);
                 var skipOperation = code.JumpIfFalse();
                 code.Pop();
 
@@ -1059,7 +1059,10 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 code.Instructions.Add(startIncrementOperation);
 
-                CompileExpression(method, forStatement.Increment, ref settings, null, context);
+                if (forStatement.Increment != null)
+                {
+                    CompileExpression(method, forStatement.Increment, ref settings, null, context);
+                }
 
                 code.Jump(startExpressionOperation);
                 code.Instructions.Add(context.CurrentLoopEndInstruction);
@@ -1105,7 +1108,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 var variableNode = foreachStatement.Variable;
                 Action storeToVariable;
 
-                if (scope.TryGetCapturedVariable(variableNode.Name, out var captureScope, out var variableField))
+                if (scope.TryGetCapturedVariable(variableNode, out var captureScope, out var variableField))
                 {
                     if (variableNode.Type?.Token.Type == DSharpTokenType.Var)
                     {
@@ -1140,7 +1143,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                         CaptureAction(method, code, captureScope, variableNode, () =>
                         {
                             code.StackMove(0, 1);
-                            code.StoreField(variableField);
+                            code.StorePropertyOrField(variableField);
                         });
                     };
                 }
@@ -1460,24 +1463,35 @@ namespace DialogMaker.Core.Scripting.Compiler
                     if (catchInfo.Key.ExceptionVariableIdentifier != null &&
                         catchInfo.Value is DSharpBytecodeBuilder.TypedReferenceInstruction typedReference)
                     {
-                        catchContext.Scope = new DSharpCompilerMethodScope(method, catchContext.Scope);
+                        DSharpCompilerMethodScope scope = new(method, catchContext.Scope);
+                        catchContext.Scope = scope;
                         exceptionType = typedReference.Type;
                         var variableName = catchInfo.Key.ExceptionVariableIdentifier.Name;
                         IDSharpParameterInfo exceptionVariable;
 
-                        try
+                        if (scope.TryGetCapturedVariable(catchInfo.Key.ExceptionVariableIdentifier, out var captureScope, out var variableField))
                         {
-                            exceptionVariable = catchContext.Scope.CreateVariable(variableName, typedReference.Type);
+                            extra = () => CaptureAction(method, code, captureScope, catchInfo.Key, () =>
+                            {
+                                code.StorePropertyOrField(variableField);
+                            });
                         }
-                        catch (Exception error)
+                        else
                         {
-                            throw new InvalidOperationException($"Unable to create variable \"{variableName}\" for catch block: {catchInfo.Key}", error);
-                        }
+                            try
+                            {
+                                exceptionVariable = catchContext.Scope.CreateVariable(variableName, typedReference.Type);
+                            }
+                            catch (Exception error)
+                            {
+                                throw new InvalidOperationException($"Unable to create variable \"{variableName}\" for catch block: {catchInfo.Key}", error);
+                            }
 
-                        extra = () =>
-                        {
-                            code.StoreLocal(exceptionVariable);
-                        };
+                            extra = () =>
+                            {
+                                code.StoreLocal(exceptionVariable);
+                            };
+                        }
                     }
 
                     int depthOffset = 1;
@@ -1687,7 +1701,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     var localName = identifier.GetName(false);
 
                     if (context.Scope != null &&
-                        context.Scope.TryGetCapturedVariable(localName, out var variableScope, out var variableField))
+                        context.Scope.TryGetCapturedVariable(identifier, out var variableScope, out var variableField))
                     {
                         if (variableField.FieldType == null)
                         {
@@ -2137,7 +2151,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             if (expression is IdentifierExpressionNode identifierExpression)
             {
                 if (context.Scope != null &&
-                    context.Scope.TryGetCapturedVariable(identifierExpression.Name, out var scope, out var field))
+                    context.Scope.TryGetCapturedVariable(identifierExpression, out var scope, out var field))
                 {
                     if (scope.Closure!.Type == method.DeclaringType)
                     {
@@ -3176,7 +3190,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     if (variableIdentifier != null)
                     {
                         if (context.Scope != null &&
-                            context.Scope.TryGetCapturedVariable(variableIdentifier.Name, out var variableScope, out var variableField))
+                            context.Scope.TryGetCapturedVariable(variableIdentifier, out var variableScope, out var variableField))
                         {
                             variable = new(null, variableScope.Closure, variableField);
                         }
@@ -4572,7 +4586,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             if (expression is IdentifierExpressionNode identifier &&
                 (context.Scope == null ||
-                !context.Scope.TryGetCapturedVariable(identifier.Name, out _, out _)))
+                !context.Scope.TryGetCapturedVariable(identifier, out _, out _)))
             {
                 var localName = identifier.GetName(false);
                 bool success = false;

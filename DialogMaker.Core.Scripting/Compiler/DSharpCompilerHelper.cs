@@ -1165,11 +1165,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                         }
                     }
                     else if (context.Scope != null &&
-                             context.Scope.TryGetCapturedVariable(identifierExpression.Name, out _, out var variableField) &&
-                             variableField.FieldType != null &&
-                             context.Assembly != null)
+                             context.Scope.TryGetCapturedVariable(identifierExpression, out _, out var variableField))
                     {
-                        return (IDSharpType)context.Assembly.GetType(variableField.FieldType);
+                        if (variableField.FieldType == null)
+                        {
+                            throw new DSharpCompilerException("Field type not setted for captured variable", expression);
+                        }
+
+                        return (IDSharpType)assembly.GetType(variableField.FieldType);
                     }
                 }
 

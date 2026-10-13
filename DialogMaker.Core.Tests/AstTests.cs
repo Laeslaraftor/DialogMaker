@@ -64,7 +64,7 @@ namespace DialogMaker.Core.Tests
 
                     foreach (var scopeInfo in capture.Scopes)
                     {
-                        Console.WriteLine($"{indent1}Scope at {GetPosition(scopeInfo.Key.Node)}: {string.Join(", ", scopeInfo.Value.Select(GetPosition))}");
+                        Console.WriteLine($"{indent1}Scope at {GetPosition(scopeInfo.Key.Node)}: {string.Join(", ", scopeInfo.Value.Select(r => GetPosition(r.Node)))}");
                     }
                 }
             }

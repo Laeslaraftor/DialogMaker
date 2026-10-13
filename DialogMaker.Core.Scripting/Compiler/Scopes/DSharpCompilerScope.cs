@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Builders;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics.CodeAnalysis;
 using System.Xml.Linq;
@@ -364,6 +365,40 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         public bool TryGetCapturedInstance([NotNullWhen(true)] out DSharpCompilerMethodScope? captureScope, [NotNullWhen(true)] out DSharpFieldBuilder? field)
         {
             return TryGetCapturedVariable(DSharpCompilerMethodScope.CaptureInfo.InstanceFieldName, out captureScope, out field);
+        }
+        /// <summary>
+        /// Try to get captured variable in current scope
+        /// </summary>
+        /// <param name="identifierNode">Node that represents variable identifier or other reference to variable</param>
+        /// <param name="captureScope">Scope that contains closure</param>
+        /// <param name="field">Field that represents captured variable</param>
+        /// <returns>Is captured variable was successfully found</returns>
+        public bool TryGetCapturedVariable(AstNode identifierNode, [NotNullWhen(true)] out DSharpCompilerMethodScope? captureScope, [NotNullWhen(true)] out DSharpFieldBuilder? field)
+        {
+            DSharpFieldBuilder? variableField = null;
+            captureScope = RecursiveCheck(scope =>
+            {
+                if (scope is not DSharpCompilerMethodScope methodScope ||
+                    methodScope.Closure == null)
+                {
+                    return null;
+                }
+
+                var closure = methodScope.Closure;
+                
+                if (!closure.Capture.Variables.TryGetValue(identifierNode.Name, out var variableInfo) ||
+                    (!variableInfo.References.Contains(identifierNode) && variableInfo.Declaration.Node != identifierNode) ||
+                    !closure.CapturedDeclaration.TryGetValue(variableInfo.Declaration.Node, out variableField))
+                {
+                    return null;
+                }
+
+                return methodScope;
+            });
+
+            field = variableField;
+
+            return captureScope != null && variableField != null;
         }
         /// <summary>
         /// Try to get captured variable in current scope

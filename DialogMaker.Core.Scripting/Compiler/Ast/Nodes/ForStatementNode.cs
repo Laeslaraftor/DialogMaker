@@ -9,7 +9,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     public partial class ForStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
-        /// Initializer for conditional and incremental variable
+        /// Initializer for conditional and incremental variable.
+        /// It can be empty
         /// </summary>
         public StatementNode? Initializer { get; set; }
         /// <summary>
@@ -17,7 +18,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public ExpressionNode? Condition { get; set; }
         /// <summary>
-        /// Increment for initialized variable
+        /// Increment for initialized variable.
+        /// It can be empty
         /// </summary>
         public ExpressionNode? Increment { get; set; }
         /// <summary>
@@ -37,23 +39,30 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             var forToken = stream.Eat(DSharpTokenType.For);
             stream.Eat(DSharpTokenType.LeftParen);
 
-            ForStatementNode statement = new(forToken)
+            ForStatementNode forStatement = new(forToken); ;
+
+            if (!stream.Check(DSharpTokenType.Semicolon))
             {
-                Initializer = ParseCode(stream),
-                Condition = ExpressionNode.ParseExpression(stream)
-            };
+                forStatement.Initializer = ParseCode(stream);
+                forStatement.Initializer.Parent = forStatement;
+            }
 
+            forStatement.Condition = ExpressionNode.ParseExpression(stream);
             stream.Eat(DSharpTokenType.Semicolon);
-            statement.Increment = ExpressionNode.ParseExpression(stream);
+
+            if (!stream.Check(DSharpTokenType.RightParen))
+            {
+                forStatement.Increment = ExpressionNode.ParseExpression(stream);
+                forStatement.Increment.Parent = forStatement;
+            }
+
             stream.Eat(DSharpTokenType.RightParen);
-            statement.Body = ParseCode(stream);
+            forStatement.Body = ParseCode(stream);
 
-            statement.Initializer.Parent = statement;
-            statement.Condition.Parent = statement;
-            statement.Increment.Parent = statement;
-            statement.Body.Parent = statement;
+            forStatement.Condition.Parent = forStatement;
+            forStatement.Body.Parent = forStatement;
 
-            return statement;
+            return forStatement;
         }
 
         #endregion

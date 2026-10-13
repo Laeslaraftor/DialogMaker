@@ -263,8 +263,15 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             return scope;
         }
-
-        private DSharpCompilerContext GetContext(DSharpCompilerContext context, DSharpMethodBuilder method)
+        /// <summary>
+        /// Get context for method builder. 
+        /// It search context with same method at root scope,
+        /// otherwise creates new context
+        /// </summary>
+        /// <param name="context">Current context</param>
+        /// <param name="method">Method for that need to get context</param>
+        /// <returns>Method context</returns>
+        public DSharpCompilerContext GetContext(DSharpCompilerContext context, DSharpMethodBuilder method)
         {
             var scope = context.Scope;
 

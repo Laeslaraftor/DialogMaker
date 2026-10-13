@@ -1008,7 +1008,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             else
             {
-                DSharpCompilerContext argumentsContext = new(this, argumentsMember);
+                DSharpCompilerContext argumentsContext = Create(this, argumentsMember);
                 parameters = argumentsContext.GetArgumentTypes(callExpression.Arguments);
 
                 if (identifier.GenericParameters.Count > 0)
@@ -1050,7 +1050,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             else
             {
-                DSharpCompilerContext argumentsContext = new(this, argumentsMember);
+                DSharpCompilerContext argumentsContext = Create(this, argumentsMember);
                 parameters = argumentsContext.GetArgumentTypes(arrayAccessExpression.Arguments);
             }
 
@@ -1418,6 +1418,26 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             return false;
+        }
+
+        #endregion
+
+        #region Static
+
+        /// <summary>
+        /// Create context with next scope
+        /// </summary>
+        /// <param name="other">Base context</param>
+        /// <param name="currentMember">Scope member</param>
+        /// <returns>Context with next scope</returns>
+        public static DSharpCompilerContext Create(DSharpCompilerContext other, IDSharpMemberInfo currentMember)
+        {
+            if (other.Compiler != null && currentMember is DSharpMethodBuilder methodInfo)
+            {
+                return other.Compiler.GetContext(other, methodInfo);
+            }
+
+            return new(other, currentMember);
         }
 
         #endregion

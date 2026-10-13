@@ -1,5 +1,4 @@
-﻿using Acly.Requests;
-using DialogMaker.Core.Scripting.Compiler.Lexer;
+﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime.Executor;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
@@ -44,6 +43,18 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// Standard enumerator interface
             /// </summary>
             public static readonly DSharpBuildInTypeInfo IEnumerator = new("System.Collections.IEnumerator");
+            /// <summary>
+            /// Typed enumerator interface
+            /// </summary>
+            public static readonly DSharpBuildInTypeInfo TypedIEnumerator = new("System.Collections.IEnumerator`1");
+            /// <summary>
+            /// Standard enumerable interface
+            /// </summary>
+            public static readonly DSharpBuildInTypeInfo IEnumerable = new("System.Collections.IEnumerable");
+            /// <summary>
+            /// Typed enumerable interface
+            /// </summary>
+            public static readonly DSharpBuildInTypeInfo TypedIEnumerable = new("System.Collections.IEnumerable`1");
             /// <summary>
             /// Type that represents pointer with unknown type (void*)
             /// </summary>

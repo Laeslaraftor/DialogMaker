@@ -14,6 +14,27 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         #region Controls
 
+        /// <summary>
+        /// Count captures for same variable
+        /// </summary>
+        /// <param name="variableCapture">Variable capture for counting other capturing</param>
+        /// <returns>Amount of capturing specified variable</returns>
+        public int CountVariablesCapture(Capture variableCapture)
+        {
+            int counter = 0;
+            var declaration = variableCapture.Declaration;
+
+            foreach (var capture in RootCaptures.Values.SelectMany(i => i.Values))
+            {
+                if (declaration.Node == capture.Declaration.Node)
+                {
+                    counter++;
+                }
+            }
+
+            return counter;
+        }
+
         public override void StartVisiting(AstNode node)
         {
             base.StartVisiting(node);
@@ -39,15 +60,18 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
         }
 
-        //public override void VisitForeachStatementNode(ForeachStatementNode node)
-        //{
-        //    base.VisitForeachStatementNode(node);
+        public override void VisitCatchBlock(TryStatementNode.CatchBlock node)
+        {
+            base.VisitCatchBlock(node);
 
-        //    if (node.Variable != null)
-        //    {
-        //        VisitVariableNode(node.Variable);
-        //    }
-        //}
+            var identifier = node.ExceptionVariableIdentifier;
+
+            if (!NotEmpty && node.ExceptionType != null &&
+                identifier != null)
+            {
+                AddVariable(identifier.Name, new(identifier, node.ExceptionType, null));
+            }
+        }
         public override void VisitVariableNode(VariableNode node)
         {
             base.VisitVariableNode(node);
@@ -107,13 +131,12 @@ namespace DialogMaker.Core.Scripting.Compiler
         private void AddIdentifier(string name, AstNode node)
         {
             if (!NotEmpty || CurrentScope == null ||
-                !CurrentScope.TryGetVariableScope(name, out var scope) ||
-                CurrentScope.ContainsInCurrentScope(name))
+                !CurrentScope.TryGetVariableScope(name, out var scope))
             {
                 return;
             }
 
-            var root = scope.FindRoot();
+            var root = CurrentScope.FindRoot();
             Capture capture;
 
             if (!RootCaptures.TryGetValue(root, out var captures))
@@ -132,7 +155,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 capture.Scopes.Add(scope, scopeIdentifiers);
             }
 
-            scopeIdentifiers.Add(node);
+            scopeIdentifiers.Add(new(CurrentScope, node, name));
         }
         private static bool IsAvailable(AstNode node)
         {
@@ -175,7 +198,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             /// <summary>
             /// Scopes and it's references to current variable
             /// </summary>
-            public Dictionary<Scope, List<AstNode>> Scopes { get; } = [];
+            public Dictionary<Scope, List<VariableReference>> Scopes { get; } = [];
         }
         /// <summary>
         /// Captured variable declaration
@@ -184,6 +207,13 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// <param name="Type">Type of variable</param>
         /// <param name="Initializer">Variable initializer</param>
         public record struct CaptureDeclaration(AstNode Node, TypeInfoNode? Type, ExpressionNode? Initializer);
+        /// <summary>
+        /// Information about reference to variable
+        /// </summary>
+        /// <param name="Scope">Scope that contains this reference</param>
+        /// <param name="Node">Node that represent referencing to variable</param>
+        /// <param name="Name">Name of referencing variable</param>
+        public record struct VariableReference(Scope Scope, AstNode Node, string Name);
 
         #endregion
     }

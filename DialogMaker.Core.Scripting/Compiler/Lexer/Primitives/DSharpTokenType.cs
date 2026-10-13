@@ -19,6 +19,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         [Keyword("return")]
         Return,
         /// <summary>
+        /// Yield return
+        /// </summary>
+        [Keyword("yield")]
+        Yield,
+        /// <summary>
         /// If keyword
         /// </summary>
         [Keyword("if")]
