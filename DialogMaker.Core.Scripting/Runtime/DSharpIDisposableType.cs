@@ -19,6 +19,15 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         public IDSharpMethodInfo DisposeMethod { get; } = disposeMethod;
 
+        #region Constants
+
+        /// <summary>
+        /// Name of dispose method
+        /// </summary>
+        public const string DisposeMethodName = "Dispose";
+
+        #endregion
+
         #region Static
 
         /// <summary>
@@ -43,7 +52,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         {
             result = type.GetAllMembers(m => m.Access == DSharpAccessModifier.Public &&
                                            m is IDSharpMethodInfo method &&
-                                           method.Name == "Dispose" &&
+                                           method.Name == DisposeMethodName &&
                                            method.ReturnType == null &&
                                            method.GetParameters().Length == 0).Cast<IDSharpMethodInfo>().FirstOrDefault();
             return result != null;

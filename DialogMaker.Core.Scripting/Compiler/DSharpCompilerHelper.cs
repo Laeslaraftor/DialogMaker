@@ -6,8 +6,6 @@ using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq.Expressions;
-using System.Reflection;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -16,6 +14,156 @@ namespace DialogMaker.Core.Scripting.Compiler
     /// </summary>
     public static class DSharpCompilerHelper
     {
+        extension(DSharpTypeBuilder type)
+        {
+            /// <summary>
+            /// Implement interface on current type. 
+            /// This also add specified interface into base types if it not already added
+            /// </summary>
+            /// <param name="interfaceType">Interface that need to be implemented</param>
+            /// <param name="skipExisted">Try to find members with same names to interface declared members</param>
+            /// <returns>List of implemented members</returns>
+            /// <exception cref="DSharpException">Type is not interface</exception>
+            /// <exception cref="DSharpException">Invalid interface member</exception>
+            public List<DSharpMemberInfoBuilder> ImplementInterface(IDSharpType interfaceType, bool skipExisted = false)
+            {
+                if (interfaceType.ObjectType != DSharpObjectType.Interface)
+                {
+                    throw new ArgumentException($"Type \"{interfaceType}\" is not interface", nameof(interfaceType));
+                }
+
+                List<DSharpMemberInfoBuilder> implementedMembers = [];
+
+                if (!type.ContainsBaseType(interfaceType))
+                {
+                    type.AddBaseType(interfaceType);
+                }
+
+                static void SetupProperty(IDSharpPropertyInfo interfaceProperty, DSharpPropertyBuilder newProperty)
+                {
+                    newProperty.AddImplementedProperty(interfaceProperty);
+                    newProperty.Name = interfaceProperty.Name;
+                    newProperty.Access = interfaceProperty.Access;
+                    newProperty.PropertyType = newProperty.Assembly.GetTypeToken(interfaceProperty.PropertyType);
+
+                    if (interfaceProperty.GetterAccess != null)
+                    {
+                        var getter = newProperty.CreateGetter();
+                        getter.Access = interfaceProperty.GetterAccess.Value;
+                    }
+                    if (interfaceProperty.SetterAccess != null)
+                    {
+                        var setter = newProperty.CreateSetter();
+                        setter.Access = interfaceProperty.SetterAccess.Value;
+                    }
+                }
+
+                foreach (var interfaceMember in interfaceType.GetAllMembers(m => m.IsDeclaration))
+                {
+                    DSharpMemberInfoBuilder member;
+
+                    if (interfaceMember is IDSharpIndexerInfo interfaceIndexer)
+                    {
+                        if (skipExisted)
+                        {
+                            var indexerParameters = interfaceIndexer.GetParameters();
+
+                            if (type.GetIndexerOrDefault(indexerParameters) != null)
+                            {
+                                continue;
+                            }
+                        }
+
+                        DSharpIndexerBuilder? indexer = type.CreateIndexer();
+                        indexer.Parameters.Clear();
+                        interfaceIndexer.CopyParametersTo(type.Assembly, indexer.Parameters, true);
+                        SetupProperty(interfaceIndexer, indexer);
+
+                        member = indexer;
+                    }
+                    else if (interfaceMember is IDSharpPropertyInfo interfaceProperty)
+                    {
+                        if (skipExisted && type.GetPropertyOrDefault(interfaceProperty.Name) != null)
+                        {
+                            continue;
+                        }
+
+                        DSharpPropertyBuilder? property = type.CreateProperty(interfaceProperty.Name);
+                        SetupProperty(interfaceProperty, property);
+
+                        member = property;
+                    }
+                    else if (interfaceMember is IDSharpMethodInfo interfaceMethod)
+                    {
+                        if (skipExisted && type.GetMethodOrDefault(interfaceMethod.Name) != null)
+                        {
+                            continue;
+                        }
+
+                        DSharpMethodBuilder? method = type.CreateMethod(interfaceMethod.Name);
+                        method.Parameters.Clear();
+                        interfaceMethod.CopyParametersTo(type.Assembly, method.Parameters, true);
+
+                        method.Access = interfaceMethod.Access;
+                        method.ReturnType = interfaceMethod.ReturnType != null ? method.Assembly.GetTypeToken(interfaceMethod.ReturnType) : null;
+                        method.AddImplementedMethod(interfaceMethod);
+                        Dictionary<IDSharpType, IDSharpType>? replacedGenerics = null;
+                        int genericParameterIndex = 0;
+
+                        foreach (var genericType in interfaceMethod.GetGenericParameters())
+                        {
+                            DSharpTypeBuilder genericParameter;
+
+                            if (genericParameterIndex < method.GenericParameters.Count)
+                            {
+                                genericParameter = method.GenericParameters[genericParameterIndex];
+                            }
+                            else
+                            {
+                                genericParameter = method.CreateGenericParameter(genericType.Name);
+                            }
+
+                            genericParameter.GenericAttributes = genericType.GenericAttributes;
+
+                            replacedGenerics ??= [];
+                            replacedGenerics.Add(genericType, genericParameter);
+                            genericParameterIndex++;
+                        }
+
+                        if (genericParameterIndex > method.GenericParameters.Count)
+                        {
+                            for (int i = 0; i < genericParameterIndex - method.GenericParameters.Count; i++)
+                            {
+                                method.RemoveGenericParameter(method.GenericParameters[^1]);
+                            }
+                        }
+
+                        if (interfaceMethod.ReturnType != null)
+                        {
+                            if (replacedGenerics != null)
+                            {
+                                var replacedType = method.Assembly.ReplaceTypes(interfaceMethod.ReturnType, interfaceMethod.DeclaringType, replacedGenerics);
+                                method.ReturnType = method.Assembly.GetTypeToken(replacedType);
+                            }
+                            else
+                            {
+                                method.ReturnType = method.Assembly.GetTypeToken(interfaceMethod.ReturnType);
+                            }
+                        }
+
+                        member = method;
+                    }
+                    else
+                    {
+                        throw new DSharpException($"Invalid interface member: \"{interfaceMember}\"");
+                    }
+
+                    implementedMembers.Add(member);
+                }
+
+                return implementedMembers;
+            }
+        }
         extension(TypeNameEqualityType type)
         {
             public bool IsEquals() => type != TypeNameEqualityType.None;
@@ -613,6 +761,57 @@ namespace DialogMaker.Core.Scripting.Compiler
                 return true;
             }
         }
+        extension(IDSharpCallableMember callable)
+        {
+            /// <summary>
+            /// Copy callable parameters to parameters list with replacing types
+            /// </summary>
+            /// <param name="assembly">Assembly that should contains new parameters</param>
+            /// <param name="parameters">Parameters list for copying parameters</param>
+            /// <param name="safeModes">Also copy parameters modes, otherwise all new parameters will be created with default mode</param>
+            public void CopyParametersTo(DSharpAssemblyBuilder assembly, IList<DSharpMethodBuilderParameter> parameters, bool safeModes)
+            {
+                callable.CopyParametersTo<IDSharpType>(assembly, parameters, safeModes, null);
+            }
+            /// <summary>
+            /// Copy callable parameters to parameters list with replacing types
+            /// </summary>
+            /// <param name="assembly">Assembly that should contains new parameters</param>
+            /// <param name="parameters">Parameters list for copying parameters</param>
+            /// <param name="safeModes">Also copy parameters modes, otherwise all new parameters will be created with default mode</param>
+            /// <param name="replacedTypes">Types for replacing</param>
+            public void CopyParametersTo<T>(DSharpAssemblyBuilder assembly, IList<DSharpMethodBuilderParameter> parameters, bool safeModes, Dictionary<T, T>? replacedTypes = null)
+                where T : IDSharpType
+            {
+                IDSharpType GetReplacedType(IDSharpType type)
+                {
+                    if (replacedTypes != null)
+                    {
+                        foreach (var info in replacedTypes)
+                        {
+                            if (info.Key.Equals(type))
+                            {
+                                return info.Value;
+                            }
+                        }
+                    }
+
+                    return type;
+                }
+
+                foreach (var parameter in callable.GetParameters())
+                {
+                    var parameterType = GetReplacedType(parameter.Type);
+
+                    parameters.Add(new(assembly)
+                    {
+                        Name = parameter.Name,
+                        Mode = safeModes ? parameter.Mode : DSharpMethodParameterMode.Default,
+                        Type = assembly.GetTypeToken(parameterType)
+                    });
+                }
+            }
+        }
         extension(DSharpBinaryOperator @operator)
         {
             /// <summary>
@@ -630,42 +829,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                        @operator == DSharpBinaryOperator.LogicalGreater ||
                        @operator == DSharpBinaryOperator.LogicalGreaterOrEquals;
             }
-        }
-        extension(IfStatementNode ifStatement)
-        {
-            /// <summary>
-            /// Check all paths in current if statement for returning values
-            /// </summary>
-            /// <param name="assembly">Assembly builder for finding types</param>
-            /// <param name="returnTypes">Buffer for writing types that returns</param>
-            /// <param name="context">Compiler context</param>
-            /// <returns>Is all paths returns some value</returns>
-            //public bool AllPathReturns(DSharpAssemblyBuilder assembly, Dictionary<ExpressionNode, IDSharpType> returnTypes, DSharpCompilerContext context)
-            //{
-            //    var currentStatement = ifStatement;
-
-            //    while (true)
-            //    {
-            //        if (currentStatement.ThenBranch?.AllPathReturns(assembly, returnTypes, context) != true ||
-            //            currentStatement.ElseBranch == null)
-            //        {
-            //            return false;
-            //        }
-            //        if (currentStatement.ElseBranch is IfStatementNode elseStatement)
-            //        {
-            //            currentStatement = elseStatement;
-            //            continue;
-            //        }
-            //        else if (currentStatement.ElseBranch is BlockStatementNode elseBlockStatement)
-            //        {
-            //            return elseBlockStatement.AllPathReturns(assembly, returnTypes, context);
-            //        }
-
-            //        break;
-            //    }
-
-            //    return true;
-            //}
         }
         extension(StatementNode statement)
         {

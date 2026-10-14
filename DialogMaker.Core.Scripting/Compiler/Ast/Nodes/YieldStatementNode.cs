@@ -9,7 +9,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     public partial class YieldStatementNode(DSharpToken token) : StatementNode(token)
     {
         /// <summary>
-        /// Yielding statement
+        /// Yielding statement (return or break)
         /// </summary>
         public StatementNode? Statement { get; set; }
 
@@ -28,10 +28,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             if (stream.Check(DSharpTokenType.Return))
             {
                 yieldStatement.Statement = ReturnStatementNode.Parse(stream);
-            }
-            else if (stream.Check(DSharpTokenType.Continue))
-            {
-                yieldStatement.Statement = ContinueStatementNode.Parse(stream);
             }
             else if (stream.Check(DSharpTokenType.Break))
             {

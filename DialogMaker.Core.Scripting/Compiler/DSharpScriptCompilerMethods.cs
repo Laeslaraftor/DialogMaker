@@ -1082,9 +1082,9 @@ namespace DialogMaker.Core.Scripting.Compiler
                 var expressionReturnType = foreachStatement.EnumeratorExpression.GetRealExpressionType(Assembly, context);
                 DSharpIEnumeratorType enumerator;
 
-                if (expressionReturnType.IsAssignableTo(Assembly.IEnumeratorType.Type))
+                if (expressionReturnType.IsAssignableTo(Assembly.IEnumeratorTypeInfo.Type))
                 {
-                    CompileExpressionValueWithRequestedType(method, Assembly.IEnumeratorType.Type, code, foreachStatement.EnumeratorExpression, ref settings, null, context);
+                    CompileExpressionValueWithRequestedType(method, Assembly.IEnumeratorTypeInfo.Type, code, foreachStatement.EnumeratorExpression, ref settings, null, context);
                     enumerator = DSharpIEnumeratorType.Create(expressionReturnType);
                 }
                 else
@@ -1096,8 +1096,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                                                                 .Cast<IDSharpMethodInfo>();
                     var getEnumeratorMethod = returnTypeMethods.FirstOrDefault(m => m.Name == "GetEnumerator" &&
                                                                                     m.ReturnType != null &&
-                                                                                    m.ReturnType.IsAssignableTo(Assembly.IEnumeratorType.Type))
-                        ?? throw new DSharpCompilerException($"Unable to find public GetEnumerator method with \"{Assembly.IEnumeratorType}\" as return value in expression of foreach statement", statement); ;
+                                                                                    m.ReturnType.IsAssignableTo(Assembly.IEnumeratorTypeInfo.Type))
+                        ?? throw new DSharpCompilerException($"Unable to find public GetEnumerator method with \"{Assembly.IEnumeratorTypeInfo}\" as return value in expression of foreach statement", statement); ;
 
                     enumerator = DSharpIEnumeratorType.Create(getEnumeratorMethod.ReturnType!);
 

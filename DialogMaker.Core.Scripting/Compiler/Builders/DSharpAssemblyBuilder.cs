@@ -217,7 +217,31 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                field ??= GetTypeToken(IEnumeratorType.Type);
+                field ??= GetTypeToken(IEnumeratorType);
+                return field;
+            }
+        }
+        public DSharpTypeToken TypedIEnumeratorToken
+        {
+            get
+            {
+                field ??= GetTypeToken(TypedIEnumeratorType);
+                return field;
+            }
+        }
+        public DSharpTypeToken IEnumerableToken
+        {
+            get
+            {
+                field ??= GetTypeToken(IEnumerableType);
+                return field;
+            }
+        }
+        public DSharpTypeToken TypedIEnumerableToken
+        {
+            get
+            {
+                field ??= GetTypeToken(TypedIEnumerableType);
                 return field;
             }
         }
@@ -486,6 +510,38 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
+        public IDSharpType IEnumeratorType
+        {
+            get
+            {
+                field ??= IEnumeratorTypeInfo.Type;
+                return field;
+            }
+        }
+        public IDSharpType TypedIEnumeratorType
+        {
+            get
+            {
+                field ??= GetType(DSharpBuildInTypes.Extra.TypedIEnumerator);
+                return field;
+            }
+        }
+        public IDSharpType IEnumerableType
+        {
+            get
+            {
+                field ??= GetType(DSharpBuildInTypes.Extra.IEnumerable);
+                return field;
+            }
+        }
+        public IDSharpType TypedIEnumerableType
+        {
+            get
+            {
+                field ??= GetType(DSharpBuildInTypes.Extra.TypedIEnumerable);
+                return field;
+            }
+        }
         public DSharpArrayType ArrayBaseType
         {
             get
@@ -494,7 +550,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
-        public DSharpIEnumeratorType IEnumeratorType
+        public DSharpIEnumeratorType IEnumeratorTypeInfo
         {
             get
             {
@@ -753,6 +809,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
 
             return ReplaceTypes(genericType, parent, replacedTypes);
+        }
+        public IDSharpType ReplaceTypes<T>(IDSharpType genericType, IDSharpType? parent, IDictionary<T, T> replacedTypes)
+            where T : IDSharpType
+        {
+            Dictionary<IDSharpType, IDSharpType> types = [];
+
+            foreach (var info in replacedTypes)
+            {
+                types.Add(info.Key, info.Value);
+            }
+
+            return ReplaceTypes<IDSharpType>(genericType, parent, types);
         }
         public IDSharpType ReplaceTypes(IDSharpType genericType, IDSharpType? parent, IDictionary<IDSharpType, IDSharpType> replacedTypes)
         {

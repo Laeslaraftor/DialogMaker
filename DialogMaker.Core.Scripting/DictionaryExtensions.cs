@@ -11,6 +11,15 @@ namespace DialogMaker.Core.Scripting
                 result = dictionary.FirstOrDefault(p => Equals(p.Value, value)).Key;
                 return !Equals(result, default);
             }
+            public TValue? GetValueOrDefault(TKey key)
+            {
+                if (dictionary.TryGetValue(key, out var value))
+                {
+                    return value;
+                }
+
+                return default;
+            }
         }
     }
 }

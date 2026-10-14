@@ -29,20 +29,16 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         public IDSharpMethodInfo ResetMethod { get; } = resetMethod;
 
-        #region Управление
+        #region Controls
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
-        public override string ToString()
+        public override string? ToString()
         {
             return Type.ToString();
         }
 
         #endregion
 
-        #region Константы
+        #region Constants
 
         /// <summary>
         /// Name of field that contains current item
@@ -59,7 +55,7 @@ namespace DialogMaker.Core.Scripting.Runtime
 
         #endregion
 
-        #region Эталонная реализация IEnumerator
+        #region IEnumerator implementation example
 
         /*
         public interface IEnumerator
@@ -81,27 +77,31 @@ namespace DialogMaker.Core.Scripting.Runtime
                 _items = items;
             }
 
-            public object Current { get; private set; }
+            public object? Current { get; private set; }
 
             private readonly object[] _items;
-            private int _currentIndex = -1;
+            private int _currentIndex;
 
             public bool MoveNext()
             {
-                if (_items.Length == 0 ||
-                    _currentIndex + 1 >= _items.Length)
+                if (_items.Length == 0 || _currentIndex == -1)
                 {
                     return false;
                 }
 
-                _currentIndex++;
                 Current = _items[_currentIndex];
+                _currentIndex++;
+
+                if (_currentIndex >= _items.Length)
+                {
+                    _currentIndex = -1;
+                }
 
                 return true;
             }
             public void Reset()
             {
-                _currentIndex = -1;
+                _currentIndex = 0;
                 Current = null;
             }
         }
