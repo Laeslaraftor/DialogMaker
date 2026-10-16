@@ -7,6 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 {
     public struct DSharpMethodCompileSettings
     {
+        public DSharpIterationMethodInfo? IterationMethodInfo { get; set; }
         public Dictionary<string, DSharpFieldBuilder>? IdentifiersAsField { get; set; }
         public Dictionary<string, DSharpPropertyBuilder>? IdentifiersAsProperties { get; set; }
         public Dictionary<string, DSharpMethodBuilderParameter>? LocalVariables { get; set; }

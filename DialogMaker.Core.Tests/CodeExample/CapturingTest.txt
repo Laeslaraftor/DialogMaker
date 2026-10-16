@@ -1,101 +1,36 @@
 ﻿void LoopFunction()
 {
-	 while (true)
-        {
-            Console.Write("> ");
-            var value = Console.ReadLine();
-            
-            if (string.IsNullOrEmpty(value))
-            {
-                continue;
-            }
-            if (value == "malinovka")
-            {
-                Console.WriteLine("Малиновка шоколадного кольца");
-            }
-            else if (value == "zeWhite")
-            {
-                Console.WriteLine("zeWhite on the beat");
-            }
-            else if (value == "clear")
-            {
-                Console.Clear();
-            }
-            else if (value == "using")
-            {
-                using (DisposableObject disposable = new("first disposable"))
+	 int minValue;
+                int maxValue;
+                string textNumber;
+
+                do
                 {
-                    Console.WriteLine("Now inside disposable block");
-                }
-
-                Console.WriteLine();
-                using DisposableObject disposable2 = new("second disposable");
-                throw new InvalidOperationException("Exception after creating disposable");
-            }
-            else if (value == "split")
-            {
-                Console.Write("Enter value: ");
-                var valueToSplit = Console.ReadLine();
-                Console.Write("Enter separator: ");
-                var separator = Console.ReadLine();
-                var parts = valueToSplit.Split(separator[0]);
-
-                Console.WriteLine();
-                Console.WriteLine("Parts:");
-
-                foreach (var part in parts)
+                    Console.Write("Enter min value: ");
+                    textNumber = Console.ReadLine();
+                } 
+                while (!int.TryParse(textNumber, out minValue));
+                do
                 {
-                    Console.WriteLine(part);
+                    Console.Write("Enter max value: ");
+                    textNumber = Console.ReadLine();
+                } 
+                while (!int.TryParse(textNumber, out maxValue));
+
+                IEnumerable<int> GetValuesWhileNotInRange()
+                {
+                    while (true)
+                    {
+                        var value = Random.Shared.Next(minValue, maxValue);
+
+                        if (value >= minValue && value <= maxValue)
+                        {
+                            yield break;
+                        }
+
+                        yield return value;
+                    }
                 }
-            }
-            else if (value == "replace")
-            {
-                Console.Write("Enter value: ");
-                var valueToTestReplacing = Console.ReadLine();
-                Console.Write("Enter value that need to replace: ");
-                var oldValue = Console.ReadLine();
-                Console.Write("Enter new value: ");
-                var newValue = Console.ReadLine();
-                valueToTestReplacing = valueToTestReplacing.Replace(oldValue, newValue);
-
-                Console.WriteLine();
-                Console.WriteLine("New value: " + valueToTestReplacing);
-            }
-            else if (value == "exit")
-            {
-                break;
-            }
-            else
-            {
-                Console.WriteLine("Неизвестная команда");
-            }
-
-            Console.WriteLine();
-        }
-
-        Console.WriteLine();
-        
-        string capturedText = "first captured value";
-		int counter = 0;
-
-        void LocalFunction()
-        {
-            Console.WriteLine(capturedText);
-            capturedText = "second captured text";
-            OtherLocalFunction();
-
-            void OtherLocalFunction()
-            {
-                _counter++;
-                Console.WriteLine(capturedText);
-                capturedText = "third captured value!";
-            }
-        } 
-
-        LocalFunction();
-		counter++;
-
-        Console.WriteLine(capturedText);
 }
 
 /*

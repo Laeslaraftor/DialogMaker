@@ -48,14 +48,14 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 foreach (var parameter in invokable.Parameters)
                 {
-                    CurrentScope?.Variables.Add(parameter.Name, new(parameter, parameter.Type, null));
+                    CurrentScope?.Variables.TryAdd(parameter.Name, new(parameter, parameter.Type, null));
                 }
             }
             else if (node.Parent is DelegateExpressionNode delegateNode)
             {
                 foreach (var parameter in delegateNode.Parameters)
                 {
-                    CurrentScope?.Variables.Add(parameter.Name, new(parameter, parameter.Type, null));
+                    CurrentScope?.Variables.TryAdd(parameter.Name, new(parameter, parameter.Type, null));
                 }
             }
         }
@@ -163,9 +163,12 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             while (parent != null)
             {
+                if (parent is CallExpressionNode)
+                {
+                    return true;
+                }
                 if (parent.Parent is MemberAccessExpressionNode memberAccess &&
-                    memberAccess.Member == parent &&
-                    parent is not CallExpressionNode)
+                    memberAccess.Member == parent)
                 {
                     return false;
                 }

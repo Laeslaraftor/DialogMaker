@@ -127,6 +127,47 @@ public unsafe class Program
                 Console.WriteLine();
                 Console.WriteLine("New value: " + valueToTestReplacing);
             }
+            else if (value == "findRandom")
+            {
+                int minValue;
+                int maxValue;
+                string textNumber;
+
+                do
+                {
+                    Console.Write("Enter min value: ");
+                    textNumber = Console.ReadLine();
+                } 
+                while (!int.TryParse(textNumber, out minValue));
+                do
+                {
+                    Console.Write("Enter max value: ");
+                    textNumber = Console.ReadLine();
+                } 
+                while (!int.TryParse(textNumber, out maxValue));
+
+                IEnumerable<int> GetValuesWhileNotInRange()
+                {
+                    while (true)
+                    {
+                        var value = Random.Shared.Next(minValue, maxValue);
+
+                        if (value >= minValue && value <= maxValue)
+                        {
+                            yield break;
+                        }
+
+                        yield return value;
+                    }
+                }
+
+                Console.WriteLine("Printing numbers while it not in range:");
+
+                foreach (var number in GetValuesWhileNotInRange())
+                {
+                    Console.WriteLine(number);
+                }
+            }
             else if (value == "exit")
             {
                 break;
@@ -294,6 +335,14 @@ public unsafe class Program
         catch (Exception error)
         {
             Console.WriteLine("Exception from foreach: " + error.Message);
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Iteration method:");
+
+        foreach (var value in TestIterationMethod(50, 60))
+        {
+            Console.WriteLine(value);
         }
 
         Console.WriteLine();
@@ -528,6 +577,29 @@ public unsafe class Program
             ProgramType.MegaGovno => "MegaGovno!!!!!",
             _ => "Дрисня"
         };
+    }
+    private static IEnumerable<int> TestIterationMethod(int requiredMin, int requiredMax)
+    {
+        var random = Random.Shared;
+
+        bool GetRandomNumber(out int number)
+        {
+            var randomValue = random.Next(0, 100);
+
+            if (randomValue >= requiredMin && randomValue <= requiredMax)
+            {
+                number = -1;
+                return false;
+            }
+
+            number = randomValue;
+            return true;
+        }
+
+        while (GetRandomNumber(out var num))
+        {
+            yield return num;
+        }
     }
 
     private static bool TryGetZeBlack(string value, out string? result)

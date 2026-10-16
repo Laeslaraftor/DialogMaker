@@ -465,6 +465,25 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
 
             return methodScope != null;
         }
+        /// <summary>
+        /// Try to get first iteration method information from current and parent scopes
+        /// </summary>
+        /// <param name="result">Iteration method information that was found</param>
+        /// <returns>Is iteration method information was found successfully</returns>
+        public bool TryGetFirstIterationMethodInfo([NotNullWhen(true)] out DSharpIterationMethodInfo? result)
+        {
+            result = RecursiveCheck(scope =>
+            {
+                if (scope is DSharpCompilerMethodScope methodScope)
+                {
+                    return methodScope.IterationMethodInfo;
+                }
+
+                return null;
+            });
+
+            return result != null;
+        }
 
         /// <summary>
         /// Try to resolve first property or field

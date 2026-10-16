@@ -1202,6 +1202,21 @@ namespace DialogMaker.Core.Scripting.Runtime
                     return parameters.Length != 0 && parameters[^1].Mode == DSharpMethodParameterMode.Params;
                 }
             }
+            /// <summary>
+            /// Get method type if current callable is method
+            /// </summary>
+            public DSharpMethodType? Type
+            {
+                get
+                {
+                    if (callable is IDSharpMethodInfo methodInfo)
+                    {
+                        return methodInfo.MethodType;
+                    }
+
+                    return null;
+                }
+            }
 
             /// <summary>
             /// <inheritdoc cref="IDSharpMethodInfo.GetReplacedTypesByGenericParameters(DSharpAssemblyBuilder, IDSharpType[])"/>

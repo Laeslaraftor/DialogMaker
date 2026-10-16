@@ -17,7 +17,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                                            DSharpFieldBuilder stateField,
                                            DSharpFieldBuilder currentValueField,
                                            Dictionary<DSharpTypeBuilder, DSharpTypeBuilder>? methodToEnumerableGenericTypes,
-                                           Dictionary<DSharpTypeBuilder, DSharpTypeBuilder>? methodToEnumeratorGenericTypes)
+                                           Dictionary<DSharpTypeBuilder, DSharpTypeBuilder>? methodToEnumeratorGenericTypes,
+                                           Dictionary<DSharpMethodBuilderParameter, DSharpFieldBuilder>? methodParametersToEnumeratorFields)
     {
         /// <summary>
         /// Node that represents method
@@ -73,17 +74,19 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// </summary>
         public DSharpMethodBuilder? DisposeMethod { get; private set; }
         /// <summary>
-        /// Field that stores current state. Field type is <see cref="DSharpBuildInTypes.Int"/>
+        /// Field that stores index of next instruction after last yield returning. Field type is <see cref="DSharpBuildInTypes.Int"/>.
+        /// Value -1 means that enumerator was force stopped (yield break) or ended. 
+        /// Value 0 means default state
         /// </summary>
-        public DSharpFieldBuilder StateField { get; } = stateField;
+        public DSharpFieldBuilder InstructionField { get; } = stateField;
         /// <summary>
-        /// Field that stores current value from <see cref="MoveNextMethod"/>.Field type is <see cref="EnumeratingType"/>
+        /// Field that stores current value from <see cref="MoveNextMethod"/>. Field type is <see cref="EnumeratingType"/>.
         /// </summary>
-        public DSharpFieldBuilder CurrentValueField { get; } = currentValueField;
+        public DSharpFieldBuilder ValueField { get; } = currentValueField;
         /// <summary>
-        /// Yield statements that represents enumerator states
+        /// Fields that created instead of local variables
         /// </summary>
-        public HashSet<YieldStatementNode> YieldStatements { get; } = [];
+        public HashSet<DSharpFieldBuilder> VariableFields { get; } = [];
         /// <summary>
         /// Method generic parameters with corresponding enumerable generic types
         /// </summary>
@@ -92,6 +95,10 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// Method generic parameters with corresponding enumerator generic types
         /// </summary>
         public Dictionary<DSharpTypeBuilder, DSharpTypeBuilder>? MethodToEnumeratorGenericTypes { get; } = methodToEnumeratorGenericTypes;
+        /// <summary>
+        /// Enumerator fields that represents method parameters
+        /// </summary>
+        public Dictionary<DSharpMethodBuilderParameter, DSharpFieldBuilder>? MethodParametersToEnumeratorFields { get; } = methodParametersToEnumeratorFields;
 
         #region Controls
 
@@ -113,6 +120,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                 ?? throw new DSharpCompilerException($"Failed to implement \"{Method.Assembly.IDisposableType}\" at \"{Enumerator}\": \"{DSharpIDisposableType.DisposeMethodName}\" method not found", Node);
             DisposeMethod = disposeMethod;
 
+            var resetMethodCode = ResetMethod.GetBytecodeBuilder();
+            resetMethodCode.LoadInstance();
+            resetMethodCode.Call(disposeMethod);
+
             return disposeMethod;
         }
 
@@ -121,9 +132,9 @@ namespace DialogMaker.Core.Scripting.Compiler
         #region Constants
 
         /// <summary>
-        /// Name of field that stores current enumerable state
+        /// Name of field that stores index of next instruction after last yield returning
         /// </summary>
-        public const string StateFieldName = "<>_states";
+        public const string InstructionFieldName = "<>_instruction";
         /// <summary>
         /// Name of field that stores current value
         /// </summary>
@@ -184,6 +195,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             DSharpMethodBuilder? enumerableConstructor = null;
             Dictionary<DSharpTypeBuilder, DSharpTypeBuilder>? methodToEnumerableGenericTypes = null;
             Dictionary<DSharpTypeBuilder, DSharpTypeBuilder>? methodToEnumeratorGenericTypes = null;
+            Dictionary<DSharpMethodBuilderParameter, DSharpFieldBuilder>? methodParametersToEnumeratorFields = null;
             DSharpMethodBuilder? getEnumeratorMethod = null;
 
             if (returnType == assembly.IEnumerableType ||
@@ -245,11 +257,11 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             var implementedEnumeratorMembers = enumeratorType.ImplementInterface(enumeratorInterface);
-            var stateField = enumeratorType.CreateField(StateFieldName);
+            var instructionField = enumeratorType.CreateField(InstructionFieldName);
             var currentValueField = enumeratorType.CreateField(CurrentValueFieldName);
 
-            stateField.Access = DSharpAccessModifier.Private;
-            stateField.FieldType = assembly.Int32Token;
+            instructionField.Access = DSharpAccessModifier.Private;
+            instructionField.FieldType = assembly.Int32Token;
             currentValueField.Access = DSharpAccessModifier.Private;
             currentValueField.FieldType = assembly.GetTypeToken(enumeratingType);
 
@@ -273,7 +285,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                     var code = enumerableConstructor.GetBytecodeBuilder();
                     int parameterIndex = 0;
                     code.LoadInstance();
-                    getEnumeratorCode.LoadInstance();
 
                     foreach (var parameter in enumerableConstructor.Parameters)
                     {
@@ -285,7 +296,9 @@ namespace DialogMaker.Core.Scripting.Compiler
                         code.StorePropertyOrField(field);
                         code.Pop();
 
+                        getEnumeratorCode.LoadInstance();
                         getEnumeratorCode.LoadPropertyOrField(field);
+                        getEnumeratorCode.PopOffset(1);
 
                         parameterIndex++;
                     }
@@ -303,6 +316,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                     methodCode.New(enumerableType);
                     getEnumeratorCode.New(enumeratorType);
                 }
+
+                getEnumeratorCode.Return();
             }
             else
             {
@@ -315,6 +330,9 @@ namespace DialogMaker.Core.Scripting.Compiler
                     methodCode.New(enumeratorType);
                 }
             }
+
+            methodCode.Return();
+
             if (enumeratorConstructor != null)
             {
                 int parameterIndex = 0;
@@ -331,6 +349,9 @@ namespace DialogMaker.Core.Scripting.Compiler
                     code.StorePropertyOrField(field);
                     code.Pop();
 
+                    methodParametersToEnumeratorFields ??= [];
+                    methodParametersToEnumeratorFields.Add(method.Parameters[parameterIndex], field);
+
                     parameterIndex++;
                 }
             }
@@ -342,15 +363,16 @@ namespace DialogMaker.Core.Scripting.Compiler
                                                        enumeratorType,
                                                        enumeratingType,
                                                        enumeratorConstructor,
-                                                       stateField,
+                                                       instructionField,
                                                        currentValueField,
                                                        methodToEnumerableGenericTypes,
-                                                       methodToEnumeratorGenericTypes);
+                                                       methodToEnumeratorGenericTypes,
+                                                       methodParametersToEnumeratorFields);
 
             var resetMethodCode = resultInfo.ResetMethod.GetBytecodeBuilder();
             resetMethodCode.LoadInstance();
             resetMethodCode.Push(0);
-            resetMethodCode.StorePropertyOrField(stateField);
+            resetMethodCode.StorePropertyOrField(instructionField);
             resetMethodCode.Pop();
             resetMethodCode.Push(null);
             resetMethodCode.StorePropertyOrField(currentValueField);

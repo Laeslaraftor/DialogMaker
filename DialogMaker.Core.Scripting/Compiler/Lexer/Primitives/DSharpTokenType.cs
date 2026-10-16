@@ -44,6 +44,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         [Keyword("case")]
         Case,
         /// <summary>
+        /// Do keyword
+        /// </summary>
+        [Keyword("do")]
+        Do,
+        /// <summary>
         /// While keyword
         /// </summary>
         [Keyword("while")]

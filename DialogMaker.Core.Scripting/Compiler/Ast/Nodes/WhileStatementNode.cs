@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+using System.Collections.Immutable;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 {
@@ -8,6 +9,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
     /// <param name="token">Token that represents while keyword</param>
     public partial class WhileStatementNode(DSharpToken token) : StatementNode(token)
     {
+        /// <summary>
+        /// Is do-while
+        /// </summary>
+        public bool FirstDo { get; set; }
         /// <summary>
         /// Condition for execution body
         /// </summary>
@@ -26,28 +31,60 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <returns>Parsed while statement</returns>
         public static WhileStatementNode Parse(AstParserStream stream)
         {
-            var whileToken = stream.Eat(DSharpTokenType.While);
-            stream.Eat(DSharpTokenType.LeftParen);
+            bool isDo = false;
+            DSharpToken whileToken;
 
-            WhileStatementNode statement = new(whileToken)
+            if (stream.Check(DSharpTokenType.Do))
             {
-                Condition = ExpressionNode.ParseExpression(stream)
-            };
-            statement.Condition.Parent = statement;
-
-            stream.Eat(DSharpTokenType.RightParen);
-
-            if (!stream.Check(DSharpTokenType.Semicolon))
-            {
-                statement.Body = ParseCode(stream);
-                statement.Body.Parent = statement;
+                whileToken = stream.Eat(DSharpTokenType.Do);
+                isDo = true;
             }
             else
             {
-                stream.Eat(DSharpTokenType.Semicolon);
+                whileToken = stream.Eat(DSharpTokenType.While);
             }
 
+            WhileStatementNode statement = new(whileToken)
+            {
+                FirstDo = true,
+            };
+
+            if (isDo)
+            {
+                statement.Body = ParseCode(stream);
+                statement.Body.Parent = statement;
+                stream.Eat(DSharpTokenType.While);
+                ParseCondition(stream, statement);
+                stream.Eat(DSharpTokenType.Semicolon);
+            }
+            else
+            {
+                ParseCondition(stream, statement);
+
+                if (!stream.Check(DSharpTokenType.Semicolon))
+                {
+                    statement.Body = ParseCode(stream);
+                    statement.Body.Parent = statement;
+                }
+                else
+                {
+                    stream.Eat(DSharpTokenType.Semicolon);
+                }
+            }
+
+
             return statement;
+        }
+
+        private static void ParseCondition(AstParserStream stream, WhileStatementNode whileStatement)
+        {
+            stream.Eat(DSharpTokenType.LeftParen);
+
+            var conditionExpression = ExpressionNode.ParseExpression(stream);
+            conditionExpression.Parent = whileStatement;
+            whileStatement.Condition = conditionExpression;
+
+            stream.Eat(DSharpTokenType.RightParen);
         }
 
         #endregion

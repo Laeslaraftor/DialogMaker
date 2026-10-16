@@ -32,6 +32,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// </summary>
         public CaptureInfo? Closure { get; private set; }
         /// <summary>
+        /// Iteration information for current method
+        /// </summary>
+        public DSharpIterationMethodInfo? IterationMethodInfo { get; set; }
+        /// <summary>
         /// Is root scope. Root scope contains method parameters as variables
         /// </summary>
         public bool IsRoot { get; set; }
@@ -58,7 +62,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
                 code = Method.GetBytecodeBuilder();
                 code.Clear();
             }
-            if (Closure != null)
+            if (Closure?.ClosureContainer != null)
             {
                 Variables.Add(Closure.ClosureContainer);
                 code?.LocalVariables.Add(Closure.ClosureContainer);
@@ -68,9 +72,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// <summary>
         /// Create captures container type
         /// </summary>
-        /// <param name="owner">Node that contains captured variables</param>
+        /// <param name="capture">Information of capturing for that need to create capture</param>
+        /// <param name="isIterationMethod">
+        /// Is method for that creating capturing is iteration. 
+        /// Closure container creates as field for iteration methods,
+        /// for default methods creates variable
+        /// </param>
         /// <returns>Type that purposed to use as container for captured values</returns>
-        public CaptureInfo GetOrCreateCapture(DSharpCaptureInfo.Capture capture)
+        public CaptureInfo GetOrCreateCapture(DSharpCaptureInfo.Capture capture, bool isIterationMethod)
         {
             DSharpCompilerScope? parent = this;
 
@@ -93,13 +102,31 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
             string name = $"<>_Capture{capture.Scope.Line}_{capture.Scope.Column}";
             string instanceVariableName = $"<>_captureInstance_{capture.Scope.Line}_{capture.Scope.Column}";
             var type = Assembly.CreateType(name, Method.DeclaringType);
+            DSharpMethodBuilderParameter? variableContainer = null;
+            DSharpFieldBuilder? fieldContainer = null;
 
-            if (CreateVariable(instanceVariableName, type) is not DSharpMethodBuilderParameter variable)
+            if (isIterationMethod)
             {
-                throw new DSharpCompilerException($"Unable to variable for storing closure in \"{Method}\"", capture.Scope);
+                if (Method.DeclaringType is not DSharpTypeBuilder iterationMethodDeclaringType)
+                {
+                    throw new DSharpCompilerException("Iteration method should be declared in builder for creating closure", capture.Scope);
+                }
+
+                fieldContainer = iterationMethodDeclaringType.CreateField(instanceVariableName);
+                fieldContainer.Access = DSharpAccessModifier.Private;
+                fieldContainer.FieldType = type;
+            }
+            else
+            {
+                if (CreateVariable(instanceVariableName, type) is not DSharpMethodBuilderParameter variable)
+                {
+                    throw new DSharpCompilerException($"Unable to variable for storing closure in \"{Method}\"", capture.Scope);
+                }
+
+                variableContainer = variable;
             }
 
-            Closure = new(Method.DeclaringType, type, capture, variable);
+            Closure = new(Method.DeclaringType, type, capture, variableContainer, fieldContainer);
 
             if (type.DeclaringType != null)
             {
@@ -184,7 +211,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// <param name="type">Type that contains fields as containers for variables and method that used as local variables</param>
         /// <param name="capture">Information about captured variables</param>
         /// <param name="instanceVariable">Variable that contains instance of type instance</param>
-        public class CaptureInfo(IDSharpType? originalType, DSharpTypeBuilder type, DSharpCaptureInfo.Capture capture, DSharpMethodBuilderParameter instanceVariable)
+        public class CaptureInfo(IDSharpType? originalType, DSharpTypeBuilder type, DSharpCaptureInfo.Capture capture, DSharpMethodBuilderParameter? instanceVariable, DSharpFieldBuilder? instanceField)
         {
             /// <summary>
             /// Type that contains original method
@@ -203,9 +230,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
             /// </summary>
             public DSharpCaptureInfo.Capture Capture { get; } = capture;
             /// <summary>
-            /// Variable that contains instance of type instance
+            /// Variable that stores instance of closure type
             /// </summary>
-            public DSharpMethodBuilderParameter ClosureContainer { get; } = instanceVariable;
+            public DSharpMethodBuilderParameter? ClosureContainer { get; } = instanceVariable;
+            /// <summary>
+            /// Field that stores instance of closure type
+            /// </summary>
+            public DSharpFieldBuilder? ClosureFieldContainer { get; } = instanceField;
             /// <summary>
             /// Captured parameters as fields
             /// </summary>
@@ -241,6 +272,69 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
                 }
 
                 return InstanceField;
+            }
+            /// <summary>
+            /// Generate code for loading closure instance from it's container
+            /// </summary>
+            /// <param name="code">Bytecode builder for generating code</param>
+            /// <exception cref="InvalidOperationException">Closure container not found</exception>
+            public void LoadClosureContainer(DSharpBytecodeBuilder code)
+            {
+                if (ClosureContainer != null)
+                {
+                    code.LoadLocal(ClosureContainer);
+                }
+                else if (ClosureFieldContainer != null)
+                {
+                    code.LoadInstance();
+                    code.LoadPropertyOrField(ClosureFieldContainer);
+                    code.PopOffset(1);
+                }
+                else
+                {
+                    throw new InvalidOperationException("Closure container not found");
+                }
+            }
+            /// <summary>
+            /// Generate code for storing closure instance from it's container
+            /// </summary>
+            /// <param name="code">Bytecode builder for generating code</param>
+            /// <param name="removeValueAndInstance">
+            /// true: remove storing value and instance if loaded,
+            /// false: remove only instance if it loaded,
+            /// null: no nothing
+            /// </param>
+            /// <exception cref="InvalidOperationException">Closure container not found</exception>
+            public void StoreClosureContainer(DSharpBytecodeBuilder code, bool? removeValueAndInstance = false)
+            {
+                if (ClosureContainer != null)
+                {
+                    code.StoreLocal(ClosureContainer);
+
+                    if (removeValueAndInstance == true)
+                    {
+                        code.Pop();
+                    }
+                }
+                else if (ClosureFieldContainer != null)
+                {
+                    code.LoadInstance();
+                    code.StackMove(0, 1);
+                    code.StorePropertyOrField(ClosureFieldContainer);
+
+                    if (removeValueAndInstance == true)
+                    {
+                        code.PopRepeat(2);
+                    }
+                    else if (removeValueAndInstance == false)
+                    {
+                        code.PopOffset(1);
+                    }
+                }
+                else
+                {
+                    throw new InvalidOperationException("Closure container not found");
+                }
             }
 
             /// <summary>

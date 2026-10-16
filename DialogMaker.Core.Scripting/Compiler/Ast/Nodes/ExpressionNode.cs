@@ -182,7 +182,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     };
 
                     expression.Parent = callExpression;
-                    args.SetParent(expression);
+                    args.SetParent(callExpression);
 
                     expression = callExpression;
                 }

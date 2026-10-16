@@ -46,7 +46,7 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// <summary>
             /// Typed enumerator interface
             /// </summary>
-            public static readonly DSharpBuildInTypeInfo TypedIEnumerator = new("System.Collections.IEnumerator`1");
+            public static readonly DSharpBuildInTypeInfo TypedIEnumerator = new("System.Collections.Generic.IEnumerator`1");
             /// <summary>
             /// Standard enumerable interface
             /// </summary>
@@ -54,7 +54,7 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// <summary>
             /// Typed enumerable interface
             /// </summary>
-            public static readonly DSharpBuildInTypeInfo TypedIEnumerable = new("System.Collections.IEnumerable`1");
+            public static readonly DSharpBuildInTypeInfo TypedIEnumerable = new("System.Collections.Generic.IEnumerable`1");
             /// <summary>
             /// Type that represents pointer with unknown type (void*)
             /// </summary>
@@ -429,7 +429,6 @@ namespace DialogMaker.Core.Scripting.Runtime
                 return DSharpCastAvailability.No;
             }
             if (IsPointFloating(target) && !IsPointFloating(destination) ||
-                target == Char || destination == Char ||
                 target.Size > destination.Size ||
                 (target.Size >= destination.Size &&
                  (IsUnsigned(target) && !IsUnsigned(destination) ||

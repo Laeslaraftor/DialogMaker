@@ -34,10 +34,6 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 List<DSharpMemberInfoBuilder> implementedMembers = [];
 
-                if (!type.ContainsBaseType(interfaceType))
-                {
-                    type.AddBaseType(interfaceType);
-                }
 
                 static void SetupProperty(IDSharpPropertyInfo interfaceProperty, DSharpPropertyBuilder newProperty)
                 {
@@ -58,7 +54,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                 }
 
-                foreach (var interfaceMember in interfaceType.GetAllMembers(m => m.IsDeclaration))
+                foreach (var interfaceMember in interfaceType.GetAllMembers(m => m.IsDeclaration && m.DeclaringType?.ObjectType == DSharpObjectType.Interface))
                 {
                     DSharpMemberInfoBuilder member;
 
@@ -159,6 +155,11 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
 
                     implementedMembers.Add(member);
+                }
+
+                if (!type.ContainsBaseType(interfaceType))
+                {
+                    type.AddBaseType(interfaceType);
                 }
 
                 return implementedMembers;
@@ -1307,8 +1308,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     throw new ArgumentException($"Unable to get type of \"base\" from type that do not have base types \"{currentType}\"", nameof(context));
                 }
-                if (expression is IdentifierExpressionNode identifierExpression &&
-                    context.CurrentMember is IDSharpMethodInfo method)
+                if (expression is IdentifierExpressionNode identifierExpression)
                 {
                     if (identifierExpression.TryGetLocalMember(context, out var localMember))
                     {
@@ -1327,15 +1327,26 @@ namespace DialogMaker.Core.Scripting.Compiler
                             return (IDSharpType)assembly.GetType(context.ResolveType(isTypeExpression.DestinationType));
                         }
                     }
-                    else if (context.Scope != null &&
-                             context.Scope.TryGetCapturedVariable(identifierExpression, out _, out var variableField))
+                    if (context.Scope != null)
                     {
-                        if (variableField.FieldType == null)
+                        if (context.Scope.TryGetCapturedVariable(identifierExpression, out _, out var variableField))
                         {
-                            throw new DSharpCompilerException("Field type not setted for captured variable", expression);
-                        }
+                            if (variableField.FieldType == null)
+                            {
+                                throw new DSharpCompilerException("Field type not setted for captured variable", expression);
+                            }
 
-                        return (IDSharpType)assembly.GetType(variableField.FieldType);
+                            return (IDSharpType)assembly.GetType(variableField.FieldType);
+                        }
+                        else if (context.Scope.TryGetFirstIterationMethodInfo(out var iterationMethodInfo))
+                        {
+                            var field = iterationMethodInfo.Enumerator.GetFieldOrDefault(identifierExpression.Name);
+
+                            if (field != null)
+                            {
+                                return field.FieldType;
+                            }
+                        }
                     }
                 }
 

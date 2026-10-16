@@ -63,13 +63,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             {
                 return SwitchStatementNode.Parse(stream);
             }
-            if (stream.Check(DSharpTokenType.Void))
-            {
-                if (!ObjectDeclarationNode.TryStartParseMember(stream, out var memberInfo))
-                {
-                    stream.ThrowPositionException("Invalid tokens");
-                }
 
+            var streamPosition = stream.Position;
+
+            if (ObjectDeclarationNode.TryStartParseMember(stream, out var memberInfo) &&
+                memberInfo.MemberType == DSharpTypeMember.Method)
+            {
                 var method = MethodNode.Parse(stream, memberInfo);
                 var invokableStatement = new InvokableStatementNode(method.Token)
                 {
@@ -79,11 +78,17 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
                 return invokableStatement;
             }
+            else
+            {
+                stream.Position = streamPosition;
+            }
+
             if (stream.Check(DSharpTokenType.If))
             {
                 return IfStatementNode.Parse(stream);
             }
-            if (stream.Check(DSharpTokenType.While))
+            if (stream.Check(DSharpTokenType.While) ||
+                stream.Check(DSharpTokenType.Do))
             {
                 return WhileStatementNode.Parse(stream);
             }

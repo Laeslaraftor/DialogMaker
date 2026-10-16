@@ -1287,9 +1287,19 @@ namespace DialogMaker.Core.Scripting.Compiler
                     {
                         throw new DSharpCompilerException("Out expression should contains identifier", argumentExpression);
                     }
-                    if (outExpression.Type?.Name == DSharpAssemblyBuilder.VarName)
+                    if (outExpression.Type != null)
                     {
-                        parameters[i] = null;
+                        var typeInfo = outExpression.Type;
+
+                        if (typeInfo.Name == DSharpAssemblyBuilder.VarName)
+                        {
+                            parameters[i] = null;
+                        }
+                        else
+                        {
+                            parameters[i] = (IDSharpType)Assembly.GetType(ResolveType(typeInfo));
+                        }
+
                         i++;
                         continue;
                     }

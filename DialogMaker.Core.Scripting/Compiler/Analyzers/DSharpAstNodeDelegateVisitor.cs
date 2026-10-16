@@ -9,14 +9,23 @@ namespace DialogMaker.Core.Scripting.Compiler.Analyzers
     public class DSharpAstNodeDelegateVisitor : DSharpAstVisitor
     {
         /// <summary>
-        /// Nodes handler
+        /// Nodes start visiting handler
         /// </summary>
-        public Action<AstNode>? Handler { get; set; }
+        public Action<AstNode>? StartHandler { get; set; }
+        /// <summary>
+        /// Nodes end visiting handler
+        /// </summary>
+        public Action<AstNode>? EndHandler { get; set; }
 
         public override void StartVisiting(AstNode node)
         {
             base.StartVisiting(node);
-            Handler?.Invoke(node);
+            StartHandler?.Invoke(node);
+        }
+        public override void EndVisiting(AstNode node)
+        {
+            base.EndVisiting(node);
+            EndHandler?.Invoke(node);
         }
     }
 }
