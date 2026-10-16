@@ -126,7 +126,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
                 variableContainer = variable;
             }
 
-            Closure = new(Method.DeclaringType, type, capture, variableContainer, fieldContainer);
+            Closure = new(this, Method.DeclaringType, type, capture, variableContainer, fieldContainer);
 
             if (type.DeclaringType != null)
             {
@@ -159,7 +159,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         }
         protected override IEnumerable<IDSharpMemberInfo> GetMembers(string name)
         {
-            return GetTypes(name);
+            if (IterationMethodInfo != null &&
+                IterationMethodInfo.TryGetScopedVariable(this, name, out var variable))
+            {
+                yield return variable;
+            }
+
+            foreach (var type in GetTypes(name))
+            {
+                yield return type;
+            }
         }
         protected override IEnumerable<IDSharpParameterInfo> GetVariables()
         {
@@ -207,12 +216,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// <summary>
         /// Information about captured variables
         /// </summary>
+        /// <param name="scope">Scope that created this capture information</param>
         /// <param name="originalType">Type that contains original method</param>
         /// <param name="type">Type that contains fields as containers for variables and method that used as local variables</param>
         /// <param name="capture">Information about captured variables</param>
         /// <param name="instanceVariable">Variable that contains instance of type instance</param>
-        public class CaptureInfo(IDSharpType? originalType, DSharpTypeBuilder type, DSharpCaptureInfo.Capture capture, DSharpMethodBuilderParameter? instanceVariable, DSharpFieldBuilder? instanceField)
+        /// <param name="instanceField">Field that contains instance of type instance</param>
+        public class CaptureInfo(DSharpCompilerMethodScope scope, IDSharpType? originalType, DSharpTypeBuilder type, DSharpCaptureInfo.Capture capture, DSharpMethodBuilderParameter? instanceVariable, DSharpFieldBuilder? instanceField)
         {
+            public DSharpCompilerMethodScope Scope { get; } = scope;
             /// <summary>
             /// Type that contains original method
             /// </summary>
@@ -245,6 +257,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
             /// Variables definitions as fields
             /// </summary>
             public Dictionary<AstNode, DSharpFieldBuilder> CapturedDeclaration { get; } = [];
+            /// <summary>
+            /// Custom fields that stores closure
+            /// </summary>
+            public Dictionary<DSharpMethodBuilder, DSharpFieldBuilder> CustomClosureContainers { get; } = [];
 
             /// <summary>
             /// Create field for containing calling object instance.
@@ -260,13 +276,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
                     {
                         throw new DSharpCompilerException("Unable to create field for containing instance for capturing without provided original type", Capture.Scope);
                     }
+
+                    DSharpFieldBuilder? parentInstanceField = null;
+
+                    if (Scope.Parent != null && Scope.Parent.TryGetClosure(out var parentClosure))
+                    {
+                        parentInstanceField = parentClosure.GetOrCreateInstanceField();
+                    }
                     if (OriginalType.IsStatic)
                     {
                         throw new DSharpCompilerException($"Unable to capture instance of static type \"{OriginalType}\"", Capture.Scope);
                     }
 
                     var instanceField = Type.CreateField(InstanceFieldName);
-                    instanceField.FieldType = Type.Assembly.GetTypeToken(OriginalType);
+                    instanceField.FieldType = parentInstanceField?.FieldType ?? Type.Assembly.GetTypeToken(OriginalType);
                     instanceField.Access = DSharpAccessModifier.Public;
                     InstanceField = instanceField;
                 }
@@ -280,15 +303,31 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
             /// <exception cref="InvalidOperationException">Closure container not found</exception>
             public void LoadClosureContainer(DSharpBytecodeBuilder code)
             {
-                if (ClosureContainer != null)
+                static void LoadFromField(DSharpBytecodeBuilder code, DSharpFieldBuilder field)
                 {
-                    code.LoadLocal(ClosureContainer);
+                    code.LoadInstance();
+                    code.LoadPropertyOrField(field);
+                    code.PopOffset(1);
+                }
+
+                if (CustomClosureContainers.TryGetValue(code.Method, out var containerField))
+                {
+                    LoadFromField(code, containerField);
                 }
                 else if (ClosureFieldContainer != null)
                 {
-                    code.LoadInstance();
-                    code.LoadPropertyOrField(ClosureFieldContainer);
-                    code.PopOffset(1);
+                    LoadFromField(code, ClosureFieldContainer);
+                }
+                else if (ClosureContainer != null)
+                {
+                    if (code.Method.DeclaringType == Type)
+                    {
+                        code.LoadInstance();
+                    }
+                    else
+                    {
+                        code.LoadLocal(ClosureContainer);
+                    }
                 }
                 else
                 {
@@ -307,20 +346,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
             /// <exception cref="InvalidOperationException">Closure container not found</exception>
             public void StoreClosureContainer(DSharpBytecodeBuilder code, bool? removeValueAndInstance = false)
             {
-                if (ClosureContainer != null)
-                {
-                    code.StoreLocal(ClosureContainer);
-
-                    if (removeValueAndInstance == true)
-                    {
-                        code.Pop();
-                    }
-                }
-                else if (ClosureFieldContainer != null)
+                static void StoreFromField(DSharpBytecodeBuilder code, DSharpFieldBuilder field, bool? removeValueAndInstance)
                 {
                     code.LoadInstance();
                     code.StackMove(0, 1);
-                    code.StorePropertyOrField(ClosureFieldContainer);
+                    code.StorePropertyOrField(field);
 
                     if (removeValueAndInstance == true)
                     {
@@ -329,6 +359,24 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
                     else if (removeValueAndInstance == false)
                     {
                         code.PopOffset(1);
+                    }
+                }
+
+                if (CustomClosureContainers.TryGetValue(code.Method, out var containerField))
+                {
+                    StoreFromField(code, containerField, removeValueAndInstance);
+                }
+                else if (ClosureFieldContainer != null)
+                {
+                    StoreFromField(code, ClosureFieldContainer, removeValueAndInstance);
+                }
+                else if (ClosureContainer != null)
+                {
+                    code.StoreLocal(ClosureContainer);
+
+                    if (removeValueAndInstance == true)
+                    {
+                        code.Pop();
                     }
                 }
                 else

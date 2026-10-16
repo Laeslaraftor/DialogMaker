@@ -20,7 +20,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
                 if (index == -1)
                 {
-                    throw new InvalidOperationException($"Unable to write local variable that not exists in current method \"{BytecodeBuilder.Method}\"");
+                    throw new InvalidOperationException($"Unable to write local variable that not exists in current method \"{BytecodeBuilder.Method}\". Instruction index: {BytecodeBuilder.Instructions.IndexOf(this)}");
                 }
 
                 stream.Write((uint)index);

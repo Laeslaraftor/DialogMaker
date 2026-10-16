@@ -46,11 +46,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                     {
                         var getter = newProperty.CreateGetter();
                         getter.Access = interfaceProperty.GetterAccess.Value;
+                        newProperty.GetterAccess = interfaceProperty.GetterAccess;
                     }
                     if (interfaceProperty.SetterAccess != null)
                     {
                         var setter = newProperty.CreateSetter();
                         setter.Access = interfaceProperty.SetterAccess.Value;
+                        newProperty.SetterAccess = interfaceProperty.SetterAccess;
                     }
                 }
 

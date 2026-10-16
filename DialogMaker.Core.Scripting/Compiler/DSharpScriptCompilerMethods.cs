@@ -77,7 +77,16 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             if (body.Contains<YieldStatementNode>(skipMethodsAndDelegates: true))
             {
-                iterationMethodInfo = DSharpIterationMethodInfo.Create(method, (AstNode?)_createdMethods.GetValueOrDefault(method) ?? body);
+                DSharpCompilerMethodScope.CaptureInfo? closure;
+
+                if (context?.Scope == null ||
+                    !context.Value.Scope.TryGetClosure(out closure) ||
+                    closure.Type != method.DeclaringType)
+                {
+                    closure = null;
+                }
+
+                iterationMethodInfo = DSharpIterationMethodInfo.Create(method, (AstNode?)_createdMethods.GetValueOrDefault(method) ?? body, closure);
                 method = iterationMethodInfo.MoveNextMethod;
             }
 
@@ -149,8 +158,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             scope.IterationMethodInfo = iterationMethodInfo;
 
-            if (contextValue.CaptureInfo == null &&
-                DSharpCaptureInfo.TryFind(body, out var captureInfo))
+            if (DSharpCaptureInfo.TryFind(body, out var captureInfo))
             {
                 contextValue.CaptureInfo = captureInfo;
             }
@@ -238,7 +246,19 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 if (closure.InstanceField != null)
                 {
-                    code.LoadInstance();
+                    if (closure.Scope.Parent != null &&
+                        closure.Scope.Parent.TryGetClosure(out var parentClosure) &&
+                        parentClosure.InstanceField != null)
+                    {
+                        parentClosure.LoadClosureContainer(code);
+                        code.LoadPropertyOrField(parentClosure.InstanceField);
+                        code.PopOffset(1);
+                    }
+                    else
+                    {
+                        code.LoadInstance();
+                    }
+
                     code.StorePropertyOrField(closure.InstanceField);
                     code.Pop();
                 }
@@ -299,11 +319,10 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 if (iterationMethodInfo.VariableFields.Count > 0)
                 {
-
                     code.LoadInstance();
                     code.Push(null);
 
-                    foreach (var variableField in iterationMethodInfo.VariableFields)
+                    foreach (var variableField in iterationMethodInfo.VariableFields.Values)
                     {
                         code.StorePropertyOrField(variableField);
                     }
@@ -788,6 +807,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     var iterationMethodInfo = settings.IterationMethodInfo;
                     variableField = iterationMethodInfo.Enumerator.CreateField(variableName);
+                    iterationMethodInfo.VariableFields.Add(variableNode, variableField);
+
+                    if (context.Scope != null)
+                    {
+                        settings.IterationMethodInfo.AddScopedVariable(context.Scope, variableField);
+                    }
+
                     variable = variableField;
                     variableTypeGetter = () => GetFieldVariableType(variableField);
                 }
@@ -2362,6 +2388,21 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
 
                     return field;
+                }
+                else if (settings.IterationMethodInfo != null &&
+                         settings.IterationMethodInfo.Enumerator == method.DeclaringType &&
+                         settings.IterationMethodInfo.TryGetVariableByReferenceNode(expression, out var variableField))
+                {
+                    code.LoadInstance();
+
+                    if (!settings.DoNotCompileEndPointMember)
+                    {
+                        code.LoadPropertyOrField(variableField);
+                        code.PopOffset(1);
+                        settings.LastOperationIsReturnsValue = true;
+                    }
+
+                    return variableField;
                 }
                 else if (context.TryResolveVariable(identifierExpression.Name, out var variable))
                 {
@@ -4837,7 +4878,8 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             if (context.Scope != null &&
                 context.Scope.TryGetClosure(out var closure) &&
-                closure.OriginalType == member.DeclaringType)
+                closure.OriginalType == member.DeclaringType &&
+                closure.OriginalType != code.Method.DeclaringType)
             {
                 var instanceField = closure.GetOrCreateInstanceField();
 

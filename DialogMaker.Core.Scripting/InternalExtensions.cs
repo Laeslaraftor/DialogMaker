@@ -1,6 +1,7 @@
 ﻿#if NETSTANDARD2_1_OR_GREATER
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 #endif
 
 namespace DialogMaker.Core.Scripting
@@ -10,7 +11,7 @@ namespace DialogMaker.Core.Scripting
 #if NETSTANDARD2_1_OR_GREATER
         extension(ObjectDisposedException)
         {
-            [StackTraceHidden]
+            [StackTraceHidden, MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static void ThrowIf([DoesNotReturnIf(true)] bool condition, object instance)
             {
                 if (condition)

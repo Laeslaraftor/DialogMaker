@@ -79,6 +79,31 @@ namespace DialogMaker.Core.Scripting.Compiler
             return false;
         }
 
+        /// <summary>
+        /// Check node on containing at least one captured variable
+        /// </summary>
+        /// <param name="node">Node to check</param>
+        /// <returns>Is node contains at least one captured variable</returns>
+        public bool Contains(AstNode node)
+        {
+            foreach (var reference in captures.SelectMany(c => c.Variables.Values.SelectMany(v => v.References)))
+            {
+                var parent = reference;
+
+                while (parent != null)
+                {
+                    if (parent == node)
+                    {
+                        return true;
+                    }
+
+                    parent = parent.Parent;
+                }
+            }
+
+            return false;
+        }
+
         #endregion
 
         #region Static
@@ -102,7 +127,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             result = null;
             DSharpVariablesVisitor variablesVisitor = new();
-            AstNode rootNode = body;
+            AstNode? rootNode = body;
 
             if (body.Parent is InvokableNode ||
                 body.Parent is DelegateExpressionNode)

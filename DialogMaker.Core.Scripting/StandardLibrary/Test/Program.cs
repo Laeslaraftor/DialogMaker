@@ -148,9 +148,16 @@ public unsafe class Program
 
                 IEnumerable<int> GetValuesWhileNotInRange()
                 {
+                    var random = Random.Shared;
+
+                    int GetRandomNumber()
+                    {
+                        return random.Next(0, 100);
+                    }
+
                     while (true)
                     {
-                        var value = Random.Shared.Next(minValue, maxValue);
+                        var value = GetRandomNumber();
 
                         if (value >= minValue && value <= maxValue)
                         {
@@ -161,7 +168,7 @@ public unsafe class Program
                     }
                 }
 
-                Console.WriteLine("Printing numbers while it not in range:");
+                Console.WriteLine("Printing numbers 0-100 while it not in range " + minValue + "-" + maxValue + ":");
 
                 foreach (var number in GetValuesWhileNotInRange())
                 {

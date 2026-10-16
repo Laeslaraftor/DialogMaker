@@ -825,10 +825,19 @@ namespace DialogMaker.Core.Scripting.Compiler
                 return count;
             }
 
-            if (Scope != null && Scope.TryGetClosure(out var closure) &&
-                closure.OriginalType != null)
+            if (Scope != null)
             {
-                AddRange(closure.OriginalType.GetAllLocalMembers(m => m.Name == name, false, false));
+                if (Scope.TryGetClosure(out var closure) &&
+                    closure.OriginalType != null)
+                {
+                    AddRange(closure.OriginalType.GetAllLocalMembers(m => m.Name == name, false, false));
+                }
+                if (Scope.TryGetFirstIterationMethodInfo(out var iterationInfo) &&
+                    iterationInfo.TryGetScopedVariable(Scope, name, out var variableField))
+                {
+                    Add(variableField);
+                    return result;
+                }
             }
             if (Assembly != null)
             {

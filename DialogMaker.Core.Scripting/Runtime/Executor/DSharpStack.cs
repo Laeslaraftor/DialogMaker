@@ -542,10 +542,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         }
         public void Move(uint offset, int moveOffset)
         {
-            if (IsDisposed)
-            {
-                throw new ObjectDisposedException(nameof(DSharpStack), "Stack has been disposed");
-            }
+            ObjectDisposedException.ThrowIf(IsDisposed, this);
+
             if (0 > (int)offset + moveOffset)
             {
                 throw new IndexOutOfRangeException();
@@ -556,24 +554,80 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
 
             int index = (int)(_frameIndex - offset);
+            int endIndex = index - moveOffset;
             FrameInfo* frame = &_frames[index];
             int frameSize = frame->Size;
-            byte* tempBuffer = stackalloc byte[frameSize + sizeof(FrameInfo)];
-            FrameInfo* tempFrame = (FrameInfo*)tempBuffer;
+            byte* tempBuffer = stackalloc byte[frameSize];
+            FrameInfo* tempFrame = stackalloc FrameInfo[1];
+            int sourceOffset = moveOffset > 0 ? -1 : 1;
 
             *tempFrame = *frame;
 
             if (frameSize > 0)
             {
-                System.Buffer.MemoryCopy((void*)frame->StackPointer, tempBuffer + sizeof(FrameInfo), frameSize, frameSize);
+                System.Buffer.MemoryCopy((void*)frame->StackPointer, tempBuffer, frameSize, frameSize);
+            }
+
+            if (moveOffset > 0)
+            {
+                nint? startStackPointer = null;
+                int stackSize = 0;
+
+                for (int i = index; i > endIndex; i--)
+                {
+                    var currentFrame = &_frames[i - 1];
+                    var destinationFrame = &_frames[i];
+
+                    stackSize += currentFrame->Size;
+                    startStackPointer ??= currentFrame->StackPointer;
+                    currentFrame->StackPointer += frameSize;
+
+                    if (currentFrame->Buffer != null)
+                    {
+                        currentFrame->Buffer->FrameInfo = destinationFrame;
+                    }
+
+                    *destinationFrame = *currentFrame;
+                }
+
+                if (startStackPointer != null)
+                {
+                    var stackPointer = (byte*)startStackPointer.Value;
+                    System.Buffer.MemoryCopy(stackPointer, stackPointer + frameSize, stackSize, stackSize);
+                }
+
+                var finalFrame = &_frames[endIndex];
+                *finalFrame = *tempFrame;
+                finalFrame->StackPointer = startStackPointer ?? 0;
+
+                System.Buffer.MemoryCopy(tempBuffer, (void*)finalFrame->StackPointer, frameSize, frameSize);
+
+                return;
             }
 
             int endPointIndex = index - moveOffset;
             int moveCount = Math.Abs(moveOffset);
             int sizeToMove = sizeof(FrameInfo) * moveCount;
-            int sourceOffset = moveOffset > 0 ? -1 : 1;
 
-            System.Buffer.MemoryCopy(&_frames[index + sourceOffset], frame, sizeToMove, sizeToMove);
+            if (moveOffset > 0)
+            {
+                var previousFrame = &_frames[index - 1];
+                System.Buffer.MemoryCopy(previousFrame, frame, sizeToMove, sizeToMove);
+
+                if (frameSize > 0)
+                {
+                    var previousStackPointer = (byte*)frame->StackPointer;
+                    System.Buffer.MemoryCopy(previousStackPointer, previousStackPointer + frameSize, sizeToMove, sizeToMove);
+                }
+            }
+            else
+            {
+                for (int i = moveCount - 1; i >= 0; i--)
+                {
+                    _frames[index - i] = _frames[index - i - 1];
+                }
+            }
+
 
             FrameInfo* endPointFrame = &_frames[endPointIndex];
             *endPointFrame = *tempFrame;
@@ -606,9 +660,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             if (lastFrame != null)
             {
-                System.Buffer.MemoryCopy((void*)(frame->StackPointer + frameSize * -moveOffset), (void*)frame->StackPointer, totalSize, totalSize);
+                //System.Buffer.MemoryCopy((void*)(frame->StackPointer + frameSize * -moveOffset), (void*)frame->StackPointer, totalSize, totalSize);
                 endPointFrame->StackPointer = lastFrame->StackPointer + lastFrame->Size;
-                System.Buffer.MemoryCopy((tempBuffer + sizeof(FrameInfo)), (void*)endPointFrame->StackPointer, frameSize, frameSize);
+                System.Buffer.MemoryCopy(tempBuffer, (void*)endPointFrame->StackPointer, frameSize, frameSize);
             }
         }
 
@@ -1026,7 +1080,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             {
                 static bool IsNull(FrameInfo frame)
                 {
-                    if (0 >= frame.Size)    
+                    if (0 >= frame.Size)
                     {
                         return true;
                     }
