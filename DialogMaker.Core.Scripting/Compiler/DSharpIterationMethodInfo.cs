@@ -601,12 +601,12 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// <summary>
         /// Information about finally method
         /// </summary>
-        /// <param name="method">Method that contains finalization code</param>
-        /// <param name="isEnabledField">
+        /// <param name="Method">Method that contains finalization code</param>
+        /// <param name="IsEnabledField">
         /// Field that contains boolean value that represents finalization active status.
         /// If value stores <c>true</c> - method can be called on enumerator disposing
         /// </param>
-        public record struct FinallyMethodInfo(DSharpMethodBuilder method, DSharpFieldBuilder isEnabledField);
+        public record struct FinallyMethodInfo(DSharpMethodBuilder Method, DSharpFieldBuilder IsEnabledField);
 
         #endregion
     }

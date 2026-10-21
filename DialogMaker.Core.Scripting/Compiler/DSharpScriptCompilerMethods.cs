@@ -768,7 +768,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             CreatedVariableInfo CompileVariable(VariableNode variableNode, ref DSharpMethodCompileSettings settings)
             {
-                var variableName = variableNode.Name;
+                string variableName = variableNode.IsAnonymous ? $"<>_{variableNode.Line}_{variableNode.Column}" : variableNode.Name;
                 object variable;
                 DSharpCompilerMethodScope.CaptureInfo? variableClosure = null;
                 Func<IDSharpType> variableTypeGetter;
@@ -889,7 +889,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     context.CheckUnsafe(statement);
                 }
 
-                return new(variable as IDSharpParameterInfo, variableClosure, variable as DSharpFieldBuilder);
+                return new(variableType, variable as IDSharpParameterInfo, variableClosure, variable as DSharpFieldBuilder);
             }
 
             if (statement is BlockStatementNode blockStatement)
@@ -1528,180 +1528,114 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 if (tryStatement.TryBlock == null)
                 {
-                    throw new InvalidOperationException($"Try block should contains body: {statement}");
+                    throw new DSharpCompilerException("Try block should contains body", statement);
                 }
-                if (tryStatement.CatchBlocks.Count == 0)
+                if (tryStatement.CatchBlocks.Count == 0 && tryStatement.FinallyBlock == null)
                 {
-                    throw new InvalidOperationException($"Try block should have at least 1 catch block: {statement}");
+                    throw new DSharpCompilerException("Try block should have at least 1 catch or finally block", statement);
                 }
                 if (tryStatement.TryBlock.Statements.Count == 0)
                 {
                     return;
                 }
 
-                Dictionary<TryStatementNode.CatchBlock, DSharpBytecodeBuilder.ReferenceInstruction> catchBlockRegisterInstructions = [];
-                DSharpBytecodeBuilder.ReferenceInstruction? finallyRegisterInstruction = null;
-                DSharpBytecodeBuilder.Instruction endInstruction = code.StopTrying();
-                HashSet<IDSharpType> catchingExceptions = [];
-                bool emptyCatchBlockAlreadyCreated = false;
+                Dictionary<IDSharpType, CatchBlockInfo>? typedCatchBlocks = null;
+                TryStatementNode.CatchBlock? catchBlock = null;
+                var savedContext = context;
+                BytecodeBuilderHandler? finallyHandler = null;
+                List<IDSharpType?>? catchTypes = null;
 
-                code.Instructions.Remove(endInstruction);
-
-                DSharpBytecodeBuilder.Instruction CompileBlock(ref DSharpMethodCompileSettings settings, BlockStatementNode block, DSharpCompilerContext context, Action? extra = null, bool endJump = true, int depthOffset = 1)
+                foreach (var block in tryStatement.CatchBlocks)
                 {
-                    int startIndex = code.Instructions.Count;
-                    DSharpBytecodeBuilder.Instruction start = code.Empty();
+                    catchTypes ??= [];
 
-                    extra?.Invoke();
-                    CompileStatement(method, block, depth + depthOffset, code, ref settings, context, false);
-
-                    if (endJump)
+                    if (block.ExceptionVariable == null)
                     {
-                        if (finallyRegisterInstruction != null)
+                        if (catchBlock != null)
                         {
-                            code.Finally();
+                            throw new DSharpCompilerException("Try-catch-finally statement can contains only one catch block without exception filtering", block);
                         }
 
-                        code.Jump(endInstruction);
+                        catchTypes.Add(null);
+                        catchBlock = block;
+                        continue;
                     }
 
-                    return start;
-                }
+                    typedCatchBlocks ??= [];
+                    DSharpCompilerMethodScope scope = new(method, context.Scope);
+                    var catchContext = context;
+                    catchContext.Scope = scope;
+                    context = catchContext;
+                    var variable = CompileVariable(block.ExceptionVariable, ref settings);
 
-                code.StartTrying();
-
-                foreach (var catchBlock in tryStatement.CatchBlocks)
-                {
-                    if (catchBlock.Statements == null)
+                    if (typedCatchBlocks.ContainsKey(variable.Type))
                     {
-                        throw new InvalidOperationException($"Catch block should contains body: {catchBlock}");
+                        throw new DSharpCompilerException("Exception with same type already catching", block.ExceptionVariable);
+                    }
+                    if (!variable.Type.IsAssignableTo(Assembly.ExceptionType))
+                    {
+                        throw new DSharpCompilerException($"Handling type should be inherited from \"{Assembly.ExceptionType}\"", block.ExceptionVariable);
                     }
 
-                    DSharpBytecodeBuilder.ReferenceInstruction instruction;
-
-                    if (catchBlock.ExceptionType == null)
-                    {
-                        if (emptyCatchBlockAlreadyCreated)
-                        {
-                            throw new InvalidOperationException($"Try/catch/finally can not contains multiple catch blocks without specified exception");
-                        }
-
-                        instruction = code.RegisterCatch();
-                        emptyCatchBlockAlreadyCreated = true;
-                    }
-                    else
-                    {
-                        IDSharpType exceptionType;
-
-                        try
-                        {
-                            var typeToken = context.ResolveType(catchBlock.ExceptionType);
-                            exceptionType = (IDSharpType)Assembly.GetType(typeToken);
-                        }
-                        catch (Exception error)
-                        {
-                            throw new InvalidOperationException($"Unable to resolve exception type: {catchBlock.ExceptionType}", error);
-                        }
-
-                        if (!exceptionType.IsAssignableTo(Assembly.ExceptionType))
-                        {
-                            throw new InvalidOperationException($"\"{exceptionType}\" is not inherit exception type: {catchBlock}");
-                        }
-
-                        if (!catchingExceptions.Add(exceptionType))
-                        {
-                            throw new InvalidOperationException($"Exception \"{exceptionType}\" already handling: {catchBlock}");
-                        }
-
-                        instruction = code.RegisterTypedCatch(exceptionType);
-                    }
-
-                    catchBlockRegisterInstructions.Add(catchBlock, instruction);
+                    typedCatchBlocks.Add(variable.Type, new(block, variable, scope));
+                    catchTypes.Add(variable.Type);
+                    context = savedContext;
                 }
 
                 if (tryStatement.FinallyBlock != null)
                 {
-                    context.HasFinally = true;
-                    finallyRegisterInstruction = code.RegisterFinally();
-                }
-                else
-                {
-                    context.HasFinally = false;
-                }
-
-                CompileBlock(ref settings, tryStatement.TryBlock, context);
-
-                int catchBlockIndex = 0;
-
-                foreach (var catchInfo in catchBlockRegisterInstructions)
-                {
-                    Action? extra = null;
-                    var catchContext = context;
-                    catchContext.NowInCatchBlock = true;
-                    IDSharpType? exceptionType = null;
-
-                    if (catchInfo.Key.ExceptionVariableIdentifier != null &&
-                        catchInfo.Value is DSharpBytecodeBuilder.TypedReferenceInstruction typedReference)
+                    finallyHandler = (code, ref settings, context) =>
                     {
-                        DSharpCompilerMethodScope scope = new(method, catchContext.Scope);
-                        catchContext.Scope = scope;
-                        exceptionType = typedReference.Type;
-                        var variableName = catchInfo.Key.ExceptionVariableIdentifier.Name;
-                        IDSharpParameterInfo exceptionVariable;
+                        context.Scope = new DSharpCompilerMethodScope(code.Method, context.Scope);
+                        CompileStatement(code.Method, tryStatement.FinallyBlock, depth + 1, code, ref settings, context);
+                    };
+                }
 
-                        if (scope.TryGetCapturedVariable(catchInfo.Key.ExceptionVariableIdentifier, out var captureScope, out var variableField))
+                CompileTryCatchFinally(method, code, (code, ref settings, context) =>
+                {
+                    context.Scope = new DSharpCompilerMethodScope(code.Method, context.Scope);
+                    CompileStatement(code.Method, tryStatement.TryBlock, depth + 1, code, ref settings, context);
+                }, (type, code, ref settings, context) =>
+                {
+                    if (type == null)
+                    {
+                        if (catchBlock?.Statements == null)
                         {
-                            extra = () => CaptureAction(method, code, captureScope, catchInfo.Key, () =>
-                            {
-                                code.StorePropertyOrField(variableField);
-                            });
+                            throw new DSharpCompilerException("Catch block body not found", statement);
                         }
-                        else
-                        {
-                            try
-                            {
-                                exceptionVariable = catchContext.Scope.CreateVariable(variableName, typedReference.Type);
-                            }
-                            catch (Exception error)
-                            {
-                                throw new InvalidOperationException($"Unable to create variable \"{variableName}\" for catch block: {catchInfo.Key}", error);
-                            }
 
-                            extra = () =>
-                            {
-                                code.StoreLocal(exceptionVariable);
-                            };
-                        }
+                        context.Scope = new DSharpCompilerMethodScope(code.Method, context.Scope);
+                        CompileStatement(code.Method, catchBlock.Statements, depth + 1, code, ref settings, context);
+                        return;
+                    }
+                    if (typedCatchBlocks == null ||
+                        !typedCatchBlocks.TryGetValue(type, out var blockInfo))
+                    {
+                        throw new DSharpCompilerException($"Catch block for type \"{type}\" information not found", statement);
                     }
 
-                    int depthOffset = 1;
-
-                    if (depth == 0 &&
-                        (catchInfo.Key.ExceptionType == null ||
-                        catchInfo.Key.ExceptionType != null && exceptionType == Assembly.ExceptionType))
+                    if (blockInfo.ExceptionVariable.FieldVariable != null)
                     {
-                        depthOffset = 0;
+                        CaptureAction(method, code, blockInfo.Scope, statement, () =>
+                        {
+                            code.StorePropertyOrField(blockInfo.ExceptionVariable.FieldVariable);
+                        });
+                    }
+                    else if (blockInfo.ExceptionVariable.ParameterVariable != null)
+                    {
+                        code.StoreLocal(blockInfo.ExceptionVariable.ParameterVariable);
+                    }
+                    else
+                    {
+                        throw new DSharpCompilerException($"Variable for storing exception instance \"{type}\" not found", blockInfo.Block);
                     }
 
-                    catchInfo.Value.ReferencedInstruction = CompileBlock(ref settings,
-                                                                         catchInfo.Key.Statements!,
-                                                                         catchContext,
-                                                                         extra,
-                                                                         finallyRegisterInstruction != null || catchBlockIndex + 1 < catchBlockRegisterInstructions.Count,
-                                                                         depthOffset);
-
-                    catchBlockIndex++;
-                }
-
-                if (finallyRegisterInstruction != null && tryStatement.FinallyBlock != null)
-                {
-                    var finallyContext = context;
-                    finallyContext.NowInFinallyBlock = true;
-                    finallyRegisterInstruction.ReferencedInstruction = CompileBlock(ref settings, tryStatement.FinallyBlock, finallyContext, null, false);
-                    code.Return();
-                }
-
-                code.Instructions.Add(endInstruction);
+                    if (blockInfo.Block.Statements != null)
+                    {
+                        context.Scope = blockInfo.Scope;
+                        CompileStatement(code.Method, blockInfo.Block.Statements, depth + 1, code, ref settings, context);
+                    }
+                }, finallyHandler, statement, ref settings, savedContext, catchTypes);
             }
             else if (statement is LockStatementNode lockStatement)
             {
@@ -1837,6 +1771,8 @@ namespace DialogMaker.Core.Scripting.Compiler
         #region Delegates
 
         private delegate T? AssignSettingRefHandler<T>(ref DSharpMethodCompileSettings settings);
+        private delegate void BytecodeBuilderHandler(DSharpBytecodeBuilder code, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context);
+        private delegate void TypedBytecodeBuilderHandler(IDSharpType? type, DSharpBytecodeBuilder code, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context);
         private delegate void InstructionHandler<T>(T instruction)
             where T : DSharpBytecodeBuilder.Instruction;
         private delegate void EndPointSkipInstructionHandler<T>(T instruction, bool instanceLoaded)
@@ -3370,13 +3306,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                         if (context.Scope != null &&
                             context.Scope.TryGetCapturedVariable(variableIdentifier, out var variableScope, out var variableField))
                         {
-                            variable = new(null, variableScope.Closure, variableField);
+                            variable = new(((IDSharpFieldInfo)variableField).FieldType, null, variableScope.Closure, variableField);
                         }
                         else
                         {
                             try
                             {
-                                variable = new(CreateVariable(method, variableIdentifier.Name, destinationType, null, ref settings, context), null, null);
+                                var parameter = CreateVariable(method, variableIdentifier.Name, destinationType, null, ref settings, context);
+                                variable = new(parameter.Type, parameter, null, null);
                             }
                             catch (Exception error)
                             {
@@ -5280,6 +5217,139 @@ namespace DialogMaker.Core.Scripting.Compiler
             code.Return();
         }
 
+        private void CompileTryFinally(DSharpMethodBuilder method, DSharpBytecodeBuilder code, BytecodeBuilderHandler tryBlockHandler, BytecodeBuilderHandler finallyBlockHandler, AstNode node, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context)
+        {
+            CompileTryCatchFinally(method, code, tryBlockHandler, null, finallyBlockHandler, node, ref settings, context);
+        }
+        private void CompileTryCatchFinally(DSharpMethodBuilder method, DSharpBytecodeBuilder code, BytecodeBuilderHandler tryBlockHandler, TypedBytecodeBuilderHandler? catchBlockHandler, BytecodeBuilderHandler? finallyBlockHandler, AstNode node, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context, params IEnumerable<IDSharpType?>? handingExceptionTypes)
+        {
+            if (finallyBlockHandler == null &&
+                (handingExceptionTypes == null || !handingExceptionTypes.Any()))
+            {
+                throw new DSharpCompilerException("Try-catch-finally block should have at least one catch or finally block", node);
+            }
+
+            code.StartTrying();
+
+            var endInstruction = code.StopTrying();
+            code.Instructions.Remove(endInstruction);
+
+            Dictionary<IDSharpType, DSharpBytecodeBuilder.TypedReferenceInstruction>? typedCatchBlocksRegistration = null;
+            DSharpBytecodeBuilder.ReferenceInstruction? catchBlockRegistration = null;
+            DSharpBytecodeBuilder.ReferenceInstruction? finallyBlockRegistration = null;
+            DSharpIterationMethodInfo.FinallyMethodInfo? finallyMethodInfo = null;
+
+            void CompileCatchBlock(IDSharpType? type, DSharpBytecodeBuilder.ReferenceInstruction registration, ref DSharpMethodCompileSettings settings)
+            {
+                registration.ReferencedInstruction = code.Empty();
+                var catchBlockContext = context;
+                catchBlockContext.NowInCatchBlock = true;
+                catchBlockHandler!(type, code, ref settings, catchBlockContext);
+
+                if (finallyBlockRegistration != null)
+                {
+                    code.Finally();
+                }
+
+                code.Jump(endInstruction);
+            }
+
+            if (handingExceptionTypes != null)
+            {
+                if (catchBlockHandler == null)
+                {
+                    throw new DSharpCompilerException("Catch block handler should be provided when handling exception types was specified", node);
+                }
+
+                foreach (var handlingType in handingExceptionTypes)
+                {
+                    if (handlingType == null)
+                    {
+                        if (catchBlockRegistration != null)
+                        {
+                            throw new DSharpCompilerException("Try-catch-finally block can contains only one catch block without exceptions filter", node);
+                        }
+
+                        catchBlockRegistration = code.RegisterCatch();
+                        continue;
+                    }
+
+                    typedCatchBlocksRegistration ??= [];
+
+                    if (typedCatchBlocksRegistration.ContainsKey(handlingType))
+                    {
+                        throw new DSharpCompilerException("Try-catch-finally block can contains only one catch block per exception type", node);
+                    }
+
+                    var registration = code.RegisterTypedCatch(handlingType);
+                    typedCatchBlocksRegistration.Add(handlingType, registration);
+                }
+            }
+            if (finallyBlockHandler != null)
+            {
+                finallyBlockRegistration = code.RegisterFinally();
+                context.HasFinally = true;
+            }
+
+            var skipBlocks = code.Jump();
+
+            if (catchBlockRegistration != null)
+            {
+                CompileCatchBlock(null, catchBlockRegistration, ref settings);
+            }
+            if (typedCatchBlocksRegistration != null)
+            {
+                foreach (var info in typedCatchBlocksRegistration)
+                {
+                    CompileCatchBlock(info.Key, info.Value, ref settings);
+                }
+            }
+            if (finallyBlockRegistration != null)
+            {
+                var finallyContext = context;
+                finallyContext.NowInFinallyBlock = true;
+                finallyBlockRegistration.ReferencedInstruction = code.Empty();
+                var finallyCode = code;
+
+                if (settings.IterationMethodInfo != null)
+                {
+                    var finallyMethod = settings.IterationMethodInfo.CreateFinalizationMethod();
+                    finallyCode = finallyMethod.Method.GetBytecodeBuilder();
+                    finallyMethodInfo = finallyMethod;
+
+                    code.LoadInstance();
+                    code.Push(false);
+                    code.StorePropertyOrField(finallyMethod.IsEnabledField);
+                    code.Pop();
+                    code.Call(finallyMethod.Method);
+                    code.Pop();
+                }
+
+                finallyBlockHandler!(finallyCode, ref settings, finallyContext);
+
+                code.Return();
+            }
+
+            skipBlocks.ReferencedInstruction = code.Empty();
+
+            if (finallyMethodInfo != null)
+            {
+                code.LoadInstance();
+                code.Push(true);
+                code.StorePropertyOrField(finallyMethodInfo.Value.IsEnabledField);
+                code.PopRepeat(2);
+            }
+
+            tryBlockHandler(code, ref settings, context);
+
+            if (finallyBlockRegistration != null)
+            {
+                code.Finally();
+            }
+
+            code.Instructions.Add(endInstruction);
+        }
+
         #endregion
 
         #region Variables
@@ -5359,7 +5429,8 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         #region Structs
 
-        private record struct CreatedVariableInfo(IDSharpParameterInfo? ParameterVariable, DSharpCompilerMethodScope.CaptureInfo? CaptureInfo, DSharpFieldBuilder? FieldVariable);
+        private record struct CreatedVariableInfo(IDSharpType Type, IDSharpParameterInfo? ParameterVariable, DSharpCompilerMethodScope.CaptureInfo? CaptureInfo, DSharpFieldBuilder? FieldVariable);
+        private record struct CatchBlockInfo(TryStatementNode.CatchBlock Block, CreatedVariableInfo ExceptionVariable, DSharpCompilerMethodScope Scope);
 
         #endregion
     }

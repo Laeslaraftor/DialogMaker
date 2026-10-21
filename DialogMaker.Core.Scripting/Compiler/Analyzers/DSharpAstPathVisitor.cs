@@ -140,7 +140,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Analyzers
             }
 
             var tryBlockContains = CheckAllPathContains(node.TryBlock);
-            var typelessCatchBlock = node.CatchBlocks.FirstOrDefault(b => b.ExceptionType == null);
+            var typelessCatchBlock = node.CatchBlocks.FirstOrDefault(b => b.ExceptionVariable == null);
 
             if (typelessCatchBlock == null ||
                 typelessCatchBlock.Statements == null)

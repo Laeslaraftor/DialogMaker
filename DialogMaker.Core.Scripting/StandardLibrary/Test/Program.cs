@@ -279,7 +279,15 @@ public unsafe class Program
         Console.WriteLine("End counter value: " + testCounter);
 
         // last exception should be unhandled
-        TestExceptionHandling();
+
+        try
+        {
+            TestExceptionHandling();
+        }
+        finally
+        {
+            Console.WriteLine("Test exception handling finalling");
+        }
     }
 
     private static void TestRandom()

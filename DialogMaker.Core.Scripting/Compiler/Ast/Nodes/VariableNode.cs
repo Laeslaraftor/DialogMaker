@@ -21,6 +21,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// Initializer for this variable
         /// </summary>
         public ExpressionNode? Initializer { get; set; }
+        /// <summary>
+        /// Is anonymous variable
+        /// </summary>
+        public bool IsAnonymous { get; set; }
 
         #region Controls
 
@@ -79,24 +83,37 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <param name="attributes">List of attributes</param>
         /// <param name="eatEnding">A flag that indicates that the final token must be eaten.</param>
         /// <returns>Parsed variable</returns>
-        public static VariableNode ParseVariable(AstParserStream stream, List<AttributeNode>? attributes, bool eatEnding = true, bool canContainsAssignment = true)
+        public static VariableNode ParseVariable(AstParserStream stream, List<AttributeNode>? attributes, bool eatEnding = true, bool canContainsAssignment = true, bool allowVar = true, bool allowPrimaryTypes = true, bool allowAnononymous = false)
         {
             TypeInfoNode variableType;
 
-            if (stream.Check(DSharpTokenType.Var))
+            if (allowVar && stream.Check(DSharpTokenType.Var))
             {
                 variableType = new(stream.Eat(DSharpTokenType.Var));
             }
             else
             {
-                variableType = TypeInfoNode.Parse(stream, true, true);
+                variableType = TypeInfoNode.Parse(stream, allowPrimaryTypes, true);
             }
 
-            var nameToken = stream.Eat(DSharpTokenType.Identifier);
+            var nameToken = variableType.Token;
+            bool isAnonymous = true;
+
+            if (stream.Check(DSharpTokenType.Identifier))
+            {
+                nameToken = stream.Eat(DSharpTokenType.Identifier);
+                isAnonymous = false;
+            }
+            else if (allowAnononymous)
+            {
+                stream.ThrowPositionException("Anonymous variables not allowed in current context");
+            }
+
             VariableNode variable = new(nameToken)
             {
                 Type = variableType,
-                Attributes = attributes
+                Attributes = attributes,
+                IsAnonymous = isAnonymous
             };
             variableType.Parent = variable;
             attributes?.SetParent(variable);

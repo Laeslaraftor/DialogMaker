@@ -48,17 +48,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 if (stream.Check(DSharpTokenType.LeftParen))
                 {
                     stream.Eat(DSharpTokenType.LeftParen);
-                    block.ExceptionType = TypeInfoNode.Parse(stream, false, false);
-                    block.ExceptionType.Parent = block;
-                    
-                    if (stream.Check(DSharpTokenType.Identifier))
-                    {
-                        var identifierToken = stream.Eat(DSharpTokenType.Identifier);
-                        block.ExceptionVariableIdentifier = new(identifierToken)
-                        {
-                            Parent = block
-                        };
-                    }
+                    block.ExceptionVariable = VariableNode.ParseVariable(stream, null, false, false, false, false);
+                    block.ExceptionVariable.Parent = block;
 
                     stream.Eat(DSharpTokenType.RightParen);
                 }
@@ -93,13 +84,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             /// </summary>
             public BlockStatementNode? Statements { get; set; }
             /// <summary>
-            /// Type of catching exception
+            /// Variable that contains exception instance
             /// </summary>
-            public TypeInfoNode? ExceptionType { get; set; }
-            /// <summary>
-            /// Name of variable that should contains exception instance
-            /// </summary>
-            public IdentifierExpressionNode? ExceptionVariableIdentifier { get; set; }
+            public VariableNode? ExceptionVariable { get; set; }
         }
 
         #endregion
