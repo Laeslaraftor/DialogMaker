@@ -297,8 +297,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                         instance = methodExecutor->ObjectInstance;
                         methodInfo = methodExecutor->MethodInfo;
                         arguments = methodExecutor->Arguments;
-                        methodExecutor->HaveUnhandledException = haveUnhandledException;
-                        methodExecutor->UnhandledException = unhandledException;
+                        methodExecutor->HaveUnhandledException |= haveUnhandledException;
+
+                        if (unhandledException != null)
+                        {
+                            methodExecutor->UnhandledException = unhandledException;
+                        }
                     }
 
                     continueExecuting = true;
@@ -326,6 +330,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                         {
                             SetException(exception);
                             methodExecutor->NowClosingTryCatchFinallyBlock = true;
+                            (&methodExecutor->NextReturnInstructions)->Add(methodExecutor->InstructionIndex + 1);
                             methodExecutor->InstructionIndex = catchBlock->InstructionIndex;
                             continueExecuting = true;
                             return true;

@@ -30,11 +30,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
         /// Clear scope
         /// </summary>
         /// <param name="recursive">Is recursive clear. It also clears parent scopes</param>
-        public virtual void Clear(bool recursive = true)
+        /// <param name="bytecodeStartIndex">Start index for clearing bytecode. 0 - all instruction will be removed</param>
+        public virtual void Clear(bool recursive = true, int bytecodeStartIndex = 0)
         {
             if (recursive)
             {
-                Parent?.Clear();
+                Parent?.Clear(recursive, bytecodeStartIndex);
             }
         }
 
@@ -425,6 +426,29 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
             field = variableField;
 
             return captureScope != null && variableField != null;
+        }
+        /// <summary>
+        /// Try to get scope that contains provided captured variable
+        /// </summary>
+        /// <param name="fieldAsVariable">Variable to find it scope</param>
+        /// <param name="captureScope">Scope that contains provided variable</param>
+        /// <param name="closure">Closure that declares provided field</param>
+        /// <returns>Is scope was successfully found</returns>
+        public bool TryGetScopeForCapturedVariable(DSharpFieldBuilder fieldAsVariable, [NotNullWhen(true)] out DSharpCompilerMethodScope? captureScope, [NotNullWhen(true)] out DSharpCompilerMethodScope.CaptureInfo? closure)
+        {
+            captureScope = RecursiveCheck(scope =>
+            {
+                if (scope is DSharpCompilerMethodScope methodScope &&
+                    methodScope.Closure != null &&
+                    methodScope.Closure.Type.Fields.Contains(fieldAsVariable))
+                {
+                    return methodScope;
+                }
+
+                return null;
+            });
+            closure = captureScope?.Closure;
+            return captureScope != null;
         }
         /// <summary>
         /// Try to get closure in current and parent scopes

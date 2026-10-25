@@ -60,18 +60,6 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
         }
 
-        //public override void VisitCatchBlock(TryStatementNode.CatchBlock node)
-        //{
-        //    base.VisitCatchBlock(node);
-
-        //    var identifier = node.ExceptionVariableIdentifier;
-
-        //    if (!NotEmpty && node.ExceptionType != null &&
-        //        identifier != null)
-        //    {
-        //        AddVariable(identifier.Name, new(identifier, node.ExceptionType, null));
-        //    }
-        //}
         public override void VisitVariableNode(VariableNode node)
         {
             base.VisitVariableNode(node);

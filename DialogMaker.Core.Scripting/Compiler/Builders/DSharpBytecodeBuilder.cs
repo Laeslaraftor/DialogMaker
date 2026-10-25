@@ -77,9 +77,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <summary>
         /// Clear bytecode and variables
         /// </summary>
-        public void Clear()
+        /// <param name="startInstructionsIndex">Start index for clearing bytecode. 0 - all instruction will be removed</param>
+        public void Clear(int startInstructionsIndex = 0)
         {
-            Instructions.Clear();
+            if (0 >= startInstructionsIndex)
+            {
+                Instructions.Clear();
+            }
+            else
+            {
+                Instructions.RemoveRange(startInstructionsIndex, Instructions.Count - startInstructionsIndex);
+            }
+
             LocalVariables.Clear();
         }
 

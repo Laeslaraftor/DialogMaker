@@ -4,9 +4,7 @@ using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using System.Text;
-using System.Xml.Linq;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -37,6 +35,8 @@ namespace DialogMaker.Core.Scripting.Compiler
             CaptureInfo = context.CaptureInfo;
             IsUnsafe = context.IsUnsafe;
             AccessThroughPointer = context.AccessThroughPointer;
+            OriginalMethod = context.OriginalMethod;
+            SelfScopedBy = context.SelfScopedBy;
 
             if (context.Compiler != null && context.CurrentMember != currentMember)
             {
@@ -76,6 +76,8 @@ namespace DialogMaker.Core.Scripting.Compiler
             set;
         }
         public bool AccessThroughPointer { get; set; }
+        public DSharpMethodBuilder? OriginalMethod { get; set; }
+        public BlockStatementNode? SelfScopedBy { get; set; }
 
         #region Access
 

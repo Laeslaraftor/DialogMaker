@@ -453,6 +453,16 @@ public unsafe class Program
 
         argValue++;
 
+        foreach (var value in TestIterationMethod(50, 60))
+        {
+            void PrintCurrentValue()
+            {
+                Console.WriteLine("Current value: " + value);
+            }
+
+            PrintCurrentValue();
+        }
+
         Console.WriteLine("End arg: " + argValue);
 
         Console.WriteLine();

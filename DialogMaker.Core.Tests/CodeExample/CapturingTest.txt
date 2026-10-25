@@ -1,51 +1,36 @@
-﻿void LoopFunction()
-{
-	 int minValue;
-                int maxValue;
-                string textNumber;
+﻿void TestCaptures(int argValue)
+    {
+        void Increment()
+        {
+            argValue++;
+        }
 
-                do
-                {
-                    Console.Write("Enter min value: ");
-                    textNumber = Console.ReadLine();
-                } 
-                while (!int.TryParse(textNumber, out minValue));
-                do
-                {
-                    Console.Write("Enter max value: ");
-                    textNumber = Console.ReadLine();
-                } 
-                while (!int.TryParse(textNumber, out maxValue));
+        Console.WriteLine();
+        Console.WriteLine("==== Captures ====");
+        Console.WriteLine();
 
-                IEnumerable<int> GetValuesWhileNotInRange()
-                {
-                    var random = Random.Shared;
+        Console.WriteLine("Start arg: " + argValue);
 
-                    int GetRandomNumber()
-                    {
-                        return random.Next(0, 100);
-                    }
+        Increment();
 
-                    while (true)
-                    {
-                        var value = GetRandomNumber();
+        argValue++;
 
-                        if (value >= minValue && value <= maxValue)
-                        {
-                            yield break;
-                        }
+        foreach (var value in TestIterationMethod(50, 60))
+        {
+            void PrintCurrentValue()
+            {
+                Console.WriteLine("Current value: " + value);
+            }
 
-                        yield return value;
-                    }
-                }
+            PrintCurrentValue();
+        }
 
-                Console.WriteLine("Printing numbers 0-100 while it not in range " + minValue + "-" + maxValue + ":");
+        Console.WriteLine("End arg: " + argValue);
 
-                foreach (var number in GetValuesWhileNotInRange())
-                {
-                    Console.WriteLine(number);
-                }
-}
+        Console.WriteLine();
+        Console.WriteLine("==================");
+        Console.WriteLine();
+    }
 
 /*
 void SomeFunction(string arg)

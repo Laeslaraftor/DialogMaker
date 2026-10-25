@@ -1312,23 +1312,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 if (expression is IdentifierExpressionNode identifierExpression)
                 {
-                    if (identifierExpression.TryGetLocalMember(context, out var localMember))
-                    {
-                        return localMember.Type;
-                    }
-                    else if (identifierExpression.TryFindIdentifierDeclaration(out var identifierDeclaration))
-                    {
-                        if (identifierDeclaration is OutExpressionNode outExpression &&
-                            outExpression.Type != null)
-                        {
-                            return (IDSharpType)assembly.GetType(context.ResolveType(outExpression.Type));
-                        }
-                        else if (identifierDeclaration is IsTypeExpressionNode isTypeExpression &&
-                                 isTypeExpression.DestinationType != null)
-                        {
-                            return (IDSharpType)assembly.GetType(context.ResolveType(isTypeExpression.DestinationType));
-                        }
-                    }
                     if (context.Scope != null)
                     {
                         if (context.Scope.TryGetCapturedVariable(identifierExpression, out _, out var variableField))
@@ -1348,6 +1331,23 @@ namespace DialogMaker.Core.Scripting.Compiler
                             {
                                 return field.FieldType;
                             }
+                        }
+                    }
+                    if (identifierExpression.TryGetLocalMember(context, out var localMember))
+                    {
+                        return localMember.Type;
+                    }
+                    else if (identifierExpression.TryFindIdentifierDeclaration(out var identifierDeclaration))
+                    {
+                        if (identifierDeclaration is OutExpressionNode outExpression &&
+                            outExpression.Type != null)
+                        {
+                            return (IDSharpType)assembly.GetType(context.ResolveType(outExpression.Type));
+                        }
+                        else if (identifierDeclaration is IsTypeExpressionNode isTypeExpression &&
+                                 isTypeExpression.DestinationType != null)
+                        {
+                            return (IDSharpType)assembly.GetType(context.ResolveType(isTypeExpression.DestinationType));
                         }
                     }
                 }
@@ -2195,6 +2195,26 @@ namespace DialogMaker.Core.Scripting.Compiler
             public IEnumerable<T> Enumerate()
             {
                 yield return obj;
+            }
+        }
+        extension(TypeInfoNode typeInfo)
+        {
+            /// <summary>
+            /// Resolve type that represents by current type information node
+            /// </summary>
+            /// <param name="assembly">Assembly for searching type</param>
+            /// <param name="context">Context that should contain type</param>
+            /// <returns></returns>
+            public IDSharpType Resolve(DSharpAssemblyBuilder assembly, DSharpCompilerContext context)
+            {
+                try
+                {
+                    return (IDSharpType)assembly.GetType(context.ResolveType(typeInfo));
+                }
+                catch (Exception error)
+                {
+                    throw new DSharpCompilerException("Unable to resolve type", typeInfo, error);
+                }
             }
         }
     }

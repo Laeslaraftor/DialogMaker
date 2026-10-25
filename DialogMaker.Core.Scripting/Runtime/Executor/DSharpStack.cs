@@ -858,7 +858,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                         return null;
                     }
 
-                    return obj->Type;
+                    return obj != null ? obj->Type : null;
                 }
             }
             public readonly DSharpMethodExecutor* MethodExecutor

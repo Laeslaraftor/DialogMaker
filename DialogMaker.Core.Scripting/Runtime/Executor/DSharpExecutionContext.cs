@@ -54,6 +54,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <inheritdoc cref="DSharpMethodExecutor.NowClosingTryCatchFinallyBlock"/>
         /// </summary>
         public bool NowClosingTryCatchFinallyBlock => _executor->NowClosingTryCatchFinallyBlock;
+        /// <summary>
+        /// <inheritdoc cref="DSharpMethodExecutor.HaveUnhandledException"/>
+        /// </summary>
+        public bool HaveUnhandledException => _executor->HaveUnhandledException;
+        /// <summary>
+        /// <inheritdoc cref="DSharpMethodExecutor.UnhandledException"/>
+        /// </summary>
+        public DSharpObject* UnhandledException => _executor->UnhandledException;
 
         private readonly DSharpMethodExecutor* _executor = executor;
 

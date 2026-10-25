@@ -1,6 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor

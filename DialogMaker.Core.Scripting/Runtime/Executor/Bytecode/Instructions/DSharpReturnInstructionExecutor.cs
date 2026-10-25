@@ -20,6 +20,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 nextInstructions->RemoveAt(lastIndex);
                 context.EndTryCatchFinally();
 
+                if (context.HaveUnhandledException)
+                {
+                    return DSharpMethodExecutionCallback.Throw(context.UnhandledException);
+                }
                 if (context.NowClosingTryCatchFinallyBlock)
                 {
                     return DSharpMethodExecutionCallback.Throw(null);

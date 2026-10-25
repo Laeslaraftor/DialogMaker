@@ -50,7 +50,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
             return null;
         }) ?? false;
 
-        public override void Clear(bool recursive = true)
+        public override void Clear(bool recursive = true, int bytecodeStartIndex = 0)
         {
             base.Clear(recursive);
 
