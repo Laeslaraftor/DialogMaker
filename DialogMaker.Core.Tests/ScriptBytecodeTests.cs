@@ -82,6 +82,7 @@ namespace DialogMaker.Core.Tests
         [TestCase("Program", "TestSwitchStatement")]
         [TestCase("Program", "TestSwitchExpression")]
         [TestCase("Program", "TestIterationMethod")]
+        [TestCase("Program", "TestLogicalExpression")]
         [TestCase("Program.<>Enumerable_TestIterationMethod_540_37", "GetEnumerator")]
         [TestCase("Program.<>Enumerable_TestIterationMethod_540_37.<>Enumerator_TestIterationMethod_540_37", "MoveNext")]
         [TestCase("Program.<>Enumerable_TestIterationMethod_540_37.<>Enumerator_TestIterationMethod_540_37", "Reset")]

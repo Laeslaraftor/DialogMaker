@@ -281,8 +281,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                     return false;
                 }
 
-                return type.ObjectType == DSharpObjectType.Class ||
-                       type.ObjectType == DSharpObjectType.Interface;
+                return !type.IsValueType();
             }
             /// <summary>
             /// Check is current type can be casted to destination type
@@ -744,8 +743,8 @@ namespace DialogMaker.Core.Scripting.Runtime
                     return type.GenericAttributes.HasFlag(DSharpGenericTypeAttributes.Struct);
                 }
 
-                return type.ObjectType != DSharpObjectType.Class &&
-                       type.ObjectType != DSharpObjectType.Interface;
+                return type.ObjectType == DSharpObjectType.Struct ||
+                       type.ObjectType == DSharpObjectType.Enum;
             }
 
             /// <summary>

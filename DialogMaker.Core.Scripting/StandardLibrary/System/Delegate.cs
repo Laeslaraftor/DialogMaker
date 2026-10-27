@@ -11,7 +11,7 @@ public abstract unsafe class Delegate
 
     public abstract object? DynamicInvoke(params object?[]? parameters);
 
-    internal static object? Invoke(Pointer<RuntimeMethodInfo> runtimeMethodInfo, object? instance, params object?[]? parameters)
+    internal static object? Invoke(RuntimeMethodInfo* runtimeMethodInfo, object? instance, params object?[]? parameters)
     {
         var methodInfo = runtimeMethodInfo[0];
         int availableParametersCount = 0;

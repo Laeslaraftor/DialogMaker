@@ -626,6 +626,10 @@ public unsafe class Program
             yield return num;
         }
     }
+    private static bool TestLogicalExpression(bool statement, int left, int right)
+    {
+        return (left + right == 0) || statement && !statement || statement;
+    }
 
     private static bool TryGetZeBlack(string value, out string? result)
     {

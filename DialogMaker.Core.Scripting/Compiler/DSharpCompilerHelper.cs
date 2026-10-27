@@ -1745,241 +1745,106 @@ namespace DialogMaker.Core.Scripting.Compiler
             public bool TrySimplifyToLiteral([NotNullWhen(true)] out DSharpLiteralValue result)
             {
                 result = default;
-                bool expressionFailed = false;
-                DSharpLiteralValue lastExpressionValue = default;
-                Dictionary<DSharpMathOperationValues, DSharpLiteralValue>? expressionValues = null;
-
-                bool TryGetValue(ExpressionNode expression, [NotNullWhen(true)] out DSharpLiteralValue result)
-                {
-                    result = default;
-
-                    if (expressionValues == null)
-                    {
-                        return false;
-                    }
-                    foreach (var info in expressionValues)
-                    {
-                        if (info.Key.Contains(expression))
-                        {
-                            result = info.Value;
-                            return true;
-                        }
-                    }
-
-                    return false;
-                }
-                void AddExpressionValue(ExpressionNode left, ExpressionNode right, DSharpLiteralValue value)
-                {
-                    DSharpMathOperationValues operation = new(left, right);
-
-                    if (expressionValues == null)
-                    {
-                        expressionValues = [];
-                        expressionValues.Add(operation, value);
-                        return;
-                    }
-
-                    foreach (var info in expressionValues)
-                    {
-                        if (info.Key.Contains(left) || info.Key.Contains(right))
-                        {
-                            expressionValues[info.Key] = value;
-                        }
-                    }
-
-                    if (!expressionValues.TryAdd(operation, value))
-                    {
-                        expressionValues[operation] = value;
-                    }
-                }
-                void HandleExpression(DSharpBinaryExpressionSide leftSide, DSharpBinaryExpressionSide rightSide, DSharpBinaryOperator @operator, ref DSharpMethodCompileSettings settings)
-                {
-                    var left = leftSide.Value;
-                    var right = rightSide.Value;
-
-                    if (expressionFailed ||
-                        left is not LiteralExpressionNode leftLiteral ||
-                        right is not LiteralExpressionNode rightLiteral)
-                    {
-                        expressionFailed = true;
-                        return;
-                    }
-
-                    DSharpLiteralValue value = DSharpLiteralValue.Null;
-                    DSharpLiteralValue leftValue = leftLiteral.Value;
-                    DSharpLiteralValue rightValue = rightLiteral.Value;
-
-                    if (expressionValues != null)
-                    {
-                        if (TryGetValue(left, out var savedLeftValue))
-                        {
-                            leftValue = savedLeftValue;
-                        }
-                        if (TryGetValue(right, out var savedRightValue))
-                        {
-                            rightValue = savedRightValue;
-                        }
-                    }
-
-                    value = DSharpLiteralValue.MathOperation(@operator, leftValue, rightValue);
-                    expressionValues ??= [];
-                    lastExpressionValue = value;
-
-                    AddExpressionValue(left, right, value);
-                }
 
                 if (expression is LiteralExpressionNode literalExpression)
                 {
                     result = literalExpression.Value;
                     return true;
                 }
-                else if (expression is UnaryExpressionNode unaryExpression)
+                else if (expression is UnaryExpressionNode unaryExpression &&
+                         unaryExpression.Operator != DSharpUnaryOperator.Dereference &&
+                         unaryExpression.Operator != DSharpUnaryOperator.AddressOf &&
+                         unaryExpression.Operand?.TrySimplifyToLiteral(out var value) == true)
                 {
-                    if (unaryExpression.Operand?.TrySimplifyToLiteral(out var literal) != true)
+                    if (value.IsBool)
                     {
+                        if (unaryExpression.Operator == DSharpUnaryOperator.Not)
+                        {
+                            result = !value.AsBool();
+                            return true;
+                        }
+
                         return false;
                     }
-
-                    result = DSharpLiteralValue.MathOperation(unaryExpression.Operator, literal);
-                    return true;
-                }
-                else if (expression is BinaryExpressionNode binaryExpression)
-                {
-                    binaryExpression.CompileExpression(HandleExpression);
-
-                    if (!expressionFailed)
+                    else if (value.IsNumber)
                     {
-                        result = lastExpressionValue;
-                        return true;
+                        if (unaryExpression.Operator == DSharpUnaryOperator.Minus ||
+                            unaryExpression.Operator == DSharpUnaryOperator.Increment ||
+                            unaryExpression.Operator == DSharpUnaryOperator.Decrement)
+                        {
+                            result = DSharpLiteralValue.MathOperation(unaryExpression.Operator, value);
+                            return true;
+                        }
                     }
 
                     return false;
                 }
-                else if (expression is ParenContainedExpressionNode parenContainedExpression)
+                if (expression is not BinaryExpressionNode binaryExpression)
                 {
-                    return parenContainedExpression.Expression?.TrySimplifyToLiteral(out result) == true;
+                    return false;
+                }
+
+                List<DSharpLiteralValue> valuesStack = [];
+
+                foreach (var pair in DSharpBinaryExpressionCompiler.Compile(binaryExpression))
+                {
+                    if (pair.Type == DSharpBinaryExpressionCompiler.BinaryPairCompileType.Default)
+                    {
+                        if (pair.Left == null ||
+                            !pair.Left.TrySimplifyToLiteral(out var leftValue) ||
+                            pair.Right == null ||
+                            !pair.Right.TrySimplifyToLiteral(out var rightValue))
+                        {
+                            return false;
+                        }
+
+                        var value = DSharpLiteralValue.MathOperation(pair.Operator, leftValue, rightValue);
+                        valuesStack.Add(value);
+                    }
+                    else if (pair.Type == DSharpBinaryExpressionCompiler.BinaryPairCompileType.CompileLeftBeforeRight)
+                    {
+                        if (pair.Left == null ||
+                            !pair.Left.TrySimplifyToLiteral(out var value))
+                        {
+                            return false;
+                        }
+
+                        valuesStack.Add(value);
+                    }
+                    else if (pair.Type == DSharpBinaryExpressionCompiler.BinaryPairCompileType.PreviousAsLeft)
+                    {
+                        if (pair.Right == null || 1 > valuesStack.Count ||
+                            !pair.Right.TrySimplifyToLiteral(out var rightValue))
+                        {
+                            return false;
+                        }
+
+                        var leftValue = valuesStack[^1];
+                        var value = DSharpLiteralValue.MathOperation(pair.Operator, leftValue, rightValue);
+                        valuesStack.Add(value);
+                    }
+                    else if (pair.Type == DSharpBinaryExpressionCompiler.BinaryPairCompileType.WithPrevious ||
+                             pair.Type == DSharpBinaryExpressionCompiler.BinaryPairCompileType.CompileLeftAfterRight)
+                    {
+                        if (2 > valuesStack.Count)
+                        {
+                            return false;
+                        }
+
+                        var leftValue = valuesStack[^2];
+                        var rightValue = valuesStack[^1];
+                        var value = DSharpLiteralValue.MathOperation(pair.Operator, leftValue, rightValue);
+                        valuesStack.Add(value);
+                    }
+                }
+
+                if (valuesStack.Count > 0)
+                {
+                    result = valuesStack[^1];
+                    return true;
                 }
 
                 return false;
-            }
-        }
-        extension(BinaryExpressionNode expression)
-        {
-            public void CompileExpression(BinaryExpressionCompileHandler handler)
-            {
-                DSharpMethodCompileSettings settings = default;
-                expression.CompileExpression(handler, [], ref settings);
-            }
-            public void CompileExpression(BinaryExpressionCompileHandler handler, ref DSharpMethodCompileSettings settings)
-            {
-                expression.CompileExpression(handler, [], ref settings);
-            }
-
-            private void CompileExpression(BinaryExpressionCompileHandler handler, HashSet<BinaryExpressionNode> compiledExpressions, ref DSharpMethodCompileSettings settings)
-            {
-                if (expression.Left == null || expression.Right == null)
-                {
-                    throw new ArgumentException($"Incomplete expression: {expression}", nameof(expression));
-                }
-                if (!compiledExpressions.Add(expression))
-                {
-                    return;
-                }
-
-                ExpressionNode leftExpression = expression.Left;
-                ExpressionNode rightExpression = expression.Right;
-
-                ExpressionNode GetTargetExpression(ExpressionNode expression, Func<BinaryExpressionNode, ExpressionNode?> selector)
-                {
-                    if (expression is BinaryExpressionNode binary)
-                    {
-                        var sideExpression = selector(binary);
-
-                        return sideExpression == null
-                            ? throw new ArgumentException($"Incomplete expression: {expression}", nameof(expression))
-                            : GetTargetExpression(sideExpression, selector);
-                    }
-                    else if (expression is ParenContainedExpressionNode parenContained)
-                    {
-                        if (parenContained.Expression == null)
-                        {
-                            throw new ArgumentException($"Empty expression: {parenContained}", nameof(expression));
-                        }
-
-                        return GetTargetExpression(parenContained.Expression, selector);
-                    }
-                    else if (expression is UnaryExpressionNode unary)
-                    {
-                        if (unary.Operand == null)
-                        {
-                            throw new ArgumentException($"Incomplete expression: {expression}", nameof(expression));
-                        }
-
-                        return unary.Operand;
-                    }
-
-                    return expression;
-                }
-
-                if (expression.Left is ParenContainedExpressionNode leftParenContained)
-                {
-                    if (leftParenContained.Expression == null)
-                    {
-                        throw new ArgumentException($"Empty left side of expression: {expression}", nameof(expression));
-                    }
-
-                    if (leftParenContained.Expression is BinaryExpressionNode leftBinaryExpression)
-                    {
-                        leftBinaryExpression.CompileExpression(handler, compiledExpressions, ref settings);
-                        leftExpression = GetTargetExpression(leftBinaryExpression, b => b.Right);
-                    }
-                    else
-                    {
-                        leftExpression = leftParenContained.Expression;
-                    }
-                }
-                else if (expression.Left is BinaryExpressionNode leftBinaryExpression)
-                {
-                    leftBinaryExpression.CompileExpression(handler, compiledExpressions, ref settings);
-                    leftExpression = GetTargetExpression(leftBinaryExpression, b => b.Right);
-                }
-                if (expression.Right is ParenContainedExpressionNode rightParenContained)
-                {
-                    if (rightParenContained.Expression == null)
-                    {
-                        throw new ArgumentException($"Empty right side of expression: {expression}", nameof(expression));
-                    }
-
-                    if (rightParenContained.Expression is BinaryExpressionNode rightBinaryExpression)
-                    {
-                        rightBinaryExpression.CompileExpression(handler, compiledExpressions, ref settings);
-                        rightExpression = GetTargetExpression(rightBinaryExpression, b => b.Left);
-                    }
-                    else
-                    {
-                        rightExpression = rightParenContained.Expression;
-                    }
-                }
-                else if (expression.Right is BinaryExpressionNode rightBinaryExpression)
-                {
-                    if (rightBinaryExpression.Operator == DSharpBinaryOperator.Multiply ||
-                        rightBinaryExpression.Operator == DSharpBinaryOperator.Divide ||
-                        rightBinaryExpression.Operator == DSharpBinaryOperator.And ||
-                        rightBinaryExpression.Operator == DSharpBinaryOperator.ShiftLeft ||
-                        rightBinaryExpression.Operator == DSharpBinaryOperator.ShiftRight ||
-                        expression.Operator.IsLogical())
-                    {
-                        rightBinaryExpression.CompileExpression(handler, compiledExpressions, ref settings);
-                    }
-                    if (rightBinaryExpression.Left == null)
-                    {
-                        throw new ArgumentException($"Incomplete expression: {rightBinaryExpression}", nameof(expression));
-                    }
-
-                    rightExpression = GetTargetExpression(rightBinaryExpression, b => b.Left);
-                }
-
-                handler(new(leftExpression, expression.Left), new(rightExpression, expression.Right), expression.Operator, ref settings);
             }
         }
         extension(IdentifierExpressionNode identifierExpression)

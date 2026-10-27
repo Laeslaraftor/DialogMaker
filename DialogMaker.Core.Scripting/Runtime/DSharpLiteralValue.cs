@@ -447,7 +447,7 @@ namespace DialogMaker.Core.Scripting.Runtime
             return new()
             {
                 Type = value.Type,
-                _numberValue = Convert.ChangeType(decimalValue, numberType)
+                _numberValue = Convert.ChangeType(decimalValue, numberType!)
             };
         }
         /// <summary>

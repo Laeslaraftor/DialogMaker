@@ -627,11 +627,6 @@ namespace DialogMaker.Core.Scripting.Compiler
         }
         private BlockStatementNode? CompileStatement(DSharpMethodBuilder method, StatementNode statement, StatementNode? parentStatement, int depth, DSharpBytecodeBuilder code, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context = default)
         {
-            IDSharpParameterInfo GetCustomVariable2(string name, object type, ref DSharpMethodCompileSettings settings, ExpressionNode? initializer = null)
-            {
-                return CreateVariable(method, name, type, initializer, ref settings, context);
-            }
-
             if (statement is BlockStatementNode blockStatement)
             {
                 CompileStatement(method, blockStatement, depth + 1, code, ref settings, context);
@@ -1410,6 +1405,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     throw new DSharpCompilerException("Yield available only in iteration methods", statement);
                 }
+                if (context.NowInFinallyBlock)
+                {
+                    throw new DSharpCompilerException("Yield not available in finally blocks", statement);
+                }
 
                 var iterationInfo = settings.IterationMethodInfo;
 
@@ -1433,6 +1432,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     code.Push(true); // 5
                     code.Return(); // 6
                     // 7 - next instruction
+                    context.TryCatchFinallyRegistrationGenerator?.Invoke(context);
                 }
                 else if (yieldStatement.Statement is BreakStatementNode)
                 {
@@ -4882,43 +4882,34 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 List<DSharpBytecodeBuilder.Instruction> instructions = [];
 
-                while (code.Instructions.Count > startInstructionsCount)
+                instructions.AddRange(code.Instructions);
+                code.Instructions.Clear();
+
+                CompileTryFinally(method, code, (code, ref _, _) =>
                 {
-                    int lastIndex = code.Instructions.Count - 1;
-                    instructions.Add(code.Instructions[lastIndex]);
-                    code.Instructions.RemoveAt(lastIndex);
-                }
-
-                instructions.Reverse();
-
-                code.StartTrying();
-                var catchReference = code.RegisterTypedCatch(Assembly.ExceptionType);
-                var finallyReference = code.RegisterFinally();
-
-                code.Instructions.AddRange(instructions);
-                code.Finally();
-                var skipCatchInstruction = code.Jump();
-                catchReference?.ReferencedInstruction = code.Finally();
-                code.Throw();
-                finallyReference?.ReferencedInstruction = code.Empty();
-
-                foreach (var info in settings.UsingVariables)
+                    code.Instructions.AddRange(instructions);
+                }, (code, ref settings, _) =>
                 {
-                    code.LoadLocal(info.Key);
-                    code.Push(null);
-                    code.Equals();
-                    var skipCallingInstruction = code.JumpIfTrue();
-                    code.PopRepeat(2);
-                    code.Call(info.Value);
-                    code.Pop();
-                    code.SkipNext();
-                    skipCallingInstruction.ReferencedInstruction = code.PopRepeat(3);
-                }
+                    if (settings.UsingVariables == null || settings.UsingVariables.Count == 0)
+                    {
+                        return;
+                    }
 
-                code.Return();
-                skipCatchInstruction.ReferencedInstruction = code.Empty();
+                    foreach (var info in settings.UsingVariables)
+                    {
+                        code.LoadLocal(info.Key);
+                        code.Push(null);
+                        code.Equals();
+                        var skipCallingInstruction = code.JumpIfTrue();
+                        code.PopRepeat(2);
+                        code.Call(info.Value);
+                        code.Pop();
+                        code.SkipNext();
+                        skipCallingInstruction.ReferencedInstruction = code.PopRepeat(3);
+                    }
+                }, body, ref settings, context);
 
-                settings.UsingVariables.Clear();
+                settings.UsingVariables?.Clear();
             }
         }
 
@@ -5041,6 +5032,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             var endInstruction = code.StopTrying();
             code.Instructions.Remove(endInstruction);
 
+            Dictionary<DSharpBytecodeBuilder.ReferenceInstruction, DSharpBytecodeBuilder.Instruction> sectionsLabel = [];
             Dictionary<IDSharpType, DSharpBytecodeBuilder.TypedReferenceInstruction>? typedCatchBlocksRegistration = null;
             DSharpBytecodeBuilder.ReferenceInstruction? catchBlockRegistration = null;
             DSharpBytecodeBuilder.ReferenceInstruction? finallyBlockRegistration = null;
@@ -5048,7 +5040,8 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             void CompileCatchBlock(IDSharpType? type, DSharpBytecodeBuilder.ReferenceInstruction registration, ref DSharpMethodCompileSettings settings)
             {
-                registration.ReferencedInstruction = code.Empty();
+                ApplyLabel(registration);
+
                 var catchBlockContext = context;
                 catchBlockContext.NowInCatchBlock = true;
                 catchBlockHandler!(type, code, ref settings, catchBlockContext);
@@ -5060,6 +5053,24 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 code.Jump(endInstruction);
             }
+            void ApplyLabel(DSharpBytecodeBuilder.ReferenceInstruction registration)
+            {
+                if (!sectionsLabel.TryGetValue(registration, out var label))
+                {
+                    label = code.Empty();
+                }
+                else
+                {
+                    code.Instructions.Add(label);
+                }
+            }
+            DSharpBytecodeBuilder.Instruction CreateLabel()
+            {
+                var label = code.Empty(true);
+                code.Instructions.Remove(label);
+
+                return label;
+            }
 
             if (handingExceptionTypes != null && handingExceptionTypes.Any())
             {
@@ -5070,6 +5081,8 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 foreach (var handlingType in handingExceptionTypes)
                 {
+                    DSharpBytecodeBuilder.Instruction label;
+
                     if (handlingType == null)
                     {
                         if (catchBlockRegistration != null)
@@ -5078,6 +5091,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                         }
 
                         catchBlockRegistration = code.RegisterCatch();
+                        label = CreateLabel();
+                        catchBlockRegistration.ReferencedInstruction = label;
+                        sectionsLabel.Add(catchBlockRegistration, label);
+
                         continue;
                     }
 
@@ -5089,16 +5106,65 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
 
                     var registration = code.RegisterTypedCatch(handlingType);
+                    label = CreateLabel();
+                    registration.ReferencedInstruction = label;
+                    sectionsLabel.Add(registration, label);
                     typedCatchBlocksRegistration.Add(handlingType, registration);
                 }
             }
             if (finallyBlockHandler != null)
             {
                 finallyBlockRegistration = code.RegisterFinally();
+                var label = CreateLabel();
+                finallyBlockRegistration.ReferencedInstruction = label;
+                sectionsLabel.Add(finallyBlockRegistration, label);
                 context.HasFinally = true;
             }
 
             var skipBlocks = code.Jump();
+            var currentGenerator = context.TryCatchFinallyRegistrationGenerator;
+            context.TryCatchFinallyRegistrationGenerator = context =>
+            {
+                bool nowInCatchBlock = false;
+
+                if (context.NowInCatchBlock)
+                {
+                    context.NowInCatchBlock = false;
+                    nowInCatchBlock = true;
+                }
+
+                currentGenerator?.Invoke(context);
+                bool emptyCatchGenerated = false;
+
+                foreach (var info in sectionsLabel)
+                {
+                    if (nowInCatchBlock && 
+                        (info.Key.Operation == DSharpBytecodeOperation.RegisterCatch ||
+                        info.Key.Operation == DSharpBytecodeOperation.RegisterTypedCatch))
+                    {
+                        if (!emptyCatchGenerated)
+                        {
+                            emptyCatchGenerated = true;
+                            var registration = code.RegisterCatch();
+                            registration.ReferencedInstruction = code.Empty();
+                            var skipCatchBlock = code.Jump();
+
+                            if (finallyBlockRegistration != null)
+                            {
+                                code.Finally();
+                            }
+
+                            code.Throw();
+                            skipCatchBlock.ReferencedInstruction = code.Empty();
+                        }
+
+                        continue;
+                    }
+
+                    var copy = info.Key.Copy(code);
+                    code.Instructions.Add(copy);
+                }
+            };
 
             if (catchBlockRegistration != null)
             {
@@ -5115,8 +5181,9 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 var finallyContext = context;
                 finallyContext.NowInFinallyBlock = true;
-                finallyBlockRegistration.ReferencedInstruction = code.Empty();
                 var finallyCode = code;
+
+                ApplyLabel(finallyBlockRegistration);
 
                 if (settings.IterationMethodInfo != null)
                 {

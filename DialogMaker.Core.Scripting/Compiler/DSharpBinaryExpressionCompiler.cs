@@ -18,6 +18,38 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// <exception cref="InvalidOperationException">Right side pairs can not be null when it compiled as binary</exception>
         public static IEnumerable<BinaryPair> Compile(BinaryExpressionNode expression)
         {
+            //if (expression.Operator == DSharpBinaryOperator.LogicalAnd &&
+            //    expression.Left is BinaryExpressionNode leftBinary &&
+            //    leftBinary.Operator == DSharpBinaryOperator.LogicalOr)
+            //{
+            //    bool leftIsBinary = false;
+
+            //    if (leftBinary.Right is BinaryExpressionNode leftRightBinary)
+            //    {
+            //        leftIsBinary = true;
+
+            //        foreach (var pair in Compile(leftRightBinary))
+            //        {
+            //            yield return pair;
+            //        }
+            //    }
+            //    if (expression.Right is BinaryExpressionNode rightBinary)
+            //    {
+            //        foreach (var pair in Compile(rightBinary))
+            //        {
+            //            yield return pair;
+            //        }
+
+            //        if (leftIsBinary)
+            //        {
+            //            yield return new(BinaryPairCompileType.WithPrevious, null, null, DSharpBinaryOperator.LogicalAnd);
+            //            yield break;
+            //        }
+            //    }
+
+            //    yield break;
+            //}
+
             var leftPairs = RecursiveCompile(expression.Left, out bool leftCompiledAsBinary, out var leftExpression);
             var rightPairs = RecursiveCompile(expression.Right, out bool rightCompiledAsBinary, out var rightExpression);
 

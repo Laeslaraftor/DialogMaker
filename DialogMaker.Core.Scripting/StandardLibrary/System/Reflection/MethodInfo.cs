@@ -5,13 +5,13 @@ namespace System.Reflection;
 
 public unsafe class MethodInfo : MemberInfo
 {
-    internal MethodInfo(Pointer<RuntimeMethodInfo> runtimeMethodInfo)
+    internal MethodInfo(RuntimeMethodInfo* runtimeMethodInfo)
     {
         RuntimeMethodInfo = runtimeMethodInfo;
         _methodInfo = runtimeMethodInfo[0];
     }
 
-    internal Pointer<RuntimeMethodInfo> RuntimeMethodInfo { get; }
+    internal RuntimeMethodInfo* RuntimeMethodInfo { get; }
     public override string Name
     {
         get

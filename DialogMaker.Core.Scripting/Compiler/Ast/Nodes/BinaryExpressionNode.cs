@@ -84,11 +84,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                    tokenType == DSharpTokenType.GreaterEqual;
         }
 
-        public static ExpressionNode Parse(AstParserStream stream) => ParseLogical(stream);
-        public static ExpressionNode ParseLogical(AstParserStream stream)
+        public static ExpressionNode Parse(AstParserStream stream) => ParseLogicalAnd(stream);
+        public static ExpressionNode ParseLogicalAnd(AstParserStream stream)
         {
-            return ParseOperation(stream, ParseEquality, DSharpTokenType.LogicalOr,
-                                                         DSharpTokenType.LogicalAnd);
+            return ParseOperation(stream, ParseLogicalOr, DSharpTokenType.LogicalAnd);
+        }
+        public static ExpressionNode ParseLogicalOr(AstParserStream stream)
+        {
+            return ParseOperation(stream, ParseEquality, DSharpTokenType.LogicalOr);
         }
         public static ExpressionNode ParseEquality(AstParserStream stream)
         {

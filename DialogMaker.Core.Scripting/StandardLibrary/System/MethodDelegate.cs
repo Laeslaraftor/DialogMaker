@@ -17,6 +17,9 @@ public unsafe class MethodDelegate : Delegate
         _runtimeMethodInfo = (RuntimeMethodInfo*)runtimeMethodInfo;
         Target = target;
     }
+    public MethodDelegate(nint runtimeMethodInfo) : this(runtimeMethodInfo, null)
+    {
+    }
 
     public override MethodInfo? MethodInfo
     {
@@ -37,7 +40,7 @@ public unsafe class MethodDelegate : Delegate
     }
     public override object? Target { get; }
 
-    private readonly Pointer<RuntimeMethodInfo> _runtimeMethodInfo;
+    private readonly RuntimeMethodInfo* _runtimeMethodInfo;
     private MethodInfo? _methodInfo;
 
     public override object? DynamicInvoke(params object?[]? parameters)

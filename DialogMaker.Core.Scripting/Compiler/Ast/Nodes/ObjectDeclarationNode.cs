@@ -77,6 +77,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// List of operators
         /// </summary>
         public List<OperatorNode> Operators { get; set; } = [];
+        /// <summary>
+        /// List of primary constructor parameters
+        /// </summary>
+        public List<ParameterExpressionNode>? PrimaryConstructorParameters { get; set; }
+        /// <summary>
+        /// Type that returns by delegate.
+        /// This property was null when delegate has void on return type or this is not delegate declaration
+        /// </summary>
+        public TypeInfoNode? DelegateReturnType { get; set; }
 
         #region Static
 
@@ -227,6 +236,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
                     mode = memberMode;
                     eatToken = true;
+                }
+                else if (currentToken.Type == DSharpTokenType.Delegate)
+                {
+                    eatToken = false;
                 }
                 else if (currentToken.Type == DSharpTokenType.Tilde)
                 {
@@ -463,7 +476,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 return stream.Check(DSharpTokenType.Struct, offset) ||
                        stream.Check(DSharpTokenType.Class, offset) ||
                        stream.Check(DSharpTokenType.Enum, offset) ||
-                       stream.Check(DSharpTokenType.Interface, offset);
+                       stream.Check(DSharpTokenType.Interface, offset) ||
+                       stream.Check(DSharpTokenType.Delegate, offset);
             }
             bool IsStatic(int offset)
             {
@@ -557,6 +571,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             ParseUnsafe();
 
             DSharpObjectType objectType = DSharpObjectType.Class;
+            TypeInfoNode? delegateReturnType = null;
 
             if (stream.Check(DSharpTokenType.Struct))
             {
@@ -573,6 +588,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 stream.Eat(DSharpTokenType.Enum);
                 objectType = DSharpObjectType.Enum;
             }
+            else if (stream.Check(DSharpTokenType.Delegate))
+            {
+                stream.Eat(DSharpTokenType.Delegate);
+                objectType = DSharpObjectType.Delegate;
+
+                if (TypeInfoNode.CanParse(stream, 0))
+                {
+                    delegateReturnType = TypeInfoNode.Parse(stream, true, true);
+                }
+                else
+                {
+                    stream.Eat(DSharpTokenType.Void);
+                }
+            }
             else
             {
                 stream.Eat(DSharpTokenType.Class);
@@ -587,11 +616,29 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 IsSealed = isSealed,
                 Access = access,
                 IsStatic = isStatic,
-                IsUnsafe = isUnsafe
+                IsUnsafe = isUnsafe,
+                DelegateReturnType = delegateReturnType
             };
 
             identifier.Parent = node;
 
+            if (stream.Check(DSharpTokenType.LeftParen))
+            {
+                stream.Eat(DSharpTokenType.LeftParen);
+                node.PrimaryConstructorParameters = InvokableNode.ParseParameters(stream);
+                stream.Eat(DSharpTokenType.RightParen);
+            }
+            if (objectType == DSharpObjectType.Delegate)
+            {
+                if (node.PrimaryConstructorParameters == null)
+                {
+                    stream.ThrowPositionException("Delegate definition requires parameters");
+                }
+
+                stream.Eat(DSharpTokenType.Semicolon);
+
+                return node;
+            }
             if (stream.Check(DSharpTokenType.Colon))
             {
                 stream.Eat(DSharpTokenType.Colon);

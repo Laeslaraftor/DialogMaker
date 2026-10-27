@@ -37,6 +37,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             AccessThroughPointer = context.AccessThroughPointer;
             OriginalMethod = context.OriginalMethod;
             SelfScopedBy = context.SelfScopedBy;
+            TryCatchFinallyRegistrationGenerator = context.TryCatchFinallyRegistrationGenerator;
 
             if (context.Compiler != null && context.CurrentMember != currentMember)
             {
@@ -78,6 +79,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         public bool AccessThroughPointer { get; set; }
         public DSharpMethodBuilder? OriginalMethod { get; set; }
         public BlockStatementNode? SelfScopedBy { get; set; }
+        public Action<DSharpCompilerContext>? TryCatchFinallyRegistrationGenerator { get; set; }
 
         #region Access
 

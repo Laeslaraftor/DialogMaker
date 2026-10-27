@@ -20,6 +20,10 @@
         /// <summary>
         /// <inheritdoc cref="DSharpTypeAttributes.Interface"/>
         /// </summary>
-        Interface = DSharpTypeAttributes.Interface
+        Interface = DSharpTypeAttributes.Interface,
+        /// <summary>
+        /// <inheritdoc cref="DSharpTypeAttributes.Interface"/>
+        /// </summary>
+        Delegate = DSharpTypeAttributes.Delegate
     }
 }

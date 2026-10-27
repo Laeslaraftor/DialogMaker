@@ -161,38 +161,50 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 throw new ArgumentException($"Objects in namespace only can be public or internal: {declaration}", nameof(declaration));
             }
-            if (declaration.Type == DSharpObjectType.Enum)
+            if (declaration.Type == DSharpObjectType.Enum ||
+                declaration.Type == DSharpObjectType.Delegate)
             {
                 if (declaration.IsAbstract)
                 {
-                    throw new DSharpCompilerException($"Enum can not be abstract", declaration);
+                    throw new DSharpCompilerException($"{declaration.Type} can not be abstract", declaration);
+                }
+                if (declaration.Type == DSharpObjectType.Delegate &&
+                    declaration.IsStatic)
+                {
+                    throw new DSharpCompilerException($"{declaration.Type} can not be static", declaration);
+                }
+                if (declaration.IsSealed)
+                {
+                    throw new DSharpCompilerException($"{declaration.Type} can not be sealed", declaration);
                 }
                 if (declaration.Methods.Count > 0)
                 {
-                    throw new DSharpCompilerException($"Enum can not contains methods", declaration);
+                    throw new DSharpCompilerException($"{declaration.Type} can not contains methods", declaration);
                 }
                 if (declaration.Finalizers.Count > 0)
                 {
-                    throw new DSharpCompilerException($"Enum can not contains finalizer", declaration);
+                    throw new DSharpCompilerException($"{declaration.Type} can not contains finalizer", declaration);
                 }
-                if (declaration.Constructors.Count > 0)
+                if (declaration.Constructors.Count > 0 ||
+                    declaration.Type == DSharpObjectType.Enum &&
+                    declaration.PrimaryConstructorParameters != null)
                 {
-                    throw new DSharpCompilerException($"Enum can not contains constructors", declaration);
+                    throw new DSharpCompilerException($"{declaration.Type} can not contains constructors", declaration);
                 }
                 if (declaration.Indexers.Count > 0)
                 {
-                    throw new DSharpCompilerException($"Enum can not contains indexers", declaration);
+                    throw new DSharpCompilerException($"{declaration.Type} can not contains indexers", declaration);
                 }
                 if (declaration.Operators.Count > 0)
                 {
-                    throw new DSharpCompilerException($"Enum can not contains operators", declaration);
+                    throw new DSharpCompilerException($"{declaration.Type} can not contains operators", declaration);
                 }
                 if (declaration.Children.Count > 0)
                 {
-                    throw new DSharpCompilerException($"Enum can not contains children", declaration);
+                    throw new DSharpCompilerException($"{declaration.Type} can not contains children", declaration);
                 }
             }
-
+            
             var type = Assembly.CreateType(declaration.Identifier.Name, parent);
             type.IsStatic = declaration.IsStatic;
             type.IsAbstract = declaration.IsAbstract;
