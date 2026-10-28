@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.CodeAnalyzer;
 using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions;
+using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
@@ -171,6 +172,13 @@ namespace DialogMaker.Core.Scripting.Runtime
         [Executor(typeof(DSharpLoadTypeInformationInstructionExecutor))]
         LoadTypeInformation,
         /// <summary>
+        /// Load specified method information pointer to stack
+        /// </summary>
+        [ArgsCount(1)]
+        [RequestsStackValues(0)]
+        [Executor(typeof(DSharpLoadMethodInformationInstructionExecutor))]
+        LoadMethodInformation,
+        /// <summary>
         /// Load specified type size to stack
         /// </summary>
         [ArgsCount(1)]
@@ -217,7 +225,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         StoreOnAddress,
 
         /// <summary>
-        /// Call function or static method.
+        /// Call method.
         /// Stack:
         /// 0: args...
         /// </summary>
@@ -225,6 +233,18 @@ namespace DialogMaker.Core.Scripting.Runtime
         [RequestsStackValues(-1)]
         [Executor(typeof(DSharpCallInstructionExecutor))]
         Call,
+        /// <summary>
+        /// Dynamically call method. Generic methods not supported.
+        /// This is virtual calling.
+        /// Stack:
+        /// 0: runtime method info address (<see cref="DSharpRuntimeMethodInfo"/>),
+        /// 1: instance or null
+        /// 2: args...
+        /// </summary>
+        [ArgsCount(0)]
+        [RequestsStackValues(-1)]
+        [Executor(typeof(DSharpDynamicCallInstructionExecutor))]
+        DynamicCall,
         /// <summary>
         /// Lock last value in stack.
         /// It throws exception if stack value is null or it was not reference type.

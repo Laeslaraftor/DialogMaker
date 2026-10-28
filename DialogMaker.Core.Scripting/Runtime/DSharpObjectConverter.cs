@@ -40,7 +40,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <returns>C# sbyte</returns>
         public static sbyte ToSByte(DSharpObject* obj)
         {
-            CheckType(obj, DSharpBuildInTypes.SignedByte);
+            CheckType(obj, DSharpBuildInTypes.SByte);
             return *(sbyte*)DSharpObject.GetData(obj);
         }
         /// <summary>
@@ -50,7 +50,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <returns>C# short</returns>
         public static short ToInt16(DSharpObject* obj)
         {
-            CheckType(obj, DSharpBuildInTypes.Short);
+            CheckType(obj, DSharpBuildInTypes.Int16);
             return *(short*)DSharpObject.GetData(obj);
         }
         /// <summary>
@@ -60,7 +60,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <returns>C# ushort</returns>
         public static ushort ToUInt16(DSharpObject* obj)
         {
-            CheckType(obj, DSharpBuildInTypes.UnsignedShort);
+            CheckType(obj, DSharpBuildInTypes.UInt16);
             return *(ushort*)DSharpObject.GetData(obj);
         }
         /// <summary>
@@ -70,7 +70,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <returns>C# int</returns>
         public static int ToInt32(DSharpObject* obj)
         {
-            CheckType(obj, DSharpBuildInTypes.Int);
+            CheckType(obj, DSharpBuildInTypes.Int32);
             return *(int*)DSharpObject.GetData(obj);
         }
         /// <summary>
@@ -80,7 +80,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <returns>C# uint</returns>
         public static uint ToUInt32(DSharpObject* obj)
         {
-            CheckType(obj, DSharpBuildInTypes.UnsignedInt);
+            CheckType(obj, DSharpBuildInTypes.UInt32);
             return *(uint*)DSharpObject.GetData(obj);
         }
         /// <summary>
@@ -90,7 +90,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <returns>C# long</returns>
         public static long ToInt64(DSharpObject* obj)
         {
-            CheckType(obj, DSharpBuildInTypes.Long);
+            CheckType(obj, DSharpBuildInTypes.Int64);
             return *(long*)DSharpObject.GetData(obj);
         }
         /// <summary>
@@ -100,7 +100,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <returns>C# ulong</returns>
         public static ulong ToUInt64(DSharpObject* obj)
         {
-            CheckType(obj, DSharpBuildInTypes.UnsignedLong);
+            CheckType(obj, DSharpBuildInTypes.UInt64);
             return *(ulong*)DSharpObject.GetData(obj);
         }
         /// <summary>
@@ -110,7 +110,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <returns>C# nint</returns>
         public static nint ToIntPtr(DSharpObject* obj)
         {
-            CheckType(obj, DSharpBuildInTypes.NativeInt);
+            CheckType(obj, DSharpBuildInTypes.IntPtr);
             return *(nint*)DSharpObject.GetData(obj);
         }
         /// <summary>
@@ -120,7 +120,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <returns>C# nuint</returns>
         public static nuint ToUIntPtr(DSharpObject* obj)
         {
-            CheckType(obj, DSharpBuildInTypes.NativeUnsignedInt);
+            CheckType(obj, DSharpBuildInTypes.UIntPtr);
             return *(nuint*)DSharpObject.GetData(obj);
         }
         /// <summary>

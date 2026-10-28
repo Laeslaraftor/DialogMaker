@@ -73,6 +73,8 @@ namespace DialogMaker.Core.Scripting.Compiler
             _propertyFields.Clear();
             _propertiesWithCustomAccessors.Clear();
             _createdParameters.Clear();
+            _createdGenericTypes.Clear();
+            _createdDelegates.Clear();
             _currentNamespace = null;
             _typesToSetupBases = null;
         }
@@ -106,6 +108,10 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// </summary>
         public void CompileCode()
         {
+            foreach (var delegateDescription in _createdDelegates.Values)
+            {
+                CompileDelegate(delegateDescription);
+            }
             foreach (var type in _types)
             {
                 if (type.StaticInitializer != null ||
@@ -295,6 +301,12 @@ namespace DialogMaker.Core.Scripting.Compiler
             return context;
         }
 
+        private string GetNamespaceName() => GetNamespaceName(_currentNamespace);
+        private string GetNamespaceName(string? @namespace)
+        {
+            return @namespace ?? GlobalNamespace;
+        }
+
         #endregion
 
         #region Types resolving
@@ -323,6 +335,12 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             return typeToken;
         }
+
+        #endregion
+
+        #region Constants
+
+        public const string GlobalNamespace = "<global namespace>";
 
         #endregion
     }

@@ -236,6 +236,39 @@ namespace DialogMaker.Core.Tests
                     }
                 }
 
+                foreach (var genericType in type.GenericTypes)
+                {
+                    if (genericType.GenericAttributes == DSharpGenericTypeAttributes.None &&
+                        genericType.BaseTypes.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    Console.WriteLine();
+                    Console.Write($"    where {genericType.Name} : ");
+                    bool isFirstAttribute = true;
+
+                    foreach (var value in DSharpGenericTypeAttributesHelper.Values)
+                    {
+                        if (genericType.GenericAttributes.HasFlag(value))
+                        {
+                            if (!isFirstAttribute)
+                            {
+                                Console.Write(", ");
+                            }
+
+                            isFirstAttribute = false;
+                            Console.Write(value.ToString());
+                        }
+                    }
+                    if (!isFirstAttribute && genericType.BaseTypes.Count > 0)
+                    {
+                        Console.Write(", ");
+                    }
+
+                    Console.Write(string.Join(", ", genericType.BaseTypes.Select(t => t.FullName)));
+                }
+
                 Console.WriteLine();
 
                 if (type.Properties.Count > 0)

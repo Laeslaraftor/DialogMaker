@@ -192,7 +192,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <inheritdoc/>
         /// </summary>
         public override bool IsDeclaration => false;
-        public DSharpGenericTypeAttributes GenericAttributes { get; set; }
+        public DSharpGenericTypeAttributes GenericAttributes { get; set; } = DSharpGenericTypeAttributes.None;
         internal Action? SetupHandler { get; set; }
 
         IDSharpMethodInfo? IDSharpType.Finalizer => Finalizer;

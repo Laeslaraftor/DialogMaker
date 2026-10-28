@@ -3,6 +3,7 @@ using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
+using MessagePack.Resolvers;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -20,6 +21,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         }
 
         private readonly Dictionary<DSharpTypeBuilder, ObjectDeclarationNode> _createdTypes = [];
+        private readonly Dictionary<DSharpTypeBuilder, TypeInfoNode> _createdGenericTypes = [];
         private readonly Dictionary<DSharpFieldBuilder, FieldNode> _createdFields = [];
         private readonly Dictionary<DSharpFieldBuilder, ExpressionNode> _createdGlobalVariablesRawValueExpressions = [];
         private readonly Dictionary<DSharpFieldBuilder, VariableNode> _createdGlobalVariables = [];
@@ -30,6 +32,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         private readonly Dictionary<DSharpOperatorBuilder, OperatorNode> _createdOperators = [];
         private readonly Dictionary<DSharpMethodBuilder, ConstructorNode> _createdConstructors = [];
         private readonly Dictionary<DSharpMethodBuilderParameter, ParameterExpressionNode> _createdParameters = [];
+        public readonly Dictionary<DSharpTypeBuilder, DSharpCompilerDelegateDescription> _createdDelegates = [];
         private readonly List<DSharpCompilerEnumDescription> _enumTypes = [];
         private readonly List<DSharpTypeBuilder> _types = [];
         private Dictionary<IDSharpType, ObjectDeclarationNode>? _typesToSetupBases;
@@ -164,14 +167,20 @@ namespace DialogMaker.Core.Scripting.Compiler
             if (declaration.Type == DSharpObjectType.Enum ||
                 declaration.Type == DSharpObjectType.Delegate)
             {
+                if (declaration.Type == DSharpObjectType.Delegate)
+                {
+                    if (declaration.IsStatic)
+                    {
+                        throw new DSharpCompilerException($"{declaration.Type} can not be static", declaration);
+                    }
+                    if (declaration.BaseTypes.Count > 0)
+                    {
+                        throw new DSharpCompilerException($"{declaration.Type} can not have base types", declaration);
+                    }
+                }
                 if (declaration.IsAbstract)
                 {
                     throw new DSharpCompilerException($"{declaration.Type} can not be abstract", declaration);
-                }
-                if (declaration.Type == DSharpObjectType.Delegate &&
-                    declaration.IsStatic)
-                {
-                    throw new DSharpCompilerException($"{declaration.Type} can not be static", declaration);
                 }
                 if (declaration.IsSealed)
                 {
@@ -204,54 +213,72 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new DSharpCompilerException($"{declaration.Type} can not contains children", declaration);
                 }
             }
-            
-            var type = Assembly.CreateType(declaration.Identifier.Name, parent);
-            type.IsStatic = declaration.IsStatic;
-            type.IsAbstract = declaration.IsAbstract;
-            type.ObjectType = declaration.Type;
-            type.Access = declaration.Access;
-            type.IsSealed = declaration.IsSealed;
-            type.Namespace = _currentNamespace;
-            type.IsUnsafe = declaration.IsUnsafe;
 
-            if (declaration.Type == DSharpObjectType.Enum)
+            DSharpTypeBuilder? type;
+
+            if (declaration.Type == DSharpObjectType.Delegate)
             {
-                DSharpCompilerEnumDescription description = new(type, declaration);
-                _enumTypes.Add(description);
-                CreateEnumFields(description);
+                type = CreateDelegate(declaration, parent);
+
+                if (type == null)
+                {
+                    return;
+                }
             }
             else
             {
-                CreateGenerics(type, declaration.Identifier.GenericParameters);
-                SetupGenericDescription(type, declaration);
+                type = Assembly.CreateType(declaration.Identifier.Name, parent);
+            }
 
-                foreach (var childType in declaration.Children)
+            type.Access = declaration.Access;
+            type.ObjectType = declaration.Type;
+            type.Namespace = _currentNamespace;
+            type.IsUnsafe = declaration.IsUnsafe;
+
+            if (declaration.Type != DSharpObjectType.Delegate)
+            {
+                type.IsStatic = declaration.IsStatic;
+                type.IsAbstract = declaration.IsAbstract;
+                type.IsSealed = declaration.IsSealed;
+
+                if (declaration.Type == DSharpObjectType.Enum)
                 {
-                    CreateType(type, childType);
+                    DSharpCompilerEnumDescription description = new(type, declaration);
+                    _enumTypes.Add(description);
+                    CreateEnumFields(description);
                 }
-                foreach (var field in declaration.Fields)
+                else
                 {
-                    CreateFieldOrProperty(type, field);
-                }
-                foreach (var indexer in declaration.Indexers)
-                {
-                    CreateIndexer(type, indexer);
-                }
-                foreach (var method in declaration.Methods)
-                {
-                    CreateMethod(type, method);
-                }
-                foreach (var finalizer in declaration.Finalizers)
-                {
-                    CreateFinalizer(type, finalizer);
-                }
-                foreach (var @operator in declaration.Operators)
-                {
-                    CreateOperator(type, @operator);
-                }
-                foreach (var constructor in declaration.Constructors)
-                {
-                    CreateConstructor(type, constructor);
+                    CreateGenerics(type, declaration.Identifier.GenericParameters);
+
+                    foreach (var childType in declaration.Children)
+                    {
+                        CreateType(type, childType);
+                    }
+                    foreach (var field in declaration.Fields)
+                    {
+                        CreateFieldOrProperty(type, field);
+                    }
+                    foreach (var indexer in declaration.Indexers)
+                    {
+                        CreateIndexer(type, indexer);
+                    }
+                    foreach (var method in declaration.Methods)
+                    {
+                        CreateMethod(type, method);
+                    }
+                    foreach (var finalizer in declaration.Finalizers)
+                    {
+                        CreateFinalizer(type, finalizer);
+                    }
+                    foreach (var @operator in declaration.Operators)
+                    {
+                        CreateOperator(type, @operator);
+                    }
+                    foreach (var constructor in declaration.Constructors)
+                    {
+                        CreateConstructor(type, constructor);
+                    }
                 }
             }
 
@@ -567,6 +594,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             foreach (var type in types)
             {
                 var genericType = builder.CreateGenericType(type.Name);
+                _createdGenericTypes.Add(genericType, type);
                 CreateGenerics(genericType, type.GenericParameters);
             }
         }
@@ -868,6 +896,28 @@ namespace DialogMaker.Core.Scripting.Compiler
                 ValidateInvokableNodeParameters(info.Value);
                 ResolveParameters(info.Value.Parameters, info.Key.Parameters, context);
             }
+            foreach (var info in _createdDelegates)
+            {
+                foreach (var invokeInfo in info.Value.InvokeMethods)
+                {
+                    if (invokeInfo.Value.PrimaryConstructorParameters == null)
+                    {
+                        throw new DSharpCompilerException("Delegate should have parameters", invokeInfo.Value);
+                    }
+
+                    var context = Context;
+                    context.CurrentMember = invokeInfo.Key;
+                    context.Scope = GetScope(invokeInfo.Key);
+
+                    ResolveParameters(invokeInfo.Value.PrimaryConstructorParameters, invokeInfo.Key.Parameters, context);
+
+                    if (invokeInfo.Value.DelegateReturnType != null && invokeInfo.Value.DelegateReturnType.Token.Type != DSharpTokenType.Void)
+                    {
+                        invokeInfo.Key.ReturnTypeResolver = () => context.ResolveType(invokeInfo.Value.DelegateReturnType);
+                    }
+
+                }
+            }
             foreach (var info in _createdMethods)
             {
                 var context = Context;
@@ -920,6 +970,22 @@ namespace DialogMaker.Core.Scripting.Compiler
                 if (type.ObjectType == DSharpObjectType.Enum)
                 {
                     return;
+                }
+
+                try
+                {
+                    var declaringType = typeBuilder;
+
+                    while (declaringType != null && _createdTypes.TryGetValue(declaringType, out var declaringDeclaration))
+                    {
+                        SetupGenericDescription(declaringType, declaringDeclaration);
+                        declaringType = declaringType.DeclaringType as DSharpTypeBuilder;
+                    }
+                }
+                catch
+                {
+                    typesToSetupBases.Add(type, declaration);
+                    throw;
                 }
 
                 foreach (var baseTypeInfo in declaration.BaseTypes)
@@ -976,8 +1042,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                         throw;
                     }
                 }
-
-                SetupGenericDescription(typeBuilder, declaration);
             }
 
             foreach (var info in _createdMethods)
@@ -1147,7 +1211,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 CheckParameters(method, method.Parameters, methodNode);
-                
+
                 if (!methodNode.ReturnType.IsVoid())
                 {
                     CheckTypeToken(method, method.ReturnType, methodNode.ReturnType!);

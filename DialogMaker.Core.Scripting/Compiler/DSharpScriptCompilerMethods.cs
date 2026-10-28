@@ -4017,7 +4017,8 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     CheckAccess(currentMemberAccess.AccessMode, currentType);
 
-                    if (currentMemberAccess.AccessMode == DSharpMemberAccessMode.Pointer)
+                    if (currentMemberAccess.Member is MemberAccessExpressionNode &&
+                        currentMemberAccess.AccessMode == DSharpMemberAccessMode.Pointer)
                     {
                         currentType = CompileAccessThroughPointer(currentType);
                     }
@@ -4028,7 +4029,8 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     CheckAccess(currentMemberAccess.AccessMode);
 
-                    if (currentMemberAccess.AccessMode == DSharpMemberAccessMode.Pointer)
+                    if (currentMemberAccess.Member is MemberAccessExpressionNode &&
+                        currentMemberAccess.AccessMode == DSharpMemberAccessMode.Pointer)
                     {
                         CompileAccessThroughPointer();
                     }

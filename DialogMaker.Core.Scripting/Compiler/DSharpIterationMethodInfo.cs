@@ -83,7 +83,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// </summary>
         public DSharpMethodBuilder? DisposeMethod { get; private set; }
         /// <summary>
-        /// Field that stores index of next instruction after last yield returning. Field type is <see cref="DSharpBuildInTypes.Int"/>.
+        /// Field that stores index of next instruction after last yield returning. Field type is <see cref="DSharpBuildInTypes.Int32"/>.
         /// Value -1 means that enumerator was force stopped (yield break) or ended. 
         /// Value 0 means default state
         /// </summary>

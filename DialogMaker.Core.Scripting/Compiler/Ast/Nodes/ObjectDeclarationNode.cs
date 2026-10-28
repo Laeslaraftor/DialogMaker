@@ -624,9 +624,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             if (stream.Check(DSharpTokenType.LeftParen))
             {
-                stream.Eat(DSharpTokenType.LeftParen);
                 node.PrimaryConstructorParameters = InvokableNode.ParseParameters(stream);
-                stream.Eat(DSharpTokenType.RightParen);
             }
             if (objectType == DSharpObjectType.Delegate)
             {
@@ -635,6 +633,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     stream.ThrowPositionException("Delegate definition requires parameters");
                 }
 
+                WhereNode.ParseAll(stream, node.GenericDescriptions);
                 stream.Eat(DSharpTokenType.Semicolon);
 
                 return node;

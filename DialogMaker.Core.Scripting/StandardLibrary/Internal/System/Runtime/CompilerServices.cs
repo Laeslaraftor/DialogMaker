@@ -1,4 +1,5 @@
 using System.Native;
+using System;
 
 namespace Internal.System.Runtime;
 

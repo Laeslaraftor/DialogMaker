@@ -76,7 +76,7 @@
         /// <returns>Items indexer</returns>
         public static IDSharpIndexerInfo GetIndexer(IDSharpType type)
         {
-            var intType = type.Assembly.GetType(DSharpBuildInTypes.Int);
+            var intType = type.Assembly.GetType(DSharpBuildInTypes.Int32);
             return type.GetIndexer(intType);
         }
 

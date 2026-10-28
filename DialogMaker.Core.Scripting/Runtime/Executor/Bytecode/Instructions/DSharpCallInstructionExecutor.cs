@@ -46,7 +46,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpCallInstructionExecutor Instance = new();
 
-        internal static DSharpMethodExecutionCallback Call(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, CallingExecutionParameters parameters, uint extraScopeOffset = 0)
+        internal static DSharpMethodExecutionCallback Call(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, CallingExecutionParameters parameters, uint extraScopeOffset = 0, uint argumentsOffset = 0)
         {
             var instance = parameters.Instance;
             var method = parameters.Member;
@@ -66,7 +66,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 }
             }
 
-            var argumentsInfo = CreateArguments(context, method, parameters.GenericParameters, 0);
+            var argumentsInfo = CreateArguments(context, method, parameters.GenericParameters, argumentsOffset);
 
             if (!method->IsExtern && method->Bytecode.IsNull)
             {

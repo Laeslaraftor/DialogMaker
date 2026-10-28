@@ -67,6 +67,45 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// Class with static helper methods for
             /// </summary>
             public static readonly DSharpBuildInTypeInfo RuntimeHelper = new("Internal.System.Runtime.RuntimeHelper");
+            /// <summary>
+            /// Action delegate without parameters
+            /// </summary>
+            public static readonly DSharpBuildInTypeInfo Action = new("System.Action");
+            /// <summary>
+            /// Func delegate without parameters
+            /// </summary>
+            public static readonly DSharpBuildInTypeInfo Func = new(FuncFullNameTemplate + "`1");
+
+            private const string FuncFullNameTemplate = "System.Func";
+
+            /// <summary>
+            /// Get information about <c>Action</c> delegate with specified amount of parameters
+            /// </summary>
+            /// <param name="parametersCount">Amount of required parameters</param>
+            /// <returns>Information about <c>Action</c> delegate</returns>
+            public static DSharpBuildInTypeInfo GetAction(int parametersCount)
+            {
+                if (0 >= parametersCount)
+                {
+                    return Action;
+                }
+
+                return new(Action.FullName + $"`{parametersCount}");
+            }
+            /// <summary>
+            /// Get information about <c>Func</c> delegate with specified amount of parameters
+            /// </summary>
+            /// <param name="parametersCount">Amount of required parameters</param>
+            /// <returns>Information about <c>Func</c> delegate</returns>
+            public static DSharpBuildInTypeInfo GetFunc(int parametersCount)
+            {
+                if (0 >= parametersCount)
+                {
+                    return Func;
+                }
+
+                return new(FuncFullNameTemplate + $"`{parametersCount + 1}");
+            }
         }
 
         /// <summary>
@@ -80,7 +119,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <summary>
         /// Signed byte: -128-127 (1 byte)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo SignedByte = new("System.SByte", sizeof(sbyte), DSharpTokenType.SByte, &ToSByte, new(sbyte.MinValue, sbyte.MaxValue, typeof(sbyte)));
+        public static readonly DSharpBuildInTypeInfo SByte = new("System.SByte", sizeof(sbyte), DSharpTokenType.SByte, &ToSByte, new(sbyte.MinValue, sbyte.MaxValue, typeof(sbyte)));
         /// <summary>
         /// UTF-16 character is unsigned short (2 bytes)
         /// </summary>
@@ -100,43 +139,43 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <summary>
         /// Integer: -2,147,483,648 to 2,147,483,647 (4 bytes)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo Int = new("System.Int32", sizeof(int), DSharpTokenType.Int, &ToInt32, new(int.MinValue, int.MaxValue, typeof(int)));
+        public static readonly DSharpBuildInTypeInfo Int32 = new("System.Int32", sizeof(int), DSharpTokenType.Int, &ToInt32, new(int.MinValue, int.MaxValue, typeof(int)));
         /// <summary>
         /// Unsigned integer: 0 to 4,294,967,295 (4 bytes)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo UnsignedInt = new("System.UInt32", sizeof(uint), DSharpTokenType.UInt, &ToUInt32, new(uint.MinValue, uint.MaxValue, typeof(uint)));
+        public static readonly DSharpBuildInTypeInfo UInt32 = new("System.UInt32", sizeof(uint), DSharpTokenType.UInt, &ToUInt32, new(uint.MinValue, uint.MaxValue, typeof(uint)));
         /// <summary>
         /// Native integer which size depends on platform (4 or 8 bytes)
         /// </summary>
 #if NET10_0
-        public static readonly DSharpBuildInTypeInfo NativeInt = new("System.IntPtr", sizeof(nint), DSharpTokenType.Nint, &ToIntPtr, new(nint.MinValue, nint.MaxValue, typeof(nint)));
+        public static readonly DSharpBuildInTypeInfo IntPtr = new("System.IntPtr", sizeof(nint), DSharpTokenType.Nint, &ToIntPtr, new(nint.MinValue, nint.MaxValue, typeof(nint)));
 #else
-        public static readonly DSharpBuildInTypeInfo NativeInt = new("System.IntPtr", sizeof(nint), DSharpTokenType.Nint, &ToIntPtr, new(sizeof(nint) == sizeof(long) ? long.MinValue : int.MinValue, sizeof(nint) == sizeof(long) ? long.MaxValue : int.MaxValue, typeof(nint)));
+        public static readonly DSharpBuildInTypeInfo IntPtr = new("System.IntPtr", sizeof(nint), DSharpTokenType.Nint, &ToIntPtr, new(sizeof(nint) == sizeof(long) ? long.MinValue : int.MinValue, sizeof(nint) == sizeof(long) ? long.MaxValue : int.MaxValue, typeof(nint)));
 #endif
         /// <summary>
         /// Unsigned native integer which size depends on platform (4 or 8 bytes)
         /// </summary>
 #if NET10_0_OR_GREATER
-        public static readonly DSharpBuildInTypeInfo NativeUnsignedInt = new("System.UIntPtr", sizeof(nuint), DSharpTokenType.Nuint, &ToUIntPtr, new(nuint.MinValue, nuint.MaxValue, typeof(nuint)));
+        public static readonly DSharpBuildInTypeInfo UIntPtr = new("System.UIntPtr", sizeof(nuint), DSharpTokenType.Nuint, &ToUIntPtr, new(nuint.MinValue, nuint.MaxValue, typeof(nuint)));
 #else
-        public static readonly DSharpBuildInTypeInfo NativeUnsignedInt = new("System.UIntPtr", sizeof(nuint), DSharpTokenType.Nuint, &ToUIntPtr, new(sizeof(nuint) == sizeof(ulong) ? ulong.MinValue : uint.MinValue, sizeof(nuint) == sizeof(ulong) ? ulong.MaxValue : uint.MaxValue, typeof(nuint)));
+        public static readonly DSharpBuildInTypeInfo UIntPtr = new("System.UIntPtr", sizeof(nuint), DSharpTokenType.Nuint, &ToUIntPtr, new(sizeof(nuint) == sizeof(ulong) ? ulong.MinValue : uint.MinValue, sizeof(nuint) == sizeof(ulong) ? ulong.MaxValue : uint.MaxValue, typeof(nuint)));
 #endif
         /// <summary>
         /// Long: -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807 (8 bytes)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo Long = new("System.Int64", sizeof(long), DSharpTokenType.Long, &ToInt64, new(long.MinValue, long.MaxValue, typeof(long)));
+        public static readonly DSharpBuildInTypeInfo Int64 = new("System.Int64", sizeof(long), DSharpTokenType.Long, &ToInt64, new(long.MinValue, long.MaxValue, typeof(long)));
         /// <summary>
         /// Unsigned long: 0 to 18,446,744,073,709,551,615 (8 bytes)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo UnsignedLong = new("System.UInt64", sizeof(ulong), DSharpTokenType.ULong, &ToUInt64, new(ulong.MinValue, ulong.MaxValue, typeof(ulong)));
+        public static readonly DSharpBuildInTypeInfo UInt64 = new("System.UInt64", sizeof(ulong), DSharpTokenType.ULong, &ToUInt64, new(ulong.MinValue, ulong.MaxValue, typeof(ulong)));
         /// <summary>
         /// Short integer: -32,768 to 32,767 (2 bytes)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo Short = new("System.Int16", sizeof(short), DSharpTokenType.Short, &ToInt16, new(short.MinValue, short.MaxValue, typeof(short)));
+        public static readonly DSharpBuildInTypeInfo Int16 = new("System.Int16", sizeof(short), DSharpTokenType.Short, &ToInt16, new(short.MinValue, short.MaxValue, typeof(short)));
         /// <summary>
         /// Unsigned short integer: 0 to 65,535 (2 bytes)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo UnsignedShort = new("System.UInt16", sizeof(ushort), DSharpTokenType.UShort, &ToUInt16, new(ushort.MinValue, ushort.MaxValue, typeof(ushort)));
+        public static readonly DSharpBuildInTypeInfo UInt16 = new("System.UInt16", sizeof(ushort), DSharpTokenType.UShort, &ToUInt16, new(ushort.MinValue, ushort.MaxValue, typeof(ushort)));
         /// <summary>
         /// Empty structure that represents non returning value
         /// </summary>
@@ -173,16 +212,16 @@ namespace DialogMaker.Core.Scripting.Runtime
                 {
                     Dictionary<string, DSharpBuildInTypeInfo> values = new()
                     {
-                        { Int.FullName, Int },
-                        { UnsignedInt.FullName, UnsignedInt },
-                        { Long.FullName, Long },
-                        { UnsignedLong.FullName, UnsignedLong },
-                        { Short.FullName, Short },
-                        { UnsignedShort.FullName, UnsignedShort },
-                        { NativeInt.FullName, NativeInt },
-                        { NativeUnsignedInt.FullName, NativeUnsignedInt },
+                        { Int32.FullName, Int32 },
+                        { UInt32.FullName, UInt32 },
+                        { Int64.FullName, Int64 },
+                        { UInt64.FullName, UInt64 },
+                        { Int16.FullName, Int16 },
+                        { UInt16.FullName, UInt16 },
+                        { IntPtr.FullName, IntPtr },
+                        { UIntPtr.FullName, UIntPtr },
                         { Byte.FullName, Byte },
-                        { SignedByte.FullName, SignedByte },
+                        { SByte.FullName, SByte },
                         { Boolean.FullName, Boolean },
                         { Char.FullName, Char },
                         { Decimal.FullName, Decimal },
@@ -208,16 +247,16 @@ namespace DialogMaker.Core.Scripting.Runtime
                 {
                     Dictionary<string, DSharpBuildInTypeInfo> values = new()
                     {
-                        { Int.FullName, Int },
-                        { UnsignedInt.FullName, UnsignedInt },
-                        { Long.FullName, Long },
-                        { UnsignedLong.FullName, UnsignedLong },
-                        { Short.FullName, Short },
-                        { UnsignedShort.FullName, UnsignedShort },
-                        { NativeInt.FullName, NativeInt },
-                        { NativeUnsignedInt.FullName, NativeUnsignedInt },
+                        { Int32.FullName, Int32 },
+                        { UInt32.FullName, UInt32 },
+                        { Int64.FullName, Int64 },
+                        { UInt64.FullName, UInt64 },
+                        { Int16.FullName, Int16 },
+                        { UInt16.FullName, UInt16 },
+                        { IntPtr.FullName, IntPtr },
+                        { UIntPtr.FullName, UIntPtr },
                         { Byte.FullName, Byte },
-                        { SignedByte.FullName, SignedByte },
+                        { SByte.FullName, SByte },
                         { Boolean.FullName, Boolean },
                         { Char.FullName, Char },
                         { Decimal.FullName, Decimal },
@@ -384,10 +423,10 @@ namespace DialogMaker.Core.Scripting.Runtime
         public static bool IsUnsigned(this DSharpBuildInTypeInfo type)
         {
             return type == Byte ||
-                   type == UnsignedInt ||
-                   type == UnsignedLong ||
-                   type == UnsignedShort ||
-                   type == NativeUnsignedInt;
+                   type == UInt32 ||
+                   type == UInt64 ||
+                   type == UInt16 ||
+                   type == UIntPtr;
         }
         /// <summary>
         /// Check type is number

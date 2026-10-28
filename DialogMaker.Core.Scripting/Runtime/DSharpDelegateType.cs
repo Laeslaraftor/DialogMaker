@@ -5,7 +5,7 @@ namespace DialogMaker.Core.Scripting.Runtime
     /// <summary>
     /// Information about delegate type
     /// </summary>
-    public class DSharpDelegateType(IDSharpType type, ReadOnlyCollection<IDSharpMethodInfo> invokeMethods, IDSharpMethodInfo? dynamicInvokeMethod, IDSharpMethodInfo instanceConstructor, IDSharpMethodInfo staticConstructor)
+    public class DSharpDelegateType(IDSharpType type, IDSharpMethodInfo invokeMethod, IDSharpMethodInfo? dynamicInvokeMethod, IDSharpMethodInfo instanceConstructor, IDSharpMethodInfo staticConstructor)
     {
         /// <summary>
         /// Delegate type
@@ -14,7 +14,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <summary>
         /// Invocation methods
         /// </summary>
-        public ReadOnlyCollection<IDSharpMethodInfo> InvokeMethods { get; } = invokeMethods;
+        public IDSharpMethodInfo InvokeMethod { get; } = invokeMethod;
         /// <summary>
         /// Method for dynamic invocation
         /// </summary>
@@ -31,10 +31,21 @@ namespace DialogMaker.Core.Scripting.Runtime
         #region Constants
 
         /// <summary>
-        /// Name if method for invoking delegate
+        /// Name of method for invoking delegate
         /// </summary>
         public const string InvokeMethodName = "Invoke";
+        /// <summary>
+        /// Name of method for dynamic method invocation
+        /// </summary>
         public const string DynamicInvokeMethodName = "DynamicInvoke";
+        /// <summary>
+        /// Field that contains address to runtime method information
+        /// </summary>
+        public const string RuntimeMethodInfoFieldName = "_runtimeMethodInfo";
+        /// <summary>
+        /// Field that contains object instance for invoking instance method
+        /// </summary>
+        public const string TargetFieldName = "_target";
 
         #endregion
 
@@ -53,7 +64,8 @@ namespace DialogMaker.Core.Scripting.Runtime
                 throw new ArgumentException("Delegate type was required", nameof(type));
             }
 
-            var invokeMethods = type.GetMethods(m => m.Name == InvokeMethodName).ToList();
+            var invokeMethods = type.GetMethodOrDefault(InvokeMethodName)
+                ?? throw new ArgumentException($"Type \"{type}\" not contains \"{InvokeMethodName}\" method", nameof(type));
             var dynamicInvokeMethod = type.GetMethodOrDefault(DynamicInvokeMethodName);
             IDSharpMethodInfo? instanceConstructor = null;
             IDSharpMethodInfo? staticConstructor = null;
@@ -63,7 +75,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                 var parameters = constructor.GetParameters();
 
                 if (parameters.Length == 0 ||
-                    parameters[0].Type.FullName != DSharpBuildInTypes.NativeInt)
+                    parameters[0].Type.FullName != DSharpBuildInTypes.IntPtr)
                 {
                     continue;
                 }

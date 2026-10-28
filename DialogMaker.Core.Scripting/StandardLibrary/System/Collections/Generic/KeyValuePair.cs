@@ -1,6 +1,7 @@
 namespace System.Collections.Generic;
 
 public struct KeyValuePair<TKey, TValue>
+    where TKey : notnull
 {
     public KeyValuePair(TKey key, TValue value)
     {

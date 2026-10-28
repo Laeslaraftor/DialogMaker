@@ -167,7 +167,7 @@
                 return GetInstanceSize(fieldType, pack);
             }
 
-            return DSharpBuildInTypes.NativeInt.Size;
+            return DSharpBuildInTypes.IntPtr.Size;
         }
 
         private static int GetFieldAlignment(IDSharpFieldInfo field, int pack)
@@ -185,7 +185,7 @@
                 return GetStructAlignment(fieldType, pack);
             }
 
-            return DSharpBuildInTypes.NativeInt.Size;
+            return DSharpBuildInTypes.IntPtr.Size;
         }
 
         private static int GetStructAlignment(IDSharpType structType, int pack)

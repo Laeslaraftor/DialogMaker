@@ -63,7 +63,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             {
                 if (field == null)
                 {
-                    field = GetRuntimeInfo(DSharpBuildInTypes.SignedByte);
+                    field = GetRuntimeInfo(DSharpBuildInTypes.SByte);
                 }
 
                 return field;
@@ -75,7 +75,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             {
                 if (field == null)
                 {
-                    field = GetRuntimeInfo(DSharpBuildInTypes.Short);
+                    field = GetRuntimeInfo(DSharpBuildInTypes.Int16);
                 }
 
                 return field;
@@ -87,7 +87,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             {
                 if (field == null)
                 {
-                    field = GetRuntimeInfo(DSharpBuildInTypes.UnsignedShort);
+                    field = GetRuntimeInfo(DSharpBuildInTypes.UInt16);
                 }
 
                 return field;
@@ -99,7 +99,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             {
                 if (field == null)
                 {
-                    field = GetRuntimeInfo(DSharpBuildInTypes.Int);
+                    field = GetRuntimeInfo(DSharpBuildInTypes.Int32);
                 }
 
                 return field;
@@ -111,7 +111,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             {
                 if (field == null)
                 {
-                    field = GetRuntimeInfo(DSharpBuildInTypes.UnsignedInt);
+                    field = GetRuntimeInfo(DSharpBuildInTypes.UInt32);
                 }
 
                 return field;
@@ -123,7 +123,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             {
                 if (field == null)
                 {
-                    field = GetRuntimeInfo(DSharpBuildInTypes.Long);
+                    field = GetRuntimeInfo(DSharpBuildInTypes.Int64);
                 }
 
                 return field;
@@ -135,7 +135,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             {
                 if (field == null)
                 {
-                    field = GetRuntimeInfo(DSharpBuildInTypes.UnsignedLong);
+                    field = GetRuntimeInfo(DSharpBuildInTypes.UInt64);
                 }
 
                 return field;
@@ -183,7 +183,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             {
                 if (field == null)
                 {
-                    field = GetRuntimeInfo(DSharpBuildInTypes.NativeInt);
+                    field = GetRuntimeInfo(DSharpBuildInTypes.IntPtr);
                 }
 
                 return field;
@@ -195,7 +195,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             {
                 if (field == null)
                 {
-                    field = GetRuntimeInfo(DSharpBuildInTypes.NativeUnsignedInt);
+                    field = GetRuntimeInfo(DSharpBuildInTypes.UIntPtr);
                 }
 
                 return field;

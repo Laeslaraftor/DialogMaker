@@ -781,6 +781,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadTypeInformation, type);
         }
         /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.LoadMethodInformation"/>
+        /// </summary>
+        /// <returns></returns>
+        public TypeInstruction LoadMethodInformation(IDSharpMethodInfo method)
+        {
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadMethodInformation, method);
+        }
+        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.LoadTypeSize"/>
         /// </summary>
         /// <returns></returns>
@@ -830,6 +838,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
         #region Calling and jumping
 
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.DynamicCall"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction DynamicCall()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.DynamicCall);
+        }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.Call"/>
         /// </summary>

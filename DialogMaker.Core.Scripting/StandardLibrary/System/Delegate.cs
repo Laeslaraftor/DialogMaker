@@ -29,7 +29,9 @@ public abstract unsafe class Delegate
             throw new ArgumentException("Provided parameters count not match to method parameters. Required " + availableParametersCount + " parameter, but got " + parameters.Length);
         }
 
-        return __Invoke((nint)runtimeMethodInfo, instance, parameters);
+        object? result = __Invoke((nint)runtimeMethodInfo, instance, parameters);
+
+        return runtimeMethodInfo->ReturnType != null ? result : null;
     }
 
     // implemeted by compiler

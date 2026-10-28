@@ -694,6 +694,11 @@ namespace DialogMaker.Core.Scripting.Runtime
                 {
                     foreach (var flag in DSharpGenericTypeAttributesHelper.Values)
                     {
+                        if (flag == DSharpGenericTypeAttributes.None)
+                        {
+                            continue;
+                        }
+
                         if (type.GenericAttributes.HasFlag(flag) &&
                             !normalType.GenericAttributes.HasFlag(flag))
                         {
@@ -759,8 +764,8 @@ namespace DialogMaker.Core.Scripting.Runtime
                 {
                     var currentTypeFullName = type.FullName;
 
-                    if (currentTypeFullName == DSharpBuildInTypes.NativeInt ||
-                        currentTypeFullName == DSharpBuildInTypes.NativeUnsignedInt)
+                    if (currentTypeFullName == DSharpBuildInTypes.IntPtr ||
+                        currentTypeFullName == DSharpBuildInTypes.UIntPtr)
                     {
                         return true;
                     }

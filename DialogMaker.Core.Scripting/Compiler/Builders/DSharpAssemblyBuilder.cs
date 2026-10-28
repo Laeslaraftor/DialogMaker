@@ -5,10 +5,15 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
 {
-    public class DSharpAssemblyBuilder(string name, IList<DSharpAssembly> references) : IDSharpAssembly
+    /// <summary>
+    /// D# assembly builder
+    /// </summary>
+    /// <param name="name">Name of building assembly</param>
+    /// <param name="references">Referenced assemblies</param>
+    public class DSharpAssemblyBuilder(string name, IList<IDSharpAssembly> references) : IDSharpAssembly
     {
         public string Name { get; } = name;
-        public ReadOnlyCollection<DSharpAssembly> References { get; } = new(references);
+        public ReadOnlyCollection<IDSharpAssembly> References { get; } = new(references);
         public ReferenceReadOnlyList<DSharpTypeBuilder> Types
         {
             get
@@ -41,7 +46,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                field ??= GetTypeToken(DSharpBuildInTypes.Int);
+                field ??= GetTypeToken(DSharpBuildInTypes.Int32);
                 return field;
             }
         }
@@ -49,7 +54,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                field ??= GetTypeToken(DSharpBuildInTypes.UnsignedInt);
+                field ??= GetTypeToken(DSharpBuildInTypes.UInt32);
                 return field;
             }
         }
@@ -57,7 +62,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                field ??= GetTypeToken(DSharpBuildInTypes.Long);
+                field ??= GetTypeToken(DSharpBuildInTypes.Int64);
                 return field;
             }
         }
@@ -65,7 +70,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                field ??= GetTypeToken(DSharpBuildInTypes.UnsignedLong);
+                field ??= GetTypeToken(DSharpBuildInTypes.UInt64);
                 return field;
             }
         }
@@ -73,7 +78,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                field ??= GetTypeToken(DSharpBuildInTypes.Short);
+                field ??= GetTypeToken(DSharpBuildInTypes.Int16);
                 return field;
             }
         }
@@ -81,7 +86,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                field ??= GetTypeToken(DSharpBuildInTypes.UnsignedShort);
+                field ??= GetTypeToken(DSharpBuildInTypes.UInt16);
                 return field;
             }
         }
@@ -97,7 +102,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                field ??= GetTypeToken(DSharpBuildInTypes.SignedByte);
+                field ??= GetTypeToken(DSharpBuildInTypes.SByte);
                 return field;
             }
         }
@@ -105,7 +110,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                field ??= GetTypeToken(DSharpBuildInTypes.NativeInt);
+                field ??= GetTypeToken(DSharpBuildInTypes.IntPtr);
                 return field;
             }
         }
@@ -113,7 +118,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                field ??= GetTypeToken(DSharpBuildInTypes.NativeUnsignedInt);
+                field ??= GetTypeToken(DSharpBuildInTypes.UIntPtr);
                 return field;
             }
         }
@@ -298,6 +303,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             get
             {
                 field ??= GetTypeToken(TypedPointerType);
+                return field;
+            }
+        }
+        public DSharpTypeToken ActionTypeToken
+        {
+            get
+            {
+                field ??= GetTypeToken(ActionType);
+                return field;
+            }
+        }
+        public DSharpTypeToken FuncTypeToken
+        {
+            get
+            {
+                field ??= GetTypeToken(FuncType);
                 return field;
             }
         }
@@ -542,6 +563,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
+        public IDSharpType ActionType
+        {
+            get
+            {
+                field ??= GetType(DSharpBuildInTypes.Extra.Action);
+                return field;
+            }
+        }
+        public IDSharpType FuncType
+        {
+            get
+            {
+                field ??= GetType(DSharpBuildInTypes.Extra.Func);
+                return field;
+            }
+        }
         public DSharpArrayType ArrayBaseType
         {
             get
@@ -630,6 +667,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
+        public DSharpDelegateType ActionTypeInfo
+        {
+            get
+            {
+                field ??= DSharpDelegateType.Create(ActionType);
+                return field;
+            }
+        }
+        public DSharpDelegateType FuncTypeInfo
+        {
+            get
+            {
+                field ??= DSharpDelegateType.Create(FuncType);
+                return field;
+            }
+        }
 
         #endregion
 
@@ -641,6 +694,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         private readonly List<DSharpTypeToken> _fieldsDefinitions = [];
         private readonly List<DSharpTypeToken> _propertiesDefinitions = [];
         private readonly List<DSharpTypeToken> _operatorsDefinitions = [];
+        private readonly Dictionary<int, DSharpDelegateType> _actionTypes = [];
+        private readonly Dictionary<int, DSharpDelegateType> _funcTypes = [];
 
         #region Controls
 
@@ -1304,7 +1359,45 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
         #endregion
 
-        #region Поиск
+        #region Type searching
+
+        public DSharpDelegateType GetActionType(int parametersCount)
+        {
+            if (!_actionTypes.TryGetValue(parametersCount, out var type))
+            {
+                if (0 >= parametersCount)
+                {
+                    return ActionTypeInfo;
+                }
+                else
+                {
+                    type = DSharpDelegateType.Create(GetType(DSharpBuildInTypes.Extra.GetAction(parametersCount)));
+
+                }
+                _actionTypes.Add(parametersCount, type);
+            }
+
+            return type;
+        }
+        public DSharpDelegateType GetFuncType(int parametersCount)
+        {
+            if (!_funcTypes.TryGetValue(parametersCount, out var type))
+            {
+                if (0 >= parametersCount)
+                {
+                    return FuncTypeInfo;
+                }
+                else
+                {
+                    type = DSharpDelegateType.Create(GetType(DSharpBuildInTypes.Extra.GetFunc(parametersCount)));
+
+                }
+
+                _funcTypes.Add(parametersCount, type);
+            }
+
+            return type;
+        }
 
         public DSharpTypeToken GetTypeToken(string fullName)
         {
@@ -1557,6 +1650,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 DSharpLiteralType.Float => SingleType,
                 _ => throw new ArgumentException($"Invalid literal type: {literalType}", nameof(literalType))
             };
+        }
+        public IDSharpType? GetTypeOrDefault(string fullName)
+        {
+            if (TryGetType(fullName, out var type))
+            {
+                return type;
+            }
+
+            return null;
         }
         public IDSharpMemberInfo? GetTypeOrDefault(DSharpTypeToken? token)
         {
