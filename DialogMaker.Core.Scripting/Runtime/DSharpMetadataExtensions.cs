@@ -370,6 +370,45 @@ namespace DialogMaker.Core.Scripting.Runtime
                     castOperator = null;
                     return DSharpCastAvailability.Explicit;
                 }
+                if (type.ObjectType == DSharpObjectType.Delegate &&
+                    destination.ObjectType == DSharpObjectType.Delegate)
+                {
+                    castOperator = null;
+                    var sourceDelegate = DSharpDelegateType.Create(type);
+                    var destinationDelegate = DSharpDelegateType.Create(destination);
+                    var sourceInvoke = sourceDelegate.InvokeMethod;
+                    var destinationInvoke = destinationDelegate.InvokeMethod;
+
+                    if (sourceInvoke.ParametersCount != destinationInvoke.ParametersCount ||
+                        sourceInvoke.ReturnType == null && destinationInvoke.ReturnType != null ||
+                        sourceInvoke.ReturnType != null && destinationInvoke.ReturnType == null ||
+                        sourceInvoke.ReturnType != null && destinationInvoke.ReturnType != null && 
+                        !sourceInvoke.ReturnType.IsAssignableTo(destinationInvoke.ReturnType))
+                    {
+                        return DSharpCastAvailability.No;
+                    }
+
+                    var sourceParameters = sourceInvoke.GetParameters();
+                    var destinationParameters = destinationInvoke.GetParameters();
+
+                    for (int i = 0; i < sourceInvoke.ParametersCount; i++)
+                    {
+                        var sourceParameter = sourceParameters[i];
+                        var destinationParameter = destinationParameters[i];
+
+                        if ((sourceParameter.Mode != destinationParameter.Mode &&
+                            sourceParameter.Mode != DSharpMethodParameterMode.This &&
+                            sourceParameter.Mode != DSharpMethodParameterMode.Default &&
+                            destinationParameter.Mode != DSharpMethodParameterMode.This &&
+                            destinationParameter.Mode != DSharpMethodParameterMode.Default) ||
+                            !sourceParameter.Type.IsAssignableTo(destinationParameter.Type))
+                        {
+                            return DSharpCastAvailability.No;
+                        }
+                    }
+
+                    return DSharpCastAvailability.Implicit;
+                }
 
                 var typeGenericTemplateFullName = type.GenericTemplate?.FullName;
                 var destinationGenericTemplateFullName = destination.GenericTemplate?.FullName;
@@ -1404,7 +1443,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                 }
                 if (member is IDSharpMethodInfo method)
                 {
-                    if (!method.IsSealed && 
+                    if (!method.IsSealed &&
                         (method.IsAbstract || (method.IsVirtual && !tryToDefault)))
                     {
                         return DSharpMethodCallingType.Virtual;

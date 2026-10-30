@@ -133,8 +133,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             else
             {
                 BlockStatementNode body = new(result.Token);
-                BlockStatementNode.ParseBody(stream, DSharpStatementType.Code, body.Statements, DSharpTokenType.Semicolon);
+                var statement = StatementNode.ParseCode(stream, false);
+                body.Statements.Add(statement);
 
+                statement.Parent = body;
                 result.Body = body;
             }
 

@@ -188,9 +188,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 }
             }
         }
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
         public override bool IsDeclaration => false;
         public DSharpGenericTypeAttributes GenericAttributes { get; set; } = DSharpGenericTypeAttributes.None;
         internal Action? SetupHandler { get; set; }
@@ -213,7 +210,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         internal IReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo>? _templatedMembers;
         internal ReadOnlyDictionary<IDSharpType, IDSharpType>? _replacedTypes;
 
-        #region Управление
+        #region Controls
+
+        IDSharpType IDSharpTypeProvider.GetType(DSharpCompilerContext context, params object?[] parameters)
+        {
+            return this;
+        }
 
         internal DSharpMethodBuilder CreateMethod(Func<DSharpTypeToken, DSharpMethodBuilder> fabric)
         {
@@ -515,10 +517,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             return _childrenTypes.Remove(type);
         }
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public override string ToString()
         {
             return FullName;
@@ -574,73 +572,24 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
         #endregion
 
-        #region Получение членов
+        #region Providing members
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public IDSharpType[] GetBaseTypes() => [.. _baseTypes];
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public IDSharpType[] GetChildrenTypes() => [.. ChildrenTypes];
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public IDSharpType[] GetGenericParameters() => [.. GenericParameters.Select(t => (IDSharpType)Assembly.GetType(t))];
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public IDSharpType[] GetGenericTypes() => [.. GenericTypes];
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="predicate"><inheritdoc/></param>
-        /// <returns><inheritdoc/></returns>
         public IDSharpMethodInfo[] GetMethods(Predicate<IDSharpMethodInfo> predicate) => [.. _methods.Where(m => predicate(m))];
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="predicate"><inheritdoc/></param>
-        /// <returns><inheritdoc/></returns>
         public IDSharpPropertyInfo[] GetProperties(Predicate<IDSharpPropertyInfo> predicate) => [.. _properties.Where(p => predicate(p))];
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="predicate"><inheritdoc/></param>
-        /// <returns><inheritdoc/></returns>
         public IDSharpIndexerInfo[] GetIndexers(Predicate<IDSharpIndexerInfo> predicate) => [.. _indexers.Where(i => predicate(i))];
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="predicate"><inheritdoc/></param>
-        /// <returns><inheritdoc/></returns>
         public IDSharpFieldInfo[] GetFields(Predicate<IDSharpFieldInfo> predicate) => [.. _fields.Where(f => predicate(f))];
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <param name="predicate"><inheritdoc/></param>
-        /// <returns><inheritdoc/></returns>
         public IDSharpMethodInfo[] GetConstructors(Predicate<IDSharpMethodInfo> predicate) => [.. _constructors.Where(c => predicate(c))];
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public IDSharpOperatorInfo[] GetCastOperators() => [.. _castOperators];
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
         public IDSharpOperatorInfo[] GetOperators() => [.. _operators];
 
         #endregion
 
-        #region Константы
+        #region Constants
 
         /// <summary>
         /// Name for all constructors
@@ -669,7 +618,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
         #endregion
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Check containing base type by specified type

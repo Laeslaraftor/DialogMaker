@@ -29,7 +29,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         /// <param name="stream">Abstract syntax tree parser stream</param>
         /// <returns>Parsed statement</returns>
-        public static StatementNode ParseCode(AstParserStream stream)
+        public static StatementNode ParseCode(AstParserStream stream, bool eatSemicolon = true)
         {
             if (stream.Check(DSharpTokenType.LeftBrace))
             {
@@ -123,7 +123,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
             var expression = ExpressionNode.ParseExpression(stream);
 
-            if (!stream.Check(DSharpTokenType.RightBrace))
+            if (eatSemicolon && !stream.Check(DSharpTokenType.RightBrace))
             {
                 stream.Eat(DSharpTokenType.Semicolon);
             }

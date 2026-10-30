@@ -261,6 +261,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
             /// Custom fields that stores closure
             /// </summary>
             public Dictionary<DSharpMethodBuilder, DSharpFieldBuilder> CustomClosureContainers { get; } = [];
+            /// <summary>
+            /// Compiled delegates
+            /// </summary>
+            public Dictionary<DelegateExpressionNode, DSharpMethodBuilder> Delegates { get; } = [];
+            /// <summary>
+            /// Information about compiled delegates
+            /// </summary>
+            public Dictionary<DelegateExpressionNode, DSharpCompiledDelegateInfo> CompiledDelegatesInfo { get; } = [];
 
             /// <summary>
             /// Create field for containing calling object instance.

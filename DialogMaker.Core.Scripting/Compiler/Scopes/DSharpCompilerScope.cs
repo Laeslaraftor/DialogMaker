@@ -358,6 +358,33 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
             return result != null;
         }
         /// <summary>
+        /// Try to get delegate in current context
+        /// </summary>
+        /// <param name="delegateExpression">Delegate expression to find method</param>
+        /// <param name="result">Delegate that was found</param>
+        /// <returns>Is delegate was found</returns>
+        public bool TryGetDelegate(DelegateExpressionNode delegateExpression, [NotNullWhen(true)] out DSharpCompilerMethodScope? closureScope, [NotNullWhen(true)] out DSharpMethodBuilder? result)
+        {
+            DSharpCompilerMethodScope? resultClosureScope = null;
+
+            result = RecursiveCheck(scope =>
+            {
+                if (scope is DSharpCompilerMethodScope methodScope &&
+                    methodScope.Closure != null &&
+                    methodScope.Closure.Delegates.TryGetValue(delegateExpression, out var delegateMethod))
+                {
+                    resultClosureScope = methodScope;
+                    return delegateMethod;
+                }
+
+                return null;
+            });
+
+            closureScope = resultClosureScope;
+
+            return result != null;
+        }
+        /// <summary>
         /// Try to get captured instance in current scope
         /// </summary>
         /// <param name="captureScope">Scope that contains closure</param>

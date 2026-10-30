@@ -470,6 +470,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
 
             Dictionary<IDSharpMemberInfo, IDSharpMemberInfo> result = [];
+            Dictionary<IDSharpType, Dictionary<IDSharpMemberInfo, IDSharpMemberInfo>> typesReplacedMembers = [];
 
             for (int i = 0; i < genericParameters.Length; i++)
             {
@@ -490,7 +491,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
             bool TryFill(IDSharpType type, [NotNullWhen(true)] out IDSharpType? filledType)
             {
-                return type.TryFillRecursive(Assembly, result, out filledType);
+                if (result.TryGetValue(type, out var alreadyFilledMember) &&
+                    alreadyFilledMember is IDSharpType alreadyFilledType)
+                {
+                    filledType = alreadyFilledType;
+                    return true;
+                }
+
+                if (type.TryFillRecursive(Assembly, result, genericParameters, out filledType, out var totalReplacedMembers))
+                {
+                    typesReplacedMembers.TryAdd(type, totalReplacedMembers);
+                    return true;
+                }
+
+                return false;
             }
             void Add(IDSharpMemberInfo oldMember, IDSharpMemberInfo newMember)
             {
@@ -533,9 +547,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             bool TryAddOrFill(IDSharpMemberInfo member)
             {
+                IDSharpType? filledType;
+
                 if (member is IDSharpType typeMember)
                 {
-                    if (TryFill(typeMember, out var filledType))
+                    if (TryFill(typeMember, out filledType))
                     {
                         Add(typeMember, filledType);
                         return true;
@@ -547,6 +563,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 if (replacedMember != member)
                 {
                     Add(member, replacedMember);
+                    return true;
+                }
+                if (member.DeclaringType != null &&
+                    TryFill(member.DeclaringType, out filledType) &&
+                    typesReplacedMembers.TryGetValue(member.DeclaringType, out var filledTypeReplacedMembers) &&
+                    filledTypeReplacedMembers.TryGetValue(member, out var newMember))
+                {
+                    Add(member, newMember);
                     return true;
                 }
 

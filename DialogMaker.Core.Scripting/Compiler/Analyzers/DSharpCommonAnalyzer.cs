@@ -24,7 +24,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Analyzers
             /// Set <c>-1</c> if current node is method node or delegate expression, otherwise set 0
             /// </param>
             /// <returns>Is node with specified type contains in provided node</returns>
-            public bool Contains<T>(DSharpAstVisitMode visitMode = DSharpAstVisitMode.Recursive, bool skipMethodsAndDelegates = false, int startMethodDepth = 0)
+            public bool Contains<T>(DSharpAstVisitMode visitMode = DSharpAstVisitMode.Recursive, bool skipMethodsAndDelegates = false, int startMethodDepth = 0, IList<T>? buffer = null)
                 where T : AstNode
             {
                 bool contains = false;
@@ -35,14 +35,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Analyzers
 
                     node.Accept(n =>
                     {
+                        if (otherMethodAndDelegateDepth == 0 &&
+                            n is T typedNode)
+                        {
+                            contains = true;
+                            buffer?.Add(typedNode);
+                        }
                         if (n is MethodNode || n is DelegateExpressionNode)
                         {
                             otherMethodAndDelegateDepth++;
-                            return;
-                        }
-                        if (otherMethodAndDelegateDepth == 0)
-                        {
-                            contains |= n is T;
                         }
                     }, n =>
                     {
@@ -54,10 +55,27 @@ namespace DialogMaker.Core.Scripting.Compiler.Analyzers
                 }
                 else
                 {
-                    node.Accept(n => contains |= n is T, null, visitMode);
+                    node.Accept(n =>
+                    {
+                        if (n is T typedNode)
+                        {
+                            contains = true;
+                            buffer?.Add(typedNode);
+                        }
+                    }, null, visitMode);
                 }
 
                 return contains;
+            }
+            /// <summary>
+            /// Accept delegate visitor
+            /// </summary>
+            /// <param name="startVisitor">Nodes start visiting handler</param>
+            /// <param name="endVisitor">Nodes end visiting handler</param>
+            /// <param name="visitMode">Visiting mode</param>
+            public void Accept(Action<AstNode>? startVisitor, DSharpAstVisitMode visitMode = DSharpAstVisitMode.Simple)
+            {
+                node.Accept(startVisitor, null, visitMode);
             }
             /// <summary>
             /// Accept delegate visitor

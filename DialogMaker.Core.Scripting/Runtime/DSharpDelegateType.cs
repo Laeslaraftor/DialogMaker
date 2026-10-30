@@ -61,7 +61,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         {
             if (type.ObjectType != DSharpObjectType.Delegate)
             {
-                throw new ArgumentException("Delegate type was required", nameof(type));
+                throw new ArgumentException($"Delegate type was required, got \"{type.ObjectType}\" ({type})", nameof(type));
             }
 
             var invokeMethods = type.GetMethodOrDefault(InvokeMethodName)
@@ -98,7 +98,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                 throw new ArgumentException("Constructor that creates delegate for static method not found", nameof(type));
             }
 
-            return new(type, new(invokeMethods), dynamicInvokeMethod, instanceConstructor, staticConstructor);
+            return new(type, invokeMethods, dynamicInvokeMethod, instanceConstructor, staticConstructor);
         }
 
         #endregion

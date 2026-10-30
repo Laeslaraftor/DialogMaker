@@ -5,6 +5,7 @@ using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Compiler
@@ -337,6 +338,24 @@ namespace DialogMaker.Core.Scripting.Compiler
                 return false;
             }
 
+            /// <summary>
+            /// Replace current member with provided replaced members
+            /// </summary>
+            /// <param name="assemblyBuilder">Assembly builder for replacing generic parameters</param>
+            /// <param name="replacedMembers">Already replaced members</param>
+            /// <returns>Replaced member</returns>
+            public IDSharpMemberInfo Replace<T>(DSharpAssemblyBuilder assemblyBuilder, IReadOnlyDictionary<T, T> replacedTypes)
+                where T : IDSharpType
+            {
+                Dictionary<IDSharpMemberInfo, IDSharpMemberInfo> replacedMembers = [];
+
+                foreach (var info in replacedTypes)
+                {
+                    replacedMembers.Add(info.Key, info.Value);
+                }
+
+                return member.Replace(assemblyBuilder, replacedMembers);
+            }
             /// <summary>
             /// Replace current member with provided replaced members
             /// </summary>
@@ -696,6 +715,10 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             public bool TryFillRecursive(DSharpAssemblyBuilder assemblyBuilder, IDictionary<IDSharpType, IDSharpType> replacedTypes, [NotNullWhen(true)] out IDSharpType? filledType)
             {
+                return type.TryFillRecursive(assemblyBuilder, replacedTypes, null, out filledType);
+            }
+            public bool TryFillRecursive(DSharpAssemblyBuilder assemblyBuilder, IDictionary<IDSharpType, IDSharpType> replacedTypes, IDSharpType[]? genericParameters, [NotNullWhen(true)] out IDSharpType? filledType)
+            {
                 Dictionary<IDSharpMemberInfo, IDSharpMemberInfo> replacedMembers = new(replacedTypes.Count);
 
                 foreach (var info in replacedTypes)
@@ -703,12 +726,21 @@ namespace DialogMaker.Core.Scripting.Compiler
                     replacedMembers.Add(info.Key, info.Value);
                 }
 
-                return type.TryFillRecursive(assemblyBuilder, replacedMembers, out filledType);
+                return type.TryFillRecursive(assemblyBuilder, replacedMembers, genericParameters, out filledType);
             }
             public bool TryFillRecursive(DSharpAssemblyBuilder assemblyBuilder, IDictionary<IDSharpMemberInfo, IDSharpMemberInfo> replacedMembers, [NotNullWhen(true)] out IDSharpType? filledType)
             {
+                return type.TryFillRecursive(assemblyBuilder, replacedMembers, null, out filledType);
+            }
+            public bool TryFillRecursive(DSharpAssemblyBuilder assemblyBuilder, IDictionary<IDSharpMemberInfo, IDSharpMemberInfo> replacedMembers, IDSharpType[]? genericParameters, [NotNullWhen(true)] out IDSharpType? filledType)
+            {
+                return type.TryFillRecursive(assemblyBuilder, replacedMembers, genericParameters, out filledType, out _);
+            }
+            public bool TryFillRecursive(DSharpAssemblyBuilder assemblyBuilder, IDictionary<IDSharpMemberInfo, IDSharpMemberInfo> replacedMembers, IDSharpType[]? genericParameters, [NotNullWhen(true)] out IDSharpType? filledType, out Dictionary<IDSharpMemberInfo, IDSharpMemberInfo> totalReplacedMembers)
+            {
                 if (type.IsGeneric)
                 {
+                    totalReplacedMembers = [];
                     filledType = null;
                     return false;
                 }
@@ -718,6 +750,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                 if (type.GenericTemplate == null)
                 {
                     genericTypes = type.GetGenericTypes();
+
+                    if (genericParameters != null &&
+                        genericParameters.Length == genericTypes.Length)
+                    {
+                        for (int i = 0; i < genericTypes.Length; i++)
+                        {
+                            replacedMembers.TryAdd(genericTypes[i], genericParameters[i]);
+                        }
+                    }
                 }
                 else
                 {
@@ -753,6 +794,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 if (!isAnyReplaced)
                 {
                     filledType = null;
+                    totalReplacedMembers = [];
                     return false;
                 }
                 if (type.GenericTemplate != null)
@@ -760,7 +802,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     type = type.GenericTemplate;
                 }
 
-                filledType = assemblyBuilder.FillGeneric(type, replaced);
+                filledType = assemblyBuilder.FillGeneric(type, out totalReplacedMembers, replaced);
                 return true;
             }
         }
@@ -790,13 +832,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     if (replacedTypes != null)
                     {
-                        foreach (var info in replacedTypes)
-                        {
-                            if (info.Key.Equals(type))
-                            {
-                                return info.Value;
-                            }
-                        }
+                        return (IDSharpType)type.Replace(assembly, replacedTypes);
                     }
 
                     return type;
@@ -1174,6 +1210,33 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             /// <summary>
+            /// Try to find member that contains or returns delegate and get it's type
+            /// </summary>
+            /// <param name="assembly">Assembly builder for finding types</param>
+            /// <param name="context">Compiler context</param>
+            /// <param name="result">Type of delegate that provided by member</param>
+            /// <returns>Is delegate type successfully got</returns>
+            public bool TryGetTypeAsDelegateReturnType(DSharpAssemblyBuilder assembly, DSharpCompilerContext context, [NotNullWhen(true)] out IDSharpType? result)
+            {
+                result = null;
+
+                try
+                {
+                    var callExpressionType = expression.GetRealExpressionType(assembly, context);
+
+                    if (callExpressionType.ObjectType == DSharpObjectType.Delegate)
+                    {
+                        result = callExpressionType;
+                        return true;
+                    }
+                }
+                catch
+                {
+                }
+
+                return false;
+            }
+            /// <summary>
             /// Get result type of expression
             /// </summary>
             /// <param name="assembly">Assembly builder for finding types</param>
@@ -1181,7 +1244,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             /// <returns>Result type of expression</returns>
             /// <exception cref="InvalidOperationException"></exception>
             /// <exception cref="ArgumentException"></exception>
-            public IDSharpMemberInfo? GetExpressionType(DSharpAssemblyBuilder assembly, DSharpCompilerContext context = default)
+            public IDSharpMemberInfo? GetExpressionType(DSharpAssemblyBuilder assembly, DSharpCompilerContext context = default, IDSharpType? directRequiredType = null)
             {
                 if (expression is LiteralExpressionNode literalExpression)
                 {
@@ -1240,6 +1303,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 else if (expression is CallExpressionNode callExpression)
                 {
+                    if (callExpression.Callee != null &&
+                        callExpression.Callee.TryGetTypeAsDelegateReturnType(assembly, context, out var delegateType))
+                    {
+                        var delegateInfo = DSharpDelegateType.Create(delegateType);
+                        return delegateInfo.InvokeMethod.ReturnType;
+                    }
+
                     var callingInfo = context.FindMethod(callExpression);
                     return callingInfo.GetReturnType(assembly);
                 }
@@ -1352,7 +1422,173 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                 }
 
-                if (expression is UnaryExpressionNode unaryExpression)
+                if (expression is DelegateExpressionNode delegateExpression)
+                {
+                    if (directRequiredType != null && directRequiredType.ObjectType != DSharpObjectType.Delegate)
+                    {
+                        //directRequiredType = null;
+                        throw new DSharpCompilerException($"Required type should be delegate, got \"{directRequiredType}\"", expression);
+                    }
+
+                    IDSharpType? returnType = null;
+                    List<IDSharpType>? parameterTypes = null;
+                    DSharpDelegateType? requestedDelegateInfo = null;
+
+                    if (delegateExpression.Parameters.Count > 0)
+                    {
+                        directRequiredType ??= context.TypeResolver?.Invoke(delegateExpression);
+
+                        if (directRequiredType == null)
+                        {
+                            throw new DSharpCompilerException("Unable to detect delegate type", expression);
+                        }
+
+                        requestedDelegateInfo = DSharpDelegateType.Create(directRequiredType);
+                        var invokeMethodParameters = requestedDelegateInfo.InvokeMethod.GetParameters();
+
+                        if (invokeMethodParameters.Length != delegateExpression.Parameters.Count)
+                        {
+                            throw new DSharpCompilerException($"Delegate parameters count not match to required delegate \"{directRequiredType}\"", expression);
+                        }
+
+                        parameterTypes = new(invokeMethodParameters.Length);
+
+                        for (int i = 0; i < invokeMethodParameters.Length; i++)
+                        {
+                            var parameterExpression = delegateExpression.Parameters[i];
+                            var parameter = invokeMethodParameters[i];
+
+                            if (parameterExpression.Mode != parameter.Mode &&
+                                parameterExpression.Mode != DSharpMethodParameterMode.This &&
+                                parameter.Mode != DSharpMethodParameterMode.This)
+                            {
+                                throw new DSharpCompilerException($"Delegate parameter \"{parameterExpression.Name}\" mode ({parameterExpression.Mode.ToString().ToLower()}) not match to parameter at same index in required delegate type \"{directRequiredType}\" ({parameter})", parameterExpression);
+                            }
+
+                            parameterTypes.Add(parameter.Type);
+                        }
+                    }
+
+                    var argsResolverContext = context;
+
+                    if (parameterTypes != null)
+                    {
+                        argsResolverContext.TypeResolver = obj =>
+                        {
+                            if (obj is IdentifierExpressionNode expressionNode)
+                            {
+                                var argIndex = delegateExpression.Parameters.Select(p => p.Name).IndexOf(expressionNode.Name);
+
+                                if (argIndex != -1 &&
+                                    argIndex < parameterTypes.Count)
+                                {
+                                    return parameterTypes[argIndex];
+                                }
+                            }
+
+                            return context.TypeResolver?.Invoke(obj);
+                        };
+                    }
+
+                    if (delegateExpression.Body != null)
+                    {
+                        var body = delegateExpression.Body;
+
+                        if (body.Token.Type == DSharpTokenType.Lambda &&
+                            body.Statements.FirstOrDefault() is ExpressionStatementNode expressionStatement &&
+                            expressionStatement.Expression != null)
+                        {
+                            try
+                            {
+                                returnType = expressionStatement.Expression.GetRealExpressionType(assembly, argsResolverContext);
+                            }
+                            catch (Exception error)
+                            {
+                                Debug.WriteLine(error);
+                            }
+                        }
+                        else
+                        {
+                            List<ExpressionNode>? returnExpressions = null;
+                            List<YieldStatementNode> yieldReturnStatements = [];
+                            bool isIteration = false;
+
+                            if (body.Contains(skipMethodsAndDelegates: true, buffer: yieldReturnStatements))
+                            {
+                                isIteration = true;
+                                returnExpressions = [];
+
+                                foreach (var yieldReturnStatement in yieldReturnStatements)
+                                {
+                                    if (yieldReturnStatement.Statement is ReturnStatementNode returnStatement &&
+                                        returnStatement.Value != null)
+                                    {
+                                        returnExpressions.Add(returnStatement.Value);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                List<ReturnStatementNode> returnStatements = [];
+
+                                if (body.Contains(skipMethodsAndDelegates: true, buffer: returnStatements))
+                                {
+                                    returnExpressions = [.. returnStatements.Where(s => s.Value != null).Select(s => s.Value!)];
+                                }
+                            }
+
+                            if (returnExpressions != null && returnExpressions.Count > 0)
+                            {
+                                List<IDSharpType> expressionsType = [.. returnExpressions.Select(e => e.GetRealExpressionType(assembly, argsResolverContext, null))];
+                                var nearestCommonType = expressionsType.GetNearestCommonType();
+
+                                if (isIteration)
+                                {
+                                    returnType = assembly.FillGeneric(assembly.TypedIEnumerableType, nearestCommonType);
+                                }
+                                else
+                                {
+                                    returnType = nearestCommonType;
+                                }
+                            }
+                            else if (isIteration)
+                            {
+                                returnType = assembly.IEnumerableType;
+                            }
+                        }
+                    }
+                    if (requestedDelegateInfo != null)
+                    {
+                        var requestedReturnType = requestedDelegateInfo.InvokeMethod.ReturnType;
+
+                        if (returnType != requestedReturnType)
+                        {
+                            throw new DSharpCompilerException($"Return type not match to required delegate \"{directRequiredType}\"", expression);
+                        }
+
+                        return directRequiredType;
+                    }
+
+                    IDSharpType delegateType;
+
+                    if (returnType == null)
+                    {
+                        delegateType = assembly.GetActionType(parameterTypes?.Count ?? 0).Type;
+                    }
+                    else
+                    {
+                        delegateType = assembly.GetFuncType(parameterTypes?.Count ?? 0).Type;
+                        parameterTypes ??= [];
+                        parameterTypes.Add(returnType);
+                    }
+                    if (parameterTypes == null)
+                    {
+                        return delegateType;
+                    }
+
+                    return assembly.FillGeneric(delegateType, parameterTypes);
+                }
+                else if (expression is UnaryExpressionNode unaryExpression)
                 {
                     if (unaryExpression.Operand == null)
                     {
@@ -1542,7 +1778,12 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                     if (newExpression.Type == null)
                     {
-                        throw new ArgumentException($"Unknown type: {newExpression.Type}", nameof(expression));
+                        if (directRequiredType != null)
+                        {
+                            return directRequiredType;
+                        }
+
+                        throw new DSharpCompilerException($"Unknown type: {newExpression.Type}", expression);
                     }
                     if (type == null)
                     {
@@ -1661,7 +1902,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     return caseTypes.GetNearestCommonType();
                 }
 
-                throw new ArgumentException($"Unable to get type of expression: {expression}", nameof(expression));
+                throw new DSharpCompilerException($"Unable to get type of expression: {expression}", expression);
             }
             /// <summary>
             /// Get expression returning type or throw exception
@@ -1670,13 +1911,13 @@ namespace DialogMaker.Core.Scripting.Compiler
             /// <param name="context">Compiler context</param>
             /// <returns>Type of returning value</returns>
             /// <exception cref="DSharpCompilerException">Unable to find value expression type</exception>
-            public IDSharpType GetRealExpressionType(DSharpAssemblyBuilder assembly, DSharpCompilerContext context = default)
+            public IDSharpType GetRealExpressionType(DSharpAssemblyBuilder assembly, DSharpCompilerContext context = default, IDSharpType? directRequiredType = null)
             {
                 IDSharpMemberInfo? valueMember;
 
                 try
                 {
-                    valueMember = expression.GetExpressionType(assembly, context);
+                    valueMember = expression.GetExpressionType(assembly, context, directRequiredType);
                 }
                 catch (Exception error)
                 {

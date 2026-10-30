@@ -90,7 +90,22 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// <returns>Array of parameter types with replaced generics</returns>
         public IDSharpType[] GetCallingParameterTypes()
         {
-            IDSharpType[] parameters = [.. Callable.GetParameters().Select(p => p.Type)];
+            IDSharpType[] parameters = new IDSharpType[Callable.ParametersCount];
+            var callableParameters = Callable.GetParameters();
+
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (i < Parameters.Count)
+                {
+                    parameters[i] = Parameters[i] ?? callableParameters[i].Type;
+                }
+                else
+                {
+                    parameters[i] = callableParameters[i].Type;
+                }
+            }
+
+            //IDSharpType[] parameters = [.. Callable.GetParameters().Select(p => p.Type)];
 
             for (int i = 0; i < parameters.Length; i++)
             {
@@ -147,7 +162,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// <returns>Method calling information</returns>
         /// <exception cref="InvalidOperationException">Generic parameters amount not matching</exception>
         /// <exception cref="InvalidOperationException">Type can not replace generic</exception>
-        public static DSharpMethodCallingInfo Create(IDSharpCallableMember callable, IDSharpType?[] parameters, IDSharpType[]? genericParameters)
+        public static DSharpMethodCallingInfo Create(DSharpAssemblyBuilder assembly, IDSharpCallableMember callable, IDSharpType?[] parameters, IDSharpType[]? genericParameters)
         {
             var callableParameters = callable.GetParameters();
             var genericTypes = callable.GetGenericParameters();
@@ -189,7 +204,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             else if (genericParameters == null && genericTypes.Length > 0)
             {
-                replacedTypes = DetectReplacedGenerics(callable, parameters, parametersType);
+                replacedTypes = DetectReplacedGenerics(assembly, callable, parameters, parametersType);
 
                 if (genericTypes.Length != replacedTypes.Count)
                 {
@@ -198,6 +213,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             int index = 0;
+            IDSharpType?[] newParameters = new IDSharpType[parameters.Length];
 
             foreach (var parameterInfo in parametersType)
             {
@@ -218,7 +234,12 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                 }
 
-                var parameter = parameters[index];
+                if (!parametersType.TryGetValue(callableParameters[index], out var parameter))
+                {
+                    parameter = parameters[index];
+                }
+
+                newParameters[index] = parameter;
 
                 if (!parameter!.IsAssignableTo(typeForAssignment))
                 {
@@ -228,7 +249,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 index++;
             }
 
-            return new(callable, parameters, replacedTypes);
+            return new(callable, newParameters, replacedTypes);
         }
         /// <summary>
         /// Find generic types replaces in calling parameter types
@@ -238,7 +259,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// <param name="parameterTypes"></param>
         /// <returns>Detected generic replaces</returns>
         /// <exception cref="InvalidOperationException">Unable to detect parameter type for replacing generic</exception>
-        public static Dictionary<IDSharpType, IDSharpType> DetectReplacedGenerics(IDSharpCallableMember callable, IDSharpType?[] parameters, Dictionary<IDSharpParameterInfo, IDSharpType>? parameterTypes = null)
+        public static Dictionary<IDSharpType, IDSharpType> DetectReplacedGenerics(DSharpAssemblyBuilder assembly, IDSharpCallableMember callable, IDSharpType?[] parameters, Dictionary<IDSharpParameterInfo, IDSharpType>? parameterTypes = null)
         {
             Dictionary<IDSharpType, IDSharpType> result = [];
             var callableParameters = callable.GetParameters();
@@ -260,10 +281,6 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             bool TryAdd(IDSharpParameterInfo parameter, IDSharpType genericType, IDSharpType replacedType, IDSharpType newParameterType)
             {
-                if (!result.TryAdd(genericType, replacedType))
-                {
-                    return false;
-                }
                 if (parameterTypes != null)
                 {
                     if (!parameterTypes.TryAdd(parameter, newParameterType))
@@ -272,40 +289,60 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                 }
 
-                return true;
+                return result.TryAdd(genericType, replacedType);
             }
 
             foreach (var generic in callableGenerics)
             {
-                for (int i = 0; i < minParametersLength; i++)
+                bool repeat = false;
+
+                do
                 {
-                    var callableParameter = callableParameters[i];
-                    var parameter = parameters[i]
-                            ?? throw new InvalidOperationException($"Unable to detect \"{callableParameter.Name}\" parameter type for replacing generic \"{generic}\" at \"{callable}\"");
+                    repeat = false;
 
-                    if (!generic.CanReplaceGenericType(parameter))
+                    for (int i = 0; i < minParametersLength; i++)
                     {
-                        continue;
-                    }
+                        var callableParameter = callableParameters[i];
+                        var parameter = parameters[i]
+                                ?? throw new InvalidOperationException($"Unable to detect \"{callableParameter.Name}\" parameter type for replacing generic \"{generic}\" at \"{callable}\"");
 
-                    if (callableParameter.Type == generic)
-                    {
-                        if (!TryAdd(callableParameter, generic, parameter, parameter))
+                        if (!generic.CanReplaceGenericType(parameter))
                         {
-                            goto End;
+                            continue;
                         }
 
-                        continue;
-                    }
-                    if (callableParameter.Type.TryFindTypeWithGeneric(generic, out var typeWithGenericInMethodParameter, out var methodParameterGenericIndex) &&
-                        parameter.TryFindTypeWithGeneric(generic, methodParameterGenericIndex, false, out var parameterTypeWithGeneric, out var replacedGeneric, out _))
-                    {
-                        if (!TryAdd(callableParameter, generic, replacedGeneric, parameter))
+                        if (callableParameter.Type == generic)
                         {
-                            goto End;
+                            if (!TryAdd(callableParameter, generic, parameter, parameter))
+                            {
+                                goto End;
+                            }
+
+                            continue;
+                        }
+                        if (callableParameter.Type.TryFindTypeWithGeneric(generic, out var typeWithGenericInMethodParameter, out var methodParameterGenericIndex) &&
+                            parameter.TryFindTypeWithGeneric(generic, methodParameterGenericIndex, false, out var parameterTypeWithGeneric, out var replacedGeneric, out _))
+                        {
+                            if (result.TryGetValue(replacedGeneric, out var newType))
+                            {
+                                replacedGeneric = newType;
+
+                                if (parameter.TryFillRecursive(assembly, result, null, out var filledType))
+                                {
+                                    parameter = filledType;
+                                }
+                            }
+
+                            if (!TryAdd(callableParameter, generic, replacedGeneric, parameter))
+                            {
+                                goto End;
+                            }
+
+                            repeat = i > 0;
                         }
                     }
                 }
+                while (repeat);
 
                 genericIndex++;
             }

@@ -7,6 +7,25 @@ public static class Enumerator
 {
     public static T? FirstOrDefault<T>(this IEnumerable<T> enumerable)
     {
+        if (enumerable is T[] array)
+        {
+            if (array.Length == 0)
+            {
+                return null;
+            }
+
+            return array[0];
+        }
+        if (enumerable is IList<T> list)
+        {
+            if (list.Count == 0)
+            {
+                return null;
+            }
+
+            return list[0];
+        }
+
         foreach (var item in enumerable)
         {
             return item;
@@ -16,15 +35,34 @@ public static class Enumerator
     }
     public static T First<T>(this IEnumerable<T> enumerable)
     {
-        foreach (var item in enumerable)
-        {
-            return item;
-        }
-
-        throw new ArgumentException("No items in sequence");
+        return enumerable.LastOrDefault()
+            ?? throw new ArgumentException("No items in sequence");
     }
     public static T? LastOrDefault<T>(this IEnumerable<T> enumerable)
     {
+        if (enumerable is T[] array)
+        {
+            int length = array.Length;
+
+            if (length == 0)
+            {
+                return null;
+            }
+
+            return array[length - 1];
+        }
+        else if (enumerable is IList<T> list)
+        {
+            int count = list.Count;
+
+            if (count == 0)
+            {
+                return null;
+            }
+
+            return list[count];
+        }
+
         T? lastItem = null;
 
         foreach (var item in enumerable)
@@ -36,14 +74,7 @@ public static class Enumerator
     }
     public static T Last<T>(this IEnumerable<T> enumerable)
     {
-        T? lastItem = null;
-
-        foreach (var item in enumerable)
-        {
-            lastItem = item;
-        }
-
-        return lastItem ??
+        return enumerable.LastOrDefault() ??
             throw new ArgumentException("No items in sequence");
     }
     public static bool Any(this IEnumerable enumerable)
@@ -80,80 +111,58 @@ public static class Enumerator
     }
     public static IEnumerable<T> Union<T>(this IEnumerable<T> enumerable, IEnumerable<T> items)
     {
-        return new UnionEnumerable<T>(enumerable, items);
+        foreach (var item in enumerable)
+        {
+            yield return item;
+        }
+        foreach (var item in items)
+        {
+            yield return item;
+        }
     }
-
-    private class UnionEnumerable<T> : IEnumerable<T>
+    public static IEnumerable<T> Where<T>(this IEnumerable<T> enumerable, Predicate<T> predicate)
     {
-        public UnionEnumerable(IEnumerable<T> first, IEnumerable<T> second)
+        foreach (var item in enumerable)
         {
-            _first = first;
-            _second = second;
+            if (predicate(item))
+            {
+                yield return item;
+            }
+        }
+    }
+    public static IEnumerable<TValue> Select<TItem, TValue>(this IEnumerable<TItem> enumerable, Func<TItem, TValue> selector)
+    {
+        foreach (var item in enumerable)
+        {
+            yield return selector(item);
+        }
+    }
+    public static IEnumerable<TValue> SelectMany<TItem, TValue>(this IEnumerable<TItem> enumerable, Func<TItem, IEnumerable<TValue>> selector)
+    {
+        foreach (var item in enumerable)
+        {
+            foreach (var innerItem in selector(item))
+            {
+                yield return innerItem;
+            }
+        }
+    }
+    public static IEnumerable<T> Append<T>(this IEnumerable<T> enumerable, T value)
+    {
+        foreach (var item in enumerable)
+        {
+            yield return item;
         }
 
-        private readonly IEnumerable<T> _first;
-        private readonly IEnumerable<T> _second;
+        yield return value;
+    }
+    public static IEnumerable<T> Prepend<T>(this IEnumerable<T> enumerable, T value)
+    {
+        yield return value;
 
-        public IEnumerator<T> GetEnumerator()
+        foreach (var item in enumerable)
         {
-            return new Enumerator(_first.GetEnumerator(), _second.GetEnumerator());
-        }
-
-        private class Enumerator : IEnumerator<T>
-        {
-            public Enumerator(IEnumerator<T> first, IEnumerator<T> second)
-            {
-                _first = first;
-                _second = second;
-            }
-
-            public T Current { get; private set; }
-
-            private readonly IEnumerator<T> _first;
-            private readonly IEnumerator<T> _second;
-            private bool _nowSecond;
-            private bool _completed;
-
-            public bool MoveNext()
-            {
-                if (_completed)
-                {
-                    return false;
-                }
-
-                IEnumerator<T> enumerator = _nowSecond ? _second : _first;
-
-                if (enumerator.MoveNext())
-                {
-                    Current = enumerator.Current;
-                    return true;
-                }            
-                if (_nowSecond)
-                {
-                    _completed = true;
-                    return false;
-                }
-
-                _nowSecond = true;
-
-                if (_second.MoveNext())
-                {
-                    Current = _second.Current;
-                    return true;
-                }
-
-                _completed = true;
-
-                return false;
-            }
-
-            public void Reset()
-            {
-                _first.Reset();
-                _second.Reset();
-                _nowSecond = false;
-                _completed = false;
-            }
+            yield return item;
         }
     }
 }

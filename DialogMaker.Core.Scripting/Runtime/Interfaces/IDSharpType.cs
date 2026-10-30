@@ -1,6 +1,8 @@
-﻿namespace DialogMaker.Core.Scripting.Runtime
+﻿using DialogMaker.Core.Scripting.Compiler;
+
+namespace DialogMaker.Core.Scripting.Runtime
 {
-    public interface IDSharpType : IDSharpMemberInfo
+    public interface IDSharpType : IDSharpMemberInfo, IDSharpTypeProvider
     {
         /// <summary>
         /// Is type generic. 

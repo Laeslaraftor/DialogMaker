@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using DialogMaker.Core.Scripting.Compiler;
+using System.Collections.ObjectModel;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
@@ -42,7 +43,12 @@ namespace DialogMaker.Core.Scripting.Runtime
 
         public IDSharpMethodInfo? StaticConstructor => throw new NotImplementedException();
 
-        #region Управление
+        #region Controls
+
+        IDSharpType IDSharpTypeProvider.GetType(DSharpCompilerContext context, params object?[] parameters)
+        {
+            return this;
+        }
 
         public IDSharpMethodInfo[] GetMethods() => [.. Methods];
         public IDSharpMethodInfo[] GetMethods(Predicate<IDSharpMethodInfo> predicate) => [.. Methods.Where(m => predicate(m))];

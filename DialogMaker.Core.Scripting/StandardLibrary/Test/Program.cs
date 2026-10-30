@@ -277,8 +277,12 @@ public unsafe class Program
         TestSwitch();
 
         Console.WriteLine("End counter value: " + testCounter);
+        Console.WriteLine("Delegates test:");
 
+        DelegatesTest("Delegates test method captured value");
         // last exception should be unhandled
+
+        Console.WriteLine();
 
         try
         {
@@ -629,6 +633,58 @@ public unsafe class Program
     private static bool TestLogicalExpression(bool statement, int left, int right)
     {
         return (left + right == 0) || statement && !statement || statement;
+    }
+    private static void DelegatesTest(string input)
+    {
+        void DelegateInvoker(Action<string> action)
+        {
+            action("Action invoked by invoker");
+        } 
+
+        string firstIterationMessage = "First Iteration";
+
+        var simpleDelegate = () =>
+        {
+            Console.WriteLine("Message from simple delegate");
+        };
+        var valueDelegate = () =>
+        {
+            return "Value from delegate";
+        };
+        var captureValueDelegate = () =>
+        {
+            return input;
+        };          
+        Func<IEnumerable<string>> iterationDelegate = () =>
+        {
+            yield return firstIterationMessage;
+            yield return "Iteration 1";
+            yield return "Iteration 2: " + input;
+        };
+        Action<string> delegateWithParameter = v => Console.WriteLine(v);
+
+        input += "_Extra";
+
+        Console.WriteLine(simpleDelegate.GetType().FullName);
+        simpleDelegate.Invoke();
+        Console.WriteLine(valueDelegate.Invoke());
+        Console.WriteLine(captureValueDelegate.Invoke());
+
+        Console.WriteLine();
+        Console.WriteLine("Delegate iterator:");
+        foreach (var value in iterationDelegate().Where(v => v == firstIterationMessage).Append("Final iteration"))
+        {
+            Console.WriteLine(value);
+        }
+
+        Console.WriteLine();
+        delegateWithParameter.Invoke("Message from parameterized delegate");
+        DelegateInvoker(v =>
+        {
+            Console.Write(v);
+            Console.Write(". Then: ");
+            Console.WriteLine(input);
+        });
     }
 
     private static bool TryGetZeBlack(string value, out string? result)

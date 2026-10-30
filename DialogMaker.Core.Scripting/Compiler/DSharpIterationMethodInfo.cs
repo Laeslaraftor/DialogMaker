@@ -21,8 +21,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                                            DSharpFieldBuilder stateField,
                                            DSharpFieldBuilder currentValueField,
                                            DSharpFieldBuilder? closureField,
-                                           Dictionary<DSharpTypeBuilder, DSharpTypeBuilder>? methodToEnumerableGenericTypes,
-                                           Dictionary<DSharpTypeBuilder, DSharpTypeBuilder>? methodToEnumeratorGenericTypes,
+                                           Dictionary<DSharpTypeBuilder, DSharpTypeBuilder>? methodToGenericTypes,
                                            Dictionary<DSharpMethodBuilderParameter, DSharpFieldBuilder>? methodParametersToEnumeratorFields)
     {
         /// <summary>
@@ -107,11 +106,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// <summary>
         /// Method generic parameters with corresponding enumerable generic types
         /// </summary>
-        public Dictionary<DSharpTypeBuilder, DSharpTypeBuilder>? MethodToEnumerableGenericTypes { get; } = methodToEnumerableGenericTypes;
-        /// <summary>
-        /// Method generic parameters with corresponding enumerator generic types
-        /// </summary>
-        public Dictionary<DSharpTypeBuilder, DSharpTypeBuilder>? MethodToEnumeratorGenericTypes { get; } = methodToEnumeratorGenericTypes;
+        public Dictionary<DSharpTypeBuilder, DSharpTypeBuilder>? MethodToGenericTypes { get; } = methodToGenericTypes;
         /// <summary>
         /// Enumerator fields that represents method parameters
         /// </summary>
@@ -121,7 +116,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// </summary>
         public ReadOnlyCollection<FinallyMethodInfo> FinalizationMethods
         {
-            get 
+            get
             {
                 field ??= new(_finalizationMethods);
                 return field;
@@ -334,13 +329,13 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             DSharpTypeBuilder? enumerableType = null;
             DSharpMethodBuilder? enumerableConstructor = null;
-            Dictionary<DSharpTypeBuilder, DSharpTypeBuilder>? methodToEnumerableGenericTypes = null;
-            Dictionary<DSharpTypeBuilder, DSharpTypeBuilder>? methodToEnumeratorGenericTypes = null;
+            Dictionary<DSharpTypeBuilder, DSharpTypeBuilder>? methodToGenericTypes = null;
             Dictionary<DSharpMethodBuilderParameter, DSharpFieldBuilder>? methodParametersToEnumeratorFields = null;
             DSharpMethodBuilder? getEnumeratorMethod = null;
             DSharpMethodBuilderParameter? enumerableClosureParameter = null;
             DSharpMethodBuilderParameter? enumeratorClosureParameter = null;
             DSharpFieldBuilder? closureContainerField = null;
+            bool enumerableAsGenericsRoot = false;
 
             if (returnType == assembly.IEnumerableType ||
                 returnType.GenericTemplate == assembly.TypedIEnumerableType)
@@ -358,16 +353,17 @@ namespace DialogMaker.Core.Scripting.Compiler
                     enumerableType.Access = DSharpAccessModifier.Internal;
                 }
 
-                methodToEnumerableGenericTypes = CopyGenericTypes(method, enumerableType);
+                methodToGenericTypes = CopyGenericTypes(method, enumerableType);
+                enumerableAsGenericsRoot = method.GenericParameters.Count > 0;
                 var newReturnType = returnType;
 
-                if (methodToEnumerableGenericTypes != null)
+                if (methodToGenericTypes != null)
                 {
-                    newReturnType = assembly.ReplaceTypes(returnType, method.DeclaringType, methodToEnumerableGenericTypes);
+                    newReturnType = assembly.ReplaceTypes(returnType, method.DeclaringType, methodToGenericTypes);
                 }
                 if (method.Parameters.Count > 0 || methodClosure != null)
                 {
-                    enumerableConstructor = CreateConstructor(method, enumerableType, methodToEnumerableGenericTypes);
+                    enumerableConstructor = CreateConstructor(method, enumerableType, methodToGenericTypes);
 
                     if (methodClosure != null)
                     {
@@ -394,15 +390,18 @@ namespace DialogMaker.Core.Scripting.Compiler
                 enumeratorType.Access = DSharpAccessModifier.Internal;
             }
 
-            methodToEnumeratorGenericTypes = CopyGenericTypes(method, enumeratorType);
-
-            if (methodToEnumeratorGenericTypes != null)
+            if (!enumerableAsGenericsRoot)
             {
-                enumeratorInterface = assembly.ReplaceTypes(enumeratorInterface, null, methodToEnumeratorGenericTypes);
+                methodToGenericTypes = CopyGenericTypes(method, enumeratorType);
+            }
+
+            if (methodToGenericTypes != null)
+            {
+                enumeratorInterface = assembly.ReplaceTypes(enumeratorInterface, null, methodToGenericTypes);
             }
             if (method.Parameters.Count > 0 || methodClosure != null)
             {
-                enumeratorConstructor = CreateConstructor(method, enumeratorType, methodToEnumerableGenericTypes);
+                enumeratorConstructor = CreateConstructor(method, enumeratorType, methodToGenericTypes);
 
                 if (methodClosure != null)
                 {
@@ -530,8 +529,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                                                        instructionField,
                                                        currentValueField,
                                                        closureContainerField,
-                                                       methodToEnumerableGenericTypes,
-                                                       methodToEnumeratorGenericTypes,
+                                                       methodToGenericTypes,
                                                        methodParametersToEnumeratorFields);
 
             var resetMethodCode = resultInfo.ResetMethod.GetBytecodeBuilder();
