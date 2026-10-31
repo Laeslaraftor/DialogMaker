@@ -1,11 +1,9 @@
-﻿using System.Collections.ObjectModel;
-
-namespace DialogMaker.Core.Scripting.Runtime
+﻿namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
     /// Information about delegate type
     /// </summary>
-    public class DSharpDelegateType(IDSharpType type, IDSharpMethodInfo invokeMethod, IDSharpMethodInfo? dynamicInvokeMethod, IDSharpMethodInfo instanceConstructor, IDSharpMethodInfo staticConstructor)
+    public class DSharpCustomDelegateType(IDSharpType type, IDSharpMethodInfo invokeMethod, IDSharpMethodInfo? dynamicInvokeMethod, IDSharpMethodInfo instanceConstructor, IDSharpMethodInfo staticConstructor)
     {
         /// <summary>
         /// Delegate type
@@ -57,12 +55,14 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <param name="type">Delegate type for that need to create information</param>
         /// <returns>Information about provided delegate type</returns>
         /// <exception cref="ArgumentException">Delegate type was required</exception>
-        public static DSharpDelegateType Create(IDSharpType type)
+        public static DSharpCustomDelegateType Create(IDSharpType type)
         {
             if (type.ObjectType != DSharpObjectType.Delegate)
             {
                 throw new ArgumentException($"Delegate type was required, got \"{type.ObjectType}\" ({type})", nameof(type));
             }
+
+            List<string> l = new();
 
             var invokeMethods = type.GetMethodOrDefault(InvokeMethodName)
                 ?? throw new ArgumentException($"Type \"{type}\" not contains \"{InvokeMethodName}\" method", nameof(type));

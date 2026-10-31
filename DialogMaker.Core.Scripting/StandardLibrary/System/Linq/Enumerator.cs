@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Collections;
+using Internal.System.Runtime;
 
 namespace System.Linq;
 
@@ -98,8 +99,17 @@ public static class Enumerator
 
         return false;
     }
-    public static int Count(this IEnumerable enumerable)
+    public static int Count<T>(this IEnumerable<T> enumerable)
     {
+        if (enumerable is T[] array)
+        {
+            return array.Length;
+        }
+        if (enumerable is ICollection<T> collection)
+        {
+            return collection.Count;
+        }
+
         int count = 0;
 
         foreach (var item in enumerable)
@@ -164,5 +174,79 @@ public static class Enumerator
         {
             yield return item;
         }
+    }
+
+    public static T[] ToArray<T>(this IEnumerable<T> enumerable)
+    {
+        T[] result;
+
+        if (enumerable is T[] array)
+        {
+            int length = array.Length;
+
+            if (length == 0)
+            {
+                return Array<T>.Empty;
+            }
+
+            result = new T[length];
+            Array<T>.Copy(array, 0, result, 0, length);
+        }
+        else if (enumerable is ICollection<T> collection)
+        {
+            int length = collection.Count;
+
+            if (length == 0)
+            {
+                return Array<T>.Empty;
+            }
+
+            result = new T[length];
+            
+            if (enumerable is IList<T> list)
+            {
+                list.CopyTo(0, result, 0, length);
+            }
+            else
+            {
+                int i = 0;
+
+                foreach (var item in enumerable)
+                {
+                    result[i] = item;
+                    i++;
+                }
+            }
+        }
+        else
+        {
+            var enumerator = enumerable.GetEnumerator();
+            int length = 0;
+
+            foreach (var item in enumerator)
+            {
+                length++;
+            }
+
+            if (length == 0)
+            {
+                return Array<T>.Empty;
+            }
+            
+            result = new T[length];
+            int i = 0;
+
+            foreach (var item in enumerator)
+            {
+                result[i] = item;
+                i++;
+            }
+        }
+
+        return result;
+    }
+    public static List<T> ToList<T>(this IEnumerable<T> enumerable)
+    {
+        return new(enumerable.ToArray(), false);
     }
 }

@@ -5,5 +5,5 @@ using DialogMaker.Core.Scripting.Runtime;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
-    public record struct DSharpCompiledDelegateInfo(DelegateExpressionNode Expression, DSharpCompilerMethodScope.CaptureInfo Closure, DSharpDelegateType DelegateInfo, DSharpMethodBuilder DelegateMethod);
+    public record struct DSharpCompiledDelegateInfo(DelegateExpressionNode Expression, DSharpCompilerMethodScope.CaptureInfo Closure, DSharpCustomDelegateType DelegateInfo, DSharpMethodBuilder DelegateMethod);
 }

@@ -667,19 +667,19 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
-        public DSharpDelegateType ActionTypeInfo
+        public DSharpCustomDelegateType ActionTypeInfo
         {
             get
             {
-                field ??= DSharpDelegateType.Create(ActionType);
+                field ??= DSharpCustomDelegateType.Create(ActionType);
                 return field;
             }
         }
-        public DSharpDelegateType FuncTypeInfo
+        public DSharpCustomDelegateType FuncTypeInfo
         {
             get
             {
-                field ??= DSharpDelegateType.Create(FuncType);
+                field ??= DSharpCustomDelegateType.Create(FuncType);
                 return field;
             }
         }
@@ -694,8 +694,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         private readonly List<DSharpTypeToken> _fieldsDefinitions = [];
         private readonly List<DSharpTypeToken> _propertiesDefinitions = [];
         private readonly List<DSharpTypeToken> _operatorsDefinitions = [];
-        private readonly Dictionary<int, DSharpDelegateType> _actionTypes = [];
-        private readonly Dictionary<int, DSharpDelegateType> _funcTypes = [];
+        private readonly Dictionary<int, DSharpCustomDelegateType> _actionTypes = [];
+        private readonly Dictionary<int, DSharpCustomDelegateType> _funcTypes = [];
         private readonly Dictionary<IDSharpType, Dictionary<IDSharpMemberInfo, IDSharpMemberInfo>> _typesReplacedMembers = [];
 
         #region Controls
@@ -1396,7 +1396,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
         #region Type searching
 
-        public DSharpDelegateType GetActionType(int parametersCount)
+        public DSharpCustomDelegateType GetActionType(int parametersCount)
         {
             if (!_actionTypes.TryGetValue(parametersCount, out var type))
             {
@@ -1406,7 +1406,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 }
                 else
                 {
-                    type = DSharpDelegateType.Create(GetType(DSharpBuildInTypes.Extra.GetAction(parametersCount)));
+                    type = DSharpCustomDelegateType.Create(GetType(DSharpBuildInTypes.Extra.GetAction(parametersCount)));
 
                 }
                 _actionTypes.Add(parametersCount, type);
@@ -1414,7 +1414,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             return type;
         }
-        public DSharpDelegateType GetFuncType(int parametersCount)
+        public DSharpCustomDelegateType GetFuncType(int parametersCount)
         {
             if (!_funcTypes.TryGetValue(parametersCount, out var type))
             {
@@ -1424,7 +1424,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 }
                 else
                 {
-                    type = DSharpDelegateType.Create(GetType(DSharpBuildInTypes.Extra.GetFunc(parametersCount)));
+                    type = DSharpCustomDelegateType.Create(GetType(DSharpBuildInTypes.Extra.GetFunc(parametersCount)));
 
                 }
 

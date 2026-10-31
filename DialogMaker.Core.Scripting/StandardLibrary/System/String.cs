@@ -20,14 +20,7 @@ public sealed class String : IEnumerable<char>, IEquatable<string>
     public override string ToString() => this;
     public override bool Equals(object? obj)
     {
-        var other = obj as string;
-
-        if (other == null)
-        {
-            return false;
-        }
-
-        return Equals(other);
+        return obj is string other && Equals(other);
     }
     public bool Equals(string other)
     {
@@ -191,22 +184,24 @@ public sealed class String : IEnumerable<char>, IEquatable<string>
     public static string operator +(object l, string r) => Ctor(l.ToString(), r);
     public static string operator +(string l, char r)
     {
-        Span<char> buffer = stackalloc char[l.Length + 1];
+        var length = l.Length;
+        Span<char> buffer = stackalloc char[length + 1];
 
-        for (int i = 0; i < l.Length; i++)
+        for (int i = 0; i < length; i++)
         {
             buffer[i] = l[i];
         }
 
-        buffer[buffer.Length - 1] = r;
+        buffer[length] = r;
 
         return Ctor(buffer);
     }
     public static string operator +(char l, string r)
     {
-        Span<char> buffer = stackalloc char[r.Length + 1];
+        int newLength = r.Length + 1;
+        Span<char> buffer = stackalloc char[newLength];
 
-        for (int i = 1; i < r.Length + 1; i++)
+        for (int i = 1; i < newLength; i++)
         {
             buffer[i] = r[i];
         }
@@ -260,6 +255,46 @@ public sealed class String : IEnumerable<char>, IEquatable<string>
         {
             var currentValue = values[i];
 
+            if (IsNullOrEmpty(currentValue))
+            {
+                continue;
+            }
+            if (result != null)
+            {
+                result += separator;
+            }
+
+            result += currentValue;
+        }
+
+        return result ?? Empty;
+    }
+    public static string Join(char separator, IEnumerable<string> values)
+    {
+        string? result = null;
+
+        foreach (var currentValue in values)
+        {
+            if (IsNullOrEmpty(currentValue))
+            {
+                continue;
+            }
+            if (result != null)
+            {
+                result += separator;
+            }
+
+            result += currentValue;
+        }
+
+        return result ?? Empty;
+    }
+    public static string Join(string separator, IEnumerable<string> values)
+    {
+        string? result = null;
+
+        foreach (var currentValue in values)
+        {
             if (IsNullOrEmpty(currentValue))
             {
                 continue;

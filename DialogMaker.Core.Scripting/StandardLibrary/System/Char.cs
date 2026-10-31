@@ -9,7 +9,8 @@ public struct Char
     }
     public override int GetHashCode() => (int)this;
 
-    internal static bool TryParseNumber(char value, out int result)
+    public static bool IsDigit(char value) => value >= '0' && value <= '9';
+    public static bool TryParseDigit(char value, out int result)
     {
         if (value >= '0' && value <= '9')
         {

@@ -3,60 +3,46 @@ using System.Reflection;
 
 namespace System;
 
-public class MulticastDelegate : Delegate
+public sealed class MulticastDelegate : Delegate
 {
-    public bool HasSingleTarget => _invocationList.Count == 0;
-    public override MethodInfo? MethodInfo => _invocationList.Count > 0 ? _invocationList[0].MethodInfo : null;
-    public override object? Target => _invocationList.Count > 0 ? _invocationList[0].Target : null;
-
-    private IEnumerator<Delegate> InvocationEnumerator
+    public MulticastDelegate(params Delegate[] delegates)
     {
-        get
+        if (delegates.Length == 0)
         {
-            field ??= _invocationList.GetEnumerator();
-            return field;
-        }
-    }
-    private readonly HashSet<Delegate> _invocationList = new();
-
-    public void Clear() => _invocationList.Clear();
-    public bool Add(Delegate @delegate)
-    {
-        if (@delegate == null)
-        {
-            throw new ArgumentNullException(nameof(@delegate));
+            throw new ArgumentException("Empty delegates array", nameof(delegates));
         }
 
-        return _invocationList.Add(@delegate);
+        _delegates = new(delegates);
     }
-    public bool Remove(Delegate @delegate)
+
+    public override MethodInfo MethodInfo => _delegates[_delegates.Count - 1].MethodInfo;
+    public override object? Target => _delegates[_delegates.Count - 1].Target;
+
+    private readonly List<Delegate> _delegates;
+
+    public override Delegate[] GetInvocationList()
     {
-        if (@delegate == null)
+        return _delegates.ToArray();
+    }
+
+    protected override nint GetRuntimeMethodInfo()
+    {
+        return _delegates[_delegates.Count - 1].GetRuntimeMethodInfo();
+    }
+    protected override Delegate CombineImpl(Delegate d)
+    {
+        _delegates.Add(d);
+        return this;
+    }
+    protected override Delegate RemoveImpl(Delegate d)
+    {
+        _delegates.Remove(d);
+
+        if (_delegates.Count == 1)
         {
-            throw new ArgumentNullException(nameof(@delegate));
+            return _delegates[0];
         }
 
-        return _invocationList.Remove(@delegate);
-    }
-    public override object? DynamicInvoke(params object?[]? parameters)
-    {
-        for (int i = 0; i < _invocationList.Count; i++)
-        {
-            var site = _invocationList[i];
-            site.DynamicInvoke(parameters);
-        }
-
-        return null;
-    }
-
-    public static MulticastDelegate operator +(MulticastDelegate multicastDelegate, Delegate @delegate)
-    {
-        multicastDelegate.Add(@delegate);
-        return multicastDelegate;
-    }
-    public static MulticastDelegate operator -(MulticastDelegate multicastDelegate, Delegate @delegate)
-    {
-        multicastDelegate.Remove(@delegate);
-        return multicastDelegate;
+        return this;
     }
 }

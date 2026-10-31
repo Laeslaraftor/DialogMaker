@@ -1,9 +1,9 @@
-namespace System;
-
 using Internal.System.Runtime;
 using System.Native;
 
-public sealed class Object
+namespace System;
+
+public class Object
 {
     public virtual bool Equals(object? obj) => ContentEquals(this, obj);
     public virtual int GetHashCode() => GetHashCode(this);

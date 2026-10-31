@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace System.Collections.Generic;
 
 public class List<T> : IList<T>
@@ -10,6 +12,22 @@ public class List<T> : IList<T>
         capacity = Math.Max(capacity, 4);
         _items = new T[capacity];
     }
+    public List(IEnumerable<T> items)
+    {
+        _items = items.ToArray();
+        Count = _items.Length;
+    }
+    internal List(T[] items, bool makeCopy)
+    {
+        if (makeCopy)
+        {
+            items = Array<T>.Copy(items);
+        }
+
+        _items = items;
+        Count = items.Length;
+    }
+
 
     public int Count { get; private set; }
     public int Capacity => _items.Length;
@@ -112,6 +130,33 @@ public class List<T> : IList<T>
         }
 
         Count = 0;
+    }
+
+    public void CopyTo(T[] array)
+    {
+        Array<T>.Copy(_items, 0, array, 0, array.Length);
+    }
+    public void CopyTo(T[] array, int arrayIndex)
+    {
+        Array<T>.Copy(_items, 0, array, arrayIndex, array.Length - arrayIndex);
+    }
+    public void CopyTo(int index, T[] array, int arrayIndex, int count)
+    {
+        Array<T>.Copy(_items, index, array, arrayIndex, count);
+    }
+    public T[] ToArray()
+    {
+        int length = Count;
+
+        if (length == 0)
+        {
+            return Array<T>.Empty;
+        }
+
+        T[] result = new T[Count];
+        Array<T>.Copy(_items, 0, result, 0, length);
+
+        return result;
     }
 
     public IEnumerator<T> GetEnumerator()

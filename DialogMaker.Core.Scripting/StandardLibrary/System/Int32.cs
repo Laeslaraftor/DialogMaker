@@ -21,7 +21,7 @@ public struct Int32
 
             char symbol = value[i];
 
-            if (char.TryParseNumber(symbol, out int number))
+            if (char.TryParseDigit(symbol, out int number))
             {
                 result += number;
             }

@@ -1306,7 +1306,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     if (callExpression.Callee != null &&
                         callExpression.Callee.TryGetTypeAsDelegateReturnType(assembly, context, out var delegateType))
                     {
-                        var delegateInfo = DSharpDelegateType.Create(delegateType);
+                        var delegateInfo = DSharpCustomDelegateType.Create(delegateType);
                         return delegateInfo.InvokeMethod.ReturnType;
                     }
 
@@ -1426,13 +1426,12 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     if (directRequiredType != null && directRequiredType.ObjectType != DSharpObjectType.Delegate)
                     {
-                        //directRequiredType = null;
                         throw new DSharpCompilerException($"Required type should be delegate, got \"{directRequiredType}\"", expression);
                     }
 
                     IDSharpType? returnType = null;
                     List<IDSharpType>? parameterTypes = null;
-                    DSharpDelegateType? requestedDelegateInfo = null;
+                    DSharpCustomDelegateType? requestedDelegateInfo = null;
 
                     if (delegateExpression.Parameters.Count > 0)
                     {
@@ -1443,7 +1442,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                             throw new DSharpCompilerException("Unable to detect delegate type", expression);
                         }
 
-                        requestedDelegateInfo = DSharpDelegateType.Create(directRequiredType);
+                        requestedDelegateInfo = DSharpCustomDelegateType.Create(directRequiredType);
                         var invokeMethodParameters = requestedDelegateInfo.InvokeMethod.GetParameters();
 
                         if (invokeMethodParameters.Length != delegateExpression.Parameters.Count)

@@ -54,10 +54,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                     TypeGetter = () => Assembly.NIntToken
                 });
 
-                var runtimeMethodInfoField = type.CreateField(DSharpDelegateType.RuntimeMethodInfoFieldName);
+                var runtimeMethodInfoField = type.CreateField(DSharpCustomDelegateType.RuntimeMethodInfoFieldName);
                 runtimeMethodInfoField.Access = DSharpAccessModifier.Private;
                 runtimeMethodInfoField.FieldTypeResolver = () => Assembly.NIntToken;
-                var targetField = type.CreateField(DSharpDelegateType.TargetFieldName);
+                var targetField = type.CreateField(DSharpCustomDelegateType.TargetFieldName);
                 targetField.Access = DSharpAccessModifier.Private;
                 targetField.FieldTypeResolver = () => Assembly.ObjectToken;
 
@@ -66,7 +66,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 _createdDelegates.Add(type, description);
             }
 
-            var invokeMethod = type.CreateMethod(DSharpDelegateType.InvokeMethodName);
+            var invokeMethod = type.CreateMethod(DSharpCustomDelegateType.InvokeMethodName);
             invokeMethod.Access = DSharpAccessModifier.Public;
 
             description.InvokeMethods.Add(invokeMethod, declaration);

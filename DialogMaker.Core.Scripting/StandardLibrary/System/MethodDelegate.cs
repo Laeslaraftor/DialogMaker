@@ -1,4 +1,3 @@
-using System.Native;
 using System.Reflection;
 using Internal.System.Runtime;
 
@@ -7,44 +6,38 @@ namespace System;
 public unsafe class MethodDelegate : Delegate
 {
     public MethodDelegate(MethodInfo methodInfo, object? target)
+        : this(methodInfo)
     {
+        TargetInstance = target;
+    }
+    public MethodDelegate(MethodInfo methodInfo)
+    {
+        RuntimeMethodInfo = (nint)methodInfo.RuntimeMethodInfo;
         _methodInfo = methodInfo;
-        _runtimeMethodInfo = methodInfo.RuntimeMethodInfo;
-        Target = target;
     }
-    public MethodDelegate(nint runtimeMethodInfo, object? target)
+    protected MethodDelegate(nint runtimeMethodInfo, object? target)
+        : this(runtimeMethodInfo)
     {
-        _runtimeMethodInfo = (RuntimeMethodInfo*)runtimeMethodInfo;
-        Target = target;
+        TargetInstance = target;
     }
-    public MethodDelegate(nint runtimeMethodInfo) : this(runtimeMethodInfo, null)
+    protected MethodDelegate(nint runtimeMethodInfo)
     {
+        RuntimeMethodInfo = runtimeMethodInfo;
     }
 
-    public override MethodInfo? MethodInfo
+    public override MethodInfo MethodInfo
     {
         get
         {
-            if (_methodInfo == null)
-            {
-                if (_runtimeMethodInfo == 0)
-                {
-                    throw new InvalidOperationException("Runtime method information not provided!");
-                }
-
-                _methodInfo = new(_runtimeMethodInfo);
-            }
-
+            _methodInfo ??= new((RuntimeMethodInfo*)RuntimeMethodInfo);
             return _methodInfo;
         }
     }
-    public override object? Target { get; }
+    public override object? Target => TargetInstance;
 
-    private readonly RuntimeMethodInfo* _runtimeMethodInfo;
+    protected readonly nint RuntimeMethodInfo;
+    protected readonly object? TargetInstance;
     private MethodInfo? _methodInfo;
 
-    public override object? DynamicInvoke(params object?[]? parameters)
-    {
-        return Invoke(_runtimeMethodInfo, Target, parameters);
-    }
+    protected override nint GetRuntimeMethodInfo() => RuntimeMethodInfo;
 }

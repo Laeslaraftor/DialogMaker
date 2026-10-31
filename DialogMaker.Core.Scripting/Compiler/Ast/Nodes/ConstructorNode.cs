@@ -51,7 +51,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 IsUnsafe = memberInfo.IsUnsafe
             };
 
-            ParseParameters(stream, constructor.Parameters, allowModes: false);
+            ParseParameters(stream, constructor.Parameters);
 
             memberInfo.Identifier.Parent = constructor;
             memberInfo.Attributes?.SetParent(constructor);

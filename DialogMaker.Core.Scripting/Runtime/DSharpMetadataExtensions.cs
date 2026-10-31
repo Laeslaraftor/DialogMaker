@@ -374,8 +374,8 @@ namespace DialogMaker.Core.Scripting.Runtime
                     destination.ObjectType == DSharpObjectType.Delegate)
                 {
                     castOperator = null;
-                    var sourceDelegate = DSharpDelegateType.Create(type);
-                    var destinationDelegate = DSharpDelegateType.Create(destination);
+                    var sourceDelegate = DSharpCustomDelegateType.Create(type);
+                    var destinationDelegate = DSharpCustomDelegateType.Create(destination);
                     var sourceInvoke = sourceDelegate.InvokeMethod;
                     var destinationInvoke = destinationDelegate.InvokeMethod;
 

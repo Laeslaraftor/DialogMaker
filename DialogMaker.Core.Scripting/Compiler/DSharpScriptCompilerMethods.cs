@@ -3928,7 +3928,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 return false;
             }
 
-            var delegateInfo = DSharpDelegateType.Create(callExpressionType);
+            var delegateInfo = DSharpCustomDelegateType.Create(callExpressionType);
             var callingInfo = context.CreateCallingInfo(delegateInfo.InvokeMethod, expression.Arguments, out _);
 
             if (callingInfo == null)
@@ -3947,7 +3947,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             return true;
         }
-        private DSharpDelegateType CompileDelegate(DelegateExpressionNode delegateExpression, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context, out DSharpCompilerMethodScope.CaptureInfo closure, out DSharpMethodBuilder delegateMethod)
+        private DSharpCustomDelegateType CompileDelegate(DelegateExpressionNode delegateExpression, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context, out DSharpCompilerMethodScope.CaptureInfo closure, out DSharpMethodBuilder delegateMethod)
         {
             if (delegateExpression.Body == null)
             {
@@ -3989,7 +3989,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 localFunctionScope.IsRoot = true;
             }
 
-            var delegateInfo = DSharpDelegateType.Create(delegateType);
+            var delegateInfo = DSharpCustomDelegateType.Create(delegateType);
             var invokeMethod = delegateInfo.InvokeMethod;
             var invokeParameters = invokeMethod.GetParameters();
             delegateMethod.ReturnType = invokeMethod.ReturnType != null ? Assembly.GetTypeToken(invokeMethod.ReturnType) : null;
@@ -4251,43 +4251,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                         callingInfo.GenericParameters.Count > 0 &&
                         callingInfo.Callable.ReturnType != null)
                     {
-                        var returnType = callingInfo.Callable.ReturnType;
-                        IDSharpType[] genericTypes;
-
-                        if (returnType.GenericTemplate == null)
-                        {
-                            genericTypes = returnType.GetGenericTypes();
-                        }
-                        else
-                        {
-                            genericTypes = returnType.GetGenericParameters();
-                        }
-                        if (genericTypes.Length > 0)
-                        {
-                            IDSharpType[] newParameters = new IDSharpType[genericTypes.Length];
-                            bool isAnyReplaced = false;
-
-                            for (int i = 0; i < genericTypes.Length; i++)
-                            {
-                                var genericType = genericTypes[i];
-
-                                if (callingInfo.GenericParameters.TryGetValue(genericType, out var replacedType))
-                                {
-                                    newParameters[i] = replacedType;
-                                    isAnyReplaced = true;
-                                }
-                                else
-                                {
-                                    newParameters[i] = genericType;
-                                }
-                            }
-
-                            if (isAnyReplaced)
-                            {
-                                expressionMember = Assembly.FillGeneric(returnType, newParameters);
-                                expressionMemberSetted = true;
-                            }
-                        }
+                        expressionMember = callingInfo.GetReturnType(Assembly)
+                            ?? expressionMember;
                     }
                     if (!expressionMemberSetted &&
                         expressionMember is not IDSharpType &&

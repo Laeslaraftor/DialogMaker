@@ -577,7 +577,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     callExpression.Callee != null &&
                     callExpression.Callee.TryGetTypeAsDelegateReturnType(Assembly, this, out var delegateType))
                 {
-                    var delegateInfo = DSharpDelegateType.Create(delegateType);
+                    var delegateInfo = DSharpCustomDelegateType.Create(delegateType);
                     var callingInfo = CreateCallingInfo(delegateInfo.InvokeMethod, callExpression.Arguments, out _);
 
                     if (callingInfo != null)
@@ -610,6 +610,11 @@ namespace DialogMaker.Core.Scripting.Compiler
                 var member = memberSearchResult.MemberInfo;
                 var assembly = Assembly;
 
+                if (Assembly != null && memberSearchResult.MethodCallingInfo != null)
+                {
+                    member = memberSearchResult.MethodCallingInfo.GetReturnType(Assembly)
+                        ?? member;
+                }
                 if (member is not IDSharpType)
                 {
                     if (member.TryGetReturnType(out var memberType))
@@ -618,7 +623,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                     else
                     {
-                        throw new InvalidOperationException($"Unable to get returning type of \"{member}\": {memberAccess.Target}");
+                        throw new DSharpCompilerException($"Unable to get returning type of \"{member}\"", memberAccess.Target);
                     }
                 }
 
@@ -1208,14 +1213,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 return DSharpMethodCallingInfo.GetMostSuitable(callingInfosParameters);
             }
 
-            if (callingExceptions.Count == 1)
-            {
-                throw callingExceptions[0];
-            }
-            else if (callingExceptions.Count > 1)
-            {
-                throw callingExceptions[^1];
-            }
+            Exception? innerException = callingExceptions.LastOrDefault();
 
             string message = $"Can not find method \"{name}\" in \"{currentType}\" with {parameters.Length} parameters";
 
@@ -1246,7 +1244,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                 message = builder.ToString().TrimEnd();
             }
 
-            throw new InvalidOperationException(message);
+            if (innerException == null)
+            {
+                throw new DSharpException(message);
+            }
+            else
+            {
+                throw new DSharpException(message, innerException);
+            }
         }
         public readonly DSharpMethodCallingInfo? CreateCallingInfo(IDSharpCallableMember callable, IDSharpType? currentType, IDSharpTypeProvider?[] parameters, IDSharpType[]? genericParameters, out IDSharpType[] filledCallingParameters)
         {

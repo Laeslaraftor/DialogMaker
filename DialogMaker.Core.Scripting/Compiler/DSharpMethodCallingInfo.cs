@@ -217,22 +217,13 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             foreach (var parameterInfo in parametersType)
             {
-                IDSharpType typeForAssignment = parameterInfo.Value;
-
-                if (parameterInfo.Key.Mode == DSharpMethodParameterMode.Params)
+                if (parameterInfo.Key.Mode == DSharpMethodParameterMode.Params &&
+                    index >= parameters.Length)
                 {
-                    if (index >= parameters.Length)
-                    {
-                        break;
-                    }
-
-                    var parameterTypeGenericParameters = parameterInfo.Value.GetGenericParameters();
-
-                    if (parameterTypeGenericParameters.Length == 1)
-                    {
-                        typeForAssignment = parameterTypeGenericParameters[0];
-                    }
+                    break;
                 }
+
+                IDSharpType typeForAssignment = parameterInfo.Value;
 
                 if (!parametersType.TryGetValue(callableParameters[index], out var parameter))
                 {
@@ -240,6 +231,22 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 newParameters[index] = parameter;
+
+                if (parameterInfo.Key.Mode == DSharpMethodParameterMode.Params)
+                {
+                    var parameterTypeGenericParameters = parameterInfo.Value.GetGenericParameters();
+                    var parameterGenericParameters = parameter?.GetGenericParameters();
+
+                    if (parameterTypeGenericParameters.Length == 1)
+                    {
+                        typeForAssignment = parameterTypeGenericParameters[0];
+                    }
+                    if (parameterGenericParameters != null &&
+                        parameterGenericParameters.Length == 1)
+                    {
+                        parameter = parameterGenericParameters[0];
+                    }
+                }
 
                 if (!parameter!.IsAssignableTo(typeForAssignment))
                 {

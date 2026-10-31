@@ -3,7 +3,7 @@ using Internal.System.Runtime;
 
 namespace System.Reflection;
 
-public unsafe class MethodInfo : MemberInfo
+public unsafe class MethodInfo : MemberInfo, IEquatable<MethodInfo>
 {
     internal MethodInfo(RuntimeMethodInfo* runtimeMethodInfo)
     {
@@ -51,4 +51,13 @@ public unsafe class MethodInfo : MemberInfo
     {
         return Delegate.Invoke(RuntimeMethodInfo, instance, parameters);
     }
+
+    public bool Equals(MethodInfo other) => RuntimeMethodInfo == other.RuntimeMethodInfo;
+    public override bool Equals(object? obj)
+    {
+        return obj is MethodInfo other && Equals(other);
+    }
+
+    public static bool operator ==(MethodInfo? l, MethodInfo? r) => r?.RuntimeMethodInfo == l?.RuntimeMethodInfo;
+    public static bool operator !=(MethodInfo? l, MethodInfo? r) => r?.RuntimeMethodInfo != l?.RuntimeMethodInfo;
 }

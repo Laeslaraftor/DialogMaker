@@ -11,4 +11,6 @@ public interface IList<T> : IEnumerable<T>
     public void Insert(T item, int index);
     public bool Remove(T item);
     public void Clear();
+
+    public void CopyTo(int index, T[] array, int arrayIndex, int count);
 }

@@ -33,6 +33,13 @@ public sealed class Array<T> : Array, IEnumerable<T>
             array[i] = value;
         }
     }
+    public static T[] Copy(T[] source)
+    {
+        T[] destination = new T[source.Length];
+        Copy(source, 0, destination, 0, source.Length);
+
+        return destination;
+    }
     public static void Copy(T[] source, T[] destination)
     {
         Copy(source, 0, destination, 0, Math.Min(source.Length, destination.Length));
