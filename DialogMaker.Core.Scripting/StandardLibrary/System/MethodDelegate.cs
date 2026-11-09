@@ -15,12 +15,12 @@ public unsafe class MethodDelegate : Delegate
         RuntimeMethodInfo = (nint)methodInfo.RuntimeMethodInfo;
         _methodInfo = methodInfo;
     }
-    protected MethodDelegate(nint runtimeMethodInfo, object? target)
+    public MethodDelegate(nint runtimeMethodInfo, object? target)
         : this(runtimeMethodInfo)
     {
         TargetInstance = target;
     }
-    protected MethodDelegate(nint runtimeMethodInfo)
+    public MethodDelegate(nint runtimeMethodInfo)
     {
         RuntimeMethodInfo = runtimeMethodInfo;
     }

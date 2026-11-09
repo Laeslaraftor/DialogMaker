@@ -22,7 +22,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             var identifier = declaration.Identifier;
             var existedType = parent?.ChildrenTypes.FirstOrDefault(c => c.Name == identifier.Name)
                 ?? Assembly.GetTypeOrDefault(_currentNamespace != null ? $"{_currentNamespace}.{identifier.GetName(true)}" : identifier.GetName(true));
-
+            
             if (existedType?.GetGenericTypes().Length == declaration.Identifier.GenericParameters.Count)
             {
                 throw new DSharpCompilerException($"Delegate with same name and generic parameters already exists in \"{GetNamespaceName()}\" namespace", declaration);
@@ -54,14 +54,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     TypeGetter = () => Assembly.NIntToken
                 });
 
-                var runtimeMethodInfoField = type.CreateField(DSharpCustomDelegateType.RuntimeMethodInfoFieldName);
-                runtimeMethodInfoField.Access = DSharpAccessModifier.Private;
-                runtimeMethodInfoField.FieldTypeResolver = () => Assembly.NIntToken;
-                var targetField = type.CreateField(DSharpCustomDelegateType.TargetFieldName);
-                targetField.Access = DSharpAccessModifier.Private;
-                targetField.FieldTypeResolver = () => Assembly.ObjectToken;
-
-                description = new(type, instanceConstructor, staticConstructor, runtimeMethodInfoField, targetField);
+                description = new(type, instanceConstructor, staticConstructor);
 
                 _createdDelegates.Add(type, description);
             }
@@ -80,36 +73,54 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         private void CompileDelegate(DSharpCompilerDelegateDescription description)
         {
-            CompileDelegateStaticConstructor(description, description.StaticConstructor);
-            CompileDelegateStaticConstructor(description, description.InstanceConstructor);
-            CompileDelegateInstanceConstructor(description, description.InstanceConstructor);
+            var methodDelegateType = Assembly.MethodDelegateTypeInfo;
+
+            if (methodDelegateType.InstanceConstructor == null)
+            {
+                throw new DSharpCompilerException($"Type \"{methodDelegateType.Type}\" not contains constructor for creating instance delegate: {DSharpTypeBuilder.ConstructorName}({Assembly.NIntType}, {Assembly.ObjectType})", _createdTypes[description.Type]);
+            }
+            if (methodDelegateType.StaticConstructor == null)
+            {
+                throw new DSharpCompilerException($"Type \"{methodDelegateType.Type}\" not contains constructor for creating static delegate: {DSharpTypeBuilder.ConstructorName}({Assembly.NIntType})", _createdTypes[description.Type]);
+            }
+            if (!description.Type.BaseTypes.Contains(methodDelegateType.Type))
+            {
+                description.Type.AddBaseType(methodDelegateType.Type);
+            }
+
+            var runtimeMethodInfoField = methodDelegateType.Type.GetField(DSharpCustomDelegateType.RuntimeMethodInfoFieldName);
+            var targetField = methodDelegateType.Type.GetField(DSharpCustomDelegateType.TargetFieldName);
+
+            CompileDelegateStaticConstructor(description, description.StaticConstructor, methodDelegateType.StaticConstructor);
+            CompileDelegateInstanceConstructor(description, description.InstanceConstructor, methodDelegateType.InstanceConstructor);
 
             foreach (var info in description.InvokeMethods)
             {
-                CompileDelegateInvokeMethod(description, info.Value, info.Key);
+                CompileDelegateInvokeMethod(info.Key, targetField, runtimeMethodInfoField);
             }
         }
 
-        private void CompileDelegateStaticConstructor(DSharpCompilerDelegateDescription description, DSharpMethodBuilder constructor)
+        private void CompileDelegateStaticConstructor(DSharpCompilerDelegateDescription description, DSharpMethodBuilder constructor, IDSharpMethodInfo baseConstructor)
         {
             var code = constructor.GetBytecodeBuilder();
             code.LoadInstance();
             code.LoadLocal(constructor.Parameters[0]);
-            code.StoreInstanceField(description.RuntimeMethodInfoField);
+            code.Call(baseConstructor, DSharpMethodCallingType.Default);
         }
-        private void CompileDelegateInstanceConstructor(DSharpCompilerDelegateDescription description, DSharpMethodBuilder constructor)
+        private void CompileDelegateInstanceConstructor(DSharpCompilerDelegateDescription description, DSharpMethodBuilder constructor, IDSharpMethodInfo baseConstructor)
         {
             var code = constructor.GetBytecodeBuilder();
             code.LoadInstance();
+            code.LoadLocal(constructor.Parameters[0]);
             code.LoadLocal(constructor.Parameters[1]);
-            code.StoreInstanceField(description.TargetField);
+            code.Call(baseConstructor, DSharpMethodCallingType.Default);
         }
-        private void CompileDelegateInvokeMethod(DSharpCompilerDelegateDescription description, ObjectDeclarationNode declaration, DSharpMethodBuilder invokeMethod)
+        private void CompileDelegateInvokeMethod(DSharpMethodBuilder invokeMethod, IDSharpFieldInfo targetField, IDSharpFieldInfo methodInfoField)
         {
             var code = invokeMethod.GetBytecodeBuilder();
 
             code.LoadInstance();
-            code.LoadInstanceField(description.TargetField);
+            code.LoadInstanceField(targetField);
 
             foreach (var parameter in invokeMethod.Parameters)
             {
@@ -117,7 +128,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             code.LoadInstance();
-            code.LoadInstanceField(description.RuntimeMethodInfoField);
+            code.LoadInstanceField(methodInfoField);
             code.PopOffset(1);
             code.DynamicCall();
 
@@ -125,36 +136,6 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 code.Return();
             }
-        }
-
-        #endregion
-
-        #region Detecting
-
-        private IDSharpType GetDelegateTypeForMethod(IDSharpMethodInfo method)
-        {
-            List<IDSharpType> parameters = [.. method.GetParameters().Select(p => p.Type)];
-            DSharpBuildInTypeInfo delegateTypeInfo;
-
-            if (method.ReturnType != null)
-            {
-                delegateTypeInfo = DSharpBuildInTypes.Extra.GetFunc(parameters.Count);
-                parameters.Add(method.ReturnType);
-            }
-            else
-            {
-                delegateTypeInfo = DSharpBuildInTypes.Extra.GetAction(parameters.Count);
-            }
-
-            IDSharpType delegateType = Assembly.GetType(delegateTypeInfo);
-
-            if (method.ReturnType == null &&
-                parameters.Count == 0)
-            {
-                return delegateType;
-            }
-
-            return Assembly.FillGeneric(delegateType, parameters);
         }
 
         #endregion

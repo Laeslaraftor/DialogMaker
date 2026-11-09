@@ -29,6 +29,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                     return DSharpMethodExecutionCallback.Throw(null);
                 }
 
+                context.Stack.PushReference(context.UnhandledException);
+
                 return DSharpMethodExecutionCallback.Complete();
             }
 

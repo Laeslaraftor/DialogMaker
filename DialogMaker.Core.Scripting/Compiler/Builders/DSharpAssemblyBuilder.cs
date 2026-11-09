@@ -306,6 +306,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
+        public DSharpTypeToken MethodDelegateTypeToken
+        {
+            get
+            {
+                field ??= GetTypeToken(MethodDelegateType);
+                return field;
+            }
+        }
         public DSharpTypeToken ActionTypeToken
         {
             get
@@ -563,6 +571,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
+        public IDSharpType MethodDelegateType
+        {
+            get
+            {
+                field ??= GetType(DSharpBuildInTypes.Extra.MethodDelegate);
+                return field;
+            }
+        }
         public IDSharpType ActionType
         {
             get
@@ -664,6 +680,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             get
             {
                 field ??= DSharpPointerType.Create(this, true);
+                return field;
+            }
+        }
+        public DSharpDelegateType MethodDelegateTypeInfo
+        {
+            get
+            {
+                field ??= DSharpDelegateType.Create(MethodDelegateType);
                 return field;
             }
         }
@@ -854,7 +878,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             {
                 _typesReplacedMembers.TryGetValue(result, out totalReplacedMembers!);
                 totalReplacedMembers ??= [];
-                
+
                 return result;
             }
 
@@ -931,6 +955,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             newType.Namespace = genericType.Namespace;
             newType.GenericTemplate = genericType.GenericTemplate ?? genericType;
 
+            if (parent != null)
+            {
+                replacedTypes.TryAdd(genericType, newType);
+            }
+
             int i = 0;
             var genericTypes = genericType.GenericTemplate == null ? genericType.GetGenericTypes() : genericType.GetGenericParameters();
 
@@ -938,13 +967,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             {
                 foreach (var parameter in genericTypes)
                 {
-                    if (!replacedTypes.TryGetValue(parameter, out var replacedGenericType))
+                    if (replacedTypes.TryGetValue(parameter, out var replacedGenericType))
+                    {
+                        if (!parameter.CanReplaceGenericType(replacedGenericType))
+                        {
+                            throw new ArgumentException($"Generic type {parameter} can not be replaced by {replacedGenericType}");
+                        }
+                    }
+                    else if (!parameter.TryFillRecursive(this, replacedTypes, null, out replacedGenericType))
                     {
                         throw new InvalidOperationException($"Type for replacing generic type \"{parameter}\" in \"{genericType}\" not provided");
-                    }
-                    if (!parameter.CanReplaceGenericType(replacedGenericType))
-                    {
-                        throw new ArgumentException($"Generic type {parameter} can not be replaced by {replacedGenericType}");
                     }
 
                     newType.GenericParameters.Add(GetTypeToken(replacedGenericType));

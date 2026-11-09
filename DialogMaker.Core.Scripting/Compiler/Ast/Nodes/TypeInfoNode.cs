@@ -374,8 +374,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 return stream.Check(DSharpTokenType.Semicolon, offset) ||
                        stream.Check(DSharpTokenType.Assign, offset) ||
                        stream.Check(DSharpTokenType.LeftParen, offset) ||
-                       stream.Check(DSharpTokenType.LeftBrace, offset) ||
-                       stream.Check(DSharpTokenType.LeftBracket, offset);
+                       stream.Check(DSharpTokenType.LeftBrace, offset);
             }
 
             while (!IsEnd(offset))

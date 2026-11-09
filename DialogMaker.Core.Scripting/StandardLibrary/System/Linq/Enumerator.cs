@@ -34,9 +34,26 @@ public static class Enumerator
 
         return null;
     }
+    public static T? FirstOrDefault<T>(this IEnumerable<T> enumerable, Predicate<T> predicate)
+    {
+        foreach (var item in enumerable)
+        {
+            if (predicate(item))
+            {
+                return item;
+            }
+        }
+
+        return null;
+    }
     public static T First<T>(this IEnumerable<T> enumerable)
     {
-        return enumerable.LastOrDefault()
+        return enumerable.FirstOrDefault()
+            ?? throw new ArgumentException("No items in sequence");
+    }
+    public static T First<T>(this IEnumerable<T> enumerable, Predicate<T> predicate)
+    {
+        return enumerable.FirstOrDefault(predicate)
             ?? throw new ArgumentException("No items in sequence");
     }
     public static T? LastOrDefault<T>(this IEnumerable<T> enumerable)
@@ -78,6 +95,44 @@ public static class Enumerator
         return enumerable.LastOrDefault() ??
             throw new ArgumentException("No items in sequence");
     }
+    public static T ElementAt<T>(this IEnumerable<T> enumerable, int index)
+    {
+        return enumerable.ElementAt(index) ??
+            throw new ArgumentException("No items on index " + index);
+    }
+    public static T? ElementAtOrDefault<T>(this IEnumerable<T> enumerable, int index)
+    {
+        if (0 > index)
+        {
+            throw new ArgumentException("Index should be greater or equals to zero", nameof(index));
+        }
+        if (enumerable is T[] array)
+        {
+            return array[index];
+        }
+        else if (enumerable is IList<T> list)
+        {
+            return list[index];
+        }
+        else if (index == 0)
+        {
+            return enumerable.FirstOrDefault();
+        }
+
+        int currentIndex = 0;
+
+        foreach (var item in enumerable)
+        {
+            if (currentIndex == index)
+            {
+                return item;
+            }
+
+            currentIndex++;
+        }
+
+        return null;
+    }
     public static bool Any(this IEnumerable enumerable)
     {
         foreach (var item in enumerable)
@@ -86,6 +141,37 @@ public static class Enumerator
         }
 
         return false;
+    }
+    public static bool Any<T>(this IEnumerable<T> enumerable, Predicate<T> predicate)
+    {
+        foreach (var item in enumerable)
+        {
+            if (predicate(item))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+    public static bool All<T>(this IEnumerable<T> enumerable, Predicate<T> predicate)
+    {
+        foreach (var item in enumerable)
+        {
+            if (!predicate(item))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    public static IEnumerable<T> Cast<T>(this IEnumerable enumerable)
+    {
+        foreach (var item in enumerable)
+        {
+            yield return (T)item;
+        }
     }
     public static bool Contains<T>(this IEnumerable<T> enumerable, T item)
     {
@@ -120,6 +206,25 @@ public static class Enumerator
         return count;
     }
     public static IEnumerable<T> Union<T>(this IEnumerable<T> enumerable, IEnumerable<T> items)
+    {
+        HashSet<T> values = new();
+
+        foreach (var item in enumerable)
+        {
+            if (values.Add(item))
+            {
+                yield return item;
+            }
+        }
+        foreach (var item in items)
+        {
+            if (values.Add(item))
+            {
+                yield return item;
+            }
+        }
+    }
+    public static IEnumerable<T> Concat<T>(this IEnumerable<T> enumerable, IEnumerable<T> items)
     {
         foreach (var item in enumerable)
         {
@@ -173,6 +278,60 @@ public static class Enumerator
         foreach (var item in enumerable)
         {
             yield return item;
+        }
+    }
+    public static IEnumerable<T[]> Chunk<T>(this IEnumerable<T> enumerable, int size)
+    {
+        if (0 >= size)
+        {
+            throw new ArgumentException("Chunk size should be greater then zero", nameof(size));
+        }
+
+        T[] currentChunk = new T[size];
+        int currentIndex = 0;
+
+        foreach (var item in enumerable)
+        {
+            currentChunk[currentIndex] = item;
+            currentIndex++;
+
+            if (currentIndex >= size)
+            {
+                yield return currentChunk;
+                currentIndex = 0;
+                currentChunk = new T[size];
+            }
+        }
+
+        yield return currentChunk;
+    }
+    public static IEnumerable<T> Skip<T>(this IEnumerable<T> enumerable, int count)
+    {
+        int skipped = 0;
+
+        foreach (var item in enumerable)
+        {
+            if (skipped >= count)
+            {
+                yield return item;
+            }
+
+            skipped++;
+        }
+    }
+    public static IEnumerable<T> Take<T>(this IEnumerable<T> enumerable, int count)
+    {
+        int taked = 0;
+
+        foreach (var item in enumerable)
+        {
+            if (taked >= count)
+            {
+                yield break;
+            }
+
+            yield return item;
+            taked++;
         }
     }
 

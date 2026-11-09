@@ -769,40 +769,37 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 }
             }
 
-            lock (Vm)
+            var vm = Vm;
+            var thread = vm.CreateThread();
+
+            if (type->StaticInitializer != null && !type->IsStaticInitializerCalled)
             {
-                var vm = Vm;
-                var thread = vm.CreateThread();
+                type->IsStaticInitializerCalled = true;
+                thread.Start(null, default, default, type->StaticInitializer);
+                WaitThread(thread);
+            }
+            else
+            {
+                type->IsStaticInitializerCalled = true;
+            }
 
-                if (type->StaticInitializer != null && !type->IsStaticInitializerCalled)
+            DSharpRuntimeMethodInfo* staticConstructor = null;
+
+            for (int i = 0; i < type->Constructors.Length; i++)
+            {
+                var constructor = type->Constructors.GetItemReference(i);
+
+                if (constructor->IsStatic)
                 {
-                    type->IsStaticInitializerCalled = true;
-                    thread.Start(null, default, default, type->StaticInitializer);
-                    WaitThread(thread);
+                    staticConstructor = constructor;
+                    break;
                 }
-                else
-                {
-                    type->IsStaticInitializerCalled = true;
-                }
+            }
 
-                DSharpRuntimeMethodInfo* staticConstructor = null;
-
-                for (int i = 0; i < type->Constructors.Length; i++)
-                {
-                    var constructor = type->Constructors.GetItemReference(i);
-
-                    if (constructor->IsStatic)
-                    {
-                        staticConstructor = constructor;
-                        break;
-                    }
-                }
-
-                if (staticConstructor != null)
-                {
-                    thread.Start(null, default, default, staticConstructor);
-                    WaitThread(thread);
-                }
+            if (staticConstructor != null)
+            {
+                thread.Start(null, default, default, staticConstructor);
+                WaitThread(thread);
             }
         }
         private Pointer<DSharpRuntimeTypeInfo>[] CreateTypes(IDSharpType[] types)

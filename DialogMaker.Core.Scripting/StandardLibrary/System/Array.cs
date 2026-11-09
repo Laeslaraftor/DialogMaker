@@ -11,8 +11,24 @@ public sealed class Array<T> : Array, IEnumerable<T>
     public override int Length => GetLength();
     public T this[int index]
     {
-        get => GetItem(index);
-        set => SetItem(index, value);
+        get
+        {
+            if (0 > index || index >= Length)
+            {
+                throw new IndexOutOfRangeException("Index was outside the bounds of the array.");
+            }
+
+            return GetItem(index);
+        }
+        set
+        {
+            if (0 > index || index >= Length)
+            {
+                throw new IndexOutOfRangeException("Index was outside the bounds of the array.");
+            }
+
+            SetItem(index, value);
+        }
     } 
 
     public IEnumerator<T> GetEnumerator()

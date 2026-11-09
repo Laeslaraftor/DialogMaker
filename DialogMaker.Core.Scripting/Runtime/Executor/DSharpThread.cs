@@ -307,6 +307,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
                     continueExecuting = true;
                     stack.CloseScope(methodScope, offset);
+
+                    if (unhandledException != null)
+                    {
+                        stack.PushReference(unhandledException);
+                    }
                 }
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 void SetException(DSharpObject* exception)

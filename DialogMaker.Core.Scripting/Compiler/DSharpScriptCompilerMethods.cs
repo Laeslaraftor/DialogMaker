@@ -1539,7 +1539,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                         type = type.GetGenericParameters().First();
                     }
 
-                    CompileExpressionValueWithRequestedType(method, type, code, assignExpression.Right!, ref settings, expression, context);
+                    CompileExpressionValueWithRequestedType(method, type, code, assignExpression.Right!, ref settings, null, context);
                 }
                 DSharpBinaryOperator GetBinaryOperator()
                 {
@@ -1560,7 +1560,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     if (assignExpression.Operator == DSharpAssignmentOperator.AssignIfNull)
                     {
-                        var member = CompileValueExpression(method, assignExpression.Left!, ref settings, assignExpression, context);
+                        var member = CompileValueExpression(method, assignExpression.Left!, ref settings, null, context);
 
                         code.Push(null);
                         code.Equals();
@@ -1583,9 +1583,9 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
 
                     var binaryOperator = GetBinaryOperator();
-                    var resultType = CompileBinaryExpression(method, code, binaryOperator, assignExpression.Left!, assignExpression.Right!, ref settings, assignExpression, context);
+                    var resultType = CompileBinaryExpression(method, code, binaryOperator, assignExpression.Left!, assignExpression.Right!, ref settings, null, context);
 
-                    CastTypes(method, resultType, type, code, assignExpression, context);
+                    CastTypes(method, resultType, type, code, null, context);
                     return compileAssign(ref settings);
                 }
                 bool CompileIdentifier(IdentifierExpressionNode identifier, ref DSharpMethodCompileSettings settings)
@@ -3080,14 +3080,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                         AddWarning($"This expression always return \"{!isNegative}\"", expression);
                         code.Push(!isNegative);
                     }
-                    else if (destinationType != Assembly.ObjectType &&
-                             ((expressionTypeIsValue && destinationType.CanCastTo(expressionType) == DSharpCastAvailability.No &&
-                                                        !destinationType.ContainsBaseType(expressionType)) ||
-                             (!expressionTypeIsValue && !destinationType.ContainsBaseType(expressionType))))
-                    {
-                        AddWarning($"This expression always return \"{isNegative}\"", expression);
-                        code.Push(isNegative);
-                    }
                     else
                     {
                         code.As(destinationType);
@@ -3319,6 +3311,11 @@ namespace DialogMaker.Core.Scripting.Compiler
             else if (expression is DelegateExpressionNode delegateExpression)
             {
                 var delegateInfo = CompileDelegate(delegateExpression, ref settings, context, out var closure, out var delegateMethod);
+
+                if (delegateInfo.InstanceConstructor == null)
+                {
+                    throw new DSharpCompilerException($"Delegate \"{delegateInfo.Type}\" not contains instance constructor", expression);
+                }
 
                 code.LoadMethodInformation(delegateMethod);
                 closure.LoadClosureContainer(code);

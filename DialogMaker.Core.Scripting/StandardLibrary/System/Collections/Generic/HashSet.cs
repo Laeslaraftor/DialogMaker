@@ -260,7 +260,7 @@ public class HashSet<T> : IEnumerable<T>
         public static readonly ItemInfo Empty = new()
         {
             HashCode = -1,
-            Next = -1,
+            Next = 0,
             IsEmpty = true
         };
     }

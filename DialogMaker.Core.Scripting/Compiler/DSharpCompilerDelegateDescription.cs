@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler
     /// Description of compiled delegate
     /// </summary>
     /// <param name="type">Delegate type</param>
-    public class DSharpCompilerDelegateDescription(DSharpTypeBuilder type, DSharpMethodBuilder instanceConstructor, DSharpMethodBuilder staticConstructor, DSharpFieldBuilder runtimeMethodInfo, DSharpFieldBuilder targetField)
+    public class DSharpCompilerDelegateDescription(DSharpTypeBuilder type, DSharpMethodBuilder instanceConstructor, DSharpMethodBuilder staticConstructor)
     {
         /// <summary>
         /// Delegate type
@@ -25,13 +25,5 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// Constructor that creates delegate for static method
         /// </summary>
         public DSharpMethodBuilder StaticConstructor { get; } = staticConstructor;
-        /// <summary>
-        /// Field that contains address to runtime method information (nint)
-        /// </summary>
-        public DSharpFieldBuilder RuntimeMethodInfoField { get; } = runtimeMethodInfo;
-        /// <summary>
-        /// Field that contains object instance for invoking instance method (object)
-        /// </summary>
-        public DSharpFieldBuilder TargetField { get; } = targetField;
     }
 }
