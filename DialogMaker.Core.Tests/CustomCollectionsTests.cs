@@ -14,7 +14,7 @@ namespace DialogMaker.Core.Tests
             {
                 if (hashSet.Add(value))
                 {
-                    Console.WriteLine(hashSet);
+                    Console.WriteLine(value);
                 }
             }
         }

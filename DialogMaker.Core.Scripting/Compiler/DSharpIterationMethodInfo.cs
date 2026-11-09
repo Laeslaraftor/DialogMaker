@@ -157,12 +157,28 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             result = null;
 
-            if (ScopedVariableFields.TryGetValue(scope, out var variables))
+            while (result == null && scope != null)
             {
-                result = variables.FirstOrDefault(v => v.Name == name);
+                if (ScopedVariableFields.TryGetValue(scope, out var variables))
+                {
+                    result = variables.FirstOrDefault(v => v.Name == name);
+
+                    if (result != null)
+                    {
+                        return true;
+                    }
+
+                }
+                if (scope is DSharpCompilerMethodScope methodScope && methodScope.IsRoot)
+                {
+                    return false;
+                }
+
+                scope = scope.Parent!;
             }
 
-            return result != null;
+
+            return false;
         }
 
         /// <summary>

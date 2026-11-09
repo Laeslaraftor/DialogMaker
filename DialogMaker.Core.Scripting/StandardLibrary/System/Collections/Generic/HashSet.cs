@@ -7,7 +7,7 @@ public class HashSet<T> : IEnumerable<T>
     }
     public HashSet(int capacity)
     {
-        capacity = Math.Max(capacity, 4);
+        capacity = Math.Max(capacity, 8);
         _buckets = new int[capacity];
         _slots = new ItemInfo[capacity];
 
@@ -132,6 +132,7 @@ public class HashSet<T> : IEnumerable<T>
             slot.HashCode = hashCode;
             slot.Item = item;
             slot.IsEmpty = false;
+            slot.Next = -1;
             _slots[slotIndex] = slot;
 
             if (countAndResize)
@@ -142,18 +143,21 @@ public class HashSet<T> : IEnumerable<T>
             return true;
         }
 
-        while (slotIndex != -1)
+        var currentSlotIndex = slotIndex;
+
+        while (currentSlotIndex != -1)
         {
             if (hashCode == slot.HashCode && Equals(item, slot.Item))
             {
                 return false;
             }
 
-            slotIndex = slot.Next;
+            currentSlotIndex = slot.Next;
 
-            if (slotIndex != -1)
+            if (currentSlotIndex != -1)
             {
-                slot = _slots[slotIndex];
+                slot = _slots[currentSlotIndex];
+                slotIndex = currentSlotIndex;
             }
         }
 
@@ -182,13 +186,15 @@ public class HashSet<T> : IEnumerable<T>
             Count = 0;
         }
 
+        int slotsLength = _slots.Length;
         _firstFreeSlotIndex = 0;
         Array<int>.Fill(_buckets, -1);
 
-        for (int i = 0; i < _slots.Length; i++)
+        for (int i = 0; i < slotsLength; i++)
         {
             var item = ItemInfo.Empty;
-            item.Next = i + 1;
+            var nextIndex = i + 1;
+            item.Next = nextIndex >= slotsLength ? -1 : nextIndex;
             _slots[i] = item;
         }
     }
@@ -246,7 +252,7 @@ public class HashSet<T> : IEnumerable<T>
     }
     private int GetIndex(T item, out int hashCode)
     {
-        hashCode = item == null ? 0 : item.GetHashCode();
+        hashCode = item == null ? 0 : Math.Abs(item.GetHashCode());
         return hashCode % (_buckets.Length - 1);
     }
 

@@ -134,7 +134,9 @@ namespace DialogMaker.Core.Tests.Collections
                 slot.HashCode = hashCode;
                 slot.Item = item;
                 slot.IsEmpty = false;
+                slot.Next = -1;
                 _slots[slotIndex] = slot;
+                _buckets[index] = slotIndex;
 
                 if (countAndResize)
                 {
@@ -144,18 +146,21 @@ namespace DialogMaker.Core.Tests.Collections
                 return true;
             }
 
-            while (slotIndex != -1)
+            var currentSlotIndex = slotIndex;
+
+            while (currentSlotIndex != -1)
             {
                 if (hashCode == slot.HashCode && Equals(item, slot.Item))
                 {
                     return false;
                 }
 
-                slotIndex = slot.Next;
+                currentSlotIndex = slot.Next;
 
-                if (slotIndex != -1)
+                if (currentSlotIndex != -1)
                 {
-                    slot = _slots[slotIndex];
+                    slot = _slots[currentSlotIndex];
+                    slotIndex = currentSlotIndex;
                 }
             }
 
@@ -190,7 +195,8 @@ namespace DialogMaker.Core.Tests.Collections
             for (int i = 0; i < _slots.Length; i++)
             {
                 var item = ItemInfo.Empty;
-                item.Next = i + 1;
+                var nextIndex = i + 1;
+                item.Next = nextIndex >= _slots.Length ? -1 : nextIndex;
                 _slots[i] = item;
             }
         }
@@ -248,7 +254,7 @@ namespace DialogMaker.Core.Tests.Collections
         }
         private int GetIndex(T item, out int hashCode)
         {
-            hashCode = item == null ? 0 : item.GetHashCode();
+            hashCode = Math.Abs(item == null ? 0 : item.GetHashCode());
             return hashCode % (_buckets.Length - 1);
         }
 

@@ -318,7 +318,7 @@ public unsafe class Program
     }
     private static void TestArray()
     {
-        string[] values = new string[] { "value", "value" };
+        string[] values = new string[] { "value", "value2" };
         string[] values2 = new string[] { "clay", "sand" };
         int i = 0;
 
