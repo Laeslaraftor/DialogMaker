@@ -2556,15 +2556,19 @@ namespace DialogMaker.Core.Scripting.Compiler
                     if (type == method.Assembly.StringType && parameters.Length == 1)
                     {
                         var stringTypeInfo = method.Assembly.StringTypeInfo;
-                        var firstParameter = parameters[0];
+                        IDSharpTypeProvider firstParameter = parameters[0];
                         constructorAlreadyCalled = true;
                         IDSharpMethodInfo? methodConstructor = null;
+                        IDSharpType charsArrayConstructorParameter = stringTypeInfo.CharsArrayConstructor.GetParameters()[0].Type;
+                        IDSharpType charsArrayFirstParameter = firstParameter.GetType(context, charsArrayConstructorParameter);
+                        IDSharpType charsSpanConstructorParameter = stringTypeInfo.CharsSpanConstructor.GetParameters()[0].Type;
+                        IDSharpType charsSpanFirstParameter = firstParameter.GetType(context, charsSpanConstructorParameter);
 
-                        if (stringTypeInfo.CharsArrayConstructor.GetParameters()[0].Type == firstParameter)
+                        if (charsArrayConstructorParameter == charsArrayFirstParameter)
                         {
                             methodConstructor = method.Assembly.StringTypeInfo.CharsArrayConstructor;
                         }
-                        else if (stringTypeInfo.CharsSpanConstructor.GetParameters()[0].Type == firstParameter)
+                        else if (charsSpanConstructorParameter == charsSpanFirstParameter)
                         {
                             methodConstructor = method.Assembly.StringTypeInfo.CharsSpanConstructor;
                         }
@@ -3928,7 +3932,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             catch (Exception error)
             {
-                throw new InvalidOperationException($"Unable to cast \"{expressionType}\" to \"{requestedType}\": {expression}", error);
+                throw new DSharpCompilerException($"Unable to cast \"{expressionType}\" to \"{requestedType}\"", expression, error);
             }
 
             return result;

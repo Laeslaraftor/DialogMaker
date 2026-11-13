@@ -3,7 +3,7 @@
     /// <summary>
     /// Type attributes
     /// </summary>
-    public enum DSharpTypeAttributes
+    public enum DSharpTypeAttributes : byte
     {
         /// <summary>
         /// Flag that marks type as class

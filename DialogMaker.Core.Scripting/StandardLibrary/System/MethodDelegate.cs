@@ -3,7 +3,7 @@ using Internal.System.Runtime;
 
 namespace System;
 
-public unsafe class MethodDelegate : Delegate
+public unsafe class MethodDelegate : Delegate, IEquatable<MethodDelegate>
 {
     public MethodDelegate(MethodInfo methodInfo, object? target)
         : this(methodInfo)
@@ -38,6 +38,16 @@ public unsafe class MethodDelegate : Delegate
     protected readonly nint RuntimeMethodInfo;
     protected readonly object? TargetInstance;
     private MethodInfo? _methodInfo;
+
+    public bool Equals(MethodDelegate other)
+    {
+        return RuntimeMethodInfo == other.RuntimeMethodInfo &&
+               TargetInstance == other.TargetInstance;
+    }
+    public override bool Equals(object? obj)
+    {
+        return obj is MethodDelegate other && Equals(other);
+    }
 
     protected override nint GetRuntimeMethodInfo() => RuntimeMethodInfo;
 }

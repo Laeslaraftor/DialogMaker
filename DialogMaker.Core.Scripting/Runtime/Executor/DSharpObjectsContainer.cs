@@ -43,7 +43,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// </summary>
         /// <param name="type">Type of new instance</param>
         /// <returns>New instance of D# object</returns>
-        public DSharpObject* Create(DSharpRuntimeTypeInfo* type) => Create(type, type->Size);
+        public DSharpObject* Create(DSharpRuntimeTypeInfo* type)
+        {
+            return Create(type, type->Size);
+        }
         /// <summary>
         /// Create new instance of array with specified type
         /// </summary>

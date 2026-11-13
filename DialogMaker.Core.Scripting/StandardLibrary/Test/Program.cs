@@ -537,6 +537,7 @@ public unsafe class Program
             Value = 6767
         };
 
+        Console.WriteLine("First pointer type: " + typeof(int*).FullName);
         Console.WriteLine("Start first pointer value: " + (*firstPointer).ToString());
 
         value = 10;
@@ -663,7 +664,7 @@ public unsafe class Program
         };
         Action<string> delegateWithParameter = v => Console.WriteLine(v);
 
-        bool IsValidValue(string iterationValue) => iterationValue == firstIterationMessage;
+        bool IsValidValue(string value) => value == firstIterationMessage;
 
         input += "_Extra";
 

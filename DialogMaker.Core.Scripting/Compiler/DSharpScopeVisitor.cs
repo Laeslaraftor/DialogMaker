@@ -1,6 +1,7 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using static DialogMaker.Core.Scripting.Compiler.DSharpVariablesVisitor;
 
 namespace DialogMaker.Core.Scripting.Compiler
@@ -68,7 +69,21 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             base.StartVisiting(node);
 
-            if (!CanDeclareVariables(node))
+            if (CurrentScope?.Node == node)
+            {
+                return;
+            }
+            if (node is DelegateExpressionNode delegateExpression &&
+                delegateExpression.Body != null)
+            {
+                node = delegateExpression.Body;
+            }
+            else if (node is InvokableNode invokableNode &&
+                     invokableNode.Body != null)
+            {
+                node = invokableNode.Body;
+            }
+            else if (!CanDeclareVariables(node))
             {
                 return;
             }
@@ -107,7 +122,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             base.EndVisiting(node);
 
-            if (CanDeclareVariables(node))
+            if (CurrentScope?.Node == node)
             {
                 CurrentScope = CurrentScope?.PreviousScope;
             }
@@ -127,6 +142,8 @@ namespace DialogMaker.Core.Scripting.Compiler
             return node is BlockStatementNode ||
                    node is ForeachStatementNode ||
                    node is ForStatementNode ||
+                   node is InvokableNode ||
+                   node is DelegateExpressionNode ||
                    node is TryStatementNode.CatchBlock;
         }
 

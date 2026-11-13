@@ -1,6 +1,6 @@
 namespace Internal.System.Runtime;
 
-internal enum ObjectType
+internal enum ObjectType : byte
 {
     Class,
     Struct,

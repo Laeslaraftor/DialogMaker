@@ -3,7 +3,7 @@
     /// <summary>
     /// Type of object
     /// </summary>
-    public enum DSharpObjectType
+    public enum DSharpObjectType : byte
     {
         /// <summary>
         /// <inheritdoc cref="DSharpTypeAttributes.Class"/>
