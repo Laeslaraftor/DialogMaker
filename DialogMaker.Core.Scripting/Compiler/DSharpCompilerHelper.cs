@@ -850,6 +850,99 @@ namespace DialogMaker.Core.Scripting.Compiler
                     });
                 }
             }
+
+            /// <summary>
+            /// Get delegate type with same signature (parameters and return type) to current callable member.
+            /// Generic parameters not supported!
+            /// </summary>
+            /// <param name="assembly">Assembly for creating delegate type</param>
+            /// <returns>Delegate type with same signature to current callable</returns>
+            public IDSharpType GetDelegateType(DSharpAssemblyBuilder assembly)
+            {
+                if (callable.GenericParametersCount > 0)
+                {
+                    throw new ArgumentException("Members with generic parameters not supported", nameof(callable));
+                }
+
+                var returnType = callable.ReturnType;
+
+                if (callable.ParametersCount == 0)
+                {
+                    if (returnType != null)
+                    {
+                        return assembly.FillGeneric(assembly.FuncType, returnType);
+                    }
+
+                    return assembly.ActionType;
+                }
+
+                var parameters = callable.GetParameters();
+
+                IDSharpType result;
+
+                if (returnType == null)
+                {
+                    result = assembly.FillGeneric(assembly.GetActionType(parameters.Length).Type, parameters.Select(p => p.Type));
+                }
+                else
+                {
+                    result = assembly.FillGeneric(assembly.GetFuncType(parameters.Length).Type, parameters.Select(p => p.Type).Append(returnType));
+                }
+
+                return result;
+            }
+            /// <summary>
+            /// Check method on same signature to specified delegate type.
+            /// Specified delegate type should contains Invoke method
+            /// </summary>
+            /// <param name="delegateType">Custom delegate type for comparing signatures</param>
+            /// <param name="strict">Strict generic parameters check</param>
+            /// <returns>Is current method have same signature to specified delegate type</returns>
+            public bool SameSignatureToDelegate(IDSharpType delegateType, bool strict = true)
+            {
+                var info = DSharpCustomDelegateType.Create(delegateType);
+                var invokeMethod = info.InvokeMethod;
+
+                if (invokeMethod.ParametersCount != callable.ParametersCount ||
+                    invokeMethod.ReturnType != callable.ReturnType)
+                {
+                    return false;
+                }
+
+                var invokeParameters = info.InvokeMethod.GetParameters();
+                var callableParameters = callable.GetParameters();
+
+                for (int i = 0; i < callableParameters.Length; i++)
+                {
+                    var invokeParameter = invokeParameters[i];
+                    var parameter = callableParameters[i];
+
+                    if (invokeParameter.Mode != parameter.Mode && 
+                        invokeParameter.Mode != DSharpMethodParameterMode.Default &&
+                        invokeParameter.Mode != DSharpMethodParameterMode.This)
+                    {
+                        return false;
+                    }
+
+                    var invokeParameterType = invokeParameter.Type;
+
+                    if (!strict && invokeParameterType.IsGeneric)
+                    {
+                        if (!invokeParameterType.CanReplaceGenericType(parameter.Type))
+                        {
+                            return false;
+                        }
+
+                        continue;
+                    }
+                    if (invokeParameter.Type != parameter.Type)
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
         }
         extension(DSharpBinaryOperator @operator)
         {
@@ -1657,7 +1750,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     return operandMember;
                 }
-                else if (context.TryResolveMember(expression, out var resolveResult))
+                else if (context.TryResolveMember(expression, directRequiredType, out var resolveResult))
                 {
                     if (resolveResult.MethodCallingInfo != null &&
                         resolveResult.MethodCallingInfo.Callable.ReturnType != null)
@@ -1673,6 +1766,17 @@ namespace DialogMaker.Core.Scripting.Compiler
                         }
 
                         return methodReturnType;
+                    }
+                    if (resolveResult.MemberInfo is IDSharpMethodInfo method && resolveResult.MethodCallingInfo == null)
+                    {
+                        if (directRequiredType != null &&
+                            directRequiredType.ObjectType == DSharpObjectType.Delegate &&
+                            method.SameSignatureToDelegate(directRequiredType, false))
+                        {
+                            return directRequiredType;
+                        }
+
+                        return method.GetDelegateType(assembly);
                     }
                     if (resolveResult.MemberInfo.TryGetReturnType(out var returnType))
                     {

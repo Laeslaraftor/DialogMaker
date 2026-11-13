@@ -90,16 +90,15 @@
             {
                 var parameters = constructor.GetParameters();
 
-                if (parameters.Length == 0 ||
-                    parameters[0].Type.FullName != DSharpBuildInTypes.IntPtr)
+                if (parameters.Length == 0)
                 {
                     continue;
                 }
-                if (parameters.Length == 1)
+                if (parameters.Length == 1 && parameters[0].Type.FullName == DSharpBuildInTypes.IntPtr)
                 {
                     staticConstructor = constructor;
                 }
-                else if (parameters[1].Type == type.Assembly.ObjectType)
+                else if (parameters.Length == 2 && parameters[0].Type == type.Assembly.ObjectType)
                 {
                     instanceConstructor = constructor;
                 }

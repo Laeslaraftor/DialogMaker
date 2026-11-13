@@ -535,6 +535,29 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
 
             return result != null;
         }
+        /// <summary>
+        /// Try to get first method scope. Result can contains current scope
+        /// </summary>
+        /// <param name="result">First method scope that was found</param>
+        /// <returns>Is method scope was found</returns>
+        public bool TryGetFirstMethodScope([NotNullWhen(true)] out DSharpCompilerMethodScope? result)
+        {
+            var scope = this;
+
+            while (scope != null)
+            {
+                if (scope is DSharpCompilerMethodScope methodScope)
+                {
+                    result = methodScope;
+                    return true;
+                }
+
+                scope = scope.Parent;
+            }
+
+            result = null;
+            return false;
+        }
 
         /// <summary>
         /// Try to resolve first property or field

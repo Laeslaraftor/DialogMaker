@@ -38,13 +38,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                 instanceConstructor.Access = DSharpAccessModifier.Public;
                 instanceConstructor.Parameters.Add(new(Assembly)
                 {
-                    Name = "runtimeMethodInfo",
-                    TypeGetter = () => Assembly.NIntToken
+                    Name = "target",
+                    TypeGetter = () => Assembly.ObjectToken
                 });
                 instanceConstructor.Parameters.Add(new(Assembly)
                 {
-                    Name = "target",
-                    TypeGetter = () => Assembly.ObjectToken
+                    Name = "runtimeMethodInfo",
+                    TypeGetter = () => Assembly.NIntToken
                 });
                 var staticConstructor = type.CreateConstructor();
                 staticConstructor.Access = DSharpAccessModifier.Public;

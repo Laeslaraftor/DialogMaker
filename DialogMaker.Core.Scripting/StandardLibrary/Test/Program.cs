@@ -663,6 +663,8 @@ public unsafe class Program
         };
         Action<string> delegateWithParameter = v => Console.WriteLine(v);
 
+        bool IsValidValue(string iterationValue) => iterationValue == firstIterationMessage;
+
         input += "_Extra";
 
         Console.WriteLine(simpleDelegate.GetType().FullName);
@@ -672,7 +674,7 @@ public unsafe class Program
 
         Console.WriteLine();
         Console.WriteLine("Delegate iterator:");
-        foreach (var value in iterationDelegate().Where(v => v == firstIterationMessage).Append("Final iteration"))
+        foreach (var value in iterationDelegate().Where(IsValidValue).Append("Final iteration"))
         {
             Console.WriteLine(value);
         }

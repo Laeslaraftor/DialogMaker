@@ -5,6 +5,7 @@ using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Compiler
@@ -2038,6 +2039,10 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// <exception cref="InvalidOperationException"></exception>
         private IDSharpMemberInfo? CompileValueExpression(DSharpMethodBuilder method, ExpressionNode expression, ref DSharpMethodCompileSettings settings, ExpressionNode? parentExpression = null, DSharpCompilerContext context = default)
         {
+            return CompileValueExpression(method, expression, null, ref settings, parentExpression, context);
+        }
+        private IDSharpMemberInfo? CompileValueExpression(DSharpMethodBuilder method, ExpressionNode expression, IDSharpType? requiredType, ref DSharpMethodCompileSettings settings, ExpressionNode? parentExpression = null, DSharpCompilerContext context = default)
+        {
             var code = method.GetBytecodeBuilder();
 
             if (expression is IdentifierExpressionNode identifierExpression)
@@ -2089,6 +2094,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 IDSharpMemberInfo member;
+                DSharpMemberSearchResult? delegateMemberSearchResult = null;
 
                 try
                 {
@@ -2096,10 +2102,23 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 catch (Exception error)
                 {
-                    throw new InvalidOperationException($"Unable to find any available member: \"{expression}\"", error);
+                    if (requiredType != null && requiredType.ObjectType == DSharpObjectType.Delegate &&
+                        context.TryResolveMember(expression, requiredType, out var memberSearchResult) &&
+                        memberSearchResult.IsMethodAsDelegate && memberSearchResult.MemberInfo is IDSharpMethodInfo methodAsDelegate)
+                    {
+                        member = memberSearchResult.MemberInfo;
+                        delegateMemberSearchResult = memberSearchResult;
+                    }
+                    else
+                    {
+                        throw new DSharpCompilerException("Unable to find any available member", expression, error);
+                    }
                 }
 
-                if (member is IDSharpFieldInfo || member is IDSharpPropertyInfo)
+                bool isDelegateWasReturned = false;
+
+                if (member is IDSharpFieldInfo || member is IDSharpPropertyInfo ||
+                    member is IDSharpMethodInfo)
                 {
                     bool instanceLoaded = false;
 
@@ -2107,6 +2126,12 @@ namespace DialogMaker.Core.Scripting.Compiler
                     {
                         if (TryCompileAccessToCapturedInstanceMember(code, member, context))
                         {
+                            instanceLoaded = true;
+                        }
+                        else if (context.Scope != null && context.Scope.TryGetLocalFunction(identifierExpression.Name, out var localFunctionScope, out var localFunctionMethod) &&
+                                 localFunctionMethod == member && localFunctionScope?.Closure != null)
+                        {
+                            localFunctionScope.Closure.LoadClosureContainer(code);
                             instanceLoaded = true;
                         }
                         else if (parentExpression is not MemberAccessExpressionNode &&
@@ -2130,15 +2155,77 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     if (!settings.DoNotCompileEndPointMember)
                     {
-                        code.LoadPropertyOrField(member, settings.NextNonVirtualizedAccess);
+                        if (member is IDSharpMethodInfo methodAsDelegate)
+                        {
+                            if (requiredType != null)
+                            {
+                                if (!methodAsDelegate.SameSignatureToDelegate(requiredType, false))
+                                {
+                                    throw new DSharpCompilerException($"Unable to convert method \"{methodAsDelegate}\" to delegate \"{requiredType}\"", expression);
+                                }
+                            }
+                            else
+                            {
+                                requiredType = methodAsDelegate.GetDelegateType(Assembly);
+                            }
+                            if (requiredType == Assembly.DelegateType)
+                            {
+                                requiredType = Assembly.MethodDelegateType;
+                            }
+
+                            var delegateInfo = DSharpDelegateType.Create(requiredType);
+
+                            if (delegateInfo.InstanceConstructor == null)
+                            {
+                                throw new DSharpCompilerException($"Delegate \"{requiredType}\" does not contains constructor for instance method", expression);
+                            }
+                            if (delegateInfo.StaticConstructor == null)
+                            {
+                                throw new DSharpCompilerException($"Delegate \"{requiredType}\" does not contains constructor for static method", expression);
+                            }
+
+                            code.LoadMethodInformation(methodAsDelegate);
+
+                            if (member.IsStatic)
+                            {
+                                code.New(delegateInfo.StaticConstructor);
+                            }
+                            else
+                            {
+                                code.New(delegateInfo.InstanceConstructor);
+                            }
+
+                            if (!instanceLoaded)
+                            {
+                                code.PopOffset(1);
+                            }
+
+                            isDelegateWasReturned = true;
+                        }
+                        else
+                        {
+                            code.LoadPropertyOrField(member, settings.NextNonVirtualizedAccess);
+                        }
+
                         settings.NextNonVirtualizedAccess = false;
                         settings.LastOperationIsReturnsValue = true;
 
                         if (instanceLoaded)
                         {
-                            code.PopOffset(1);
+                            if (isDelegateWasReturned)
+                            {
+                                code.PopPreviousTwo();
+                            }
+                            else
+                            {
+                                code.PopOffset(1);
+                            }
                         }
                     }
+                }
+                if (isDelegateWasReturned)
+                {
+                    return null;
                 }
 
                 return member;
@@ -2148,7 +2235,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 return CompileMemberAccessExpression(method, memberAccessExpression, (p, e, ref s, c) =>
                 {
                     c.ParentExpression = p;
-                    var result = CompileValueExpression(method, e, ref s, p, c);
+                    var result = CompileValueExpression(method, e, requiredType, ref s, p, c);
 
                     if (result != null && result is not IDSharpType && !result.IsStatic &&
                         p is not BaseExpressionNode &&
@@ -2849,7 +2936,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new ArgumentException($"Incomplete expression: {expression}", nameof(expression));
                 }
 
-                return CompileValueExpression(method, parenContainedExpression.Expression, ref settings, null, context);
+                return CompileValueExpression(method, parenContainedExpression.Expression, requiredType, ref settings, null, context);
             }
             else if (expression is ConditionalExpressionNode conditionalExpression)
             {
@@ -3317,8 +3404,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new DSharpCompilerException($"Delegate \"{delegateInfo.Type}\" not contains instance constructor", expression);
                 }
 
-                code.LoadMethodInformation(delegateMethod);
                 closure.LoadClosureContainer(code);
+                code.LoadMethodInformation(delegateMethod);
                 code.New(delegateInfo.InstanceConstructor);
                 code.PopPreviousTwo();
 
@@ -3832,7 +3919,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             else
             {
-                result = CompileValueExpression(method, expression, ref settings, parentExpression, context);
+                result = CompileValueExpression(method, expression, requestedType, ref settings, parentExpression, context);
             }
 
             try

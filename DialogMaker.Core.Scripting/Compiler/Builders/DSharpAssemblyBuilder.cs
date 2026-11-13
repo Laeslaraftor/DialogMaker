@@ -306,6 +306,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
+        public DSharpTypeToken DelegateTypeToken
+        {
+            get
+            {
+                field ??= GetTypeToken(DelegateType);
+                return field;
+            }
+        }
         public DSharpTypeToken MethodDelegateTypeToken
         {
             get
@@ -568,6 +576,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             get
             {
                 field ??= GetType(DSharpBuildInTypes.Extra.TypedIEnumerable);
+                return field;
+            }
+        }
+        public IDSharpType DelegateType
+        {
+            get
+            {
+                field ??= GetType(DSharpBuildInTypes.Extra.Delegate);
                 return field;
             }
         }
@@ -1448,18 +1464,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         }
         public DSharpCustomDelegateType GetFuncType(int parametersCount)
         {
+            if (0 >= parametersCount)
+            {
+                return FuncTypeInfo;
+            }
+
             if (!_funcTypes.TryGetValue(parametersCount, out var type))
             {
-                if (0 >= parametersCount)
-                {
-                    return FuncTypeInfo;
-                }
-                else
-                {
-                    type = DSharpCustomDelegateType.Create(GetType(DSharpBuildInTypes.Extra.GetFunc(parametersCount)));
-
-                }
-
+                type = DSharpCustomDelegateType.Create(GetType(DSharpBuildInTypes.Extra.GetFunc(parametersCount)));
                 _funcTypes.Add(parametersCount, type);
             }
 

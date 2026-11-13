@@ -1,9 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Runtime;
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace DialogMaker.Core.Scripting.Compiler
 {
     internal class DelegateExpressionTypeProvider(DelegateExpressionNode delegateExpression) : IDSharpTypeProvider

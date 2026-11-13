@@ -32,6 +32,10 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// </summary>
         public bool IsEmpty => MemberInfo == null && ParameterInfo == null && MethodCallingInfo == null;
         /// <summary>
+        /// Is method was found and it not called
+        /// </summary>
+        public bool IsMethodAsDelegate => MemberInfo is IDSharpMethodInfo && MethodCallingInfo == null;
+        /// <summary>
         /// Is member should be nullable
         /// </summary>
         public bool IsNullable { get; } = isNullable;

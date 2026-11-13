@@ -3,8 +3,10 @@ using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using System.Xml.Linq;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -273,7 +275,30 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         #endregion
 
-        #region Поиск типов
+        #region Controls
+
+        /// <summary>
+        /// Get context with first parent method scope
+        /// </summary>
+        /// <returns>Context with method scope</returns>
+        public readonly DSharpCompilerContext ToFirstMethodScope()
+        {
+            if (Scope == null ||
+                !Scope.TryGetFirstMethodScope(out var methodScope))
+            {
+                return this;
+            }
+
+            var methodsContext = this;
+            methodsContext.Scope = methodScope;
+            methodsContext.CurrentMember = methodScope.Method;
+
+            return methodsContext;
+        }
+
+        #endregion
+
+        #region Type searching
 
         public readonly bool TryResolveVariable(string name, [NotNullWhen(true)] out IDSharpParameterInfo? result)
         {
@@ -376,10 +401,21 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// <summary>
         /// Try to resolve type by information
         /// </summary>
-        /// <param name="typeInfo">Information about type</param>
+        /// <param name="expression">Expression that represents accessing to member</param>
         /// <param name="result">Resolved type</param>
         /// <returns>Resolve status</returns>
         public readonly bool TryResolveMember(ExpressionNode expression, [NotNullWhen(true)] out DSharpMemberSearchResult result)
+        {
+            return TryResolveMember(expression, null, out result);
+        }
+        /// <summary>
+        /// Try to resolve type by information
+        /// </summary>
+        /// <param name="expression">Expression that represents accessing to member</param>
+        /// <param name="directRequiredType">Required type that should be returned by accessed member</param>
+        /// <param name="result">Resolved type</param>
+        /// <returns>Resolve status</returns>
+        public readonly bool TryResolveMember(ExpressionNode expression, IDSharpType? directRequiredType, [NotNullWhen(true)] out DSharpMemberSearchResult result)
         {
             result = default;
 
@@ -387,7 +423,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 expression = parentContained.GetContent();
 
-                if (TryResolveMember(expression, out result))
+                if (TryResolveMember(expression, directRequiredType, out result))
                 {
                     return true;
                 }
@@ -419,12 +455,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 if (Scope != null)
                 {
+                    bool isMethodIdentifier = expression.Parent is CallExpressionNode parentCalling && parentCalling.Callee == expression;
+
                     if (Scope.TryGetVariable(name, out var variable))
                     {
                         result = new(variable);
                         return true;
                     }
-                    else if (Scope.TryResolveMember(name, out var resultMember))
+                    else if (Scope.TryResolveMember(name, out var resultMember) && 
+                             ((resultMember is not IDSharpMethodInfo && isMethodIdentifier) || !isMethodIdentifier))
                     {
                         if (identifier.GenericParameters.Count > 0)
                         {
@@ -448,6 +487,51 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                         return true;
                     }
+                    if (isMethodIdentifier)
+                    {
+                        return false;
+                    }
+                    if (Scope.TryGetFirstMethodScope(out var methodScope))
+                    {
+                        IEnumerable<IDSharpMemberInfo>? methods = null;
+
+                        try
+                        {
+                            methods = GetCallableMembers<IDSharpMethodInfo>(name, DSharpMethodType.Default);
+                        }
+                        catch (Exception error)
+                        {
+                            Debug.WriteLine(error);
+                        }
+
+                        if (methods != null && methods.Any())
+                        {
+                            IDSharpMemberInfo? firstMethod = null;
+
+                            foreach (var method in methods)
+                            {
+                                if (firstMethod != null)
+                                {
+                                    throw new DSharpCompilerException($"Unable to choice most suitable overloading for \"{name}\"", expression);
+                                }
+                                if (directRequiredType != null &&
+                                    (method is not IDSharpMethodInfo methodMember ||
+                                    !methodMember.SameSignatureToDelegate(directRequiredType, false)))
+                                {
+                                    continue;
+                                }
+
+                                firstMethod = method;
+                                break;
+                            }
+
+                            if (firstMethod != null)
+                            {
+                                result = new(firstMethod);
+                                return true;
+                            }
+                        }
+                    }
                     //else if (TryResolveType(identifier, out var typeToken))
                     //{
                     //    var type = Scope.Assembly.GetType(typeToken);
@@ -455,6 +539,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     //    return true;
                     //}
                 }
+
                 if (result.IsEmpty && Assembly != null)
                 {
                     IDSharpMemberInfo? globalMember = Assembly.GlobalVariables.FirstOrDefault(v => v.Name == name);
@@ -537,7 +622,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new ArgumentException($"Invalid expression: {awaitExpression}", nameof(expression));
                 }
 
-                return TryResolveMember(awaitExpression.Expression, out result);
+                return TryResolveMember(awaitExpression.Expression, directRequiredType, out result);
             }
             else if (expression is TypeOfExpressionNode)
             {
@@ -602,7 +687,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     throw new ArgumentException($"Incomplete expression: {expression}", nameof(expression));
                 }
-                if (!TryResolveMember(memberAccess.Target, out var memberSearchResult))
+                if (!TryResolveMember(memberAccess.Target, directRequiredType, out var memberSearchResult))
                 {
                     throw new InvalidOperationException($"Unable to resolve member for expression: {memberAccess.Target}");
                 }
@@ -646,7 +731,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 DSharpCompilerContext context = new(this, member);
 
-                if (!context.TryResolveMember(memberAccess.Member, out result))
+                if (!context.TryResolveMember(memberAccess.Member, directRequiredType, out result))
                 {
                     return false;
                 }
@@ -945,12 +1030,51 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             return result;
         }
+        public readonly IEnumerable<IDSharpMemberInfo> GetCallableMembers<T>(string name, DSharpMethodType type)
+            where T : IDSharpCallableMember
+        {
+            IDSharpType? currentType = CurrentMember as IDSharpType ?? CurrentMember?.DeclaringType;
+            IEnumerable<IDSharpMemberInfo> members;
+
+            if (CurrentMember is IDSharpMethodInfo methodMember &&
+                Scope != null && Scope.TryGetLocalFunction(name, out _, out var localFunction))
+            {
+                members = localFunction.Enumerate().Where(f => f.MatchType(type));
+            }
+            else if (currentType == null)
+            {
+                if (Assembly == null)
+                {
+                    throw new InvalidOperationException($"Unable to find method when current member and assembly not provided");
+                }
+
+                members = Assembly.GetGlobalFunctions().Where(m => m is T && m.Name == name && m.MatchType(type));
+            }
+            else
+            {
+                members = currentType.GetAllMembers(m => m.Name == name &&
+                                                         m is T callable &&
+                                                         callable.MatchType(type));
+
+                if (Scope != null)
+                {
+                    var extensionMethods = Scope.ResolveAllTypes().Where(t => t.IsStatic)
+                                                                  .SelectMany(t => t.GetMethods().Where(m => m is T &&
+                                                                                                             m.Name == name &&
+                                                                                                             m.MatchType(type) &&
+                                                                                                             m.IsExtension));
+                    members = members.Union(extensionMethods);
+                }
+            }
+
+            return members;
+        }
         public readonly DSharpMethodCallingInfo? FindConstructor(IEnumerable<ExpressionNode> parameters)
         {
             var arguments = GetArgumentTypes(parameters);
             return FindConstructor(arguments);
         }
-        public readonly DSharpMethodCallingInfo? FindConstructor(params IDSharpTypeProvider?[]? parameters)
+        public readonly DSharpMethodCallingInfo? FindConstructor(params IDSharpTypeProvider[]? parameters)
         {
             if (CurrentMember == null)
             {
@@ -1031,7 +1155,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 throw new ArgumentException($"Invalid method or function identifier: {callee}", nameof(callExpression));
             }
 
-            IDSharpTypeProvider?[] parameters;
+            IDSharpTypeProvider[] parameters;
             IDSharpType[]? genericParameters = null;
 
             if (argumentsMember == null)
@@ -1078,7 +1202,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 throw new InvalidOperationException($"Unable to get array type: {arrayAccessExpression.Array}");
             }
 
-            IDSharpTypeProvider?[] parameters;
+            IDSharpTypeProvider[] parameters;
             DSharpCompilerContext arrayContext = new(this, arrayType);
 
             if (argumentsMember == null)
@@ -1100,54 +1224,21 @@ namespace DialogMaker.Core.Scripting.Compiler
                 throw new InvalidOperationException($"Unable to find indexer for expression: {arrayAccessExpression}", error);
             }
         }
-        public readonly DSharpMethodCallingInfo FindIndexer(params IDSharpTypeProvider?[] parameters)
+        public readonly DSharpMethodCallingInfo FindIndexer(params IDSharpTypeProvider[] parameters)
         {
             return FindCallable<IDSharpIndexerInfo>(DSharpTypeBuilder.IndexerName, DSharpMethodType.Default, parameters);
         }
-        public readonly DSharpMethodCallingInfo FindMethod(string name, IDSharpTypeProvider?[] parameters, IDSharpType[]? genericParameters = null, List<int>? outParametersIndex = null)
+        public readonly DSharpMethodCallingInfo FindMethod(string name, IDSharpTypeProvider[] parameters, IDSharpType[]? genericParameters = null, List<int>? outParametersIndex = null)
         {
             return FindCallable<IDSharpMethodInfo>(name, DSharpMethodType.Default, parameters, genericParameters, outParametersIndex);
         }
-        public readonly DSharpMethodCallingInfo FindCallable<T>(string name, DSharpMethodType type, IDSharpTypeProvider?[] parameters, IDSharpType[]? genericParameters = null, List<int>? outParametersIndex = null)
+        public readonly DSharpMethodCallingInfo FindCallable<T>(string name, DSharpMethodType type, IDSharpTypeProvider[] parameters, IDSharpType[]? genericParameters = null, List<int>? outParametersIndex = null)
             where T : IDSharpCallableMember
         {
-            IDSharpType? currentType = CurrentMember as IDSharpType ?? CurrentMember?.DeclaringType;
-            IEnumerable<IDSharpMemberInfo> members;
-
-            if (CurrentMember is IDSharpMethodInfo methodMember &&
-                Scope != null && Scope.TryGetLocalFunction(name, out _, out var localFunction))
-            {
-                members = localFunction.Enumerate().Where(f => f.MatchType(type));
-            }
-            else if (currentType == null)
-            {
-                if (Assembly == null)
-                {
-                    throw new InvalidOperationException($"Unable to find method when current member and assembly not provided");
-                }
-
-                members = Assembly.GetGlobalFunctions().Where(m => m is T && m.Name == name && m.MatchType(type));
-            }
-            else
-            {
-                members = currentType.GetAllMembers(m => m.Name == name &&
-                                                         m is T callable &&
-                                                         callable.MatchType(type));
-
-                if (Scope != null)
-                {
-                    var extensionMethods = Scope.ResolveAllTypes().Where(t => t.IsStatic)
-                                                                  .SelectMany(t => t.GetMethods().Where(m => m is T &&
-                                                                                                             m.Name == name &&
-                                                                                                             m.MatchType(type) &&
-                                                                                                             m.IsExtension));
-                    members = members.Union(extensionMethods);
-                }
-            }
-
+            var members = GetCallableMembers<T>(name, type);
             return FindCallable(name, members, parameters, genericParameters, outParametersIndex);
         }
-        public readonly DSharpMethodCallingInfo FindCallable(string name, IEnumerable<IDSharpMemberInfo> callables, IDSharpTypeProvider?[] parameters, IDSharpType[]? genericParameters = null, List<int>? outParametersIndex = null)
+        public readonly DSharpMethodCallingInfo FindCallable(string name, IEnumerable<IDSharpMemberInfo> callables, IDSharpTypeProvider[] parameters, IDSharpType[]? genericParameters = null, List<int>? outParametersIndex = null)
         {
             IDSharpType? currentType = CurrentMember as IDSharpType ?? CurrentMember?.DeclaringType;
             Dictionary<DSharpMethodCallingInfo, IDSharpType?[]> callingInfosParameters = [];
@@ -1253,7 +1344,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 throw new DSharpException(message, innerException);
             }
         }
-        public readonly DSharpMethodCallingInfo? CreateCallingInfo(IDSharpCallableMember callable, IDSharpType? currentType, IDSharpTypeProvider?[] parameters, IDSharpType[]? genericParameters, out IDSharpType[] filledCallingParameters)
+        public readonly DSharpMethodCallingInfo? CreateCallingInfo(IDSharpCallableMember callable, IDSharpType? currentType, IDSharpTypeProvider[] parameters, IDSharpType[]? genericParameters, out IDSharpType[] filledCallingParameters)
         {
             filledCallingParameters = [];
 
@@ -1262,14 +1353,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                 return null;
             }
 
-            IDSharpTypeProvider?[]? callingExtensionParameters = null;
+            IDSharpTypeProvider[]? callingExtensionParameters = null;
             var callableParameters = callable.GetParameters();
             var callableGenericParameters = callable.GetGenericParameters();
             var callingParameters = parameters;
             bool isExtensionCalling = callable.IsExtension && currentType != null;
             bool hasParams = callable.HasParams;
+            var parametersContext = ToFirstMethodScope();
 
-            if (isExtensionCalling && currentType != callable.DeclaringType)
+            if (isExtensionCalling && currentType != callable.DeclaringType && currentType != null)
             {
                 callingExtensionParameters ??= [.. parameters.Prepend(currentType)];
                 callingParameters = callingExtensionParameters;
@@ -1287,7 +1379,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 var callingParameter = callingParameters[i];
                 var parameter = callableParameters[Math.Min(callableParameters.Length - 1, i)];
                 callingParameter ??= parameter.Type;
-                filledCallingParameters[i] = callingParameter.GetType(this, parameter.Type);
+                filledCallingParameters[i] = callingParameter.GetType(parametersContext, parameter.Type);
             }
 
             return DSharpMethodCallingInfo.Create(Assembly, callable, filledCallingParameters, genericParameters);
@@ -1316,14 +1408,14 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             return parameters;
         }
-        public readonly IDSharpTypeProvider?[] GetArgumentTypes(IEnumerable<ExpressionNode> arguments)
+        public readonly IDSharpTypeProvider[] GetArgumentTypes(IEnumerable<ExpressionNode> arguments)
         {
             if (Assembly == null)
             {
                 throw new InvalidOperationException("Unable to resolve argument types when assembly not specified");
             }
 
-            IDSharpTypeProvider?[] parameters = new IDSharpTypeProvider[arguments.Count()];
+            IDSharpTypeProvider[] parameters = new IDSharpTypeProvider[arguments.Count()];
             int i = 0;
 
             foreach (var arg in arguments)
@@ -1332,7 +1424,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 if (argumentExpression.IsNullExpression())
                 {
-                    parameters[i] = null;
+                    parameters[i] = SameTypeProvider.Instance;
                     i++;
                     continue;
                 }
@@ -1354,11 +1446,11 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                         if (typeInfo.Name == DSharpAssemblyBuilder.VarName)
                         {
-                            parameters[i] = null;
+                            parameters[i] = SameTypeProvider.Instance;
                         }
                         else
                         {
-                            parameters[i] = (IDSharpType)Assembly.GetType(ResolveType(typeInfo));
+                            parameters[i] = new ResolverTypeProvider(Assembly, typeInfo);
                         }
 
                         i++;
@@ -1367,12 +1459,8 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     argumentExpression = outExpression.Identifier;
                 }
-                if (argumentExpression.GetExpressionType(Assembly, this) is not IDSharpType argumentType)
-                {
-                    throw new DSharpCompilerException($"Unable to get argument type", argumentExpression);
-                }
 
-                parameters[i] = argumentType;
+                parameters[i] = new ExpressionTypeProvider(Assembly, argumentExpression);
                 i++;
             }
 
