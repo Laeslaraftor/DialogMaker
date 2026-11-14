@@ -792,9 +792,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <inheritdoc cref="DSharpBytecodeOperation.LoadTypeSize"/>
         /// </summary>
         /// <returns></returns>
-        public TypeInstruction LoadTypeSize(IDSharpType type)
+        public TypeInstruction LoadTypeSize(IDSharpType type, DSharpLoadTypeSizeMode mode = DSharpLoadTypeSizeMode.TotalSize)
         {
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.LoadTypeSize, type);
+            return CreateInstruction<TypeSizeInstruction>(this, DSharpBytecodeOperation.LoadTypeSize, type, mode);
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.LoadCurrentInstructionIndex"/>

@@ -34,6 +34,15 @@ public unsafe struct NativeArray<T> where T : struct
     private readonly T* _items;
     private readonly int _length;
 
-    public Span<T> ToSpan() => new Span<T>((nint)_items, _length);
+    public Span<T> ToSpan() => new(_items, _length);
+    public NativeArray<T> Slice(int startIndex, int length)
+    {
+        if (0 > startIndex || startIndex + length >= _length)
+        {
+            throw new ArgumentOutOfRangeException();
+        }
+
+        return new(_items + startIndex, _length);
+    }
     public T[] ToArray() => ToSpan().ToArray();
 }

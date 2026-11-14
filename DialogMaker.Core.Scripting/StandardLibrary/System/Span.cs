@@ -1,12 +1,12 @@
 namespace System;
 
-public struct Span<T>
+public unsafe struct Span<T>
 {
     public Span(T[] items)
     {
         _items = items;
     }
-    public Span(nint items, int length)
+    public Span(T* items, int length)
     {
         _itemsPointer = items;
         _length = length;
@@ -37,7 +37,7 @@ public struct Span<T>
                 throw new IndexOutOfRangeException();
             }
 
-            return GetValue(_itemsPointer, index);
+            return _itemsPointer[index];
         }
         set
         {
@@ -52,27 +52,27 @@ public struct Span<T>
                     throw new IndexOutOfRangeException();
                 }
 
-                SetValue(_itemsPointer, index, value);   
+                _itemsPointer[index] = value;
             }
         }
     }
 
     private readonly T[] _items;
-    private readonly nint _itemsPointer;
+    private readonly T* _itemsPointer;
     private readonly int _length;
 
     public T[] ToArray()
     {
         if (_items != null)
         {
-            return _items;
+            return Array<T>.Copy(_items);
         }
 
         T[] result = new T[_length];
 
         for (int i = 0; i < _length; i++)
         {
-            result[i] = GetValue(_itemsPointer, i);
+            result[i] = _itemsPointer[i];
         }
 
         return result;
@@ -82,8 +82,5 @@ public struct Span<T>
         return new(_itemsPointer + sizeof(T) * startIndex, length);
     }
 
-    private extern T GetValue(nint items, int index);
-    private extern void SetValue(nint items, int index, T value);
-
-    public static implicit operator Span<T>(T[] items) => new Span<T>(items);
+    public static implicit operator Span<T>(T[] items) => new(items);
 }

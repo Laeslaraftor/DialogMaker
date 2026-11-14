@@ -260,6 +260,27 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
             set => base.IsVirtual = value;
         }
+        public override bool IsUnsafe 
+        { 
+            get
+            {
+                if (MethodType == DSharpMethodType.Finalizer)
+                {
+                    return DeclaringType?.IsUnsafe == true;
+                }
+                if (LinkedType != null)
+                {
+                    return LinkedType.IsUnsafe;
+                }
+                if (LinkedProperty != null)
+                {
+                    return LinkedProperty.IsUnsafe;
+                }
+
+                return base.IsUnsafe;
+            } 
+            set => base.IsUnsafe = value; 
+        }
         public override DSharpAccessModifier Access
         {
             get

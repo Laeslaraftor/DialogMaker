@@ -1134,9 +1134,10 @@ namespace DialogMaker.Core.Scripting.Compiler
             /// </summary>
             /// <param name="assembly">Assembly builder for finding types</param>
             /// <param name="returnTypes">Buffer for writing types that returns</param>
+            /// <param name="requiredReturnType">Type of value that should be returned</param>
             /// <param name="context">Compiler context</param>
             /// <returns>Is all paths returns some value</returns>
-            public bool AllPathReturns(DSharpAssemblyBuilder assembly, Dictionary<ExpressionNode, IDSharpType> returnTypes, DSharpCompilerContext context)
+            public bool AllPathReturns(DSharpAssemblyBuilder assembly, Dictionary<ExpressionNode, IDSharpType> returnTypes, IDSharpType requiredReturnType, DSharpCompilerContext context)
             {
                 bool allPathReturn = DSharpAstPathAnalyzer.AllPathReturns(statement, out var selectedStatements);
 
@@ -1154,7 +1155,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     try
                     {
-                        expressionType = expression.GetExpressionType(assembly, context);
+                        expressionType = expression.GetExpressionType(assembly, context, requiredReturnType);
                     }
 #if DEBUG
                     catch
@@ -1750,6 +1751,54 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     return operandMember;
                 }
+                else if (expression is NewExpressionNode newExpression)
+                {
+                    IDSharpType? type = null;
+
+                    if (newExpression.Type != null)
+                    {
+                        if (context.Assembly != null && context.TryResolveType(newExpression.Type, out var resolvedTypeToken))
+                        {
+                            type = context.Assembly.GetType(resolvedTypeToken) as IDSharpType;
+                        }
+                        else
+                        {
+                            if (context.Assembly != null)
+                            {
+                                type = context.Assembly.GetType(context.ResolveType(newExpression.Type)) as IDSharpType;
+                            }
+                            else
+                            {
+                                type = assembly.GetType(newExpression.Type);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (directRequiredType != null)
+                        {
+                            return directRequiredType;
+                        }
+
+                        throw new DSharpCompilerException("Type was required", expression);
+                    }
+                    if (type == null)
+                    {
+                        return null;
+                    }
+
+                    if (expression is NewArrayExpressionNode newArrayExpression)
+                    {
+                        if (newArrayExpression.IsStackAlloc)
+                        {
+                            return assembly.CreateSpan(type);
+                        }
+
+                        return assembly.CreateArray(type);
+                    }
+
+                    return type;
+                }
                 else if (context.TryResolveMember(expression, directRequiredType, out var resolveResult))
                 {
                     if (resolveResult.MethodCallingInfo != null &&
@@ -1848,62 +1897,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
 
                     return incrementExpression.Expression.GetExpressionType(assembly, context);
-                }
-                else if (expression is NewExpressionNode newExpression)
-                {
-                    IDSharpType? type = null;
-
-                    if (newExpression.Type == null)
-                    {
-                        if (!context.TryResolveTypeOfExpression(expression, out type))
-                        {
-                            throw new InvalidOperationException($"Unable to resolve type for: {expression}");
-                        }
-                    }
-                    if (type == null && newExpression.Type != null)
-                    {
-                        if (context.Assembly != null && context.TryResolveType(newExpression.Type, out var resolvedTypeToken))
-                        {
-                            type = context.Assembly.GetType(resolvedTypeToken) as IDSharpType;
-                        }
-                        else
-                        {
-                            if (context.Assembly != null)
-                            {
-                                type = context.Assembly.GetType(context.ResolveType(newExpression.Type)) as IDSharpType;
-                            }
-                            else
-                            {
-                                type = assembly.GetType(newExpression.Type);
-                            }
-                        }
-
-                    }
-                    if (newExpression.Type == null)
-                    {
-                        if (directRequiredType != null)
-                        {
-                            return directRequiredType;
-                        }
-
-                        throw new DSharpCompilerException($"Unknown type: {newExpression.Type}", expression);
-                    }
-                    if (type == null)
-                    {
-                        return null;
-                    }
-
-                    if (expression is NewArrayExpressionNode newArrayExpression)
-                    {
-                        if (newArrayExpression.IsStackAlloc)
-                        {
-                            return assembly.CreateSpan(type);
-                        }
-
-                        return assembly.CreateArray(type);
-                    }
-
-                    return type;
                 }
                 else if (expression is ArrayAccessExpressionNode arrayExpression)
                 {

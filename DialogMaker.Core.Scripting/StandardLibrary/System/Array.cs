@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Internal.System.Runtime;
 
 namespace System;
 
@@ -9,7 +10,7 @@ public abstract class Array
 public sealed class Array<T> : Array, IEnumerable<T>
 {
     public override int Length => GetLength();
-    public T this[int index]
+    public unsafe T this[int index]
     {
         get
         {
@@ -18,7 +19,7 @@ public sealed class Array<T> : Array, IEnumerable<T>
                 throw new IndexOutOfRangeException("Index was outside the bounds of the array.");
             }
 
-            return GetItem(index);
+            return CompilerServices.GetObjectContentAddress<Array<T>, T>(this)[index];
         }
         set
         {
@@ -27,7 +28,7 @@ public sealed class Array<T> : Array, IEnumerable<T>
                 throw new IndexOutOfRangeException("Index was outside the bounds of the array.");
             }
 
-            SetItem(index, value);
+            CompilerServices.GetObjectContentAddress<Array<T>, T>(this)[index] = value;
         }
     } 
 
@@ -37,8 +38,6 @@ public sealed class Array<T> : Array, IEnumerable<T>
     }
 
     private extern int GetLength();
-    private extern T GetItem(int index);
-    private extern void SetItem(int index, T item);
 
     public static readonly T[] Empty = new T[0];
 

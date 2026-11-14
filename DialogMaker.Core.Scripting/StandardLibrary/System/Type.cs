@@ -86,7 +86,7 @@ public unsafe class Type : IEquatable<Type>
 
         for (int i = 0; i < _typeInfo.Intefaces.Length; i++)
         {
-            result = new Type(_typeInfo.Intefaces[i][0]);
+            result[i] = new(_typeInfo.Intefaces[i][0]);
         }
 
         return result;

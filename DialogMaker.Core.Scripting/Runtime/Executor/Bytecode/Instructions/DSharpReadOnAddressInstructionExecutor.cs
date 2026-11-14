@@ -26,11 +26,26 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             {
                 return context.ThrowExecutionException($"Unable to read value on address: invalid address value, required \"{context.TypesProvider.IntPtr->ToString()}\", but got \"{instance->Type->ToString()}\"");
             }
+            if (runtimeInfo->IsValueType)
+            {
+                var data = *(nint*)DSharpObject.GetData(instance);
+                UnmanagedArray<byte> buffer = new(data, runtimeInfo->Size);
 
-            var data = *(nint*)DSharpObject.GetData(instance);
-            UnmanagedArray<byte> buffer = new(data, runtimeInfo->Size);
+                context.Stack.PushStructure(runtimeInfo, buffer);
+            }
+            else
+            {
+                var obj = **(DSharpObject***)DSharpObject.GetData(instance); // обсидиановая фигня
 
-            context.Stack.PushStructure(runtimeInfo, buffer);
+                if (obj == null)
+                {
+                    context.Stack.PushNull();
+                }
+                else
+                {
+                    context.Stack.PushReference(obj, true);
+                }
+            }
 
             return DSharpMethodExecutionCallback.Complete();
         }

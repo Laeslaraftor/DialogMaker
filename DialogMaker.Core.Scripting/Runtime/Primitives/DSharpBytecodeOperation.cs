@@ -181,7 +181,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <summary>
         /// Load specified type size to stack
         /// </summary>
-        [ArgsCount(1)]
+        [ArgsCount(2)]
         [RequestsStackValues(0)]
         [Executor(typeof(DSharpLoadTypeSizeInstructionExecutor))]
         LoadTypeSize,

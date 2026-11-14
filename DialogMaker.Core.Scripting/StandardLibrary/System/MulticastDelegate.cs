@@ -17,9 +17,12 @@ public sealed class MulticastDelegate : Delegate
 
     public override MethodInfo MethodInfo => _delegates[_delegates.Count - 1].MethodInfo;
     public override object? Target => _delegates[_delegates.Count - 1].Target;
+    public int CombinedDelegates => _delegates.Count;
 
     private readonly List<Delegate> _delegates;
 
+    public void Add(Delegate d) => _delegates.Add(d);
+    public bool Remove(Delegate d) => _delegates.Remove(d);
     public override Delegate[] GetInvocationList()
     {
         return _delegates.ToArray();

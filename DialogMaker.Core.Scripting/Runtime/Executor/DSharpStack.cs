@@ -366,6 +366,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         public FrameInfo PushStructure(DSharpRuntimeTypeInfo* type, bool asArray = false) => *CreateStructure(type, new(0, 0), asArray);
         public FrameInfo PushStructure(DSharpRuntimeTypeInfo* type, UnmanagedArray<byte> dataBuffer) => *CreateStructure(type, dataBuffer, false);
         public FrameInfo PushStructure(DSharpRuntimeTypeInfo* type, UnmanagedArray<byte> dataBuffer, bool asArray) => *CreateStructure(type, dataBuffer, asArray);
+        public FrameInfo PushStructure<T>(DSharpRuntimeTypeInfo* type, T value)
+            where T : unmanaged
+        {
+            T* valuePointer = &value;
+            return PushStructure(type, new UnmanagedArray<byte>((byte*)valuePointer, sizeof(T)));
+        }
         public FrameInfo PushStructure(DSharpObject* structure, bool unbox)
         {
             if (structure->IsReferenceObject && !unbox)

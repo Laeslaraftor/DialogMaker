@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
@@ -82,6 +83,22 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             }
 
             return $"{targetName}.{memberName}";
+        }
+        /// <summary>
+        /// Try to get final member that accessed by current expression
+        /// </summary>
+        /// <param name="result">Accessed member expression</param>
+        /// <returns>Is final member successfully found</returns>
+        public bool TryGetFinalMember([NotNullWhen(true)] out ExpressionNode? result)
+        {
+            result = Member;
+
+            while (result is MemberAccessExpressionNode memberAccess)
+            {
+                result = memberAccess.Member;
+            }
+
+            return result != null;
         }
 
         public override string ToString()

@@ -175,6 +175,30 @@ public unsafe class Program
                     Console.WriteLine(number);
                 }
             }
+            else if (value == "stackText")
+            {
+                Console.Write("Enter text for recreating it on stack: ");
+                var text = Console.ReadLine();
+                int length = text.Length;
+
+                Console.WriteLine("Text length: " + length);
+                Span<char> buffer = stackalloc char[length];
+                Span<char> invertBuffer = stackalloc char[length];
+
+                for (int i = 0; i < length; i++)
+                {
+                    buffer[i] = text[i];
+                    invertBuffer[i] = text[length - i - 1];
+                }
+
+                string newText = new(buffer);
+                string invertText = new(invertBuffer);
+
+                Console.Write("Recreated text: ");
+                Console.WriteLine(newText);
+                Console.Write("Inverted text: ");
+                Console.WriteLine(invertText);
+            }
             else if (value == "exit")
             {
                 break;

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Internal.System.Runtime;
 
 namespace System;
 
@@ -15,7 +16,18 @@ public sealed class String : IEnumerable<char>, IEquatable<string>
     }
 
     public int Length => GetLength();
-    public char this[int index] => GetValue(index);
+    public unsafe char this[int index]
+    {
+        get
+        {
+            if (0 > index || index >= Length)
+            {
+                throw new ArgumentOutOfRangeException();
+            }
+
+            return CompilerServices.GetObjectContentAddress<string, char>(this)[index];
+        }
+    }
 
     public override string ToString() => this;
     public override bool Equals(object? obj)
@@ -46,6 +58,12 @@ public sealed class String : IEnumerable<char>, IEquatable<string>
     public IEnumerator<char> GetEnumerator()
     {
         return new Enumerator(this);
+        //var length = Length;
+
+        //for (int i = 0; i < length; i++)
+        //{
+        //    yield return this[i];
+        //}
     }
 
     public string[] Split(char separator)
@@ -177,7 +195,6 @@ public sealed class String : IEnumerable<char>, IEquatable<string>
     }
 
     private extern int GetLength();
-    private extern char GetValue(int index);
 
     public static string operator +(string l, string r) => Ctor(l, r);
     public static string operator +(string l, object r) => Ctor(l, r.ToString());

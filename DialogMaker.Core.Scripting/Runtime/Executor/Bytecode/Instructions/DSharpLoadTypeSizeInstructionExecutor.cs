@@ -1,5 +1,4 @@
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
-using System.Reflection;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -15,9 +14,32 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return &InstanceExecute;
         }
 
+        public override unsafe int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
+        {
+            base.GetArgumentsCount(typesProvider, stream);
+            stream->Read<DSharpLoadTypeSizeMode>();
+
+            return 2;
+        }
+        public override unsafe void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
+        {
+            base.ReadArguments(typesProvider, stream, arguments);
+            arguments[1] = (nint)stream->Read<DSharpLoadTypeSizeMode>();
+        }
+
         protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* runtimeInfo)
         {
-            context.Stack.Push(runtimeInfo->Size);
+            var mode = (DSharpLoadTypeSizeMode)instruction.Arguments[1];
+
+            if (mode == DSharpLoadTypeSizeMode.TotalSize)
+            {
+                context.Stack.Push(runtimeInfo->Size);
+            }
+            else
+            {
+                context.Stack.Push(runtimeInfo->ItemSize);
+            }
+
             return DSharpMethodExecutionCallback.Complete();
         }
 

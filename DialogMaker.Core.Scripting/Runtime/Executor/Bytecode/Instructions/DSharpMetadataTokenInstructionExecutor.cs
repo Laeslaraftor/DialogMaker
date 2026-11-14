@@ -11,9 +11,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
-            if (CheckArguments(instruction, context, 1, out var error))
+            if (1 > instruction.Arguments.Length)
             {
-                return error;
+                return context.ThrowExecutionException($"{instruction.Operation} instruction requires at least 1 argument, got {instruction.Arguments.Length}");
             }
 
             var runtimeInfo = (T*)instruction.Arguments[0];

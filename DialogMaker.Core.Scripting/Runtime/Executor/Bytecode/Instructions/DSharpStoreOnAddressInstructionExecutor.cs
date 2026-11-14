@@ -30,15 +30,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             var pointer = (void*)*(nint*)DSharpObject.GetData(addressInstance);
 
-            if (valueInstance == null)
+            if (runtimeInfo->IsValueType)
             {
-                RuntimeExtensions.FillZero(pointer, runtimeInfo->Size);
+                if (valueInstance == null)
+                {
+                    RuntimeExtensions.FillZero(pointer, runtimeInfo->Size);
+                }
+                else
+                {
+                    int size = runtimeInfo->Size;
+                    var valueData = DSharpObject.GetData(valueInstance);
+                    Buffer.MemoryCopy(valueData, pointer, size, Math.Min(size, valueInstance->Type->Size));
+                }
             }
             else
             {
-                int size = runtimeInfo->Size;
-                var valueData = DSharpObject.GetData(valueInstance);
-                Buffer.MemoryCopy(valueData, pointer, size, Math.Min(size, valueInstance->Type->Size));
+                *(DSharpObject**)pointer = valueInstance;
             }
 
             return DSharpMethodExecutionCallback.Complete();
