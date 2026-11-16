@@ -2127,7 +2127,8 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     return variableField;
                 }
-                else if (context.TryResolveVariable(identifierExpression.Name, out var variable))
+                else if (settings.IterationMethodInfo == null &&
+                         context.TryResolveVariable(identifierExpression.Name, out var variable))
                 {
                     if (!settings.DoNotCompileEndPointMember)
                     {
@@ -2140,6 +2141,11 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 IDSharpMemberInfo member;
                 DSharpMemberSearchResult? delegateMemberSearchResult = null;
+
+                if (settings.IterationMethodInfo != null && parentExpression == null)
+                {
+                    context.CurrentMember = method.DeclaringType;
+                }
 
                 try
                 {
@@ -2169,7 +2175,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                     if (!member.IsStatic)
                     {
-                        if (TryCompileAccessToCapturedInstanceMember(code, member, context))
+                        if (TryCompileAccessToCapturedInstanceMember(code, member, ref settings, context))
                         {
                             instanceLoaded = true;
                         }
@@ -2334,19 +2340,29 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 if (!calledMethod.IsStatic)
                 {
-                    if (parentExpression == null &&
+                    if ((parentExpression == null ||
+                         parentExpression is ThisExpressionNode ||
+                         parentExpression is BaseExpressionNode) &&
                         context.Scope != null &&
                         context.Scope.TryGetClosure(out var closure))
                     {
                         bool loadCapturedInstance = false;
 
                         if (closure.OriginalType != null &&
-                            closure.OriginalType.ContainsMethodOrOverride(calledMethod, false, out var originalMethod) &&
+                            (closure.OriginalType.ContainsMethodOrOverride(calledMethod, false, out var originalMethod) ||
+                             calledMethod.Name == DSharpObjectTypeInfo.EqualsMethodName ||
+                             calledMethod.Name == DSharpObjectTypeInfo.ToStringMethodName ||
+                             calledMethod.Name == DSharpObjectTypeInfo.GetHashCodeMethodName ||
+                             calledMethod.Name == DSharpObjectTypeInfo.GetTypeMethodName) &&
                             calledMethod != originalMethod)
                         {
                             loadCapturedInstance = true;
-                            calledMethod = originalMethod;
-                            calledMethodInfo = new(originalMethod, calledMethodInfo);
+
+                            if (originalMethod != null)
+                            {
+                                calledMethod = originalMethod;
+                                calledMethodInfo = new(originalMethod, calledMethodInfo);
+                            }
                         }
                         if (closure.Type == method.DeclaringType)
                         {
@@ -2369,7 +2385,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                     if (!removeInstance)
                     {
-                        if (TryCompileAccessToCapturedInstanceMember(code, calledMethod, context))
+                        if (TryCompileAccessToCapturedInstanceMember(code, calledMethod, ref settings, context))
                         {
                             removeInstance = true;
                         }
@@ -2425,7 +2441,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 CallAuto(calledMethod, ref settings);
-                CompileRemoveParametersAfterCalling(method, code, calledMethodInfo, outputParameters, expression, removeInstance, context);
+                CompileRemoveParametersAfterCalling(method, code, calledMethodInfo, outputParameters, expression, removeInstance, ref settings, context);
 
                 settings.LastMethodCallingInfo?.Add(expression, calledMethodInfo);
 
@@ -2486,7 +2502,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
 
                     code.LoadPropertyOrField(indexer, settings.NextNonVirtualizedAccess);
-                    CompileRemoveParametersAfterCalling(method, code, indexerCallingInfo, outputParameters, expression, true, context);
+                    CompileRemoveParametersAfterCalling(method, code, indexerCallingInfo, outputParameters, expression, true, ref settings, context);
                     resultType = indexer.PropertyType;
                 }
                 else
@@ -2663,7 +2679,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 if (constructorCallingInfo != null)
                 {
-                    CompileRemoveParametersAfterCalling(method, code, constructorCallingInfo, outputParameters, expression, false, context);
+                    CompileRemoveParametersAfterCalling(method, code, constructorCallingInfo, outputParameters, expression, false, ref settings, context);
                 }
                 else
                 {
@@ -3208,8 +3224,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                         {
                             try
                             {
-                                var parameter = CreateVariable(method, variableIdentifier.Name, destinationType, null, ref settings, context);
-                                variable = new(parameter.Type, parameter, null, null);
+                                variable = CreateVariable(method, variableIdentifier.Name, destinationType, isTypeExpressionNode, null, ref settings, context);
                             }
                             catch (Exception error)
                             {
@@ -4091,7 +4106,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             code.Call(delegateInfo.InvokeMethod);
 
-            CompileRemoveParametersAfterCalling(method, code, callingInfo, outputParameters, expression, true, context);
+            CompileRemoveParametersAfterCalling(method, code, callingInfo, outputParameters, expression, true, ref settings, context);
 
             invokeMethod = delegateInfo.InvokeMethod;
 
@@ -4305,9 +4320,17 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 if (currentMemberAccess.Target is ThisExpressionNode thisExpression)
                 {
-                    if (method.DeclaringType == null)
+                    var declaringType = method.DeclaringType;
+
+                    if (context.Scope != null &&
+                        context.Scope.TryGetClosure(out var closure) &&
+                        closure.OriginalType != null)
                     {
-                        throw new InvalidOperationException($"Unable to use \"this\" in method that do not have declaring type: {thisExpression}");
+                        declaringType = closure.OriginalType;
+                    }
+                    if (declaringType == null)
+                    {
+                        throw new DSharpCompilerException($"Unable to use \"this\" in method that do not have declaring type", thisExpression);
                     }
                     if (!canUseThis)
                     {
@@ -4315,18 +4338,26 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
 
                     CheckPointerAccessAvailability(currentMemberAccess, false);
-                    currentType = method.DeclaringType;
-                    currentMember = method.DeclaringType;
+                    currentType = declaringType;
+                    currentMember = declaringType;
                     previousIsThis = true;
                     currentIsThis = true;
                 }
                 else if (currentMemberAccess.Target is BaseExpressionNode baseExpression)
                 {
-                    if (context.CurrentMember == null || !canUseBase)
+                    var declaringType = context.CurrentMember;
+
+                    if (context.Scope != null &&
+                        context.Scope.TryGetClosure(out var closure) &&
+                        closure.OriginalType != null)
+                    {
+                        declaringType = closure.OriginalType;
+                    }
+                    if (declaringType == null || !canUseBase)
                     {
                         context.ThrowBaseIsUnavailable(baseExpression);
                     }
-                    if (!context.CurrentMember.TryGetBase(out var baseType))
+                    if (!declaringType.TryGetBase(out var baseType))
                     {
                         context.ThrowBaseIsUnavailable(baseExpression);
                     }
@@ -4715,8 +4746,16 @@ namespace DialogMaker.Core.Scripting.Compiler
                             throw new DSharpCompilerException("Output parameter should have simple identifier for creating variable", outParameterExpression.Identifier);
                         }
 
-                        var variable = CreateVariable(method, outParameterExpression.Identifier.Name, type, null, ref settings, context);
-                        member = new(variable);
+                        var variable = CreateVariable(method, outParameterExpression.Identifier.Name, type, outParameterExpression, null, ref settings, context);
+
+                        if (variable.ParameterVariable != null)
+                        {
+                            member = new(variable.ParameterVariable);
+                        }
+                        else
+                        {
+                            member = new(variable.FieldVariable!);
+                        }
                     }
 
                     outputParameters ??= [];
@@ -4904,7 +4943,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 i++;
             }
         }
-        private bool TryCompileAccessToCapturedInstanceMember(DSharpBytecodeBuilder code, IDSharpMemberInfo member, DSharpCompilerContext context)
+        private bool TryCompileAccessToCapturedInstanceMember(DSharpBytecodeBuilder code, IDSharpMemberInfo member, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context)
         {
             if (context.Scope != null &&
                 context.Scope.TryGetClosure(out var closure) &&
@@ -4912,10 +4951,32 @@ namespace DialogMaker.Core.Scripting.Compiler
                 closure.OriginalType != code.Method.DeclaringType)
             {
                 var instanceField = closure.GetOrCreateInstanceField();
+                bool popPreviousTwo = false;
 
                 code.LoadInstance();
+
+                if (settings.IterationMethodInfo != null &&
+                    settings.IterationMethodInfo.Enumerator == code.Method.DeclaringType)
+                {
+                    if (settings.IterationMethodInfo.ClosureField == null)
+                    {
+                        return false;
+                    }
+
+                    code.LoadPropertyOrField(settings.IterationMethodInfo.ClosureField);
+                    popPreviousTwo = true;
+                }
+
                 code.LoadPropertyOrField(instanceField);
-                code.PopOffset(1);
+
+                if (popPreviousTwo)
+                {
+                    code.PopPreviousTwo();
+                }
+                else
+                {
+                    code.PopOffset(1);
+                }
 
                 return true;
             }
@@ -4946,7 +5007,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             return 4;
         }
-        private void CompileRemoveParametersAfterCalling(DSharpMethodBuilder method, DSharpBytecodeBuilder code, DSharpMethodCallingInfo calledMethodInfo, Dictionary<int, DSharpMemberSearchResult>? outputParameters, ExpressionNode parent, bool removeInstance, DSharpCompilerContext context)
+        private void CompileRemoveParametersAfterCalling(DSharpMethodBuilder method, DSharpBytecodeBuilder code, DSharpMethodCallingInfo calledMethodInfo, Dictionary<int, DSharpMemberSearchResult>? outputParameters, ExpressionNode parent, bool removeInstance, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context)
         {
             int popOffset = calledMethodInfo.Callable.ReturnType != null ||
                             calledMethodInfo.Callable.Type == DSharpMethodType.Constructor ? 1 : 0;
@@ -4975,7 +5036,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                         {
                             bool removeCapturedInstance = false;
 
-                            if (TryCompileAccessToCapturedInstanceMember(code, outputMember.MemberInfo, context))
+                            if (TryCompileAccessToCapturedInstanceMember(code, outputMember.MemberInfo, ref settings, context))
                             {
                                 code.StackMove(0, 1);
                                 removeCapturedInstance = true;
@@ -4985,6 +5046,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                                      closure.Type == outputMember.MemberInfo.DeclaringType)
                             {
                                 closure.LoadClosureContainer(code);
+                                code.StackMove(0, 1);
+                                removeCapturedInstance = true;
+                            }
+                            else if (settings.IterationMethodInfo != null &&
+                                     settings.IterationMethodInfo.Enumerator == method.DeclaringType &&
+                                     settings.IterationMethodInfo.Enumerator == outputMember.MemberInfo.DeclaringType)
+                            {
+                                code.LoadInstance();
                                 code.StackMove(0, 1);
                                 removeCapturedInstance = true;
                             }
@@ -5605,7 +5674,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         }
         private CreatedVariableInfo CompileVariable(DSharpMethodBuilder method, IDSharpType type, string name, AstNode identifierNode, ExpressionNode? initializer, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context)
         {
-            object variable;
+            CreatedVariableInfo variable;
             DSharpCompilerMethodScope.CaptureInfo? variableClosure = null;
             Func<IDSharpType> variableTypeGetter;
 
@@ -5624,7 +5693,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 context.Scope.TryGetCapturedVariable(identifierNode, out var variableScope, out var variableField))
             {
                 variableClosure = variableScope.Closure;
-                variable = variableField;
+                variable = new(null!, null, null, variableField);
                 variableTypeGetter = () => GetFieldVariableType(variableField);
             }
             else if (settings.IterationMethodInfo != null)
@@ -5638,7 +5707,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     settings.IterationMethodInfo.AddScopedVariable(context.Scope, variableField);
                 }
 
-                variable = variableField;
+                variable = new(null!, null, null, variableField);
                 variableTypeGetter = () => GetFieldVariableType(variableField);
             }
             else
@@ -5650,7 +5719,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 try
                 {
-                    var parameterVariable = CreateVariable(method, name, type, initializer, ref settings, context);
+                    var parameterVariable = CreateVariable(method, name, type, identifierNode, initializer, ref settings, context);
                     variable = parameterVariable;
                     variableTypeGetter = () => parameterVariable.Type;
                 }
@@ -5676,7 +5745,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 var code = method.GetBytecodeBuilder();
 
-                if (variable is DSharpFieldBuilder)
+                if (variable.FieldVariable != null)
                 {
                     if (variableClosure == null)
                     {
@@ -5690,14 +5759,14 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 CompileExpressionValueWithRequestedType(method, variableTypeGetter(), code, initializer, ref settings, null, context);
 
-                if (variable is IDSharpParameterInfo parameterVariable)
+                if (variable.ParameterVariable != null)
                 {
-                    code.StoreLocal(parameterVariable);
+                    code.StoreLocal(variable.ParameterVariable);
                     code.Pop();
                 }
-                else if (variable is DSharpFieldBuilder fieldVariable)
+                else if (variable.FieldVariable != null)
                 {
-                    code.StorePropertyOrField(fieldVariable);
+                    code.StorePropertyOrField(variable.FieldVariable);
                     code.PopRepeat(2);
                 }
                 else
@@ -5714,7 +5783,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 context.CheckUnsafe(identifierNode);
             }
 
-            return new(variableType, variable as IDSharpParameterInfo, variableClosure, variable as DSharpFieldBuilder);
+            return new(variableType, variable.ParameterVariable, variableClosure, variable.FieldVariable);
         }
         private CreatedVariableInfo CompileVariable(DSharpMethodBuilder method, string name, object type, AstNode parent, ExpressionNode? initializer, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context)
         {
@@ -5750,7 +5819,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             return CompileVariable(method, variableType, name, parent, initializer, ref settings, context);
         }
-        private IDSharpParameterInfo CreateVariable(DSharpMethodBuilder method, string name, object type, ExpressionNode? initializerExpression, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context)
+        private CreatedVariableInfo CreateVariable(DSharpMethodBuilder method, string name, object type, AstNode declarationNode, ExpressionNode? initializerExpression, ref DSharpMethodCompileSettings settings, DSharpCompilerContext context)
         {
             context.ParentExpression = initializerExpression;
 
@@ -5813,9 +5882,42 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 throw new InvalidOperationException($"Unable to create variable \"{name}\" without scope at \"{method}\"");
             }
-            if (context.Scope.TryCreateVariable(name, variableType, out var result))
+
+            CreatedVariableInfo CreateFieldVariable(DSharpTypeBuilder declaringType, DSharpCompilerMethodScope.CaptureInfo? closure)
             {
-                return result;
+                if (context.Scope is not DSharpCompilerMethodScope methodScope)
+                {
+                    throw new InvalidOperationException($"Unable to create variable \"{name}\" in current context at \"{method}\"");
+                }
+                if (methodScope.TryGetVariable(name, out _))
+                {
+                    throw new InvalidOperationException($"Variable \"{name}\" with name already exists in current context at \"{method}\"");
+                }
+
+                var field = declaringType.CreateField(name);
+                field.FieldType = Assembly.GetTypeToken(variableType);
+                methodScope.Variables.Add(new(Assembly)
+                {
+                    Name = name,
+                    Type = field.FieldType
+                });
+
+                return new(variableType, null, closure, field);
+            }
+
+            if (context.Scope.TryGetClosure(out DSharpCompilerMethodScope.CaptureInfo? closure) &&
+                closure.Capture.ContainsDeclaration(declarationNode))
+            {
+                return CreateFieldVariable(closure.Type, closure);
+            }
+            else if (settings.IterationMethodInfo != null &&
+                     settings.IterationMethodInfo.Enumerator == method.DeclaringType)
+            {
+                return CreateFieldVariable(settings.IterationMethodInfo.Enumerator, null);
+            }
+            else if (context.Scope.TryCreateVariable(name, variableType, out var result))
+            {
+                return new(variableType, result, null, null);
             }
 
             throw new InvalidOperationException($"Unable to create variable \"{name}\" at \"{method}\"");

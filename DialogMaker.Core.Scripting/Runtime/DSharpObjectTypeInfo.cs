@@ -30,6 +30,27 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         public IDSharpMethodInfo EqualsMethod { get; } = equalsMethod;
 
+        #region Constants
+
+        /// <summary>
+        /// GetHashCode method name
+        /// </summary>
+        public const string GetHashCodeMethodName = nameof(GetHashCode);
+        /// <summary>
+        /// ToString method name
+        /// </summary>
+        public const string ToStringMethodName = nameof(ToString);
+        /// <summary>
+        /// Equals(object) method name
+        /// </summary>
+        public const string EqualsMethodName = nameof(Equals);
+        /// <summary>
+        /// GetType() method name
+        /// </summary>
+        public const string GetTypeMethodName = nameof(GetType);
+
+        #endregion
+
         #region Static
 
         /// <summary>
@@ -41,16 +62,16 @@ namespace DialogMaker.Core.Scripting.Runtime
         public static DSharpObjectTypeInfo Create(IDSharpAssembly assembly)
         {
             var type = assembly.GetType(DSharpBuildInTypes.Object);
-            var toStringMethod = type.GetMethods().FirstOrDefault(m => m.Name == "ToString")
-                ?? throw new InvalidOperationException($"Unable to find ToString method in \"{type}\"");
+            var toStringMethod = type.GetMethods().FirstOrDefault(m => m.Name == ToStringMethodName)
+                ?? throw new InvalidOperationException($"Unable to find {ToStringMethodName} method in \"{type}\"");
 
             if (!TryFindEquals(type, out var instanceEqualsMethod))
             {
-                throw new InvalidOperationException($"Unable to find Equals(object) method in \"{type}\"");
+                throw new InvalidOperationException($"Unable to find {EqualsMethodName} method in \"{type}\"");
             }
             if (!TryFindGetHashCode(type, out var getHashCodeMethod))
             {
-                throw new InvalidOperationException($"Unable to find GetHashCode method in \"{type}\"");
+                throw new InvalidOperationException($"Unable to find {GetHashCodeMethodName} method in \"{type}\"");
             }
 
             var equalsMethod = type.GetMethods().FirstOrDefault(m => m.Name == "Equals" && m.IsStatic)
@@ -67,7 +88,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <returns>Is Equals method successfully found</returns>
         public static bool TryFindEquals(IDSharpType? type, [NotNullWhen(true)] out IDSharpMethodInfo? result)
         {
-            return TryFindMethod(type, nameof(Equals), out result);
+            return TryFindMethod(type, EqualsMethodName, out result);
         }
         /// <summary>
         /// Try to find GetHashCode in specified type
@@ -77,7 +98,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <returns>Is GetHashCode method successfully found</returns>
         public static bool TryFindGetHashCode(IDSharpType? type, [NotNullWhen(true)] out IDSharpMethodInfo? result)
         {
-            return TryFindMethod(type, nameof(GetHashCode), out result);
+            return TryFindMethod(type, GetHashCodeMethodName, out result);
         }
 
         public static bool TryFindMethod(IDSharpType? type, string methodName, [NotNullWhen(true)] out IDSharpMethodInfo? result)

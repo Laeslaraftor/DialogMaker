@@ -23,7 +23,7 @@ public static class Math
     public static double Min(double a, double b) => a > b ? b : a;
     public static double Max(double a, double b) => a > b ? a : b;
     public static float Min(float a, float b) => a > b ? b : a;
-    public static double Max(float a, float b) => a > b ? a : b;
+    public static float Max(float a, float b) => a > b ? a : b;
 
     public static sbyte Abs(sbyte value) => value >= 0 ? value : (sbyte)-value;
     public static short Abs(short value) => value >= 0 ? value : (short)-value;

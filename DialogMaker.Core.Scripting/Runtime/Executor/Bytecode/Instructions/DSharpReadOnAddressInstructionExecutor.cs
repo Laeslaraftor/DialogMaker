@@ -35,6 +35,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
             else
             {
+                // 1. Pointer to structure data that stores System.IntPtr
+                // 2. Pointer to instance pointer (previous System.IntPtr)
+                // 3. Pointer to D# object instance
                 var obj = **(DSharpObject***)DSharpObject.GetData(instance); // обсидиановая фигня
 
                 if (obj == null)

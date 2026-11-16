@@ -353,6 +353,24 @@ namespace DialogMaker.Core.Scripting.Compiler
             /// </summary>
             public bool HasInstance { get; set; }
 
+            /// <summary>
+            /// Check variable declaration on containing in current capture
+            /// </summary>
+            /// <param name="variableDeclaration">Variable declaration that need to check</param>
+            /// <returns>Is specified variable declaration contained in current capture</returns>
+            public bool ContainsDeclaration(AstNode variableDeclaration)
+            {
+                foreach (var variable in Variables.Values)
+                {
+                    if (variable.Declaration.Node == variableDeclaration)
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
             public int CompareTo(object? obj)
             {
                 if (obj is int line)

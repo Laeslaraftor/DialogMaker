@@ -1431,33 +1431,44 @@ namespace DialogMaker.Core.Scripting.Compiler
                         scope = scope.Parent;
                     }
 
-                    throw new InvalidOperationException($"Unable to get type of \"this\": {expression}");
+                    throw new DSharpCompilerException($"Unable to get type of \"this\"", expression);
                 }
                 else if (expression is BaseExpressionNode baseExpression)
                 {
-                    if (context.CurrentMember == null)
+                    var currentMember = context.CurrentMember;
+
+                    var scope = context.Scope;
+
+                    if (scope != null &&
+                        scope.TryGetCapturedInstance(out _, out var variableField) &&
+                        variableField.FieldType != null &&
+                        context.Assembly != null)
                     {
-                        throw new ArgumentException($"Unable to get type of \"base\" because current member not provided: {expression}", nameof(context));
+                        currentMember = (IDSharpType)context.Assembly.GetType(variableField.FieldType);
                     }
-                    if (context.CurrentMember.IsStatic)
+                    if (currentMember == null)
                     {
-                        throw new InvalidOperationException($"Unable to access to base inside static member: {expression}");
+                        throw new DSharpCompilerException("Unable to get type of \"base\" because current member not provided", expression);
+                    }
+                    if (currentMember.IsStatic)
+                    {
+                        throw new DSharpCompilerException("Unable to access to base inside static member", expression);
                     }
 
                     IDSharpType currentType;
 
-                    if (context.CurrentMember is IDSharpType typeMember)
+                    if (currentMember is IDSharpType typeMember)
                     {
                         currentType = typeMember;
                     }
                     else
                     {
-                        if (context.CurrentMember.DeclaringType == null)
+                        if (currentMember.DeclaringType == null)
                         {
-                            throw new ArgumentException($"Unable to get type of \"base\" from member without declaring type: {expression}", nameof(context));
+                            throw new DSharpCompilerException("Unable to get type of \"base\" from member without declaring type", expression);
                         }
 
-                        currentType = context.CurrentMember.DeclaringType;
+                        currentType = currentMember.DeclaringType;
                     }
 
                     var baseTypes = currentType.GetBaseTypes().Where(t => t.ObjectType != DSharpObjectType.Interface);
@@ -1472,7 +1483,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                         return context.Assembly.ObjectType;
                     }
 
-                    throw new ArgumentException($"Unable to get type of \"base\" from type that do not have base types \"{currentType}\"", nameof(context));
+                    throw new DSharpCompilerException($"Unable to get type of \"base\" from type that do not have base types \"{currentType}\"", expression);
                 }
                 if (expression is IdentifierExpressionNode identifierExpression)
                 {

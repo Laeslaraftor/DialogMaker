@@ -6,7 +6,6 @@ using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using System.Xml.Linq;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -574,30 +573,52 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             else if (expression is ThisExpressionNode thisExpression)
             {
-                if (CurrentMember != null && CurrentMember.IsStatic)
+                var currentMember = CurrentMember;
+
+                if (Scope != null && Scope.TryGetClosure(out var closure) &&
+                    closure.OriginalType != null)
+                {
+                    currentMember = closure.OriginalType;
+                }
+                if (currentMember is not IDSharpType)
+                {
+                    currentMember = currentMember?.DeclaringType;
+                }
+                if (currentMember != null && currentMember.IsStatic)
                 {
                     ThrowThisIsUnavailable(expression);
                 }
-                if (CurrentMember == null)
+                if (currentMember == null)
                 {
                     return false;
                 }
 
-                result = new(CurrentMember);
+                result = new(currentMember);
                 return true;
             }
             else if (expression is BaseExpressionNode baseExpression)
             {
-                if (CurrentMember == null || Assembly == null)
+                var currentMember = CurrentMember;
+
+                if (Scope != null && Scope.TryGetClosure(out var closure) &&
+                    closure.OriginalType != null)
+                {
+                    currentMember = closure.OriginalType;
+                }
+                if (currentMember is not IDSharpType)
+                {
+                    currentMember = currentMember?.DeclaringType;
+                }
+                if (currentMember == null || Assembly == null)
                 {
                     return false;
                 }
-                if (CurrentMember.IsStatic)
+                if (currentMember.IsStatic)
                 {
                     ThrowBaseIsUnavailable(expression);
                 }
 
-                IDSharpType? type = CurrentMember as IDSharpType ?? CurrentMember.DeclaringType;
+                IDSharpType? type = currentMember as IDSharpType ?? currentMember.DeclaringType;
 
                 if (type == null)
                 {

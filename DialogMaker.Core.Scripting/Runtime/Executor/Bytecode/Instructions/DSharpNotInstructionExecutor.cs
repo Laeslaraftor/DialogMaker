@@ -36,11 +36,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         }
         public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
-            throw new NotImplementedException();
+            return 0;
         }
         public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
         {
-            throw new NotImplementedException();
         }
 
         #endregion

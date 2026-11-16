@@ -2,6 +2,9 @@
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
+    /// <summary>
+    /// Interface of D# type
+    /// </summary>
     public interface IDSharpType : IDSharpMemberInfo, IDSharpTypeProvider
     {
         /// <summary>

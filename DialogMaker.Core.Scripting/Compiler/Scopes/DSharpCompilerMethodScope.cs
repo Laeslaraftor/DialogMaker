@@ -309,9 +309,9 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
             /// </summary>
             /// <param name="code">Bytecode builder for generating code</param>
             /// <exception cref="InvalidOperationException">Closure container not found</exception>
-            public void LoadClosureContainer(DSharpBytecodeBuilder code)
+            public void LoadClosureContainer(DSharpBytecodeBuilder code, DSharpIterationMethodInfo? iterationMethodInfo = null)
             {
-                static void LoadFromField(DSharpBytecodeBuilder code, DSharpFieldBuilder field)
+                void LoadFromField(DSharpBytecodeBuilder code, DSharpFieldBuilder field)
                 {
                     code.LoadInstance();
                     code.LoadPropertyOrField(field);

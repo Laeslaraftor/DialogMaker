@@ -263,6 +263,7 @@ public unsafe class Program
         Console.WriteLine("Selection 2: " + Selector<IPlayer>(player, "Гавёшка"));
         Enemy enemy = new("Evil zeBlack");
         enemy.PrintMessage();
+        enemy.TestInstanceClosure();
 
         Console.WriteLine();
 
@@ -882,5 +883,37 @@ public class Enemy : Player
     {
         base.PrintMessage();        
         Console.WriteLine("Фигня №1");
+    }
+    public void TestInstanceClosure()
+    {
+        var nameVariable = "Глиномес";
+
+        void PrintMessage()
+        {
+            Console.WriteLine("My name is " + Name);
+            Console.WriteLine("Current type: " + this.GetType());
+        }
+        void PrintGlinomes()
+        {
+            Console.WriteLine("Тут я " + nameVariable + ", хотя по паспорту " + Name);
+        }
+        IEnumerable<string> GetAllGlinomeses(int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                yield return i % 2 == 0 ? nameVariable : Name;
+            }
+        }
+
+        PrintMessage();
+        PrintGlinomes();
+
+        Console.WriteLine();
+        Console.WriteLine("Главные глиномесы:");
+
+        foreach (var name in GetAllGlinomeses(6))
+        {
+            Console.WriteLine(name);
+        }
     }
 }
