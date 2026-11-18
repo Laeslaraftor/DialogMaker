@@ -6,6 +6,8 @@ namespace System;
 public abstract class Array
 {
     public abstract int Length { get; }
+
+    public static extern bool CanStackalloc<T>(int length);
 }
 public sealed class Array<T> : Array, IEnumerable<T>
 {

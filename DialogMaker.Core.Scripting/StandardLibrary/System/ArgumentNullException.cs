@@ -23,7 +23,7 @@ public class ArgumentNullException : SystemException
 
     public string? ParameterName { get; }
 
-    public static void ThrowIfNull(object? value, string parameterName)
+    public static void ThrowIfNull<T>(T value, string parameterName)
     {
         if (value == null)
         {

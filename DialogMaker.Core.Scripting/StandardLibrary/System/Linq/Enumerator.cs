@@ -78,7 +78,7 @@ public static class Enumerator
                 return null;
             }
 
-            return list[count];
+            return list[count - 1];
         }
 
         T? lastItem = null;
@@ -97,7 +97,7 @@ public static class Enumerator
     }
     public static T ElementAt<T>(this IEnumerable<T> enumerable, int index)
     {
-        return enumerable.ElementAt(index) ??
+        return enumerable.ElementAtOrDefault(index) ??
             throw new ArgumentException("No items on index " + index);
     }
     public static T? ElementAtOrDefault<T>(this IEnumerable<T> enumerable, int index)

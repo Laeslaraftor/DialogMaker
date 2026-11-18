@@ -3,8 +3,8 @@
     /// <summary>
     /// Information about delegate type
     /// </summary>
-    public class DSharpCustomDelegateType(IDSharpType type, IDSharpPropertyInfo methodInfoProperty, IDSharpPropertyInfo targetProperty, IDSharpMethodInfo invokeMethod, IDSharpMethodInfo dynamicInvokeMethod, IDSharpMethodInfo instanceConstructor, IDSharpMethodInfo staticConstructor)
-        : DSharpDelegateType(type, methodInfoProperty, targetProperty, dynamicInvokeMethod, instanceConstructor, staticConstructor)
+    public class DSharpCustomDelegateType(IDSharpType type, IDSharpMethodInfo invokeMethod, DSharpDelegateType.Info info)
+        : DSharpDelegateType(type, info)
     {
         /// <summary>
         /// Invocation methods
@@ -47,16 +47,7 @@
                 ?? throw new ArgumentException($"Type \"{type}\" not contains \"{InvokeMethodName}\" method", nameof(type));
             var info = CreateInfo(type);
 
-            if (info.InstanceConstructor == null)
-            {
-                throw new ArgumentException("Constructor that creates delegate for instance method not found", nameof(type));
-            }
-            if (info.StaticConstructor == null)
-            {
-                throw new ArgumentException("Constructor that creates delegate for static method not found", nameof(type));
-            }
-
-            return new(type, info.MethodInfoProperty, info.TargetProperty, invokeMethod, info.DynamicInvokeMethod, info.InstanceConstructor, info.StaticConstructor);
+            return new(type, invokeMethod, info);
         }
 
         #endregion

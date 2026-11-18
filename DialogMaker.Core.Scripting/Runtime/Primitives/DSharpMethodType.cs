@@ -32,6 +32,14 @@
         /// <summary>
         /// Method that used as operator
         /// </summary>
-        Operator
+        Operator,
+        /// <summary>
+        /// Method for adding event handler
+        /// </summary>
+        EventAdd,
+        /// <summary>
+        /// Method for removing event handler
+        /// </summary>
+        EventRemove
     }
 }

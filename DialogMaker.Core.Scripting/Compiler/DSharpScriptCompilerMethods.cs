@@ -2208,7 +2208,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     {
                         if (member is IDSharpMethodInfo methodAsDelegate)
                         {
-                            if (requiredType != null)
+                            if (requiredType != null && requiredType != Assembly.DelegateType)
                             {
                                 if (!methodAsDelegate.SameSignatureToDelegate(requiredType, false))
                                 {
@@ -2218,10 +2218,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                             else
                             {
                                 requiredType = methodAsDelegate.GetDelegateType(Assembly);
-                            }
-                            if (requiredType == Assembly.DelegateType)
-                            {
-                                requiredType = Assembly.MethodDelegateType;
                             }
 
                             var delegateInfo = DSharpDelegateType.Create(requiredType);

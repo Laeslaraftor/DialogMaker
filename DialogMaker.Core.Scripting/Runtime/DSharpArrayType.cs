@@ -5,12 +5,16 @@
     /// </summary>
     /// <param name="type">Any array type</param>
     /// <param name="indexer">Items indexer</param>
-    public class DSharpArrayType(IDSharpType type, IDSharpIndexerInfo indexer, IDSharpMethodInfo indexerSetter, IDSharpMethodInfo indexerGetter)
+    public class DSharpArrayType(IDSharpType type, IDSharpPropertyInfo lengthProperty, IDSharpIndexerInfo indexer, IDSharpMethodInfo indexerSetter, IDSharpMethodInfo indexerGetter)
     {
         /// <summary>
         /// Array type
         /// </summary>
         public IDSharpType Type { get; } = type;
+        /// <summary>
+        /// Property that returns array length
+        /// </summary>
+        public IDSharpPropertyInfo LengthProperty { get; } = lengthProperty;
         /// <summary>
         /// Items indexer
         /// </summary>
@@ -24,20 +28,16 @@
         /// </summary>
         public IDSharpMethodInfo IndexerGetter { get; } = indexerGetter;
 
-        #region Управление
+        #region Controls
 
-        /// <summary>
-        /// <inheritdoc/>
-        /// </summary>
-        /// <returns><inheritdoc/></returns>
-        public override string ToString()
+        public override string? ToString()
         {
             return Type.ToString();
         }
 
         #endregion
 
-        #region Статика
+        #region Static
 
         /// <summary>
         /// Create information about default array type (<see cref="TypeFullName"/>)
@@ -56,6 +56,7 @@
         /// <returns>Information about array type</returns>
         public static DSharpArrayType Create(IDSharpType type)
         {
+            var lengthProperty = type.GetProperty("Length");
             var indexer = GetIndexer(type);
 
             if (indexer.Setter == null)
@@ -67,7 +68,7 @@
                 throw new ArgumentException($"Unable to get indexer getter at \"{type}\"", nameof(type));
             }
 
-            return new(type, indexer, indexer.Setter, indexer.Getter);
+            return new(type, lengthProperty, indexer, indexer.Setter, indexer.Getter);
         }
         /// <summary>
         /// Find items indexer in specified array type

@@ -107,6 +107,12 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <returns>All properties that passes specified predicate</returns>
         public IDSharpPropertyInfo[] GetProperties(Predicate<IDSharpPropertyInfo> predicate);
         /// <summary>
+        /// Get all events that passes specified predicate
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <returns>All events that passes specified predicate</returns>
+        public IDSharpEventInfo[] GetEvents(Predicate<IDSharpEventInfo> predicate);
+        /// <summary>
         /// Get all fields that passes specified predicate
         /// </summary>
         /// <param name="predicate"></param>
@@ -117,7 +123,6 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         /// <param name="predicate"></param>
         /// <returns>All indexers that passes specified predicate</returns>
-
         public IDSharpIndexerInfo[] GetIndexers(Predicate<IDSharpIndexerInfo> predicate);
 
         /// <summary>

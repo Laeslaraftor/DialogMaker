@@ -103,6 +103,11 @@ namespace DialogMaker.Core.Scripting.Runtime
             throw new NotImplementedException();
         }
 
+        public IDSharpEventInfo[] GetEvents(Predicate<IDSharpEventInfo> predicate)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
     }
 }

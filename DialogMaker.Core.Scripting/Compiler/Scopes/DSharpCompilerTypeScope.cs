@@ -126,8 +126,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Scopes
             foreach (var child in parent.GetChildrenTypes())
             {
                 if (skipPrivate &&
-                    child.Access == DSharpAccessModifier.Private ||
-                    child.Access == DSharpAccessModifier.Protected ||
+                    (child.Access == DSharpAccessModifier.Private ||
+                    child.Access == DSharpAccessModifier.Protected) ||
                     (child.Access == DSharpAccessModifier.Internal && child.Assembly != Assembly))
                 {
                     continue;

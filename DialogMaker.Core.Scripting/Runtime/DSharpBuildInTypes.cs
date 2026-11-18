@@ -72,9 +72,9 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// </summary>
             public static readonly DSharpBuildInTypeInfo Delegate = new("System.Delegate");
             /// <summary>
-            /// Base type for all custom delegates
+            /// Structure that contains invocation info
             /// </summary>
-            public static readonly DSharpBuildInTypeInfo MethodDelegate = new("System.MethodDelegate");
+            public static readonly DSharpBuildInTypeInfo DelegateInvocationInfo = new("System.Delegate.InvocationInfo");
             /// <summary>
             /// Action delegate without parameters
             /// </summary>

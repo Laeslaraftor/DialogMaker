@@ -314,14 +314,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
-        public DSharpTypeToken MethodDelegateTypeToken
-        {
-            get
-            {
-                field ??= GetTypeToken(MethodDelegateType);
-                return field;
-            }
-        }
         public DSharpTypeToken ActionTypeToken
         {
             get
@@ -335,6 +327,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             get
             {
                 field ??= GetTypeToken(FuncType);
+                return field;
+            }
+        }
+        public DSharpTypeToken DelegateInvocationInfoTypeToken
+        {
+            get
+            {
+                field ??= GetTypeToken(DelegateInvocationInfoType);
                 return field;
             }
         }
@@ -587,14 +587,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
-        public IDSharpType MethodDelegateType
-        {
-            get
-            {
-                field ??= GetType(DSharpBuildInTypes.Extra.MethodDelegate);
-                return field;
-            }
-        }
         public IDSharpType ActionType
         {
             get
@@ -608,6 +600,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             get
             {
                 field ??= GetType(DSharpBuildInTypes.Extra.Func);
+                return field;
+            }
+        }
+        public IDSharpType DelegateInvocationInfoType
+        {
+            get
+            {
+                field ??= DelegateInvocationInfo.Type;
                 return field;
             }
         }
@@ -699,11 +699,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
-        public DSharpDelegateType MethodDelegateTypeInfo
+        public DSharpDelegateType DelegateTypeInfo
         {
             get
             {
-                field ??= DSharpDelegateType.Create(MethodDelegateType);
+                field ??= DSharpDelegateType.Create(DelegateType);
                 return field;
             }
         }
@@ -720,6 +720,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             get
             {
                 field ??= DSharpCustomDelegateType.Create(FuncType);
+                return field;
+            }
+        }
+        public DSharpDelegateInvocationInfo DelegateInvocationInfo
+        {
+            get
+            {
+                field ??= DSharpDelegateInvocationInfo.Create(this);
                 return field;
             }
         }

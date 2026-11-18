@@ -32,6 +32,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                     {
                         return GetArrayLength;
                     }
+                    else if (methodInfo.Name == "CanStackAlloc")
+                    {
+                        return CanStackAlloc;
+                    }
                 }
                 else if (methodInfo.DeclaringType.Name == "Numbers")
                 {
@@ -173,6 +177,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
         private static DSharpExternalMethodResult? GetArrayLength(DSharpExternalCallingArgs args)
         {
             return DSharpArray.GetLength(args.Instance);
+        }
+        private static DSharpExternalMethodResult? CanStackAlloc(DSharpExternalCallingArgs args)
+        {
+            if (args.GenericParameter.Count == 0 || args.Arguments.Length == 0)
+            {
+                return false;
+            }
+
+            var valueType = (DSharpRuntimeTypeInfo*)args.GenericParameter[0].Value.AsPointer();
+            var lengthArgument = args.Arguments[0].Buffer.ReadAsObject();
+
+            if (lengthArgument == null)
+            {
+                return false;
+            }
+
+            var length = DSharpObjectConverter.ToInt32(lengthArgument);
+
+            return length >= 0 && args.Stack.AvailableSize > length * valueType->ItemSize;
         }
 
         #endregion

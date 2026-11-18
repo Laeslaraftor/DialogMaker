@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime;
+using System.Collections.ObjectModel;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
 {
@@ -152,7 +153,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return getter == null && setter == null;
             }
         }
-        public ReferenceReadOnlyList<IDSharpPropertyInfo> ImplementedProperties
+        public ReadOnlyCollection<IDSharpPropertyInfo> ImplementedProperties
         {
             get
             {

@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler
     /// Description of compiled delegate
     /// </summary>
     /// <param name="type">Delegate type</param>
-    public class DSharpCompilerDelegateDescription(DSharpTypeBuilder type, DSharpMethodBuilder instanceConstructor, DSharpMethodBuilder staticConstructor)
+    public class DSharpCompilerDelegateDescription(DSharpTypeBuilder type, DSharpMethodBuilder instanceConstructor, DSharpMethodBuilder staticConstructor, DSharpMethodBuilder capacityConstructor, DSharpMethodBuilder createNewMethod)
     {
         /// <summary>
         /// Delegate type
@@ -25,5 +25,13 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// Constructor that creates delegate for static method
         /// </summary>
         public DSharpMethodBuilder StaticConstructor { get; } = staticConstructor;
+        /// <summary>
+        /// Constructor that creates delegate with specified invocation list length
+        /// </summary>
+        public DSharpMethodBuilder CapacityConstructor { get; } = capacityConstructor;
+        /// <summary>
+        /// Method that creates delegate with specified invocation list length
+        /// </summary>
+        public DSharpMethodBuilder CreateNewMethod { get; } = createNewMethod;
     }
 }

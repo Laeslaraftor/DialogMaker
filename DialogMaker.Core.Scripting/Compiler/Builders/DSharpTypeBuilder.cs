@@ -2,7 +2,6 @@
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
 {
@@ -87,7 +86,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <summary>
         /// <inheritdoc cref="IDSharpType.GetGenericTypes"/>
         /// </summary>
-        public ReferenceReadOnlyList<DSharpTypeBuilder> GenericTypes
+        public ReadOnlyCollection<DSharpTypeBuilder> GenericTypes
         {
             get
             {
@@ -95,7 +94,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
-        public ReferenceReadOnlyList<DSharpMethodBuilder> Constructors
+        public ReadOnlyCollection<DSharpMethodBuilder> Constructors
         {
             get
             {
@@ -103,7 +102,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
-        public ReferenceReadOnlyList<DSharpMethodBuilder> Methods
+        public ReadOnlyCollection<DSharpMethodBuilder> Methods
         {
             get
             {
@@ -111,7 +110,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
-        public ReferenceReadOnlyList<DSharpPropertyBuilder> Properties
+        public ReadOnlyCollection<DSharpPropertyBuilder> Properties
         {
             get
             {
@@ -119,7 +118,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
-        public ReferenceReadOnlyList<DSharpIndexerBuilder> Indexers
+        public ReadOnlyCollection<DSharpEventBuilder> Events
+        {
+            get
+            {
+                field ??= new(_events);
+                return field;
+            }
+        }
+        public ReadOnlyCollection<DSharpIndexerBuilder> Indexers
         {
             get
             {
@@ -127,7 +134,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
-        public ReferenceReadOnlyList<DSharpFieldBuilder> Fields
+        public ReadOnlyCollection<DSharpFieldBuilder> Fields
         {
             get
             {
@@ -135,7 +142,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
-        public ReferenceReadOnlyList<DSharpTypeBuilder> ChildrenTypes
+        public ReadOnlyCollection<DSharpTypeBuilder> ChildrenTypes
         {
             get
             {
@@ -143,7 +150,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
-        public ReferenceReadOnlyList<DSharpOperatorBuilder> CastOperators
+        public ReadOnlyCollection<DSharpOperatorBuilder> CastOperators
         {
             get
             {
@@ -151,7 +158,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
-        public ReferenceReadOnlyList<DSharpOperatorBuilder> Operators
+        public ReadOnlyCollection<DSharpOperatorBuilder> Operators
         {
             get
             {
@@ -201,6 +208,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         private readonly List<DSharpMethodBuilder> _constructors = [];
         private readonly List<DSharpMethodBuilder> _methods = [];
         private readonly List<DSharpPropertyBuilder> _properties = [];
+        private readonly List<DSharpEventBuilder> _events = [];
         private readonly List<DSharpIndexerBuilder> _indexers = [];
         private readonly List<DSharpFieldBuilder> _fields = [];
         private readonly List<DSharpOperatorBuilder> _castOperators = [];
@@ -414,6 +422,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             return CreateMember(DSharpMetadataTokenType.Property, _properties, t => new(Assembly, this, name, t));
         }
+        public DSharpEventBuilder CreateEvent(string name)
+        {
+            if (IsGeneric)
+            {
+                throw new InvalidOperationException("Generic types can not contains events");
+            }
+
+            return CreateMember(DSharpMetadataTokenType.Event, _events, t => new(Assembly, this, name, t));
+        }
         public DSharpFieldBuilder CreateField(string name)
         {
             if (IsGeneric)
@@ -509,6 +526,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             return _methods.Remove(initializer);
         }
         public bool RemoveProperty(DSharpPropertyBuilder property) => RemoveMember(_properties, property);
+        public bool RemoveEvent(DSharpEventBuilder @event) => RemoveMember(_events, @event);
         public bool RemoveIndexer(DSharpIndexerBuilder indexer) => RemoveMember(_indexers, indexer);
         public bool RemoveField(DSharpFieldBuilder field) => RemoveMember(_fields, field);
         public bool RemoveChildType(DSharpTypeBuilder type)
@@ -581,6 +599,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
         public IDSharpMethodInfo[] GetMethods(Predicate<IDSharpMethodInfo> predicate) => [.. _methods.Where(m => predicate(m))];
         public IDSharpPropertyInfo[] GetProperties(Predicate<IDSharpPropertyInfo> predicate) => [.. _properties.Where(p => predicate(p))];
+        public IDSharpEventInfo[] GetEvents(Predicate<IDSharpEventInfo> predicate) => [.. _events.Where(p => predicate(p))];
         public IDSharpIndexerInfo[] GetIndexers(Predicate<IDSharpIndexerInfo> predicate) => [.. _indexers.Where(i => predicate(i))];
         public IDSharpFieldInfo[] GetFields(Predicate<IDSharpFieldInfo> predicate) => [.. _fields.Where(f => predicate(f))];
         public IDSharpMethodInfo[] GetConstructors(Predicate<IDSharpMethodInfo> predicate) => [.. _constructors.Where(c => predicate(c))];

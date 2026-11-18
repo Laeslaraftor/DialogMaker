@@ -26,8 +26,12 @@
         /// </summary>
         Property = 0x17000000,
         /// <summary>
-        /// Generic parameter metadata
+        /// Operator metadata
         /// </summary>
         Operator = 0x2A000000,
+        /// <summary>
+        /// Event metadata
+        /// </summary>
+        Event = 0x3A000000,
     }
 }

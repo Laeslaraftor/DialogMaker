@@ -31,6 +31,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// Current amount of elements in stack
         /// </summary>
         public uint Count => (uint)(_frameIndex + 1);
+        /// <summary>
+        /// Available to allocate size
+        /// </summary>
+        public int AvailableSize => Capacity - _allocatedStackSize;
 
         private readonly DSharpRuntimeInformationProvider _runtimeInformationProvider = runtimeInformationProvider;
         private readonly DSharpVmMemoryManager _memoryManager = memoryManager;

@@ -1,5 +1,7 @@
 ﻿using DialogMaker.Core.Scripting.Runtime;
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
 {
@@ -11,6 +13,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             LinkedProperty = property;
             MethodType = isSetter ? DSharpMethodType.Setter : DSharpMethodType.Getter;
+        }
+        private DSharpMethodBuilder(DSharpEventBuilder @event, bool isAdd, string name, DSharpTypeToken metadataToken)
+            : this(@event.Assembly, @event.DeclaringType, name, metadataToken)
+        {
+            LinkedEvent = @event;
+            MethodType = isAdd ? DSharpMethodType.EventAdd : DSharpMethodType.EventRemove;
         }
         private DSharpMethodBuilder(DSharpOperatorBuilder @operator, DSharpTypeToken metadataToken)
             : this(@operator.Assembly, @operator.DeclaringType, @operator.Name, metadataToken)
@@ -41,6 +49,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// </summary>
         public DSharpPropertyBuilder? LinkedProperty { get; }
         /// <summary>
+        /// This method is event handler adder or remover only if this property not null 
+        /// </summary>
+        public DSharpEventBuilder? LinkedEvent { get; }
+        /// <summary>
         /// This method is operator only if this property not null 
         /// </summary>
         public DSharpOperatorBuilder? LinkedOperator { get; }
@@ -58,6 +70,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 if (LinkedOperator != null)
                 {
                     return LinkedOperator.Name;
+                }
+                if (LinkedEvent != null)
+                {
+                    if (MethodType == DSharpMethodType.EventAdd)
+                    {
+                        return string.Format(DSharpEventBuilder.AddMethodNameFormat, LinkedEvent.Name);
+                    }
+
+                    return string.Format(DSharpEventBuilder.RemoveMethodNameFormat, LinkedEvent.Name);
                 }
                 if (MethodType == DSharpMethodType.Finalizer)
                 {
@@ -108,7 +129,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 {
                     return LinkedOperator.ReturnType;
                 }
-                if (LinkedType != null || MethodType == DSharpMethodType.Finalizer)
+                if (LinkedEvent != null || LinkedType != null || MethodType == DSharpMethodType.Finalizer)
                 {
                     return null;
                 }
@@ -148,7 +169,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
                     return null;
                 }
-                if (LinkedType != null)
+                if (LinkedType != null || LinkedEvent != null)
                 {
                     return null;
                 }
@@ -260,8 +281,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
             set => base.IsVirtual = value;
         }
-        public override bool IsUnsafe 
-        { 
+        public override bool IsUnsafe
+        {
             get
             {
                 if (MethodType == DSharpMethodType.Finalizer)
@@ -278,8 +299,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 }
 
                 return base.IsUnsafe;
-            } 
-            set => base.IsUnsafe = value; 
+            }
+            set => base.IsUnsafe = value;
         }
         public override DSharpAccessModifier Access
         {
@@ -334,7 +355,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return _bytecodeBuilder != null;
             }
         }
-        public ReferenceReadOnlyList<IDSharpMethodInfo> ImplementedMethods
+        public ReadOnlyCollection<IDSharpMethodInfo> ImplementedMethods
         {
             get
             {
@@ -691,6 +712,32 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         public static DSharpMethodBuilder CreateSetter(DSharpPropertyBuilder property, string name, DSharpTypeToken metadataToken)
         {
             return new(property, true, name, metadataToken);
+        }
+        /// <summary>
+        /// Create event add method
+        /// </summary>
+        /// <param name="event">Event that must contains add</param>
+        /// <param name="metadataToken">Token for new method</param>
+        /// <returns>Add method</returns>
+        public static DSharpMethodBuilder CreateEventAdd(DSharpEventBuilder @event, string name, DSharpTypeToken metadataToken)
+        {
+            return new(@event, true, name, metadataToken)
+            {
+                Access = DSharpAccessModifier.Public
+            };
+        }
+        /// <summary>
+        /// Create event remove method
+        /// </summary>
+        /// <param name="event">Event that must contains remove</param>
+        /// <param name="metadataToken">Token for new method</param>
+        /// <returns>Remove method</returns>
+        public static DSharpMethodBuilder CreateEventRemove(DSharpEventBuilder @event, string name, DSharpTypeToken metadataToken)
+        {
+            return new(@event, false, name, metadataToken)
+            {
+                Access = DSharpAccessModifier.Public
+            };
         }
         /// <summary>
         /// Create operator method

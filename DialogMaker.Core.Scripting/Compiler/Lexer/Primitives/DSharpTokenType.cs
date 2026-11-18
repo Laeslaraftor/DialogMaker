@@ -304,6 +304,16 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         [Keyword("set")]
         Set,
         /// <summary>
+        /// Add keyword
+        /// </summary>
+        [Keyword("add")]
+        Add,
+        /// <summary>
+        /// Remove keyword
+        /// </summary>
+        [Keyword("remove")]
+        Remove,
+        /// <summary>
         /// Lambda keyword (=>)
         /// </summary>
         [Keyword("=>")]
