@@ -7,17 +7,15 @@ internal static unsafe class CompilerServices
 {
     public static extern nint GetObjectAddress(object obj);
     public static extern TValue* GetObjectContentAddress<T, TValue>(T obj);
-    public static nint GetObjectTypeToken(object obj)
+    public static RuntimeTypeInfo* GetObjectTypeToken(object obj)
     {
         var address = GetObjectAddress(obj);
 
         if (address == 0)
         {
-            return 0;
+            return null;
         }
 
-        var pointer = (nint*)address;
-
-        return pointer[0];
+        return *(RuntimeTypeInfo**)address;
     }
 }

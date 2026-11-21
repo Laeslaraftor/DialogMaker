@@ -309,6 +309,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// </summary>
         /// <param name="obj">D# object instance for getting it's size</param>
         /// <returns>Size for managed data, this not includes size of DSharpObject structure size.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetSize(DSharpObject* obj)
         {
             if (obj->IsString)

@@ -78,6 +78,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         public List<OperatorNode> Operators { get; set; } = [];
         /// <summary>
+        /// List of events
+        /// </summary>
+        public List<EventNode> Events { get; set; } = [];
+        /// <summary>
         /// List of primary constructor parameters
         /// </summary>
         public List<ParameterExpressionNode>? PrimaryConstructorParameters { get; set; }
@@ -240,6 +244,19 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 else if (currentToken.Type == DSharpTokenType.Delegate)
                 {
                     eatToken = false;
+                }
+                else if (currentToken.Type == DSharpTokenType.Event)
+                {
+                    if (!tilde && !isOperator && mode == null)
+                    {
+                        memberInfo = new()
+                        {
+                            MemberType = DSharpTypeMember.Event,
+                            AccessModifier = accessModifier ?? DSharpAccessModifier.Private,
+                        };
+
+                        return true;
+                    }                
                 }
                 else if (currentToken.Type == DSharpTokenType.Tilde)
                 {
@@ -722,6 +739,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 {
                     node.Finalizers.Add(finalizer);
                 }
+                else if (member is EventNode @event)
+                {
+                    node.Events.Add(@event);
+                }
                 else
                 {
                     throw new Exception($"Invalid member type: {memberInfo.MemberType}");
@@ -808,9 +829,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
 
                 return @operator;
             }
+            else if (memberInfo.MemberType == DSharpTypeMember.Event)
+            {
+                var @event = EventNode.Parse(stream, memberInfo);
+
+                if (attributes != null)
+                {
+                    @event.Attributes = attributes;
+                }
+
+                return @event;
+            }
             else
             {
-                throw new Exception($"Invalid member type: {memberInfo.MemberType}");
+                throw new DSharpException($"Invalid member type: {memberInfo.MemberType}");
             }
         }
 

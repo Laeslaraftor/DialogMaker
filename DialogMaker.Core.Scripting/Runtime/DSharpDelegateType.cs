@@ -43,6 +43,14 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// Method for creating delegate instance with specified invocation list length
         /// </summary>
         public IDSharpMethodInfo CreateNewMethod { get; } = info.CreateNewMethod;
+        /// <summary>
+        /// Static method for combining 2 delegates to one
+        /// </summary>
+        public IDSharpMethodInfo? CombineMethod { get; } = info.CombineMethod;
+        /// <summary>
+        /// Static method for remove delegate from other
+        /// </summary>
+        public IDSharpMethodInfo? RemoveMethod { get; } = info.RemoveMethod;
 
         #region Constants
 
@@ -106,6 +114,14 @@ namespace DialogMaker.Core.Scripting.Runtime
             var methodInfoProperty = type.GetProperty(MethodInfoPropertyName);
             var targetProperty = type.GetProperty(TargetPropertyName);
             var invocationListField = type.GetField(InvocationListFieldName);
+            IDSharpMethodInfo? combineMethod = type.GetMethods(m => m.IsStatic && 
+                                                                    m.Name == "Combine" && 
+                                                                    m.ParametersCount == 2 &&
+                                                                    m.GetParameters().All(p => p.Type == type)).FirstOrDefault();
+            IDSharpMethodInfo? removeMethod = type.GetMethods(m => m.IsStatic &&
+                                                                   m.Name == "Remove" &&
+                                                                   m.ParametersCount == 2 &&
+                                                                   m.GetParameters().All(p => p.Type == type)).FirstOrDefault();
             IDSharpMethodInfo? instanceConstructor = null;
             IDSharpMethodInfo? staticConstructor = null;
             IDSharpMethodInfo? capacityConstructor = null;
@@ -147,7 +163,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                 throw new ArgumentException("Constructor that creates delegate with specified invocation list length not found", nameof(type));
             }
 
-            return new(dynamicInvoke, methodInfoProperty, targetProperty, invocationListField, instanceConstructor, staticConstructor, capacityConstructor, createNewMethod);
+            return new(dynamicInvoke, methodInfoProperty, targetProperty, invocationListField, instanceConstructor, staticConstructor, capacityConstructor, createNewMethod, combineMethod, removeMethod);
         }
 
         #endregion
@@ -165,7 +181,18 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <param name="StaticConstructor"><inheritdoc cref="StaticConstructor"/></param>
         /// <param name="CapacityConstructor"><inheritdoc cref="CapacityConstructor"/></param>
         /// <param name="CreateNewMethod"><inheritdoc cref="CreateNewMethod"/></param>
-        public record struct Info(IDSharpMethodInfo DynamicInvokeMethod, IDSharpPropertyInfo MethodInfoProperty, IDSharpPropertyInfo TargetProperty, IDSharpFieldInfo InvocationListField, IDSharpMethodInfo InstanceConstructor, IDSharpMethodInfo StaticConstructor, IDSharpMethodInfo CapacityConstructor, IDSharpMethodInfo CreateNewMethod);
+        /// <param name="CombineMethod"><inheritdoc cref="CombineMethod"/></param>
+        /// <param name="RemoveMethod"><inheritdoc cref="RemoveMethod"/></param>
+        public record struct Info(IDSharpMethodInfo DynamicInvokeMethod, 
+                                  IDSharpPropertyInfo MethodInfoProperty, 
+                                  IDSharpPropertyInfo TargetProperty, 
+                                  IDSharpFieldInfo InvocationListField, 
+                                  IDSharpMethodInfo InstanceConstructor, 
+                                  IDSharpMethodInfo StaticConstructor, 
+                                  IDSharpMethodInfo CapacityConstructor, 
+                                  IDSharpMethodInfo CreateNewMethod,
+                                  IDSharpMethodInfo? CombineMethod,
+                                  IDSharpMethodInfo? RemoveMethod);
 
         #endregion
     }

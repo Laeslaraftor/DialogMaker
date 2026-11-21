@@ -32,7 +32,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                     {
                         return GetArrayLength;
                     }
-                    else if (methodInfo.Name == "CanStackAlloc")
+                    else if (methodInfo.Name == "CanStackalloc")
                     {
                         return CanStackAlloc;
                     }
@@ -419,26 +419,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                 return false;
             }
 
-            var aLength = DSharpArray.GetLength(a);
-            var bLength = DSharpArray.GetLength(b);
+            var aSize = DSharpObject.GetSize(a);
+            var bSize = DSharpObject.GetSize(b);
 
-            if (aLength != bLength)
+            if (aSize != bSize)
             {
                 return false;
             }
 
-            var aData = DSharpObject.GetData(a);
-            var bData = DSharpObject.GetData(b);
+            byte* aData = DSharpObject.GetData(a);
+            byte* bData = DSharpObject.GetData(b);
 
-            for (int i = 0; i < aLength; i++)
-            {
-                if (aData[i] != bData[i])
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return RuntimeExtensions.Equals(aData, bData, aSize);
         }
         private static DSharpExternalMethodResult? ObjectGetHashCode(DSharpExternalCallingArgs args)
         {

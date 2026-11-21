@@ -35,12 +35,23 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 List<DSharpMemberInfoBuilder> implementedMembers = [];
 
+                static void SetupMember(IDSharpMemberInfo interfaceMember, DSharpMemberInfoBuilder newMember)
+                {
+                    newMember.Name = interfaceMember.Name;
+                    newMember.Access = interfaceMember.Access;
+                    newMember.IsUnsafe = interfaceMember.IsUnsafe;
+                }
+                static void SetupEvent(IDSharpEventInfo interfaceEvent, DSharpEventBuilder newEvent)
+                {
+                    SetupMember(interfaceEvent, newEvent);
 
+                    newEvent.AddImplementedEvent(newEvent);
+                    newEvent.EventType = newEvent.Assembly.GetTypeToken(interfaceEvent.EventType);
+                }
                 static void SetupProperty(IDSharpPropertyInfo interfaceProperty, DSharpPropertyBuilder newProperty)
                 {
+                    SetupMember(interfaceProperty, newProperty);
                     newProperty.AddImplementedProperty(interfaceProperty);
-                    newProperty.Name = interfaceProperty.Name;
-                    newProperty.Access = interfaceProperty.Access;
                     newProperty.PropertyType = newProperty.Assembly.GetTypeToken(interfaceProperty.PropertyType);
 
                     if (interfaceProperty.GetterAccess != null)
@@ -92,6 +103,18 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                         member = property;
                     }
+                    else if (interfaceMember is IDSharpEventInfo interfaceEvent)
+                    {
+                        if (skipExisted && type.GetPropertyOrDefault(interfaceEvent.Name) != null)
+                        {
+                            continue;
+                        }
+
+                        DSharpEventBuilder? @event = type.CreateEvent(interfaceEvent.Name);
+                        SetupEvent(interfaceEvent, @event);
+
+                        member = @event;
+                    }
                     else if (interfaceMember is IDSharpMethodInfo interfaceMethod)
                     {
                         if (skipExisted && type.GetMethodOrDefault(interfaceMethod.Name) != null)
@@ -103,7 +126,8 @@ namespace DialogMaker.Core.Scripting.Compiler
                         method.Parameters.Clear();
                         interfaceMethod.CopyParametersTo(type.Assembly, method.Parameters, true);
 
-                        method.Access = interfaceMethod.Access;
+                        SetupMember(interfaceMethod, method);
+
                         method.ReturnType = interfaceMethod.ReturnType != null ? method.Assembly.GetTypeToken(interfaceMethod.ReturnType) : null;
                         method.AddImplementedMethod(interfaceMethod);
                         Dictionary<IDSharpType, IDSharpType>? replacedGenerics = null;
@@ -219,6 +243,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                 else if (member is IDSharpMethodInfo method)
                 {
                     result = method.ReturnType;
+                }
+                else if (member is IDSharpEventInfo @event)
+                {
+                    result = @event.EventType;
                 }
 
                 return result != null;
@@ -466,6 +494,30 @@ namespace DialogMaker.Core.Scripting.Compiler
                 return declaringType;
             }
         }
+        extension(IDSharpEventInfo @event)
+        {
+            /// <summary>
+            /// Get field that contains event handlers
+            /// </summary>
+            /// <param name="node">Node that represents access to event</param>
+            /// <param name="context">Current compiler context</param>
+            /// <returns>Field that contains event handlers</returns>
+            /// <exception cref="DSharpCompilerException">Assignment available only field events, provided event does not have field</exception>
+            /// <exception cref="DSharpCompilerException">Accessing to event field available only from declaring type</exception>
+            public IDSharpFieldInfo GetHandlersField(AstNode node, DSharpCompilerContext context)
+            {
+                if (@event.HandlersField == null)
+                {
+                    throw new DSharpCompilerException($"Assignment available only field events, \"{@event}\" does not have field", node);
+                }
+                if (!context.CanAccessTo(@event.HandlersField))
+                {
+                    throw new DSharpCompilerException("Accessing to event field available only from declaring type", node);
+                }
+
+                return @event.HandlersField;
+            }
+        }
         extension(IDSharpType type)
         {
             /// <summary>
@@ -599,6 +651,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                         yield return member;
                     }
                 }
+                foreach (var member in type.GetEvents())
+                {
+                    if (IsValid(member))
+                    {
+                        yield return member;
+                    }
+                }
                 foreach (var member in type.GetMethods())
                 {
                     if (IsValid(member))
@@ -650,6 +709,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }
                 }
                 foreach (var property in type.GetProperties())
+                {
+                    if (IsValid(property))
+                    {
+                        yield return property;
+                    }
+                }
+                foreach (var property in type.GetEvents())
                 {
                     if (IsValid(property))
                     {
@@ -1848,6 +1914,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                         }
 
                         return returnType;
+                    }
+                    if (resolveResult.MemberInfo is IDSharpEventInfo eventMember)
+                    {
+                        return eventMember.GetHandlersField(expression, context);
                     }
 
                     return resolveResult.MemberInfo;

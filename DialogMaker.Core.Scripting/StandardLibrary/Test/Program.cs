@@ -308,6 +308,10 @@ public unsafe class Program
         // last exception should be unhandled
 
         Console.WriteLine();
+        Console.WriteLine("Events test:");
+        EventsTest();
+
+        Console.WriteLine();
 
         try
         {
@@ -714,6 +718,35 @@ public unsafe class Program
             Console.WriteLine(input);
         });
     }
+    private static void EventsTest()
+    {
+        Enemy enemy = new("EventEnemy");
+
+        void LocalEnemyEventHander(object? sender, EventArgs e)
+        {
+            Console.WriteLine("Local enemy \"" + enemy.Name + "\" was killed");
+        }
+
+        enemy.Kill();
+
+        enemy.Killed += StaticEnemyEventHander;
+        enemy.Killed += LocalEnemyEventHander;
+        enemy.Killed += StaticEnemyEventHander;
+
+        Console.WriteLine();
+        enemy.Kill();
+
+        enemy.Killed -= LocalEnemyEventHander;
+        enemy.Killed -= StaticEnemyEventHander;
+
+        Console.WriteLine();
+        enemy.Kill();
+    }
+
+    private static void StaticEnemyEventHander(object? sender, EventArgs e)
+    {
+        Console.WriteLine("Static enemy event handler");
+    }
 
     private static bool TryGetZeBlack(string value, out string? result)
     {
@@ -875,7 +908,10 @@ public class Enemy : Player
 {
     public Enemy(string name) : base(name)
     {
+        Killed += OnEnemyKilled;
     }
+
+    public event EventHandler? Killed;
 
     public override string Name => "Поедатель миров";
 
@@ -914,6 +950,22 @@ public class Enemy : Player
         foreach (var name in GetAllGlinomeses(6))
         {
             Console.WriteLine(name);
+        }
+    }
+    public void Kill()
+    {
+        Killed?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnEnemyKilled(object? sender, EventArgs e)
+    {
+        if (sender is Enemy enemy)
+        {
+            Console.WriteLine("Enemy \"" + enemy.Name + "\" killed");
+        }
+        else
+        {
+            Console.WriteLine("Someone else was killed");
         }
     }
 }

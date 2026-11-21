@@ -486,6 +486,16 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                         return true;
                     }
+                    else if (Scope.TryGetClosure(out var closure))
+                    {
+                        var field = closure.Type.Fields.FirstOrDefault(f => f.Name == name);
+
+                        if (field != null)
+                        {
+                            result = new(field);
+                            return true;
+                        }
+                    }
                     if (isMethodIdentifier)
                     {
                         return false;
@@ -1008,9 +1018,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                 var properties = type.GetProperties(predicate);
                 var fields = type.GetFields(predicate);
                 var methods = type.GetMethods(predicate);
+                var @events = type.GetEvents(predicate);
                 //var constructors = type.GetConstructors(predicate);
 
-                return AddRange(properties) + AddRange(fields) + AddRange(methods);
+                return AddRange(properties) + AddRange(fields) + AddRange(methods) + AddRange(@events);
             }
             int FindBaseTypeMember(IDSharpType type, Predicate<IDSharpMemberInfo> predicate)
             {

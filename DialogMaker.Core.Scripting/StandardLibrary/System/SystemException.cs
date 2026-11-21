@@ -2,7 +2,7 @@ namespace System;
 
 public class SystemException : Exception
 {
-    public SystemException() : base("Unknown system excpetion.")
+    public SystemException() : base("Unknown system exception.")
     {
     }
     public SystemException(string message) : base(message)

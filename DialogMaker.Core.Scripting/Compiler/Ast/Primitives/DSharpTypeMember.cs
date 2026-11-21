@@ -29,5 +29,9 @@
         /// Operator member
         /// </summary>
         Operator,
+        /// <summary>
+        /// Event member
+        /// </summary>
+        Event,
     }
 }

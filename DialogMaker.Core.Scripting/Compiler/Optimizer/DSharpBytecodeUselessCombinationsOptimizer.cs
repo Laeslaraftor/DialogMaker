@@ -337,7 +337,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             builder.InstructionsAddMode = startAddMode;
             builder.InstructionsInsertIndex = startInsertIndex;
 
-            return 4;
+            return 2;
         }
         private static int UselessCombinationRemovePointerConverting(UselessCombination uselessCombination, DSharpBytecodeBuilder builder, int startIndex)
         {

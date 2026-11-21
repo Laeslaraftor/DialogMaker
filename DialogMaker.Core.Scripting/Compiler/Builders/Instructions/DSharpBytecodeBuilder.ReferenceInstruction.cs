@@ -16,7 +16,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             {
                 if (ReferencedInstruction == null)
                 {
-                    throw new InvalidOperationException("Referenced instruction not specified");
+                    throw new InvalidOperationException($"Referenced instruction not specified at \"{BytecodeBuilder.Method}\"");
                 }
 
                 base.Write(stream);

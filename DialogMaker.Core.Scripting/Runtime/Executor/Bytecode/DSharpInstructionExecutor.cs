@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
 {
@@ -79,15 +80,31 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// </summary>
         /// <param name="context">Current execution context</param>
         /// <param name="offset">Stack peek offset</param>
+        /// <returns>Pointer to object instance</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected unsafe static DSharpObject* GetInstance(DSharpExecutionContext context, uint offset)
+        {
+            return GetInstance(context, offset, false, out _);
+        }
+        /// <summary>
+        /// Get object instance from stack with specified offset
+        /// </summary>
+        /// <param name="context">Current execution context</param>
+        /// <param name="offset">Stack peek offset</param>
         /// <param name="error">Error that occurred while finding object instance</param>
         /// <returns>Pointer to object instance</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected unsafe static DSharpObject* GetInstance(DSharpExecutionContext context, uint offset, [NotNullWhen(true)] out DSharpMethodExecutionCallback error)
+        {
+            return GetInstance(context, offset, true, out error);
+        }
+        private unsafe static DSharpObject* GetInstance(DSharpExecutionContext context, uint offset, bool checkNullReference, [NotNullWhen(true)] out DSharpMethodExecutionCallback error)
         {
             var instanceFrame = context.Stack.PeekOnlyValues(offset);
 
             if (instanceFrame.ValueType == DSharpStackValueType.Null)
             {
-                error = context.ThrowExecutionException("Null object reference");
+                error = checkNullReference ? context.ThrowExecutionException("Null object reference") : default;
                 return null;
             }
 
@@ -103,7 +120,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
             }
             else
             {
-                error = context.ThrowExecutionException($"Invalid instance value: {instanceFrame.ValueType}");
+                error = checkNullReference ? context.ThrowExecutionException($"Invalid instance value: {instanceFrame.ValueType}") : default;
                 return null;
             }
 

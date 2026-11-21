@@ -11,7 +11,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
         public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
-            var instance = GetInstance(context, 0, out var error);
+            var instance = GetInstance(context, 0);
 
             if (instance != null && instance->Type->IsValueType)
             {

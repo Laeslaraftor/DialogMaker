@@ -22,5 +22,11 @@
         /// This field automatically created by compiler when add and remove method not implemented
         /// </summary>
         public IDSharpFieldInfo? HandlersField { get; }
+
+        /// <summary>
+        /// Get array of interfaces event declarations that implemented by current event
+        /// </summary>
+        /// <returns>Array of interfaces event declarations that implemented by current event</returns>
+        public IDSharpEventInfo[] GetImplementedEvents();
     }
 }

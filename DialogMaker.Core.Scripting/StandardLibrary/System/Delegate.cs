@@ -198,38 +198,37 @@ public abstract unsafe class Delegate
         for (int i = currentInvocationListLength - 1; i >= 0; i--)
         {
             var currentInfo = currentInvocationList[i];
-            bool skipDelegate = false;
 
-            for (int o = 0; o < otherInvocationListLength; o++)
+            if (availableOtherInvocations > 0)
             {
-                var otherInfo = otherInvocationList[o];
+                bool skipDelegate = false;
 
-                if (otherInfo.RuntimeMethodInfo == 0)
+                for (int o = 0; o < otherInvocationListLength; o++)
+                {
+                    var otherInfo = tempOtherInvocationList[o];
+
+                    if (otherInfo.RuntimeMethodInfo == 0)
+                    {
+                        continue;
+                    }
+                    if (currentInfo.Target == otherInfo.Target && 
+                        currentInfo.RuntimeMethodInfo == otherInfo.RuntimeMethodInfo)
+                    {
+                        tempOtherInvocationList[o] = null;
+                        skipDelegate = true;
+                        availableOtherInvocations--;
+                        break;
+                    }
+                }
+
+                if (skipDelegate)
                 {
                     continue;
                 }
-                if (currentInfo.Target == otherInfo.Target && 
-                    currentInfo.RuntimeMethodInfo == otherInfo.RuntimeMethodInfo)
-                {
-                    otherInvocationList[o] = null;
-                    skipDelegate = true;
-                    availableOtherInvocations--;
-                    break;
-                }
-            }
-
-            if (skipDelegate)
-            {
-                continue;
             }
 
             tempInvocationList[currentIndex] = currentInfo;
             currentIndex++;
-
-            if (0 >= availableOtherInvocations)
-            {
-                break;
-            }
         }
 
         if (currentIndex == currentInvocationListLength)
@@ -351,7 +350,7 @@ public abstract unsafe class Delegate
         {
             var currentDelegate = delegates[i];
 
-            if (currentDelegate.MethodInfo != firstDelegate.MethodInfo)
+            if (!TypeEquals(currentDelegate, firstDelegate))
             {
                 throw new ArgumentException("Provided delegates are not instances of the same delegate type");
             }
@@ -365,7 +364,7 @@ public abstract unsafe class Delegate
     {
         if (a != null && b != null)
         {
-            if (a.RuntimeMethodInfo != b.RuntimeMethodInfo)
+            if (!TypeEquals(a, b))
             {
                 throw new ArgumentException("Provided delegates are not instances of the same delegate type");
             }
@@ -389,11 +388,6 @@ public abstract unsafe class Delegate
 
         if (b != null)
         {
-            if (a.RuntimeMethodInfo != b.RuntimeMethodInfo)
-            {
-                throw new ArgumentException("Provided delegates are not instances of the same delegate type");
-            }
-
             return a.RemoveImpl(b);
         }
 
@@ -405,11 +399,6 @@ public abstract unsafe class Delegate
 
         if (b != null)
         {
-            if (a.RuntimeMethodInfo != b.RuntimeMethodInfo)
-            {
-                throw new ArgumentException("Provided delegates are not instances of the same delegate type");
-            }
-
             return a.RemoveAllImpl(b);
         }
         

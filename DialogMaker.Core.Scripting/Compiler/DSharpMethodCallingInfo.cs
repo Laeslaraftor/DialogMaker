@@ -383,6 +383,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                 var callingTypes = callingInfo.GetCallingParameterTypes();
                 var hasParams = info.Key.Callable.HasParams;
 
+                if (callingTypes.Length > parameters.Length)
+                {
+                    continue;
+                }
                 if ((!hasParams && callingTypes.Length != parameters.Length) ||
                     (hasParams && parameters.Length - 1 > callingTypes.Length))
                 {

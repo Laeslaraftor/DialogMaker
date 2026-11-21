@@ -294,6 +294,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         [Keyword("delegate")]
         Delegate,
         /// <summary>
+        /// Event keyword
+        /// </summary>
+        [Keyword("event")]
+        Event,
+        /// <summary>
         /// Getter keyword
         /// </summary>
         [Keyword("get")]

@@ -60,6 +60,11 @@ namespace DialogMaker.Core.Scripting.Runtime
             /// <returns>Array of all properties that contains in current type</returns>
             public IDSharpPropertyInfo[] GetProperties() => type.GetProperties(p => true);
             /// <summary>
+            /// Get all events in current type
+            /// </summary>
+            /// <returns>Array of all events that contains in current type</returns>
+            public IDSharpEventInfo[] GetEvents() => type.GetEvents(p => true);
+            /// <summary>
             /// Get all methods in current type
             /// </summary>
             /// <returns>Array of all methods that contains in current type</returns>
@@ -163,6 +168,14 @@ namespace DialogMaker.Core.Scripting.Runtime
             {
                 return type.GetPropertyOrDefault(name) ?? throw new ArgumentException($"Unable to find property {name} at {type}");
             }
+            public IDSharpEventInfo? GetEventOrDefault(string name)
+            {
+                return type.GetMemberOrDefault(t => t.GetEvents(), name);
+            }
+            public IDSharpEventInfo GetEvent(string name)
+            {
+                return type.GetEventOrDefault(name) ?? throw new ArgumentException($"Unable to find event {name} at {type}");
+            }
             public IDSharpIndexerInfo? GetIndexerOrDefault(params IEnumerable<IDSharpType> parametersType)
             {
                 int paramsCount = parametersType.Count();
@@ -216,7 +229,7 @@ namespace DialogMaker.Core.Scripting.Runtime
             public T? GetMemberOrDefault<T>(Func<IDSharpType, IEnumerable<T>> selector, string name)
                 where T : IDSharpMemberInfo
             {
-                return type.GetMemberOrDefault<T>(selector, m => m.Name == name);
+                return type.GetMemberOrDefault(selector, m => m.Name == name);
             }
             public T? GetMemberOrDefault<T>(Func<IDSharpType, IEnumerable<T>> selector, Predicate<T> predicate)
                 where T : IDSharpMemberInfo
@@ -983,14 +996,20 @@ namespace DialogMaker.Core.Scripting.Runtime
                 var fields = type.GenericTemplate.GetFields();
                 var methods = type.GenericTemplate.GetMethods();
                 var constructors = type.GenericTemplate.GetConstructors();
+                var @events = type.GenericTemplate.GetEvents();
                 var currentProperties = type.GetProperties();
                 var currentFields = type.GetFields();
                 var currentMethods = type.GetMethods();
                 var currentConstructors = type.GetConstructors();
+                var currentEvents = type.GetEvents();
 
                 if (properties.Length != currentProperties.Length)
                 {
                     throw new InvalidOperationException("Type must contains same properties that it's template");
+                }
+                if (events.Length != currentEvents.Length)
+                {
+                    throw new InvalidOperationException("Type must contains same events that it's template");
                 }
                 if (fields.Length != currentFields.Length)
                 {
@@ -1033,6 +1052,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                 }
 
                 Copy(properties, currentProperties);
+                Copy(events, currentEvents);
                 Copy(fields, currentFields);
                 Copy(methods, currentMethods);
                 Copy(constructors, currentConstructors);

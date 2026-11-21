@@ -11,7 +11,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
         public unsafe override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
         {
-            var methodInfoAddressInstance = GetInstance(context, 0, out var error);
+            var methodInfoAddressInstance = GetInstance(context, 0);
 
             if (methodInfoAddressInstance == null)
             {
@@ -25,7 +25,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 return context.ThrowExecutionException("Dynamic calling not supported generic methods");
             }
 
-            var instance = GetInstance(context, (uint)methodInfo->ParametersType.Length + 1, out error);
+            var instance = GetInstance(context, (uint)methodInfo->ParametersType.Length + 1);
 
             return DSharpCallInstructionExecutor.Call(instruction, ref context, new()
             {

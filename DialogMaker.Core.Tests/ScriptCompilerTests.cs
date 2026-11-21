@@ -271,6 +271,15 @@ namespace DialogMaker.Core.Tests
 
                 Console.WriteLine();
 
+                if (type.Events.Count > 0)
+                {
+                    Console.WriteLine("    Events:");
+
+                    foreach (var @event in type.Events)
+                    {
+                        PrintEvent(@event);
+                    }
+                }
                 if (type.Properties.Count > 0)
                 {
                     Console.WriteLine("    Properties:");
@@ -371,11 +380,24 @@ namespace DialogMaker.Core.Tests
                 PrintRawValue(field);
                 Console.WriteLine();
             }
+            void PrintEvent(DSharpEventBuilder @event)
+            {
+                Console.Write("        event ");
+                PrintType(@event.EventType);
+                Console.Write(@event.Name);
+
+                if (@event.HandlersField != null)
+                {
+                    Console.Write(" { add; remove; }");
+                }
+
+                Console.WriteLine();
+            }
             void PrintProperty(DSharpPropertyBuilder property, IEnumerable<DSharpMethodBuilderParameter>? parameters = null)
             {
                 Console.Write("        ");
                 PrintType(property.PropertyType);
-                Console.Write($"{property.Name}");
+                Console.Write(property.Name);
 
                 if (parameters != null)
                 {

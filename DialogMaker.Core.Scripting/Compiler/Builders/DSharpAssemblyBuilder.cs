@@ -742,6 +742,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         private readonly List<DSharpTypeToken> _fieldsDefinitions = [];
         private readonly List<DSharpTypeToken> _propertiesDefinitions = [];
         private readonly List<DSharpTypeToken> _operatorsDefinitions = [];
+        private readonly List<DSharpTypeToken> _eventsDefinitions = [];
         private readonly Dictionary<int, DSharpCustomDelegateType> _actionTypes = [];
         private readonly Dictionary<int, DSharpCustomDelegateType> _funcTypes = [];
         private readonly Dictionary<IDSharpType, Dictionary<IDSharpMemberInfo, IDSharpMemberInfo>> _typesReplacedMembers = [];
@@ -771,6 +772,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             else if (type == DSharpMetadataTokenType.Operator)
             {
                 tokensBuffer = _operatorsDefinitions;
+            }
+            else if (type == DSharpMetadataTokenType.Event)
+            {
+                tokensBuffer = _eventsDefinitions;
             }
             else
             {
@@ -805,6 +810,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             else if (member.MetadataToken.Type == DSharpMetadataTokenType.Operator)
             {
                 tokens = _operatorsDefinitions;
+            }
+            else if (member.MetadataToken.Type == DSharpMetadataTokenType.Operator)
+            {
+                tokens = _eventsDefinitions;
             }
             else
             {
@@ -1030,6 +1039,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
                     replacedMembers.Add(property, newProperty);
                 }
+                foreach (var @event in genericType.GetEvents())
+                {
+                    var newEvent = newType.CreateEvent(@event.Name);
+                    SetupMember(newEvent, @event);
+
+                    newEvent.EventType = GetTypeToken(ReplaceGenericParameters(@event.EventType, replacedTypes));
+                    newEvent.OriginalEvent = @event;
+
+                    ProcessMethod(newEvent.AddMethod, @event.AddMethod);
+                    ProcessMethod(newEvent.RemoveMethod, @event.RemoveMethod);
+                    SetupImplementations(@event.GetImplementedEvents(), newEvent.AddImplementedEvent);
+
+                    replacedMembers.Add(@event, newEvent);
+                }
                 foreach (var indexer in genericType.GetIndexers())
                 {
                     var newIndexer = newType.CreateIndexer();
@@ -1180,6 +1203,17 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
                         addImplementation((T)newProperty);
                     }
+                    else if (implementation is IDSharpEventInfo @event)
+                    {
+                        var newEvent = replacedType.GetEvents(p => IsSame(p) && TypesEquals(@event.EventType, p.EventType)).FirstOrDefault();
+
+                        if (newEvent == null)
+                        {
+                            throw new InvalidOperationException($"Unable to find new generic event implementation for \"{implementation}\"");
+                        }
+
+                        addImplementation((T)newEvent);
+                    }
                     else if (implementation is IDSharpMethodInfo method)
                     {
                         var newMethod = replacedType.GetMethods(m => IsSame(m) &&
@@ -1189,6 +1223,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                         addImplementation((T)newMethod);
                     }
                 }
+            }
+            void SetupMember(DSharpMemberInfoBuilder newMember, IDSharpMemberInfo member)
+            {
+                newMember.Access = member.Access;
+                newMember.IsStatic = member.IsStatic;
+                newMember.IsUnsafe = member.IsUnsafe;
             }
             void SetupOperator(DSharpOperatorBuilder newOperator, IDSharpOperatorInfo @operator)
             {
@@ -1214,8 +1254,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
             void SetupProperty(DSharpPropertyBuilder newProperty, IDSharpPropertyInfo property)
             {
-                newProperty.Access = property.Access;
-                newProperty.IsStatic = property.IsStatic;
+                SetupMember(newProperty, property);
+
                 newProperty.IsSealed = property.IsSealed;
                 newProperty.IsAbstract = property.IsAbstract;
                 newProperty.IsVirtual = property.IsVirtual;
@@ -1902,7 +1942,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
         #endregion
 
-        #region Константы
+        #region Constants
 
         public const string VarName = "var";
 

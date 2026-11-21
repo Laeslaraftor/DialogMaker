@@ -2,10 +2,10 @@ namespace System;
 
 public class ArgumentOutOfRangeException : SystemException
 {
-    public ArgumentOutOfRangeException() : base()
+    public ArgumentOutOfRangeException() : base("Argument value is out of range")
     {
     }
-    public ArgumentOutOfRangeException(string parameterName) : base("Argument value out of range: " + parameterName)
+    public ArgumentOutOfRangeException(string parameterName) : base("Argument value is out of range: " + parameterName)
     {
         ParameterName = parameterName;
     }

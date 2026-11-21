@@ -3,6 +3,7 @@ using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Scopes;
 using DialogMaker.Core.Scripting.Runtime;
+using System.Numerics;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -75,6 +76,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             _createdParameters.Clear();
             _createdGenericTypes.Clear();
             _createdDelegates.Clear();
+            _createdEvents.Clear();
             _currentNamespace = null;
             _typesToSetupBases = null;
         }
@@ -119,6 +121,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     CompileFieldsInitializer(type);
                 }
+            }
+            foreach (var info in _createdEvents)
+            {
+                CompileEvent(info.Key, info.Value);
             }
             foreach (var info in _createdProperties)
             {

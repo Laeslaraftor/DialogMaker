@@ -26,6 +26,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         private readonly Dictionary<DSharpFieldBuilder, ExpressionNode> _createdGlobalVariablesRawValueExpressions = [];
         private readonly Dictionary<DSharpFieldBuilder, VariableNode> _createdGlobalVariables = [];
         private readonly Dictionary<DSharpPropertyBuilder, FieldNode> _createdProperties = [];
+        private readonly Dictionary<DSharpEventBuilder, EventNode> _createdEvents = [];
         private readonly Dictionary<DSharpMethodBuilder, MethodNode> _createdMethods = [];
         private readonly Dictionary<DSharpMethodBuilder, FinalizerNode> _createdFinalizers = [];
         private readonly Dictionary<DSharpIndexerBuilder, IndexerNode> _createdIndexers = [];
@@ -208,6 +209,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     throw new DSharpCompilerException($"{declaration.Type} can not contains operators", declaration);
                 }
+                if (declaration.Events.Count > 0)
+                {
+                    throw new DSharpCompilerException($"{declaration.Type} can not contains events", declaration);
+                }
                 if (declaration.Children.Count > 0)
                 {
                     throw new DSharpCompilerException($"{declaration.Type} can not contains children", declaration);
@@ -278,6 +283,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                     foreach (var constructor in declaration.Constructors)
                     {
                         CreateConstructor(type, constructor);
+                    }
+                    foreach (var @event in declaration.Events)
+                    {
+                        CreateEvent(type, @event);
                     }
                 }
             }
@@ -422,6 +431,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             method.IsSealed = methodNode.IsSealed;
             method.IsAbstract = methodNode.Mode == DSharpObjectMemberMode.Abstract;
             method.IsVirtual = methodNode.Mode == DSharpObjectMemberMode.Virtual;
+            method.IsUnsafe = methodNode.IsUnsafe;
 
             if (declareType == null)
             {
@@ -545,6 +555,15 @@ namespace DialogMaker.Core.Scripting.Compiler
             @operator.IsUnsafe = operatorNode.IsUnsafe;
 
             _createdOperators.Add(@operator, operatorNode);
+        }
+        private void CreateEvent(DSharpTypeBuilder declareType, EventNode eventNode)
+        {
+            var @event = declareType.CreateEvent(eventNode.Name);
+            @event.Access = eventNode.Access;
+            @event.IsStatic = eventNode.IsStatic;
+            @event.IsUnsafe = eventNode.IsUnsafe;
+
+            _createdEvents.Add(@event, eventNode);
         }
         private void CreateConstructor(DSharpTypeBuilder? declareType, ConstructorNode constructorNode)
         {
@@ -849,6 +868,15 @@ namespace DialogMaker.Core.Scripting.Compiler
                 if (info.Value.Type != null)
                 {
                     info.Key.FieldTypeResolver = () => context.ResolveType(info.Value.Type);
+                }
+            }
+            foreach (var info in _createdEvents)
+            {
+                DSharpCompilerContext context = new(Context, info.Key);
+
+                if (info.Value.Type != null)
+                {
+                    info.Key.EventTypeResolver = () => context.ResolveType(info.Value.Type);
                 }
             }
             foreach (var info in _createdProperties)
@@ -1274,6 +1302,19 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 CheckTypeToken(property, property.PropertyType, fieldNode);
+            }
+            foreach (var @event in type.Events)
+            {
+                if (!_createdEvents.TryGetValue(@event, out var eventNode))
+                {
+                    continue;
+                }
+                if (eventNode.Type == null)
+                {
+                    throw new DSharpCompilerException($"Event \"{@event}\" should have containing value type", eventNode);
+                }
+
+                CheckTypeToken(@event, @event.EventType, eventNode);
             }
         }
 

@@ -14,10 +14,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             {
                 if (field == null)
                 {
-                    if (EventTypeGetter != null)
+                    if (EventTypeResolver != null)
                     {
-                        field = EventTypeGetter();
-                        EventTypeGetter = null;
+                        field = EventTypeResolver();
+                        EventTypeResolver = null;
                     }
                     else if (OriginalEvent != null)
                     {
@@ -27,29 +27,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
                 return field;
             }
+            set;
         }
         public DSharpMethodBuilder AddMethod
         {
             get
             {
-                if (field == null)
-                {
-                    if (DeclaringType is not DSharpTypeBuilder declaringTypeBuilder)
-                    {
-                        throw new InvalidOperationException("Declaring type should be as builder");
-                    }
-
-                    var methodName = string.Format(AddMethodNameFormat, Name);
-
-                    if (!_triedToFindAdd)
-                    {
-                        _triedToFindAdd = true;
-                        field = declaringTypeBuilder.Methods.FirstOrDefault(m => m.Name == methodName);
-                    }
-
-                    field ??= declaringTypeBuilder.CreateMethod(t => DSharpMethodBuilder.CreateEventAdd(this, methodName, t));
-                }
-
+                field ??= GetOrCreateAccessor(AddMethodNameFormat, ref _triedToFindAdd, (name, type) => type.CreateMethod(t => DSharpMethodBuilder.CreateEventAdd(this, name, t)));
                 return field;
             }
         }
@@ -57,29 +41,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         {
             get
             {
-                if (field == null)
-                {
-                    if (DeclaringType is not DSharpTypeBuilder declaringTypeBuilder)
-                    {
-                        throw new InvalidOperationException("Declaring type should be as builder");
-                    }
-
-                    var methodName = string.Format(RemoveMethodNameFormat, Name);
-
-                    if (!_triedToFindRemove)
-                    {
-                        _triedToFindRemove = true;
-                        field = declaringTypeBuilder.Methods.FirstOrDefault(m => m.Name == methodName);
-                    }
-
-                    field ??= declaringTypeBuilder.CreateMethod(t => DSharpMethodBuilder.CreateEventRemove(this, methodName, t));
-                }
-
+                field ??= GetOrCreateAccessor(RemoveMethodNameFormat, ref _triedToFindRemove, (name, type) => type.CreateMethod(t => DSharpMethodBuilder.CreateEventRemove(this, name, t)));
                 return field;
             }
         }
         public DSharpFieldBuilder? HandlersField { get; private set; }
-        public Func<DSharpTypeToken>? EventTypeGetter { get; set; }
+        public Func<DSharpTypeToken>? EventTypeResolver { get; set; }
         public IDSharpEventInfo? OriginalEvent { get; set; }
         public ReadOnlyCollection<IDSharpEventInfo> ImplementedEvents
         {
@@ -166,6 +133,36 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
 
             return result + Name;
+        }
+
+        public IDSharpEventInfo[] GetImplementedEvents() => [.. _implementedEvents];
+
+        private DSharpMethodBuilder GetOrCreateAccessor(string nameFormat, ref bool triedToFind, Func<string, DSharpTypeBuilder, DSharpMethodBuilder> fabric)
+        {
+            if (DeclaringType is not DSharpTypeBuilder declaringTypeBuilder)
+            {
+                throw new InvalidOperationException("Declaring type should be as builder");
+            }
+
+            var name = string.Format(nameFormat, Name);
+            DSharpMethodBuilder? result = null;
+
+            if (!triedToFind)
+            {
+                triedToFind = true;
+                result = declaringTypeBuilder.Methods.FirstOrDefault(m => m.Name == name);
+            }
+            if (result == null)
+            {
+                result = fabric(name, declaringTypeBuilder);
+                result.Parameters.Add(new(Assembly)
+                {
+                    Name = "value",
+                    TypeGetter = () => EventType
+                });
+            }
+
+            return result;
         }
 
         #endregion

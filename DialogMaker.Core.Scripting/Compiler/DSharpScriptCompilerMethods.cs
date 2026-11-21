@@ -1706,6 +1706,45 @@ namespace DialogMaker.Core.Scripting.Compiler
                     skip.ReferencedInstruction = code.Empty();
                 }
 
+                if ((assignExpression.Operator == DSharpAssignmentOperator.PlusAssign ||
+                    assignExpression.Operator == DSharpAssignmentOperator.MinusAssign) &&
+                    context.TryResolveMember(assignExpression.Left, out var leftMember) &&
+                    leftMember.MemberInfo is IDSharpEventInfo eventLeftMember)
+                {
+                    DSharpBytecodeBuilder.Instruction? skipInstruction = null;
+
+                    if (!eventLeftMember.IsStatic)
+                    {
+                        CompileEndPointMember(method, code, assignExpression.Left, null, (i, _) => skipInstruction = i, ref settings, context);
+                    }
+
+                    CompileRight(eventLeftMember.EventType, ref settings);
+
+                    if (assignExpression.Operator == DSharpAssignmentOperator.PlusAssign)
+                    {
+                        code.Call(eventLeftMember.AddMethod);
+                    }
+                    else
+                    {
+                        code.Call(eventLeftMember.RemoveMethod);
+                    }
+                    if (eventLeftMember.IsStatic)
+                    {
+                        code.Pop();
+                    }
+                    else
+                    {
+                        code.PopRepeat(2);
+                    }
+
+                    if (skipInstruction != null)
+                    {
+                        SetSkipInstruction(skipInstruction);
+                    }
+
+                    return null;
+                }
+
                 if (assignExpression.Left is MemberAccessExpressionNode leftMemberAccess &&
                     leftMemberAccess.TryGetFinalMember(out var leftFinalMember) &&
                     leftFinalMember is ArrayAccessExpressionNode)
@@ -1937,6 +1976,11 @@ namespace DialogMaker.Core.Scripting.Compiler
                     }, ref settings, context)
                         ?? throw new ArgumentException($"Unable to find member: {leftExpression}", nameof(expression));
 
+                    if (member is IDSharpEventInfo eventMember)
+                    {
+                        member = eventMember.GetHandlersField(assignExpression, context);
+                    }
+
                     DSharpPointerType? pointerInfo = null;
 
                     if (!member.TryGetReturnType(out var returnType))
@@ -2164,6 +2208,11 @@ namespace DialogMaker.Core.Scripting.Compiler
                     {
                         throw new DSharpCompilerException("Unable to find any available member", expression, error);
                     }
+                }
+
+                if (member is IDSharpEventInfo eventMember)
+                {
+                    member = eventMember.GetHandlersField(expression, context);
                 }
 
                 bool isDelegateWasReturned = false;
@@ -3051,13 +3100,25 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new InvalidOperationException($"Condition should returns boolean value, got \"{conditionType}\": {conditionalExpression.Condition}");
                 }
 
+                void CompileExpression(ExpressionNode expression, ref DSharpMethodCompileSettings settings)
+                {
+                    if (requiredType != null)
+                    {
+                        CompileExpressionValueWithRequestedType(method, requiredType, code, expression, ref settings, conditionalExpression, context);
+                    }
+                    else
+                    {
+                        CompileValueExpression(method, expression, ref settings, conditionalExpression, context);
+                    }
+                }
+
                 CompileValueExpression(method, conditionalExpression.Condition, ref settings, conditionalExpression, context);
                 var jumpToFalse = code.JumpIfFalse();
                 code.Pop();
-                CompileValueExpression(method, conditionalExpression.TrueExpression, ref settings, conditionalExpression, context);
+                CompileExpression(conditionalExpression.TrueExpression, ref settings);
                 var skipFalse = code.Jump();
                 jumpToFalse.ReferencedInstruction = code.Pop();
-                CompileValueExpression(method, conditionalExpression.FalseExpression, ref settings, conditionalExpression, context);
+                CompileExpression(conditionalExpression.FalseExpression, ref settings);
                 skipFalse.ReferencedInstruction = code.Empty();
 
                 return null;
@@ -3357,28 +3418,16 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 var leftExpression = selectNotNullExpressionNode.Left;
-                IDSharpType? leftExpressionType = null;
+                var leftExpressionType = leftExpression.GetRealExpressionType(assembly, context, requiredType);
 
-                try
+                if (requiredType != null)
                 {
-                    var member = leftExpression.GetExpressionType(Assembly, context);
-
-                    if (member != null && member.TryGetTypeOrReturnType(out var returnType))
-                    {
-                        leftExpressionType = returnType;
-                    }
+                    CompileExpressionValueWithRequestedType(method, requiredType, code, leftExpression, ref settings, expression, context);
                 }
-                catch (Exception error)
+                else
                 {
-                    throw new DSharpCompilerException("Unable to get left expression value", leftExpression, error);
+                    CompileValueExpression(method, leftExpression, ref settings, expression, context);
                 }
-
-                if (leftExpressionType == null)
-                {
-                    throw new DSharpCompilerException("Unable to get left expression value", leftExpression);
-                }
-
-                CompileValueExpression(method, leftExpression, ref settings, expression, context);
 
                 int popAmount = 2;
                 bool firstIsNullable = false;
@@ -3387,6 +3436,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     firstIsNullable = true;
                     var nullableInfo = DSharpNullableType.Create(leftExpressionType);
+                    leftExpressionType = nullableInfo.MemberType;
                     code.LoadPropertyOrField(nullableInfo.HasValueProperty);
                 }
                 else
@@ -3399,7 +3449,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 var skipInstruction = code.JumpIfTrue();
                 code.PopRepeat(popAmount);
 
-                CompileValueExpression(method, selectNotNullExpressionNode.Right, ref settings, expression, context);
+                CompileExpressionValueWithRequestedType(method, leftExpressionType, code, selectNotNullExpressionNode.Right, ref settings, expression, context);
 
                 code.SkipNext();
                 skipInstruction.ReferencedInstruction = firstIsNullable ? code.Pop() : code.PopRepeat(2);
@@ -4483,12 +4533,13 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             IDSharpMemberInfo? result = endPointHandler(previousTarget, currentMemberAccess.Member, ref settings, context);
 
-            if (skipInstructions.Count > 0 &&
-                result != null && result.TryGetTypeOrReturnType(out var resultType))
+            if (skipInstructions.Count > 0)
             {
                 DSharpBytecodeBuilder.Instruction? endingInstruction = null;
 
-                if (!startDoNotCompileEndPointMemberValue)
+                if (result != null &&
+                    result.TryGetTypeOrReturnType(out var resultType) &&
+                    !startDoNotCompileEndPointMemberValue)
                 {
                     DSharpNullableType? nullableType = null;
 
