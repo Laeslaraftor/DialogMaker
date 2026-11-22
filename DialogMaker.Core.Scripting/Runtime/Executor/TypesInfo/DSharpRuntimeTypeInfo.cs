@@ -51,7 +51,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <summary>
         /// Converter from D# to C#
         /// </summary>
-        public delegate*<DSharpObject*, object> Converter;
+        public DSharpRuntimeTypeConverterInfo ConverterInfo;
         /// <summary>
         /// Is type generic. Generic types used it generic parameters in methods
         /// </summary>

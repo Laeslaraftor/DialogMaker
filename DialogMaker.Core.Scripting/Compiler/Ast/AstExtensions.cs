@@ -82,6 +82,38 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
                 };
             }
         }
+        extension(DSharpLiteralType literalType)
+        {
+            /// <summary>
+            /// Get token type that represents by current literal type
+            /// </summary>
+            /// <returns>Token type</returns>
+            /// <exception cref="ArgumentException">Invalid literal type</exception>
+            public DSharpTokenType ToToken()
+            {
+                return literalType switch
+                {
+                    DSharpLiteralType.Null => DSharpTokenType.Null,
+                    DSharpLiteralType.Byte => DSharpTokenType.Byte,
+                    DSharpLiteralType.SByte => DSharpTokenType.SByte,
+                    DSharpLiteralType.Bool => DSharpTokenType.Bool,
+                    DSharpLiteralType.Short => DSharpTokenType.Short,
+                    DSharpLiteralType.UShort => DSharpTokenType.UShort,
+                    DSharpLiteralType.Char => DSharpTokenType.Char,
+                    DSharpLiteralType.Int => DSharpTokenType.Int,
+                    DSharpLiteralType.UInt => DSharpTokenType.UInt,
+                    DSharpLiteralType.Long => DSharpTokenType.Long,
+                    DSharpLiteralType.ULong => DSharpTokenType.ULong,
+                    DSharpLiteralType.NInt => DSharpTokenType.Nint,
+                    DSharpLiteralType.NUInt => DSharpTokenType.Nuint,
+                    DSharpLiteralType.Float => DSharpTokenType.Float,
+                    DSharpLiteralType.Double => DSharpTokenType.Double,
+                    DSharpLiteralType.Decimal => DSharpTokenType.Decimal,
+                    DSharpLiteralType.String => DSharpTokenType.String,
+                    _ => throw new ArgumentException($"Invalid literal type: {literalType}", nameof(literalType))
+                };
+            }
+        }
         extension(string value)
         {
             internal string GetFileName(bool removeExtension = true)

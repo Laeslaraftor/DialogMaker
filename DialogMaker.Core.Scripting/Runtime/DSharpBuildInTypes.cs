@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime.Executor;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
@@ -119,79 +120,79 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <summary>
         /// Boolean/bool: true, false (1 byte)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo Boolean = new("System.Boolean", sizeof(bool), DSharpTokenType.Bool, &ToBoolean);
+        public static readonly DSharpBuildInTypeInfo Boolean = new("System.Boolean", sizeof(bool), DSharpTokenType.Bool, DSharpLiteralType.Bool, &ToBoolean);
         /// <summary>
         /// Unsigned byte: 0-255 (1 byte)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo Byte = new("System.Byte", sizeof(byte), DSharpTokenType.Byte, &ToByte, new(byte.MinValue, byte.MaxValue, typeof(byte)));
+        public static readonly DSharpBuildInTypeInfo Byte = new("System.Byte", sizeof(byte), DSharpTokenType.Byte, DSharpLiteralType.Byte, &ToByte, new(byte.MinValue, byte.MaxValue, typeof(byte)));
         /// <summary>
         /// Signed byte: -128-127 (1 byte)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo SByte = new("System.SByte", sizeof(sbyte), DSharpTokenType.SByte, &ToSByte, new(sbyte.MinValue, sbyte.MaxValue, typeof(sbyte)));
+        public static readonly DSharpBuildInTypeInfo SByte = new("System.SByte", sizeof(sbyte), DSharpTokenType.SByte, DSharpLiteralType.SByte, &ToSByte, new(sbyte.MinValue, sbyte.MaxValue, typeof(sbyte)));
         /// <summary>
         /// UTF-16 character is unsigned short (2 bytes)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo Char = new("System.Char", sizeof(char), DSharpTokenType.Char, &ToChar, new(char.MinValue, char.MaxValue, typeof(char)));
+        public static readonly DSharpBuildInTypeInfo Char = new("System.Char", sizeof(char), DSharpTokenType.Char, DSharpLiteralType.Char, &ToChar, new(char.MinValue, char.MaxValue, typeof(char)));
         /// <summary>
         /// Decimal: ±1.0 x 10^-28 to ±7.9228 x 10^28, 28-29 digits (16 bytes)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo Decimal = new("System.Decimal", sizeof(decimal), DSharpTokenType.Decimal, &ToDecimal, new((double)decimal.MinValue, (double)decimal.MaxValue, typeof(decimal)));
+        public static readonly DSharpBuildInTypeInfo Decimal = new("System.Decimal", sizeof(decimal), DSharpTokenType.Decimal, DSharpLiteralType.Decimal, &ToDecimal, new((double)decimal.MinValue, (double)decimal.MaxValue, typeof(decimal)));
         /// <summary>
         /// Double precision floating-point number: ±5.0 × 10^−324 to ±1.7 × 10^308, ~15-17 digits (8 bytes)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo Double = new("System.Double", sizeof(double), DSharpTokenType.Double, &ToDouble, new(double.MinValue, double.MaxValue, typeof(double)));
+        public static readonly DSharpBuildInTypeInfo Double = new("System.Double", sizeof(double), DSharpTokenType.Double, DSharpLiteralType.Double, &ToDouble, new(double.MinValue, double.MaxValue, typeof(double)));
         /// <summary>
         /// Single precision floating-point number: ±1.5 x 10^−45 to ±3.4 x 10^38, ~6-9 digits (4 bytes)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo Single = new("System.Single", sizeof(float), DSharpTokenType.Float, &ToSingle, new(float.MinValue, float.MaxValue, typeof(float)));
+        public static readonly DSharpBuildInTypeInfo Single = new("System.Single", sizeof(float), DSharpTokenType.Float, DSharpLiteralType.Float, &ToSingle, new(float.MinValue, float.MaxValue, typeof(float)));
         /// <summary>
         /// Integer: -2,147,483,648 to 2,147,483,647 (4 bytes)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo Int32 = new("System.Int32", sizeof(int), DSharpTokenType.Int, &ToInt32, new(int.MinValue, int.MaxValue, typeof(int)));
+        public static readonly DSharpBuildInTypeInfo Int32 = new("System.Int32", sizeof(int), DSharpTokenType.Int, DSharpLiteralType.Int, &ToInt32, new(int.MinValue, int.MaxValue, typeof(int)));
         /// <summary>
         /// Unsigned integer: 0 to 4,294,967,295 (4 bytes)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo UInt32 = new("System.UInt32", sizeof(uint), DSharpTokenType.UInt, &ToUInt32, new(uint.MinValue, uint.MaxValue, typeof(uint)));
+        public static readonly DSharpBuildInTypeInfo UInt32 = new("System.UInt32", sizeof(uint), DSharpTokenType.UInt, DSharpLiteralType.UInt, &ToUInt32, new(uint.MinValue, uint.MaxValue, typeof(uint)));
         /// <summary>
         /// Native integer which size depends on platform (4 or 8 bytes)
         /// </summary>
 #if NET10_0
-        public static readonly DSharpBuildInTypeInfo IntPtr = new("System.IntPtr", sizeof(nint), DSharpTokenType.Nint, &ToIntPtr, new(nint.MinValue, nint.MaxValue, typeof(nint)));
+        public static readonly DSharpBuildInTypeInfo IntPtr = new("System.IntPtr", sizeof(nint), DSharpTokenType.Nint, DSharpLiteralType.NInt, &ToIntPtr, new(nint.MinValue, nint.MaxValue, typeof(nint)));
 #else
-        public static readonly DSharpBuildInTypeInfo IntPtr = new("System.IntPtr", sizeof(nint), DSharpTokenType.Nint, &ToIntPtr, new(sizeof(nint) == sizeof(long) ? long.MinValue : int.MinValue, sizeof(nint) == sizeof(long) ? long.MaxValue : int.MaxValue, typeof(nint)));
+        public static readonly DSharpBuildInTypeInfo IntPtr = new("System.IntPtr", sizeof(nint), DSharpTokenType.Nint, DSharpLiteralType.NInt, &ToIntPtr, new(sizeof(nint) == sizeof(long) ? long.MinValue : int.MinValue, sizeof(nint) == sizeof(long) ? long.MaxValue : int.MaxValue, typeof(nint)));
 #endif
         /// <summary>
         /// Unsigned native integer which size depends on platform (4 or 8 bytes)
         /// </summary>
 #if NET10_0_OR_GREATER
-        public static readonly DSharpBuildInTypeInfo UIntPtr = new("System.UIntPtr", sizeof(nuint), DSharpTokenType.Nuint, &ToUIntPtr, new(nuint.MinValue, nuint.MaxValue, typeof(nuint)));
+        public static readonly DSharpBuildInTypeInfo UIntPtr = new("System.UIntPtr", sizeof(nuint), DSharpTokenType.Nuint, DSharpLiteralType.NUInt, &ToUIntPtr, new(nuint.MinValue, nuint.MaxValue, typeof(nuint)));
 #else
-        public static readonly DSharpBuildInTypeInfo UIntPtr = new("System.UIntPtr", sizeof(nuint), DSharpTokenType.Nuint, &ToUIntPtr, new(sizeof(nuint) == sizeof(ulong) ? ulong.MinValue : uint.MinValue, sizeof(nuint) == sizeof(ulong) ? ulong.MaxValue : uint.MaxValue, typeof(nuint)));
+        public static readonly DSharpBuildInTypeInfo UIntPtr = new("System.UIntPtr", sizeof(nuint), DSharpTokenType.Nuint, DSharpLiteralType.NUInt, &ToUIntPtr, new(sizeof(nuint) == sizeof(ulong) ? ulong.MinValue : uint.MinValue, sizeof(nuint) == sizeof(ulong) ? ulong.MaxValue : uint.MaxValue, typeof(nuint)));
 #endif
         /// <summary>
         /// Long: -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807 (8 bytes)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo Int64 = new("System.Int64", sizeof(long), DSharpTokenType.Long, &ToInt64, new(long.MinValue, long.MaxValue, typeof(long)));
+        public static readonly DSharpBuildInTypeInfo Int64 = new("System.Int64", sizeof(long), DSharpTokenType.Long, DSharpLiteralType.Long, &ToInt64, new(long.MinValue, long.MaxValue, typeof(long)));
         /// <summary>
         /// Unsigned long: 0 to 18,446,744,073,709,551,615 (8 bytes)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo UInt64 = new("System.UInt64", sizeof(ulong), DSharpTokenType.ULong, &ToUInt64, new(ulong.MinValue, ulong.MaxValue, typeof(ulong)));
+        public static readonly DSharpBuildInTypeInfo UInt64 = new("System.UInt64", sizeof(ulong), DSharpTokenType.ULong, DSharpLiteralType.ULong, &ToUInt64, new(ulong.MinValue, ulong.MaxValue, typeof(ulong)));
         /// <summary>
         /// Short integer: -32,768 to 32,767 (2 bytes)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo Int16 = new("System.Int16", sizeof(short), DSharpTokenType.Short, &ToInt16, new(short.MinValue, short.MaxValue, typeof(short)));
+        public static readonly DSharpBuildInTypeInfo Int16 = new("System.Int16", sizeof(short), DSharpTokenType.Short, DSharpLiteralType.Short, &ToInt16, new(short.MinValue, short.MaxValue, typeof(short)));
         /// <summary>
         /// Unsigned short integer: 0 to 65,535 (2 bytes)
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo UInt16 = new("System.UInt16", sizeof(ushort), DSharpTokenType.UShort, &ToUInt16, new(ushort.MinValue, ushort.MaxValue, typeof(ushort)));
+        public static readonly DSharpBuildInTypeInfo UInt16 = new("System.UInt16", sizeof(ushort), DSharpTokenType.UShort, DSharpLiteralType.UShort, &ToUInt16, new(ushort.MinValue, ushort.MaxValue, typeof(ushort)));
         /// <summary>
         /// Empty structure that represents non returning value
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo Void = new("System.Void", 0, DSharpTokenType.Void, null);
+        public static readonly DSharpBuildInTypeInfo Void = new("System.Void", 0, DSharpTokenType.Void, null, null);
         /// <summary>
         /// Empty structure that represents null value
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo Null = new("System.Null", 0, DSharpTokenType.Null, null);
+        public static readonly DSharpBuildInTypeInfo Null = new("System.Null", 0, DSharpTokenType.Null, DSharpLiteralType.Null, null);
         /// <summary>
         /// Structure that represents nullable value
         /// </summary>
@@ -203,11 +204,11 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <summary>
         /// Object type which root of all objects
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo Object = new("System.Object", -1, DSharpTokenType.Object, null);
+        public static readonly DSharpBuildInTypeInfo Object = new("System.Object", -1, DSharpTokenType.Object, null, null);
         /// <summary>
         /// UTF-16 string
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo String = new("System.String", -1, DSharpTokenType.String, &ToString);
+        public static readonly DSharpBuildInTypeInfo String = new("System.String", -1, DSharpTokenType.String, DSharpLiteralType.String, &ToString);
 
         /// <summary>
         /// Dictionary of all build-in value types
@@ -282,6 +283,8 @@ namespace DialogMaker.Core.Scripting.Runtime
             }
         }
 
+        private static readonly Dictionary<DSharpLiteralType, DSharpBuildInTypeInfo> _literalTypesInfo = [];
+
         #region Controls
 
         /// <summary>
@@ -345,13 +348,19 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <returns>Is information found</returns>
         public static bool TryGetTypeInfo(DSharpLiteralType type, [NotNullWhen(true)] out DSharpBuildInTypeInfo result)
         {
-            var token = (DSharpTokenType)type;
+            if (_literalTypesInfo.TryGetValue(type, out result))
+            {
+                return true;
+            }
+
+            var token = type.ToToken();
 
             foreach (var info in AllTypes.Values)
             {
                 if (info.Token == token)
                 {
                     result = info;
+                    _literalTypesInfo.Add(type, result);
                     return true;
                 }
             }
@@ -491,22 +500,22 @@ namespace DialogMaker.Core.Scripting.Runtime
 
         #region Converters
 
-        private static object ToString(DSharpObject* obj) => DSharpObjectConverter.ToString(obj);
-        private static object ToByte(DSharpObject* obj) => DSharpObjectConverter.ToByte(obj);
-        private static object ToSByte(DSharpObject* obj) => DSharpObjectConverter.ToSByte(obj);
-        private static object ToInt16(DSharpObject* obj) => DSharpObjectConverter.ToInt16(obj);
-        private static object ToUInt16(DSharpObject* obj) => DSharpObjectConverter.ToUInt16(obj);
-        private static object ToInt32(DSharpObject* obj) => DSharpObjectConverter.ToInt32(obj);
-        private static object ToUInt32(DSharpObject* obj) => DSharpObjectConverter.ToUInt32(obj);
-        private static object ToInt64(DSharpObject* obj) => DSharpObjectConverter.ToInt64(obj);
-        private static object ToUInt64(DSharpObject* obj) => DSharpObjectConverter.ToUInt64(obj);
-        private static object ToSingle(DSharpObject* obj) => DSharpObjectConverter.ToSingle(obj);
-        private static object ToDouble(DSharpObject* obj) => DSharpObjectConverter.ToDouble(obj);
-        private static object ToDecimal(DSharpObject* obj) => DSharpObjectConverter.ToDecimal(obj);
-        private static object ToIntPtr(DSharpObject* obj) => DSharpObjectConverter.ToIntPtr(obj);
-        private static object ToUIntPtr(DSharpObject* obj) => DSharpObjectConverter.ToUIntPtr(obj);
-        private static object ToChar(DSharpObject* obj) => DSharpObjectConverter.ToChar(obj);
-        private static object ToBoolean(DSharpObject* obj) => DSharpObjectConverter.ToBoolean(obj);
+        private static DSharpLiteralValue ToString(DSharpObject* obj) => DSharpObjectConverter.ToString(obj);
+        private static DSharpLiteralValue ToByte(DSharpObject* obj) => DSharpObjectConverter.ToByte(obj);
+        private static DSharpLiteralValue ToSByte(DSharpObject* obj) => DSharpObjectConverter.ToSByte(obj);
+        private static DSharpLiteralValue ToInt16(DSharpObject* obj) => DSharpObjectConverter.ToInt16(obj);
+        private static DSharpLiteralValue ToUInt16(DSharpObject* obj) => DSharpObjectConverter.ToUInt16(obj);
+        private static DSharpLiteralValue ToInt32(DSharpObject* obj) => DSharpObjectConverter.ToInt32(obj);
+        private static DSharpLiteralValue ToUInt32(DSharpObject* obj) => DSharpObjectConverter.ToUInt32(obj);
+        private static DSharpLiteralValue ToInt64(DSharpObject* obj) => DSharpObjectConverter.ToInt64(obj);
+        private static DSharpLiteralValue ToUInt64(DSharpObject* obj) => DSharpObjectConverter.ToUInt64(obj);
+        private static DSharpLiteralValue ToSingle(DSharpObject* obj) => DSharpObjectConverter.ToSingle(obj);
+        private static DSharpLiteralValue ToDouble(DSharpObject* obj) => DSharpObjectConverter.ToDouble(obj);
+        private static DSharpLiteralValue ToDecimal(DSharpObject* obj) => DSharpObjectConverter.ToDecimal(obj);
+        private static DSharpLiteralValue ToIntPtr(DSharpObject* obj) => DSharpObjectConverter.ToIntPtr(obj);
+        private static DSharpLiteralValue ToUIntPtr(DSharpObject* obj) => DSharpObjectConverter.ToUIntPtr(obj);
+        private static DSharpLiteralValue ToChar(DSharpObject* obj) => DSharpObjectConverter.ToChar(obj);
+        private static DSharpLiteralValue ToBoolean(DSharpObject* obj) => DSharpObjectConverter.ToBoolean(obj);
 
         #endregion
     }

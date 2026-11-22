@@ -2212,7 +2212,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 if (member is IDSharpEventInfo eventMember)
                 {
-                    member = eventMember.GetHandlersField(expression, context);
+                    member = eventMember.GetHandlersField(expression, context, !settings.DoNotCompileEndPointMember);
                 }
 
                 bool isDelegateWasReturned = false;
@@ -4071,11 +4071,11 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             if (castAvailability == DSharpCastAvailability.Explicit && parentExpression is not CastExpressionNode)
             {
-                throw new InvalidOperationException($"An explicit cast is required. Current value type is \"{targetType}\", but requires \"{requestedType}\"");
+                throw new DSharpCompilerException($"An explicit cast is required. Current value type is \"{targetType}\", but requires \"{requestedType}\"", parentExpression);
             }
             if (castAvailability == DSharpCastAvailability.No)
             {
-                throw new InvalidOperationException($"Unable to cast \"{targetType}\" to \"{requestedType}\"");
+                throw new DSharpCompilerException($"Unable to cast \"{targetType}\" to \"{requestedType}\"", parentExpression);
             }
             if (requestedType == Assembly.PointerType ||
                 requestedType.GenericTemplate == Assembly.TypedPointerType)

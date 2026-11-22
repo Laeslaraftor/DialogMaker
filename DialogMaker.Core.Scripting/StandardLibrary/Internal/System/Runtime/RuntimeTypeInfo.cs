@@ -10,7 +10,7 @@ internal unsafe struct RuntimeTypeInfo
     public ObjectType ObjectType;
     public int Size;
     public int BuildInValueTypeIndex;
-    public nint Converter;
+    public RuntimeTypeConverterInfo Converter;
     public bool IsGeneric;
     public NativeArray<char> Name;
     public NativeArray<char> Namespace;

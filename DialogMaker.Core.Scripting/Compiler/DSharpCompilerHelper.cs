@@ -319,6 +319,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     return currentField.FieldType.IsAssignableTo(otherField.FieldType);
                 }
+                else if (member is IDSharpEventInfo currentEvent && otherMember is IDSharpEventInfo otherEvent)
+                {
+                    return currentEvent.EventType.IsAssignableTo(otherEvent.EventType);
+                }
                 else if (member is IDSharpPropertyInfo currentProperty && otherMember is IDSharpPropertyInfo otherProperty)
                 {
                     if (strict)
@@ -501,16 +505,17 @@ namespace DialogMaker.Core.Scripting.Compiler
             /// </summary>
             /// <param name="node">Node that represents access to event</param>
             /// <param name="context">Current compiler context</param>
+            /// <param name="checkAccess">Check access from others types to handlers field</param>
             /// <returns>Field that contains event handlers</returns>
             /// <exception cref="DSharpCompilerException">Assignment available only field events, provided event does not have field</exception>
             /// <exception cref="DSharpCompilerException">Accessing to event field available only from declaring type</exception>
-            public IDSharpFieldInfo GetHandlersField(AstNode node, DSharpCompilerContext context)
+            public IDSharpFieldInfo GetHandlersField(AstNode node, DSharpCompilerContext context, bool checkAccess = true)
             {
                 if (@event.HandlersField == null)
                 {
                     throw new DSharpCompilerException($"Assignment available only field events, \"{@event}\" does not have field", node);
                 }
-                if (!context.CanAccessTo(@event.HandlersField))
+                if (checkAccess && !context.CanAccessTo(@event.HandlersField))
                 {
                     throw new DSharpCompilerException("Accessing to event field available only from declaring type", node);
                 }

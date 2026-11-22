@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Runtime.Executor;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
@@ -8,8 +9,6 @@ namespace DialogMaker.Core.Scripting.Runtime
     /// </summary>
     public static unsafe class DSharpObjectConverter
     {
-        private static readonly Type _decimalType = typeof(decimal);
-
         /// <summary>
         /// Convert D# string to C# string
         /// </summary>
@@ -175,88 +174,26 @@ namespace DialogMaker.Core.Scripting.Runtime
         }
 
         /// <summary>
-        /// Convert D# object to C# object
+        /// Convert D# object to number
         /// </summary>
-        /// <param name="obj">D# object instance</param>
-        /// <returns>C# object</returns>
-        /// <exception cref="InvalidOperationException">Object type has not converter</exception>
-        public static T ToObject<T>(DSharpObject* obj)
+        /// <param name="obj">D# number object</param>
+        /// <returns>D# number</returns>
+        /// <exception cref="ArgumentException">Object is not a number</exception>
+        public static DSharpNumber ToNumber(DSharpObject* obj)
         {
-            var convertedValue = ToObject(obj);
+            var type = obj->Type;
 
-            if (typeof(T) == _decimalType)
+#if DEBUG
+            if (!type->ConverterInfo.IsNumber)
             {
-                decimal resultDecimal;
-
-                if (convertedValue is byte byteValue)
-                {
-                    resultDecimal = byteValue;
-                }
-                else if (convertedValue is sbyte sByteValue)
-                {
-                    resultDecimal = sByteValue;
-                }
-                else if (convertedValue is short shortValue)
-                {
-                    resultDecimal = shortValue;
-                }
-                else if (convertedValue is ushort ushortValue)
-                {
-                    resultDecimal = ushortValue;
-                }
-                else if (convertedValue is int intValue)
-                {
-                    resultDecimal = intValue;
-                }
-                else if (convertedValue is uint uintValue)
-                {
-                    resultDecimal = uintValue;
-                }
-                else if (convertedValue is long longValue)
-                {
-                    resultDecimal = longValue;
-                }
-                else if (convertedValue is ulong ulongValue)
-                {
-                    resultDecimal = ulongValue;
-                }
-                else if (convertedValue is nint nintValue)
-                {
-                    resultDecimal = nintValue;
-                }
-                else if (convertedValue is nuint nuintValue)
-                {
-                    resultDecimal = nuintValue;
-                }
-                else if (convertedValue is float floatValue)
-                {
-                    resultDecimal = (decimal)floatValue;
-                }
-                else if (convertedValue is double doubleValue)
-                {
-                    resultDecimal = (decimal)doubleValue;
-                }
-                else if (convertedValue is decimal decimalValue)
-                {
-                    resultDecimal = decimalValue;
-                }
-                else if (convertedValue is char charValue)
-                {
-                    resultDecimal = charValue;
-                }
-                else if (convertedValue is bool boolValue)
-                {
-                    resultDecimal = boolValue ? 1 : 0;
-                }
-                else
-                {
-                    resultDecimal = 0;
-                }
-
-                convertedValue = resultDecimal;
+                throw new ArgumentException($"\"{obj->ToString()}\" is not a number", nameof(obj));
             }
+#endif
 
-            return (T)Convert.ChangeType(convertedValue, typeof(T));
+            var number = DSharpNumber.Create(type->ConverterInfo.ConvertingType, decimal.Zero);
+            Unsafe.CopyBlockUnaligned(&number, DSharpObject.GetData(obj), (uint)type->Size);
+
+            return number;
         }
         /// <summary>
         /// Convert D# object to C# object
@@ -264,14 +201,24 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <param name="obj">D# object instance</param>
         /// <returns>C# object</returns>
         /// <exception cref="InvalidOperationException">Object type has not converter</exception>
-        public static object ToObject(DSharpObject* obj)
+        public static T ToObject<T>(DSharpObject* obj) where T : unmanaged
         {
-            if (obj->Type->Converter == null)
+            return ToObject(obj).AsNumber<T>();
+        }
+        /// <summary>
+        /// Convert D# object to C# object
+        /// </summary>
+        /// <param name="obj">D# object instance</param>
+        /// <returns>C# object</returns>
+        /// <exception cref="InvalidOperationException">Object type has no converter</exception>
+        public static DSharpLiteralValue ToObject(DSharpObject* obj)
+        {
+            if (obj->Type->ConverterInfo.IsNull)
             {
-                throw new InvalidOperationException($"\"{*obj}\" has not converter");
+                throw new InvalidOperationException($"\"{obj->ToString()}\" has no converter");
             }
 
-            return obj->Type->Converter(obj);
+            return obj->Type->ConverterInfo.Converter(obj);
         }
         /// <summary>
         /// Get message from D# exception instance
@@ -312,8 +259,8 @@ namespace DialogMaker.Core.Scripting.Runtime
 
                 throw new ArgumentException("Null object", nameof(obj));
             }
-            if (CompareString(obj->Type->Namespace, typeInfo.Namespace) &&
-                CompareString(obj->Type->Name, typeInfo.Name))
+            if (typeInfo.Token != null &&
+                obj->Type->ConverterInfo.ConvertingType == typeInfo.LiteralType)
             {
                 return;
             }
@@ -322,20 +269,15 @@ namespace DialogMaker.Core.Scripting.Runtime
         }
         private static bool CompareString(UnmanagedArray<char> chars, string str)
         {
-            if (chars.Length == str.Length)
+            if (chars.Length != str.Length)
             {
-                for (int i = 0; i < str.Length; i++)
-                {
-                    if (chars[i] != str[i])
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
+                return false;
             }
 
-            return false;
+            fixed (char* pointer = str)
+            {
+                return RuntimeExtensions.Equals(chars.GetItemReference(0), pointer, sizeof(char) * str.Length);
+            }
         }
     }
 }

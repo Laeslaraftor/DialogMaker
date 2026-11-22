@@ -59,6 +59,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             var identifier = stream.Eat(DSharpTokenType.Identifier);
             EventNode node = new(identifier)
             {
+                Access = memberInfo.AccessModifier,
                 IsStatic = memberInfo.IsStatic,
                 IsUnsafe = memberInfo.IsStatic,
                 Attributes = memberInfo.Attributes,

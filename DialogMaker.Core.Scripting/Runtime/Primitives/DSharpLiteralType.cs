@@ -1,79 +1,80 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Lexer;
+﻿using DialogMaker.Core.Scripting.CodeAnalyzer;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
     /// Literal type
     /// </summary>
+    [GenerateInformation(EnumValuesInformation.OnlyValues)]
     public enum DSharpLiteralType : byte
     {
         /// <summary>
         /// Null value
         /// </summary>
-        Null = DSharpTokenType.Null,
-        /// <summary>
-        /// 32-bit signed number
-        /// </summary>
-        Int = DSharpTokenType.Int,
-        /// <summary>
-        /// 32-bit unsigned number
-        /// </summary>
-        UInt = DSharpTokenType.UInt,
-        /// <summary>
-        /// 64-bit signed number
-        /// </summary>
-        Long = DSharpTokenType.Long,
-        /// <summary>
-        /// 64-bit unsigned number
-        /// </summary>
-        ULong = DSharpTokenType.ULong,
-        /// <summary>
-        /// 16-bit signed number
-        /// </summary>
-        Short = DSharpTokenType.Short,
-        /// <summary>
-        /// 16-bit unsigned number
-        /// </summary>
-        UShort = DSharpTokenType.UShort,
-        /// <summary>
-        /// 8-bit unsigned number
-        /// </summary>
-        Byte = DSharpTokenType.Byte,
-        /// <summary>
-        /// 8-bit signed number
-        /// </summary>
-        SByte = DSharpTokenType.SByte,
-        /// <summary>
-        /// Decimal
-        /// </summary>
-        Decimal = DSharpTokenType.Decimal,
-        /// <summary>
-        /// Double precision floating-point number 
-        /// </summary>
-        Double = DSharpTokenType.Double,
-        /// <summary>
-        /// Single precision floating-point number
-        /// </summary>
-        Float = DSharpTokenType.Float,
-        /// <summary>
-        /// Native signed integer (pointer)
-        /// </summary>
-        NInt = DSharpTokenType.Nint,
-        /// <summary>
-        /// Native unsigned integer (pointer)
-        /// </summary>
-        NUInt = DSharpTokenType.Nuint,
+        Null,
         /// <summary>
         /// Boolean value
         /// </summary>
-        Bool = DSharpTokenType.Bool,
+        Bool,
         /// <summary>
-        /// String value
+        /// 8-bit unsigned number
         /// </summary>
-        String = DSharpTokenType.String,
+        Byte,
+        /// <summary>
+        /// 8-bit signed number
+        /// </summary>
+        SByte,
         /// <summary>
         /// Char value
         /// </summary>
-        Char = DSharpTokenType.Char
+        Char,
+        /// <summary>
+        /// 16-bit signed number
+        /// </summary>
+        Short,
+        /// <summary>
+        /// 16-bit unsigned number
+        /// </summary>
+        UShort,
+        /// <summary>
+        /// 32-bit signed number
+        /// </summary>
+        Int,
+        /// <summary>
+        /// 32-bit unsigned number
+        /// </summary>
+        UInt,
+        /// <summary>
+        /// 64-bit signed number
+        /// </summary>
+        Long,
+        /// <summary>
+        /// 64-bit unsigned number
+        /// </summary>
+        ULong,
+        /// <summary>
+        /// Native signed integer (pointer)
+        /// </summary>
+        NInt,
+        /// <summary>
+        /// Native unsigned integer (pointer)
+        /// </summary>
+        NUInt,
+        /// <summary>
+        /// Single precision floating-point number
+        /// </summary>
+        Float,
+        /// <summary>
+        /// Double precision floating-point number 
+        /// </summary>
+        Double,
+        /// <summary>
+        /// Decimal
+        /// </summary>
+        Decimal,
+        /// <summary>
+        /// String value
+        /// </summary>
+        String
     }
 }

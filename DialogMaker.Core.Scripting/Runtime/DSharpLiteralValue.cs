@@ -1,9 +1,11 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
+using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Numerics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime
 {
@@ -144,7 +146,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <param name="text">Boolean as value literal value</param>
         public DSharpLiteralValue(bool boolean)
         {
-            _boolValue = boolean;
+            _numberValue = boolean;
             Type = DSharpLiteralType.Bool;
         }
         /// <summary>
@@ -153,7 +155,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <param name="text">Char as value literal value</param>
         public DSharpLiteralValue(char character)
         {
-            _charValue = character;
+            _numberValue = character;
             Type = DSharpLiteralType.Char;
         }
 
@@ -164,7 +166,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <summary>
         /// Is literal value empty
         /// </summary>
-        public readonly bool IsNull => _stringValue == null && _numberValue == null && _boolValue == null && _charValue == null;
+        public readonly bool IsNull => _stringValue == null && _numberValue == null;
         /// <summary>
         /// Is literal value string
         /// </summary>
@@ -176,16 +178,14 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <summary>
         /// Is literal value boolean
         /// </summary>
-        public readonly bool IsBool => _boolValue != null;
+        public readonly bool IsBool => _numberValue != null && Type == DSharpLiteralType.Bool;
         /// <summary>
         /// Is literal value char
         /// </summary>
-        public readonly bool IsChar => _charValue != null;
+        public readonly bool IsChar => _numberValue != null && Type == DSharpLiteralType.Char;
 
         private readonly string? _stringValue;
-        private readonly bool? _boolValue;
-        private readonly char? _charValue;
-        private object? _numberValue;
+        private DSharpNumber? _numberValue;
 
         #region Controls
 
@@ -206,27 +206,35 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         /// <returns>Number value</returns>
         /// <exception cref="InvalidCastException">Literal value is not a number</exception>
-        public readonly T AsNumber<T>() where T : struct
+        public readonly T AsNumber<T>() where T : unmanaged
         {
             if (_numberValue == null)
             {
                 throw new InvalidCastException("Literal value is not a number");
             }
 
-            return (T)Convert.ChangeType(_numberValue, typeof(T));
+            return _numberValue.Value.Convert<T>();
         }
         /// <summary>
-        /// Get boolean value of this literal value
+        /// Get number value of this literal value
         /// </summary>
-        /// <returns>Boolean value</returns>
-        /// <exception cref="InvalidCastException">Literal value is not a boolean</exception>
-        public readonly bool AsBool() => _boolValue ?? throw new InvalidCastException("Literal value is not a boolean");
+        /// <returns>Number value</returns>
+        /// <exception cref="InvalidCastException">Literal value is not a number</exception>
+        public readonly DSharpNumber AsDSharpNumber() => _numberValue ?? throw new InvalidCastException("Literal value is not a number");
         /// <summary>
         /// Get boolean value of this literal value
         /// </summary>
         /// <returns>Boolean value</returns>
         /// <exception cref="InvalidCastException">Literal value is not a boolean</exception>
-        public readonly char AsChar() => _charValue ?? throw new InvalidCastException("Literal value is not a char");
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly bool AsBool() => AsNumber<bool>();
+        /// <summary>
+        /// Get boolean value of this literal value
+        /// </summary>
+        /// <returns>Boolean value</returns>
+        /// <exception cref="InvalidCastException">Literal value is not a boolean</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public readonly char AsChar() => AsNumber<char>();
 
         /// <summary>
         /// Write literal value to stream
@@ -251,7 +259,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <returns><inheritdoc/></returns>
         public readonly override string ToString()
         {
-            return _stringValue ?? _numberValue?.ToString() ?? _charValue?.ToString() ?? _boolValue?.ToString() ?? NullString;
+            return _stringValue ?? _numberValue?.ToString() ?? NullString;
         }
         /// <summary>
         /// <inheritdoc/>
@@ -259,7 +267,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <returns><inheritdoc/></returns>
         public readonly override int GetHashCode()
         {
-            return HashCode.Combine(_stringValue, _numberValue, _charValue, _boolValue);
+            return HashCode.Combine(_stringValue, _numberValue);
         }
         /// <summary>
         /// <inheritdoc/>
@@ -358,213 +366,58 @@ namespace DialogMaker.Core.Scripting.Runtime
             }
         }
 
-        private static readonly Assembly _standardAssembly = typeof(int).Assembly;
-        private static readonly DSharpLiteralType[] _floatingPointTypes =
-        [
-            DSharpLiteralType.Decimal,
-            DSharpLiteralType.Double,
-            DSharpLiteralType.Float
-        ];
-        private static readonly DSharpLiteralType[][] _typesSortedBySize =
-        [
-            [
-                DSharpLiteralType.Long, DSharpLiteralType.ULong,
-                DSharpLiteralType.NInt, DSharpLiteralType.NUInt,
-                DSharpLiteralType.Decimal, DSharpLiteralType.Double
-            ],
-            [DSharpLiteralType.Int, DSharpLiteralType.UInt, DSharpLiteralType.Float],
-            [DSharpLiteralType.Short, DSharpLiteralType.UShort, DSharpLiteralType.Char],
-            [DSharpLiteralType.Byte, DSharpLiteralType.SByte],
-        ];
-
-        /// <summary>
-        /// Get larger type between two number types
-        /// </summary>
-        /// <param name="t1">First number type</param>
-        /// <param name="t2">Second number type</param>
-        /// <returns>Larger type between two number types</returns>
-        public static DSharpLiteralType GetLargerType(DSharpLiteralType t1, DSharpLiteralType t2)
-        {
-            foreach (var types in _typesSortedBySize)
-            {
-                if (types.Contains(t1))
-                {
-                    return t1;
-                }
-                if (types.Contains(t2))
-                {
-                    return t2;
-                }
-            }
-
-            return t1;
-        }
         /// <summary>
         /// Perform unary operation with literal value
         /// </summary>
-        /// <param name="op">Unary operator</param>
+        /// <param name="operator">Unary operator</param>
         /// <param name="value">Value to perform operation</param>
         /// <returns>Result of binary operation</returns>
         /// <exception cref="ArgumentException">Not operator (!) available only to boolean value</exception>
         /// <exception cref="ArgumentException">Operator available only to number value</exception>
         /// <exception cref="InvalidOperationException">Unable to get information about type</exception>
-        public static DSharpLiteralValue MathOperation(DSharpUnaryOperator op, DSharpLiteralValue value)
+        public static DSharpLiteralValue MathOperation(DSharpUnaryOperator @operator, DSharpLiteralValue value)
         {
-            if (op == DSharpUnaryOperator.Not)
+            if (value._numberValue == null)
             {
-                if (!value.IsBool)
-                {
-                    throw new ArgumentException($"Not operator (!) available only to boolean value, got: {value.Type}", nameof(value));
-                }
-
-                return !value.AsBool();
-            }
-            if (!value.IsNumber)
-            {
-                throw new ArgumentException($"{(DSharpTokenType)op} operator available only to number value, got: {value.Type}", nameof(value));
-            }
-            if (!DSharpBuildInTypes.TryGetTypeInfo(value.Type, out var info))
-            {
-                throw new InvalidOperationException($"Unable to get information about type: {value.Type}");
+                throw new ArgumentException("Performing math operation available only for number literal values", nameof(value));
             }
 
-            var numberType = _standardAssembly.GetType(info.FullName, true);
-            var decimalValue = value.AsNumber<decimal>();
+            value._numberValue = DSharpNumber.MathOperation(value._numberValue.Value, @operator);
+            value.Type = value._numberValue.Value.Type;
 
-            if (op == DSharpUnaryOperator.Minus)
-            {
-                decimalValue = -decimalValue;
-            }
-            else if (op == DSharpUnaryOperator.Increment)
-            {
-                decimalValue++;
-            }
-            else if (op == DSharpUnaryOperator.Decrement)
-            {
-                decimalValue--;
-            }
-
-            return new()
-            {
-                Type = value.Type,
-                _numberValue = Convert.ChangeType(decimalValue, numberType!)
-            };
+            return value;
         }
         /// <summary>
         /// Perform binary operation with literal values
         /// </summary>
-        /// <param name="op">Binary operator</param>
-        /// <param name="n1">First value</param>
-        /// <param name="n2">Second value</param>
+        /// <param name="operator">Binary operator</param>
+        /// <param name="left">First value</param>
+        /// <param name="right">Second value</param>
         /// <returns>Result of binary operation</returns>
         /// <exception cref="ArgumentException">Values must be numbers</exception>
         /// <exception cref="InvalidOperationException">Unable to get information about type</exception>
-        public static DSharpLiteralValue MathOperation(DSharpBinaryOperator op, DSharpLiteralValue n1, DSharpLiteralValue n2)
+        public static DSharpLiteralValue MathOperation(DSharpBinaryOperator @operator, DSharpLiteralValue left, DSharpLiteralValue right)
         {
-            if (op == DSharpBinaryOperator.LogicalEquals)
+            if (@operator == DSharpBinaryOperator.Plus &&
+                (left._stringValue != null || right._stringValue != null))
             {
-                return n1.Equals(n2);
-            }
-            else if (op == DSharpBinaryOperator.LogicalNotEquals)
-            {
-                return !n1.Equals(n2);
-            }
-            else if (op == DSharpBinaryOperator.LogicalXor)
-            {
-                return n1.AsBool() ^ n2.AsBool();
-            }
-            else if (op == DSharpBinaryOperator.LogicalOr)
-            {
-                return n1.AsBool() || n2.AsBool();
-            }
-            else if (op == DSharpBinaryOperator.LogicalAnd)
-            {
-                return n1.AsBool() && n2.AsBool();
-            }
-            if ((!n1.IsNumber || !n2.IsNumber) && op != DSharpBinaryOperator.Plus)
-            {
-                throw new ArgumentException($"Values must be numbers, got: {n1}, {n2}");
-            }
-            if (op == DSharpBinaryOperator.LogicalLess)
-            {
-                return n1.AsNumber<decimal>() < n2.AsNumber<decimal>();
-            }
-            else if (op == DSharpBinaryOperator.LogicalLessOrEquals)
-            {
-                return n1.AsNumber<decimal>() <= n2.AsNumber<decimal>();
-            }
-            else if (op == DSharpBinaryOperator.LogicalGreater)
-            {
-                return n1.AsNumber<decimal>() > n2.AsNumber<decimal>();
-            }
-            else if (op == DSharpBinaryOperator.LogicalGreaterOrEquals)
-            {
-                return n1.AsNumber<decimal>() >= n2.AsNumber<decimal>();
+                return left.ToString() + right.ToString();
             }
 
-            var largerType = GetLargerType(n1.Type, n2.Type);
-
-            if (_floatingPointTypes.Contains(n1.Type) && !_floatingPointTypes.Contains(n2.Type))
+            if (left._numberValue == null)
             {
-                largerType = n1.Type;
+                throw new ArgumentException("Left side literal value is not a number", nameof(left));
             }
-            else if (!_floatingPointTypes.Contains(n1.Type) && _floatingPointTypes.Contains(n2.Type))
+            if (right._numberValue == null)
             {
-                largerType = n2.Type;
-            }
-            if (!DSharpBuildInTypes.TryGetTypeInfo(largerType, out var info))
-            {
-                throw new InvalidOperationException($"Unable to get information about type: {largerType}");
+                throw new ArgumentException("Right side literal value is not a number", nameof(right));
             }
 
-            var numberType = _standardAssembly.GetType(info.FullName, true)!;
-            object value = 0;
+            DSharpLiteralValue result = default;
+            result._numberValue = DSharpNumber.MathOperation(left._numberValue.Value, right._numberValue.Value, @operator);
+            result.Type = result._numberValue.Value.Type;
 
-            if (op == DSharpBinaryOperator.Plus)
-            {
-                if (n1.IsString && !n2.IsString ||
-                    !n1.IsString && n2.IsString ||
-                    n1.IsString && n2.IsString)
-                {
-                    return n1.ToString() + n2.ToString();
-                }
-                if (!n1.IsNumber || !n2.IsNumber)
-                {
-                    throw new ArgumentException($"Values must be numbers, got: {n1}, {n2}");
-                }
-
-                value = n1.AsNumber<decimal>() + n2.AsNumber<decimal>();
-            }
-            else if (op == DSharpBinaryOperator.Minus)
-            {
-                value = n1.AsNumber<decimal>() - n2.AsNumber<decimal>();
-            }
-            else if (op == DSharpBinaryOperator.Multiply)
-            {
-                value = n1.AsNumber<decimal>() * n2.AsNumber<decimal>();
-            }
-            else if (op == DSharpBinaryOperator.Divide)
-            {
-                value = n1.AsNumber<decimal>() / n2.AsNumber<decimal>();
-            }
-            else if (op == DSharpBinaryOperator.Mod)
-            {
-                value = n1.AsNumber<decimal>() % n2.AsNumber<decimal>();
-            }
-            else if (op == DSharpBinaryOperator.ShiftLeft)
-            {
-                value = n1.AsNumber<long>() << n2.AsNumber<int>();
-            }
-            else if (op == DSharpBinaryOperator.ShiftRight)
-            {
-                value = n1.AsNumber<long>() >> n2.AsNumber<int>();
-            }
-
-            return new()
-            {
-                Type = largerType,
-                _numberValue = Convert.ChangeType(value, numberType)
-            };
+            return result;
         }
         /// <summary>
         /// Parse number literal
@@ -632,7 +485,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                 throw new InvalidOperationException("Unable to read literal type");
             }
 
-            var type = (DSharpLiteralType)Enum.ToObject(typeof(DSharpLiteralType), typeValue);
+            var type = (DSharpLiteralType)typeValue;
 
             if (Parsers.TryGetValue(type, out var parser))
             {

@@ -26,6 +26,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
         /// </summary>
         Decrement = DSharpTokenType.Decrement,
         /// <summary>
+        /// Bit invert operator (~). It inverts all bits in number 
+        /// </summary>
+        BitInvert = DSharpTokenType.Tilde,
+        /// <summary>
         /// Operator for getting reference to variable or field (<![CDATA[&someVariable]]>)
         /// </summary>
         AddressOf = DSharpTokenType.And,

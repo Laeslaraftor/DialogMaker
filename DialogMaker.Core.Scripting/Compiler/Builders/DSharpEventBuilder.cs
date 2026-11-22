@@ -97,6 +97,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             }
             if (!_implementedEvents.Contains(@event))
             {
+                AddMethod.AddImplementedMethod(@event.AddMethod);
+                RemoveMethod.AddImplementedMethod(@event.RemoveMethod);
                 _implementedEvents.Add(@event);
             }
         }

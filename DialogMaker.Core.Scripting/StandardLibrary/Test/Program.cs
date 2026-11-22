@@ -720,7 +720,7 @@ public unsafe class Program
     }
     private static void EventsTest()
     {
-        Enemy enemy = new("EventEnemy");
+        IPlayer enemy = new Enemy("EventEnemy");
 
         void LocalEnemyEventHander(object? sender, EventArgs e)
         {
@@ -858,9 +858,12 @@ public struct GenericObject<T>
 }
 public interface IPlayer
 {
+    public event EventHandler? Killed;
+
     public string Name { get; }
 
     public void PrintMessage();
+    public void Kill();
 }
 public struct ValuePlayer : IPlayer
 {
@@ -868,6 +871,8 @@ public struct ValuePlayer : IPlayer
     {
         Name = name;
     }
+
+    public event EventHandler? Killed;
 
     public string Name { get; }
 
@@ -877,6 +882,10 @@ public struct ValuePlayer : IPlayer
     {
         return Name;
     }
+    public void Kill()
+    {
+        Killed?.Invoke(this, EventArgs.Empty);
+    }
 }
 public class Player : IPlayer
 {
@@ -884,6 +893,8 @@ public class Player : IPlayer
     {
         Name = name;
     }
+
+    public event EventHandler? Killed;
 
     public virtual string Name { get; }
 
@@ -903,6 +914,10 @@ public class Player : IPlayer
     {
         return Name;
     }
+    public void Kill()
+    {
+        Killed?.Invoke(this, EventArgs.Empty);
+    }
 }
 public class Enemy : Player
 {
@@ -910,8 +925,6 @@ public class Enemy : Player
     {
         Killed += OnEnemyKilled;
     }
-
-    public event EventHandler? Killed;
 
     public override string Name => "Поедатель миров";
 
@@ -951,10 +964,6 @@ public class Enemy : Player
         {
             Console.WriteLine(name);
         }
-    }
-    public void Kill()
-    {
-        Killed?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnEnemyKilled(object? sender, EventArgs e)

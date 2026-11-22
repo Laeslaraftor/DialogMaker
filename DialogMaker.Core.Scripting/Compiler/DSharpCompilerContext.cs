@@ -1019,7 +1019,6 @@ namespace DialogMaker.Core.Scripting.Compiler
                 var fields = type.GetFields(predicate);
                 var methods = type.GetMethods(predicate);
                 var @events = type.GetEvents(predicate);
-                //var constructors = type.GetConstructors(predicate);
 
                 return AddRange(properties) + AddRange(fields) + AddRange(methods) + AddRange(@events);
             }
@@ -1052,8 +1051,12 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             AddRange(type.GetChildrenTypes().Where(t => t.Name == name));
             FindMember(type, m => m.Name == name);
-            FindBaseTypeMember(type, m => m.Name == name && (m.Access == DSharpAccessModifier.Public ||
-                                                            m.Access == DSharpAccessModifier.Protected));
+            FindBaseTypeMember(type, m => m.Name == name && 
+                                          (m.Access == DSharpAccessModifier.Public ||
+                                           m.Access == DSharpAccessModifier.Protected) &&
+                                          (type.ObjectType == DSharpObjectType.Interface ||
+                                           (type.ObjectType != DSharpObjectType.Interface && 
+                                            m.DeclaringType?.ObjectType != DSharpObjectType.Interface)));
 
             if (ParentExpression == null)
             {

@@ -410,7 +410,7 @@ public abstract unsafe class Delegate
     {
         // LoadLocal 0
         // LoadLocal 1
-        // LoadLocal 2
+        // LoadLocal 2 (load all items from parameters array)
         // DynamicCall
         // Return
         throw new NotImplementedException(nameof(__Invoke) + " method should be implemeted by compiler, but something went wrong and it was not implemented.");

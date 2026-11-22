@@ -126,6 +126,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                         {
                             methodBuilder.AddImplementedMethod(methodDeclaration);
                         }
+                        else if (member is DSharpEventBuilder eventBuilder && declaration is IDSharpEventInfo eventDeclaration)
+                        {
+                            eventBuilder.AddImplementedEvent(eventDeclaration);
+                        }
                     }
                 }
 

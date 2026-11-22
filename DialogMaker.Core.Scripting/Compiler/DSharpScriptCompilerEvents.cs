@@ -22,6 +22,10 @@ namespace DialogMaker.Core.Scripting.Compiler
                 CompileMethod(removeMethod, node.Remove);
                 return;
             }
+            if (@event.DeclaringType?.ObjectType == DSharpObjectType.Interface)
+            {
+                return;
+            }
 
             var delegateInfo = Assembly.DelegateTypeInfo;
             

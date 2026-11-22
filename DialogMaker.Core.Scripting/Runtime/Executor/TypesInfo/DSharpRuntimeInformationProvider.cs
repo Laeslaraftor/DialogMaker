@@ -575,7 +575,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             }
             if (DSharpBuildInTypes.TryGetInfo(type, out var buildInTypeInfo))
             {
-                info->Converter = buildInTypeInfo.Converter;
+                info->ConverterInfo = new()
+                {
+                    ConvertingType = buildInTypeInfo.LiteralType.GetValueOrDefault(),
+                    Converter = buildInTypeInfo.Converter
+                };
             }
 
             for (int i = 0; i < constructors.Length; i++)

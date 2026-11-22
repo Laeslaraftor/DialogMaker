@@ -4,7 +4,7 @@ using System.Text;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
-    public class DSharpTypeNotImplementedMemberException : Exception
+    public class DSharpTypeNotImplementedMemberException : DSharpException
     {
         public DSharpTypeNotImplementedMemberException(IDSharpType invalidType, IEnumerable<IDSharpMemberInfo> notImplementedMembers, string message) 
             : base(FormatMessage(message, notImplementedMembers))

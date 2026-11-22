@@ -165,7 +165,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                     {
                         buffer = refParametersBuilder.Allocate(sizeof(DSharpObject));
                         frame.ValueType = DSharpStackValueType.Structure;
-                        frame.IsNumber = parameterInfo.Type->Converter != null;
+                        frame.IsNumber = parameterInfo.Type->ConverterInfo.IsNumber;
                         var obj = (DSharpObject*)buffer;
                         *obj = new()
                         {

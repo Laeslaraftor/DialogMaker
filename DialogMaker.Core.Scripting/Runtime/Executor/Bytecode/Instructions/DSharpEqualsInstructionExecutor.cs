@@ -53,7 +53,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             if (leftType != rightType &&
                 leftType != null && rightType != null &&
-                leftType->Converter != null && rightType->Converter != null)
+                !leftType->ConverterInfo.IsNull && !rightType->ConverterInfo.IsNull)
             {
                 var leftDecimal = left.ReadAsDecimal();
                 var rightDecimal = right.ReadAsDecimal();

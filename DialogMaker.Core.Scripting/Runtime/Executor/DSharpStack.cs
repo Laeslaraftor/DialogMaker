@@ -34,7 +34,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <summary>
         /// Available to allocate size
         /// </summary>
-        public int AvailableSize => Capacity - _allocatedStackSize;
+        public int AvailableSize => _currentStackCapacity - _allocatedStackSize;
 
         private readonly DSharpRuntimeInformationProvider _runtimeInformationProvider = runtimeInformationProvider;
         private readonly DSharpVmMemoryManager _memoryManager = memoryManager;
@@ -978,7 +978,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 {
                     return null;
                 }
-                if (obj->Type->Converter == null)
+                if (obj->Type->ConverterInfo.IsNull)
                 {
                     return null;
                 }

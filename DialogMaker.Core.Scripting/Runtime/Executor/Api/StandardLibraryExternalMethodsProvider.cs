@@ -24,9 +24,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
 
         public DSharpExternalMethod? GetMethodImplementation(IDSharpMethodInfo methodInfo)
         {
-            if (methodInfo.DeclaringType.Namespace == "System")
+            var declaringType = methodInfo.DeclaringType;
+
+            if (declaringType.Namespace == "System")
             {
-                if (methodInfo.DeclaringType.Name == nameof(Array))
+                if (declaringType.Name == nameof(Array))
                 {
                     if (methodInfo.Name == "GetLength")
                     {
@@ -37,7 +39,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                         return CanStackAlloc;
                     }
                 }
-                else if (methodInfo.DeclaringType.Name == "Numbers")
+                else if (declaringType.Name == "Numbers")
                 {
                     if (methodInfo.Name == "Int64ToString")
                     {
@@ -52,7 +54,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                         return NumbersDecimalToString;
                     }
                 }
-                else if (methodInfo.DeclaringType.Name == "Object")
+                else if (declaringType.Name == "Object")
                 {
                     if (methodInfo.Name == "ReferenceEquals")
                     {
@@ -67,7 +69,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                         return ObjectGetHashCode;
                     }
                 }
-                else if (methodInfo.DeclaringType.FullName == DSharpBuildInTypes.String)
+                else if (declaringType.FullName == DSharpBuildInTypes.String)
                 {
                     if (methodInfo.Name == "GetLength")
                     {
@@ -121,7 +123,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                         }
                     }
                 }
-                else if (methodInfo.DeclaringType.Name == nameof(Console))
+                else if (declaringType.Name == nameof(Console))
                 {
                     if (methodInfo.Name == "WriteLine")
                     {
@@ -140,7 +142,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                         return ConsoleClear;
                     }
                 }
-                else if (methodInfo.DeclaringType.Name == nameof(Environment))
+                else if (declaringType.Name == nameof(Environment))
                 {
                     if (methodInfo.Name == "GetTickCount")
                     {
@@ -152,9 +154,23 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                     }
                 }
             }
-            else if (methodInfo.DeclaringType.Namespace == "Internal.System.Runtime")
+            else if (declaringType.Namespace == "System.Threading")
             {
-                if (methodInfo.DeclaringType.Name == "CompilerServices")
+                if (declaringType.Name == nameof(Monitor))
+                {
+                    if (methodInfo.Name == "Enter")
+                    {
+                        return MonitorEnter;
+                    }
+                    else if (methodInfo.Name == "Exit")
+                    {
+                        return MonitorExit;
+                    }
+                }
+            }
+            else if (declaringType.Namespace == "Internal.System.Runtime")
+            {
+                if (declaringType.Name == "CompilerServices")
                 {
                     if (methodInfo.Name == "GetObjectAddress")
                     {
@@ -671,6 +687,35 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
         private static DSharpExternalMethodResult? EnvironmentGetTickCount(DSharpExternalCallingArgs _)
         {
             return Environment.TickCount;
+        }
+
+        #endregion
+
+        #region Monitor
+
+        private DSharpExternalMethodResult? MonitorEnter(DSharpExternalCallingArgs args)
+        {
+            if (args.Arguments.Length == 0)
+            {
+                return null;
+            }
+
+            var obj = args.Arguments[0].Buffer.ReadAsObject();
+            _objectsContainer.Lock(obj);
+
+            return null;
+        }
+        private DSharpExternalMethodResult? MonitorExit(DSharpExternalCallingArgs args)
+        {
+            if (args.Arguments.Length == 0)
+            {
+                return null;
+            }
+
+            var obj = args.Arguments[0].Buffer.ReadAsObject();
+            _objectsContainer.Unlock(obj);
+
+            return null;
         }
 
         #endregion
