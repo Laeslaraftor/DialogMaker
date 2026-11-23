@@ -21,6 +21,9 @@
         /// Token column start index
         /// </summary>
         public int Column { get; } = column;
+        /// <summary>
+        /// Path to source file that contains current token
+        /// </summary>
         public string? FilePath { get; } = filePath;
 
         #region Управление

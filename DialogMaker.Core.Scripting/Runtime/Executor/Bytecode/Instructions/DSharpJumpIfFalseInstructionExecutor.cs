@@ -5,21 +5,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.JumpIfFalse"/> operation
     /// </summary>
-    public class DSharpJumpIfFalseInstructionExecutor : DSharpBaseJumpInstructionExecutor
+    public unsafe sealed class DSharpJumpIfFalseInstructionExecutor : DSharpBaseJumpInstructionExecutor
     {
         #region Controls
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
 
-        protected override bool CanJump(DSharpRuntimeInstruction instruction, DSharpExecutionContext context)
+        protected override sealed bool CanJump(DSharpRuntimeInstruction* instruction, DSharpExecutionContext context)
         {
             var lastValue = context.Stack.Peek();
             return !lastValue.ReadAsBoolean();
         }
-        protected override unsafe bool IsNotValid(DSharpRuntimeInstruction instruction, DSharpExecutionContext context, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
+        protected override unsafe bool IsNotValid(DSharpRuntimeInstruction* instruction, DSharpExecutionContext context, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
         {
             if (base.IsNotValid(instruction, context, out errorCallback))
             {
@@ -50,7 +50,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpJumpIfFalseInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

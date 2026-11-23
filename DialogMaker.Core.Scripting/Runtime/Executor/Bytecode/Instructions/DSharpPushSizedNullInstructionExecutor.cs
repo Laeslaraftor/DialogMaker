@@ -5,25 +5,27 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.PushSizedNull"/> operation
     /// </summary>
-    public class DSharpPushSizedNullInstructionExecutor : DSharpInstructionExecutor
+    public unsafe class DSharpPushSizedNullInstructionExecutor : DSharpInstructionExecutor
     {
         #region Controls
 
-        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
+#if DEBUG
             if (CheckArguments(instruction, context, 1, out var error))
             {
                 return error;
             }
+#endif
 
-            var type = (DSharpRuntimeTypeInfo*)instruction.Arguments[0];
+            var type = (DSharpRuntimeTypeInfo*)instruction->Arguments[0];
             type = context.ReplaceType(type);
             context.Stack.PushTypedNull(type);
 
             return DSharpMethodExecutionCallback.Complete();
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
@@ -47,7 +49,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpPushSizedNullInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

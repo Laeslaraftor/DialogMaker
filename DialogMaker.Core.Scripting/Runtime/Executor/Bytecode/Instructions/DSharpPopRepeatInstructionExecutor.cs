@@ -5,29 +5,31 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.PopRepeat"/> operation
     /// </summary>
-    public class DSharpPopRepeatInstructionExecutor : DSharpInstructionExecutor
+    public unsafe class DSharpPopRepeatInstructionExecutor : DSharpInstructionExecutor
     {
         #region Controls
 
-        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
+#if DEBUG
             if (CheckArguments(instruction, context, 1, out var error))
             {
                 return error;
             }
+#endif
 
-            uint count = *(uint*)instruction.Arguments[0];
+            uint count = *(uint*)instruction->Arguments[0];
 
-            context.Stack.Pop(0, count);
+            context.Stack.PopCount(count);
 
             return DSharpMethodExecutionCallback.Complete();
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
+        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
             stream->Read<uint>();
             return 1;
@@ -46,7 +48,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpPopRepeatInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

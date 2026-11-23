@@ -9,14 +9,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     public abstract class DSharpMetadataTokenInstructionExecutor<T> : DSharpInstructionExecutor
         where T : unmanaged
     {
-        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            if (1 > instruction.Arguments.Length)
+#if DEBUG
+            if (1 > instruction->Arguments.Length)
             {
-                return context.ThrowExecutionException($"{instruction.Operation} instruction requires at least 1 argument, got {instruction.Arguments.Length}");
+                return context.ThrowExecutionException($"{instruction->Operation} instruction requires at least 1 argument, got {instruction->Arguments.Length}");
             }
+#endif
 
-            var runtimeInfo = (T*)instruction.Arguments[0];
+            var runtimeInfo = (T*)instruction->Arguments[0];
             runtimeInfo = RuntimeInformationHandler(instruction, ref context, runtimeInfo);
 
             return Execute(instruction, ref context, runtimeInfo);
@@ -41,7 +43,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// <param name="runtimeInfo">Runtime information with metadata token from instruction arguments</param>
         /// <returns>Is successfully executed</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected abstract unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, T* runtimeInfo);
+        protected abstract unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, T* runtimeInfo);
         /// <summary>
         /// Get runtime information with specified metadata token
         /// </summary>
@@ -59,7 +61,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// <param name="runtimeInfo"></param>
         /// <returns>New runtime information</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected virtual unsafe T* RuntimeInformationHandler(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, T* runtimeInfo)
+        protected virtual unsafe T* RuntimeInformationHandler(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, T* runtimeInfo)
         {
             return runtimeInfo;
         }

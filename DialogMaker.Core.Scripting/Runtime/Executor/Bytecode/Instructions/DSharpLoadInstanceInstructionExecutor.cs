@@ -5,12 +5,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.LoadInstance"/> operation
     /// </summary>
-    public class DSharpLoadInstanceInstructionExecutor : DSharpInstructionExecutor
+    public unsafe class DSharpLoadInstanceInstructionExecutor : DSharpInstructionExecutor
     {
         #region Controls
 
-        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
+#if DEBUG
             if (context.CurrentMethod->IsStatic)
             {
                 return context.ThrowExecutionException("Unable to load current instance from static method");
@@ -19,7 +20,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             {
                 return context.ThrowExecutionException("Unable to load current instance when it not provided");
             }
-           
+#endif
+
             // Force push reference to current instance.
             // If current type is value type and push it as structure
             // it counts as creating new instance and because of this
@@ -31,7 +33,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return DSharpMethodExecutionCallback.Complete();
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
@@ -52,7 +54,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpLoadInstanceInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

@@ -73,11 +73,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
         [DoesNotReturn]
         public void ThrowUnexpectedTokenException(params DSharpTokenType[]? expected)
         {
+            var current = Current
+                ?? throw new DSharpException($"Token{(expected != null && expected.Length > 0 ? " " + expected[0].ToString() : string.Empty)} was required but it not exists"); ;
+
             if (expected != null)
             {
                 if (expected.Length == 1)
                 {
-                    throw new Exception($"Expected {expected[0]}, got {Current?.Type} at {Current?.Line}:{Current?.Column}");
+                    throw new DSharpAstException($"Expected {expected[0]}, got {current.Type}", current);
                 }
 
                 string expectedTokens = string.Empty;
@@ -92,15 +95,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast
                     expectedTokens += token;
                 }
 
-                throw new Exception($"Expected {expectedTokens}, got {Current?.Type} at {Current?.Line}:{Current?.Column}");
+                throw new DSharpAstException($"Expected {expectedTokens}, got {current.Type}", current);
             }
 
-            throw new Exception($"Unexpected token {Current?.Type} at {Current?.Line}:{Current?.Column}");
+            throw new DSharpAstException($"Unexpected token {current.Type}", current);
         }
         [DoesNotReturn]
         public void ThrowPositionException(string message)
         {
-            throw new Exception($"{message} at {Current?.Line}:{Current?.Column}");
+            var current = Current
+                ?? throw new DSharpException(message);
+
+            throw new DSharpAstException(message, current);
         }
     }
 }

@@ -873,7 +873,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     type = type.GenericTemplate;
                 }
 
-                filledType = assemblyBuilder.FillGeneric(type, out totalReplacedMembers, replaced);
+                filledType = assemblyBuilder.FillGeneric(type, null, replacedMembers, out totalReplacedMembers, replaced);
                 return true;
             }
         }
@@ -913,11 +913,9 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     var parameterType = GetReplacedType(parameter.Type);
 
-                    parameters.Add(new(assembly)
+                    parameters.Add(new(assembly, parameter)
                     {
-                        Name = parameter.Name,
                         Mode = safeModes ? parameter.Mode : DSharpMethodParameterMode.Default,
-                        Type = assembly.GetTypeToken(parameterType)
                     });
                 }
             }
@@ -2423,6 +2421,12 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             public bool TryCastTo(IDSharpType numberType, out DSharpLiteralValue result)
             {
+                if (DSharpBuildInTypes.TryGetType(numberType.Assembly, literal.Type.ToToken(), out var type) &&
+                    numberType == type)
+                {
+                    result = literal;
+                    return true;
+                }
                 if (!literal.IsNumber || !DSharpBuildInTypes.TryGetInfo(numberType, out var requiredInfo) ||
                     !requiredInfo.IsNumber() || !DSharpBuildInTypes.TryGetTypeInfo(literal.Type, out var currentInfo) ||
                     (currentInfo.IsPointFloating() && !requiredInfo.IsPointFloating()) ||

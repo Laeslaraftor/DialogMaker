@@ -76,13 +76,12 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// </summary>
         /// <param name="stream">Abstract syntax tree parser stream</param>
         /// <param name="buffer">Buffer for parsed parameters</param>
-        public static void ParseParameters(AstParserStream stream, List<ParameterExpressionNode> buffer, DSharpTokenType openToken = DSharpTokenType.LeftParen, DSharpTokenType closeToken = DSharpTokenType.RightParen, bool allowModes = true)
-        {
+        public static void ParseParameters(AstParserStream stream, List<ParameterExpressionNode> buffer, DSharpTokenType openToken = DSharpTokenType.LeftParen, DSharpTokenType closeToken = DSharpTokenType.RightParen, bool allowModes = true, bool allowDefaultValue = false)        {
             stream.Eat(openToken);
 
             while (!stream.Check(closeToken))
             {
-                var parameter = ParameterExpressionNode.Parse(stream, allowDefaultValue: false, allowModes: allowModes);
+                var parameter = ParameterExpressionNode.Parse(stream, allowDefaultValue: allowDefaultValue, allowModes: allowModes);
                 buffer.Add(parameter);
 
                 if (!ArrayExpressionNode.CheckTokenAfterComma(stream, closeToken))

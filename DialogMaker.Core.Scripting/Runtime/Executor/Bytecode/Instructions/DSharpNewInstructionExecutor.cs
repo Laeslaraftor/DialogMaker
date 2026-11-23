@@ -5,16 +5,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.New"/> operation
     /// </summary>
-    public class DSharpNewInstructionExecutor : DSharpMetadataTokenInstructionExecutor<DSharpMetadataToken>
+    public unsafe class DSharpNewInstructionExecutor : DSharpMetadataTokenInstructionExecutor<DSharpMetadataToken>
     {
         #region Controls
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
 
-        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken* member)
+        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpMetadataToken* member)
         {
             DSharpRuntimeTypeInfo* typeToInstantiate;
             DSharpRuntimeMethodInfo* constructor = null;
@@ -77,12 +77,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return DSharpMethodExecutionCallback.Complete();
         }
 
-        protected override unsafe DSharpMetadataToken* GetRuntimeInformation(DSharpRuntimeInformationProvider typesProvider, DSharpMetadataToken metadataToken)
+        protected override DSharpMetadataToken* GetRuntimeInformation(DSharpRuntimeInformationProvider typesProvider, DSharpMetadataToken metadataToken)
         {
             return typesProvider.GetMember(metadataToken);
         }
 
-        protected override unsafe DSharpMetadataToken* RuntimeInformationHandler(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpMetadataToken* runtimeInfo)
+        protected override DSharpMetadataToken* RuntimeInformationHandler(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpMetadataToken* runtimeInfo)
         {
             if (runtimeInfo->Type == DSharpMetadataTokenType.TypeDefinition)
             {
@@ -101,7 +101,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpNewInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

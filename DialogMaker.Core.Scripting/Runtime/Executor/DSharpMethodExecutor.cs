@@ -1,5 +1,6 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
@@ -176,12 +177,26 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             Span<DSharpExecutionScope> scopes = stackalloc DSharpExecutionScope[scopesCount];
             DSharpExecutionContext context = new(objectsContainer, thread, executor->MethodInfo, executor);
             DSharpMethodExecutionCallback? result = null;
+            int instructionsLength = bytecode->Instructions.Length;
+            var instructions = bytecode->Instructions.GetItemReference(0);
+            //Dictionary<DSharpBytecodeOperation, TimeSpan> operationsDurations = [];
+            //Stopwatch stopwatch = new();
 
-            while (context.InstructionIndex < bytecode->Instructions.Length)
+            while (context.InstructionIndex < instructionsLength)
             {
                 var instructionIndex = context.InstructionIndex;
-                var instruction = bytecode->Instructions[(int)instructionIndex];
-                var callback = instruction.Execute(ref context);
+                var instruction = &instructions[(int)instructionIndex];
+
+                //stopwatch.Restart();
+                var callback = DSharpRuntimeInstruction.Execute(instruction, ref context);
+                //stopwatch.Stop();
+
+                //TimeSpan duration = stopwatch.Elapsed;
+
+                //if (!operationsDurations.TryAdd(instruction->Operation, duration))
+                //{
+                //    operationsDurations[instruction->Operation] = duration;
+                //}
 
                 if (context.InstructionIndex == instructionIndex)
                 {

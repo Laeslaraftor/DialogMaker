@@ -191,7 +191,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
                 else
                 {
-                    throw new Exception($"Invalid member: {memberInfo.MemberType}");
+                    throw new DSharpCompilerException($"Invalid member: {memberInfo.MemberType}", member);
                 }
 
                 member.Parent = statement;

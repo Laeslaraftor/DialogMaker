@@ -5,34 +5,31 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.Increment"/> operation
     /// </summary>
-    public class DSharpIncrementInstructionExecutor : DSharpInstructionExecutor
+    public unsafe class DSharpIncrementInstructionExecutor : DSharpInstructionExecutor
     {
         #region Controls
 
-        public unsafe override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public unsafe override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
+#if DEBUG
             if (CheckStackValues(instruction, context, 1, out var error))
             {
                 return error;
             }
+#endif
 
             var lastValue = context.Stack.Peek();
-            var decimalValue = lastValue.ReadAsDecimal();
+            var number = lastValue.ReadAsNumber();
+            var obj = lastValue.ReadAsObject();
 
-            if (decimalValue == null)
-            {
-                return context.ThrowExecutionException($"Increment operation requires number at last value in stack, got: \"{lastValue.ValueType}\"");
-            }
+            number++;
 
-            decimal number = decimalValue.Value + 1;
-            var obj = (DSharpObject*)lastValue.StackPointer;
-
-            context.ObjectsContainer.WriteNumber(obj, number);
+            number.Write(DSharpObject.GetData(obj));
 
             return DSharpMethodExecutionCallback.Complete();
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
@@ -53,7 +50,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpIncrementInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

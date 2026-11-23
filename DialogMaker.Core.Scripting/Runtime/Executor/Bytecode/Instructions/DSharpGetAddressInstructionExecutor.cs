@@ -5,23 +5,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.GetAddress"/> operation
     /// </summary>
-    public class DSharpGetAddressInstructionExecutor : DSharpInstructionExecutor
+    public unsafe class DSharpGetAddressInstructionExecutor : DSharpInstructionExecutor
     {
         #region Controls
 
-        public unsafe override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public unsafe override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
+#if DEBUG
             if (CheckArguments(instruction, context, 2, out var error))
             {
                 return error;
             }
+#endif
 
-            var member = (DSharpGetAddressMember)instruction.Arguments[0];
+            var member = (DSharpGetAddressMember)instruction->Arguments[0];
             nint valueAddress;
 
             if (member == DSharpGetAddressMember.Variable)
             {
-                var index = (int)instruction.Arguments[1];
+                var index = (int)instruction->Arguments[1];
                 var variable = context.LocalVariables->GetItemReference(index);
 
                 if (variable->ParameterInfo.Type->IsValueType)
@@ -44,7 +46,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
             else
             {
-                var field = (DSharpRuntimeFieldInfo*)instruction.Arguments[0];
+                var field = (DSharpRuntimeFieldInfo*)instruction->Arguments[0];
 
                 if (field->IsStatic)
                 {
@@ -52,11 +54,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 }
                 else
                 {
-                    var instance = GetInstance(context, 0, out error);
+                    var instance = GetInstance(context, 0, out var instanceError);
 
                     if (instance == null)
                     {
-                        return error;
+                        return instanceError;
                     }
 
                     valueAddress = (nint)field->GetDataPointer(instance);
@@ -68,11 +70,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return DSharpMethodExecutionCallback.Complete();
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
+        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
             var member = stream->Read<DSharpGetAddressMember>();
 
@@ -112,7 +114,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpGetAddressInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

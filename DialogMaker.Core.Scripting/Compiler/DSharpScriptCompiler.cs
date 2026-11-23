@@ -122,6 +122,13 @@ namespace DialogMaker.Core.Scripting.Compiler
                     CompileFieldsInitializer(type);
                 }
             }
+            foreach (var method in _createdMethods.Keys)
+            {
+                foreach (var parameter in method.Parameters)
+                {
+                    _ = parameter.DefaultValue;
+                }
+            }
             foreach (var info in _createdEvents)
             {
                 CompileEvent(info.Key, info.Value);

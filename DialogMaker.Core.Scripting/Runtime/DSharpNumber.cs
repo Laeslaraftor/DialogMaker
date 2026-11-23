@@ -24,37 +24,37 @@ namespace DialogMaker.Core.Scripting.Runtime
         #region Fields
 
         [FieldOffset(16)]
-        private DSharpLiteralType _type;
+        internal DSharpLiteralType _type;
         [FieldOffset(0)]
-        private byte _byte;
+        internal byte _byte;
         [FieldOffset(0)]
-        private sbyte _sbyte;
+        internal sbyte _sbyte;
         [FieldOffset(0)]
-        private bool _bool;
+        internal bool _bool;
         [FieldOffset(0)]
-        private short _short;
+        internal short _short;
         [FieldOffset(0)]
-        private ushort _ushort;
+        internal ushort _ushort;
         [FieldOffset(0)]
-        private char _char;
+        internal char _char;
         [FieldOffset(0)]
-        private int _int;
+        internal int _int;
         [FieldOffset(0)]
-        private uint _uint;
+        internal uint _uint;
         [FieldOffset(0)]
-        private long _long;
+        internal long _long;
         [FieldOffset(0)]
-        private ulong _ulong;
+        internal ulong _ulong;
         [FieldOffset(0)]
-        private nint _nint;
+        internal nint _nint;
         [FieldOffset(0)]
-        private nuint _nuint;
+        internal nuint _nuint;
         [FieldOffset(0)]
-        private float _float;
+        internal float _float;
         [FieldOffset(0)]
-        private double _double;
+        internal double _double;
         [FieldOffset(0)]
-        private decimal _decimal;
+        internal decimal _decimal;
 
         #endregion
 
@@ -146,6 +146,62 @@ namespace DialogMaker.Core.Scripting.Runtime
                     break;
                 case DSharpLiteralType.Decimal:
                     _decimal = Unsafe.As<T, decimal>(ref value);
+                    break;
+                default:
+                    throw new InvalidOperationException($"Invalid number type: {type}");
+            };
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Write(void* buffer)
+        {
+            var type = _type;
+
+            switch(type)
+            {
+                case DSharpLiteralType.Byte:
+                    Unsafe.WriteUnaligned(buffer, _byte);
+                    break;
+                case DSharpLiteralType.SByte:
+                    Unsafe.WriteUnaligned(buffer, _sbyte);
+                    break;
+                case DSharpLiteralType.Bool:
+                    Unsafe.WriteUnaligned(buffer, _bool);
+                    break;
+                case DSharpLiteralType.Short:
+                    Unsafe.WriteUnaligned(buffer, _short);
+                    break;
+                case DSharpLiteralType.UShort:
+                    Unsafe.WriteUnaligned(buffer, _ushort);
+                    break;
+                case DSharpLiteralType.Char:
+                    Unsafe.WriteUnaligned(buffer, _char);
+                    break;
+                case DSharpLiteralType.Int:
+                    Unsafe.WriteUnaligned(buffer, _int);
+                    break;
+                case DSharpLiteralType.UInt:
+                    Unsafe.WriteUnaligned(buffer, _uint);
+                    break;
+                case DSharpLiteralType.Long:
+                    Unsafe.WriteUnaligned(buffer, _long);
+                    break;
+                case DSharpLiteralType.ULong:
+                    Unsafe.WriteUnaligned(buffer, _ulong);
+                    break;
+                case DSharpLiteralType.NInt:
+                    Unsafe.WriteUnaligned(buffer, _nint);
+                    break;
+                case DSharpLiteralType.NUInt:
+                    Unsafe.WriteUnaligned(buffer, _nuint);
+                    break;
+                case DSharpLiteralType.Float:
+                    Unsafe.WriteUnaligned(buffer, _float);
+                    break;
+                case DSharpLiteralType.Double:
+                    Unsafe.WriteUnaligned(buffer, _double);
+                    break;
+                case DSharpLiteralType.Decimal:
+                    Unsafe.WriteUnaligned(buffer, _decimal);
                     break;
                 default:
                     throw new InvalidOperationException($"Invalid number type: {type}");
@@ -326,6 +382,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         public static DSharpNumber Create<T>(DSharpLiteralType type, T value) where T : unmanaged
         {
             DSharpNumber* result = stackalloc DSharpNumber[1];
+            result->_decimal = 0;
             result->_type = type;
             Unsafe.WriteUnaligned(result, value);
 

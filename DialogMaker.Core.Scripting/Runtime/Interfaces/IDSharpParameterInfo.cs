@@ -17,6 +17,10 @@
         /// Parameter mode
         /// </summary>
         public DSharpMethodParameterMode Mode { get; }
+        /// <summary>
+        /// Value that used when parameter does not explicit specified
+        /// </summary>
+        public DSharpPresetValue? DefaultValue { get; }
 
         #region Классы
 

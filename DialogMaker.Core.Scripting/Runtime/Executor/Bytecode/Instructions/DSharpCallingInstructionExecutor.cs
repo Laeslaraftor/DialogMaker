@@ -8,15 +8,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            var member = (T*)instruction.Arguments[0];
-            var callingType = (DSharpMethodCallingType)instruction.Arguments[1];
+            var args = instruction->Arguments;
+            var member = (T*)args[0];
+            var callingType = (DSharpMethodCallingType)args[1];
             UnmanagedArray<Pointer<DSharpMetadataToken>> genericParameters;
 
-            if (instruction.Arguments.Length > 2)
+            if (args.Length > 2)
             {
-                genericParameters = instruction.Arguments.Slice(2).Cast<Pointer<DSharpMetadataToken>>();
+                genericParameters = args.Slice(2).Cast<Pointer<DSharpMetadataToken>>();
             }
             else
             {
@@ -93,10 +94,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
         }
 
-        protected abstract DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, CallingExecutionParameters parameters);
+        protected abstract DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, CallingExecutionParameters parameters);
 
         protected abstract T* GetMember(DSharpRuntimeInformationProvider typesProvider, DSharpMetadataToken metadataToken);
-        protected abstract T* ReplaceMember(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, T* member);
+        protected abstract T* ReplaceMember(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, T* member);
         protected abstract bool IsStatic(T* member);
         protected virtual int GetArgumentsCount(T* member)
         {

@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
@@ -18,11 +19,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// </summary>
         public UnmanagedArray<nint> Arguments;
         /// <summary>
-        /// Pointer to executor method that implements <see cref="DSharpInstructionExecutor.Execute(DSharpRuntimeInstruction, ref DSharpExecutionContext)"/>
+        /// Pointer to executor method that implements <see cref="DSharpInstructionExecutor.Execute(DSharpRuntimeInstruction*, ref DSharpExecutionContext)"/>
         /// </summary>
-        public delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> Executor;
+        public delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> Executor;
 
-        #region Controls
+        #region Static
 
         /// <summary>
         /// Execute instruction
@@ -30,22 +31,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="context">Execution context</param>
         /// <exception cref="InvalidOperationException">Executor not specified</exception>
         /// <returns>Instruction execution callback</returns>
-        public readonly DSharpMethodExecutionCallback Execute(ref DSharpExecutionContext context)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
 #if DEBUG
-            if (Executor == null)
+            if (instruction->Executor == null)
             {
-                throw new InvalidOperationException($"Executor not specified for \"{Operation}\"");
+                throw new InvalidOperationException($"Executor not specified for \"{instruction->Operation}\"");
             }
 #endif
-            // Console.WriteLine($"{context.CurrentMethod->ToString()}: {Operation}:{context.InstructionIndex}");
+            // Console.WriteLine($"{context.CurrentMethod->ToString()}: {instruction->Operation}:{context.InstructionIndex}");
 
-            return Executor(this, ref context);
+            return instruction->Executor(instruction, ref context);
         }
-
-        #endregion
-
-        #region Static
 
         /// <summary>
         /// Get arguments count of current instruction

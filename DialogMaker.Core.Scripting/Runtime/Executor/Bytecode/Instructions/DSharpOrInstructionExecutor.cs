@@ -1,23 +1,18 @@
-using System.Numerics;
-
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.Or"/> operation
     /// </summary>
-    public class DSharpOrInstructionExecutor : DSharpBitMathInstructionExecutor
+    public unsafe class DSharpOrInstructionExecutor : DSharpMathInstructionExecutor
     {
         #region Controls
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        protected override bool PerformMathOperation(bool left, bool right)
-        {
-            return left | right;
-        }
-        protected override BigInteger PerformMathOperation(BigInteger left, BigInteger right, ref DSharpExecutionContext context, out DSharpMethodExecutionCallback? error)
+
+        protected override DSharpNumber PerformMathOperation(in DSharpNumber left, in DSharpNumber right, ref DSharpExecutionContext context, out DSharpMethodExecutionCallback? error)
         {
             error = null;
             return left | right;
@@ -32,7 +27,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpOrInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

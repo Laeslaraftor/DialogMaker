@@ -1135,7 +1135,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         {
             if (callExpression.Callee == null)
             {
-                throw new ArgumentException($"Incomplete expression: {callExpression}", nameof(callExpression));
+                throw new DSharpCompilerException("Incomplete expression", callExpression);
             }
 
             string name;
@@ -1151,7 +1151,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 if (Assembly == null)
                 {
-                    throw new InvalidOperationException("Unable to find method with member access without specified assembly builder");
+                    throw new DSharpCompilerException("Unable to find method with member access without specified assembly builder", callExpression);
                 }
 
                 while (memberAccess.Member is MemberAccessExpressionNode accessMember)
@@ -1164,14 +1164,14 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                 if (memberAccess.Member == null)
                 {
-                    throw new ArgumentException($"Incomplete expression: {callExpression}", nameof(callExpression));
+                    throw new DSharpCompilerException("Incomplete expression", memberAccess);
                 }
 
                 if (memberAccess.Member is CallExpressionNode memberAccessCallExpression)
                 {
                     if (memberAccessCallExpression.Callee == null)
                     {
-                        throw new ArgumentException($"Incomplete expression: {memberAccessCallExpression}", nameof(callExpression));
+                        throw new DSharpCompilerException("Incomplete expression", memberAccessCallExpression);
                     }
 
                     callee = memberAccessCallExpression.Callee;
@@ -1187,7 +1187,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             else
             {
-                throw new ArgumentException($"Invalid method or function identifier: {callee}", nameof(callExpression));
+                throw new DSharpCompilerException("Invalid method or function identifier", callee);
             }
 
             IDSharpTypeProvider[] parameters;
@@ -1219,7 +1219,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
             catch (Exception error)
             {
-                throw new InvalidOperationException($"Unable to find method \"{name}\" with {parameters.Length} parameters", error);
+                throw new DSharpCompilerException($"Unable to find method \"{name}\" with {parameters.Length} parameters", callExpression, error);
             }
         }
         public readonly DSharpMethodCallingInfo FindIndexer(ArrayAccessExpressionNode arrayAccessExpression, IDSharpMemberInfo? argumentsMember = null)
@@ -1276,7 +1276,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         public readonly DSharpMethodCallingInfo FindCallable(string name, IEnumerable<IDSharpMemberInfo> callables, IDSharpTypeProvider[] parameters, IDSharpType[]? genericParameters = null, List<int>? outParametersIndex = null)
         {
             IDSharpType? currentType = CurrentMember as IDSharpType ?? CurrentMember?.DeclaringType;
-            Dictionary<DSharpMethodCallingInfo, IDSharpType?[]> callingInfosParameters = [];
+            Dictionary<DSharpMethodCallingInfo, IDSharpType[]> callingInfosParameters = [];
             List<Exception> callingExceptions = [];
 
             bool IsOverriden(IDSharpCallableMember callable)
@@ -1401,7 +1401,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 callingExtensionParameters ??= [.. parameters.Prepend(currentType)];
                 callingParameters = callingExtensionParameters;
             }
-            if ((!hasParams && callableParameters.Length != callingParameters.Length) ||
+            if ((!hasParams && callableParameters.Length < callingParameters.Length) ||
                 (hasParams && callableParameters.Length - 1 > callingParameters.Length))
             {
                 return null;

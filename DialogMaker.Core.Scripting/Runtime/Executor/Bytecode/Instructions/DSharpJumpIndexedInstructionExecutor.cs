@@ -5,46 +5,34 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.JumpIndexed"/> operation
     /// </summary>
-    public class DSharpJumpIndexedInstructionExecutor : DSharpInstructionExecutor
+    public unsafe class DSharpJumpIndexedInstructionExecutor : DSharpInstructionExecutor
     {
         #region Controls
 
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
+#if DEBUG
             if (CheckStackValues(instruction, context, 1, out var error))
             {
                 return error;
             }
+#endif
 
             var value = context.Stack.Peek();
 
+#if DEBUG
             if (!value.IsNumber)
             {
                 return context.ThrowExecutionException($"Jumping by index that placed in stack requires number value, got: {value.ValueType}");
             }
+#endif
 
-            var decimalNumber = value.ReadAsDecimal().GetValueOrDefault();
-            uint index;
-
-            if (uint.MinValue > decimalNumber)
-            {
-                index = 0;
-            }
-            else if (decimalNumber > uint.MaxValue)
-            {
-                index = uint.MaxValue;
-            }
-            else
-            {
-                index = (uint)decimalNumber;
-            }
-
-            context.InstructionIndex = index;
+            context.InstructionIndex = value.ReadAsNumber().Convert<uint>();
 
             return DSharpMethodExecutionCallback.Complete();
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
@@ -65,7 +53,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpJumpIndexedInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

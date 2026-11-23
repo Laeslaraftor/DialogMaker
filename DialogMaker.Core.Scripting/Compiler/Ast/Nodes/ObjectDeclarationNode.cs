@@ -201,8 +201,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
             bool tilde = false;
             bool isOperator = false;
             DSharpOperatorType? castOperatorType = null;
-            var currentToken = stream.Current ?? throw new Exception("Unable to read member");
+            var currentToken = stream.Current;
 
+            if (currentToken == null)
+            {
+                stream.ThrowPositionException("Unable to read member");
+                return false;
+            }
             if (AttributeNode.TryParse(stream, out var attributeNodes))
             {
                 memberInfo.Attributes = attributeNodes;
@@ -745,7 +750,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
                 else
                 {
-                    throw new Exception($"Invalid member type: {memberInfo.MemberType}");
+                    throw new DSharpCompilerException($"Invalid member type: {memberInfo.MemberType}", member);
                 }
             }
 

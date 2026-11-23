@@ -5,10 +5,12 @@
         public DSharpException()
         {
         }
-        public DSharpException(string message) : base(message)
+        public DSharpException(string message) 
+            : base(message)
         {
         }
-        public DSharpException(string message, Exception innerException) : base(message, innerException)
+        public DSharpException(string message, Exception? innerException) 
+            : base(message, innerException)
         {
         }
     }

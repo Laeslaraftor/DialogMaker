@@ -2,14 +2,7 @@ namespace System;
 
 public static class Environment
 {
-    public static string NewLine
-    {
-        get
-        {
-            field ??= GetNewLine();
-            return field;
-        }
-    }
+    public static readonly string NewLine = GetNewLine();
     public static int TickCount => GetTickCount();
 
     public static string[] GetCommandLineArgs()

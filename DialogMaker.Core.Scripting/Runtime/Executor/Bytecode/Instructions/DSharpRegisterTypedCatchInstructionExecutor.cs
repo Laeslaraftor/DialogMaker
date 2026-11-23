@@ -5,23 +5,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.RegisterTypedCatch"/> operation
     /// </summary>
-    public class DSharpRegisterTypedCatchInstructionExecutor : DSharpInstructionExecutor
+    public unsafe class DSharpRegisterTypedCatchInstructionExecutor : DSharpInstructionExecutor
     {
         #region Controls
 
-        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
+#if DEBUG
             if (CheckArguments(instruction, context, 2, out var error))
             {
                 return error;
             }
+#endif
             if (0 >= context.CurrentTryCatchFinallyId)
             {
                 return context.ThrowExecutionException("Unable to register catch block with no any try-catch-finally block");
             }
 
-            int instructionIndex = *(int*)instruction.Arguments[0];
-            var exceptionType = (DSharpRuntimeTypeInfo*)instruction.Arguments[1];
+            int instructionIndex = *(int*)instruction->Arguments[0];
+            var exceptionType = (DSharpRuntimeTypeInfo*)instruction->Arguments[1];
             exceptionType = context.ReplaceType(exceptionType);
 
             if (!context.AddCatchBlock(exceptionType, instructionIndex))
@@ -32,7 +34,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return DSharpMethodExecutionCallback.Complete();
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
@@ -59,7 +61,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpRegisterTypedCatchInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

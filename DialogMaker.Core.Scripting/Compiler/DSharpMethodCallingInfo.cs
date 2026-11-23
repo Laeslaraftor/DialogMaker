@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Compiler
     /// <summary>
     /// Information about calling a callable member
     /// </summary>
-    public class DSharpMethodCallingInfo(IDSharpCallableMember callable, IList<IDSharpType?> parameters, IDictionary<IDSharpType, IDSharpType> genericParameters)
+    public class DSharpMethodCallingInfo(IDSharpCallableMember callable, IList<IDSharpType> parameters, IDictionary<IDSharpType, IDSharpType> genericParameters)
     {
         public DSharpMethodCallingInfo(IDSharpCallableMember callable)
             : this(callable, [.. callable.GetParameters().Select(p => p.Type)], _emptyGenericParameters)
@@ -25,7 +25,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// <summary>
         /// Invocation parameters
         /// </summary>
-        public ReadOnlyCollection<IDSharpType?> Parameters { get; } = new(parameters);
+        public ReadOnlyCollection<IDSharpType> Parameters { get; } = new(parameters);
         /// <summary>
         /// Replaced generic parameters. Keys - method generic types, Values - invocation generic parameters.
         /// </summary>
@@ -41,7 +41,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// <returns>New method calling information with replaced types or current instance</returns>
         public DSharpMethodCallingInfo ReplaceTypes(IReadOnlyDictionary<IDSharpMemberInfo, IDSharpMemberInfo> replacedMembers)
         {
-            List<IDSharpType?> parameters = [.. Parameters];
+            List<IDSharpType> parameters = [.. Parameters];
             Dictionary<IDSharpType, IDSharpType> genericParameters = new(GenericParameters);
             bool isAnyTypeReplaced = false;
 
@@ -101,11 +101,17 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
                 else
                 {
-                    parameters[i] = callableParameters[i].Type;
+                    var parameter = callableParameters[i];
+
+                    if (parameter.DefaultValue != null)
+                    {
+                        parameters[i] = parameter.DefaultValue.Value.GetReturnType(Callable.Assembly);
+                        continue;
+                    }
+
+                    parameters[i] = parameter.Type;
                 }
             }
-
-            //IDSharpType[] parameters = [.. Callable.GetParameters().Select(p => p.Type)];
 
             for (int i = 0; i < parameters.Length; i++)
             {
@@ -162,7 +168,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// <returns>Method calling information</returns>
         /// <exception cref="InvalidOperationException">Generic parameters amount not matching</exception>
         /// <exception cref="InvalidOperationException">Type can not replace generic</exception>
-        public static DSharpMethodCallingInfo Create(DSharpAssemblyBuilder assembly, IDSharpCallableMember callable, IDSharpType?[] parameters, IDSharpType[]? genericParameters)
+        public static DSharpMethodCallingInfo Create(DSharpAssemblyBuilder assembly, IDSharpCallableMember callable, IDSharpType[] parameters, IDSharpType[]? genericParameters)
         {
             var callableParameters = callable.GetParameters();
             var genericTypes = callable.GetGenericParameters();
@@ -213,13 +219,27 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             int index = 0;
-            IDSharpType?[] newParameters = new IDSharpType[parameters.Length];
+            IDSharpType[] newParameters = new IDSharpType[parameters.Length];
 
             foreach (var parameterInfo in parametersType)
             {
                 if (parameterInfo.Key.Mode == DSharpMethodParameterMode.Params &&
                     index >= parameters.Length)
                 {
+                    break;
+                }
+                if (index >= newParameters.Length)
+                {
+                    for (int p = index; p < callableParameters.Length; p++)
+                    {
+                        var callableParameter = callableParameters[p];
+
+                        if (callableParameter.DefaultValue == null)
+                        {
+                            throw new InvalidOperationException($"Parameter \"{callable}\" need to be specified");
+                        }
+                    }
+
                     break;
                 }
 
@@ -363,7 +383,7 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// <param name="callingInfos">List of method calling infos for selecting most suitable calling among them</param>
         /// <param name="parameters">Calling parameters</param>
         /// <returns>Most suitable calling info</returns>
-        public static DSharpMethodCallingInfo GetMostSuitable(Dictionary<DSharpMethodCallingInfo, IDSharpType?[]> callingInfos)
+        public static DSharpMethodCallingInfo GetMostSuitable(Dictionary<DSharpMethodCallingInfo, IDSharpType[]> callingInfos)
         {
             if (callingInfos.Count == 0)
             {
@@ -387,14 +407,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     continue;
                 }
-                if ((!hasParams && callingTypes.Length != parameters.Length) ||
+                if ((!hasParams && callingTypes.Length < parameters.Length) ||
                     (hasParams && parameters.Length - 1 > callingTypes.Length))
                 {
                     throw new InvalidOperationException($"Calling parameter length don't match with provided parameters length: {callingInfo}");
                 }
 
                 int castsCount = 0;
-                IDSharpType?[]? callingParams = hasParams ? GetCallingParams(info.Key.Callable, parameters) : null;
+                IDSharpType[]? callingParams = hasParams ? GetCallingParams(info.Key.Callable, parameters) : null;
 
                 for (int i = 0; i < callingTypes.Length; i++)
                 {
@@ -462,7 +482,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             return minCallableCallingCasts.Key;
         }
-        public static IDSharpType?[]? GetCallingParams(IDSharpCallableMember callable, IEnumerable<IDSharpType?> callingParameters)
+        public static IDSharpType[]? GetCallingParams(IDSharpCallableMember callable, IEnumerable<IDSharpType> callingParameters)
         {
             var callableParameters = callable.GetParameters();
 
@@ -492,7 +512,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
             }
 
-            IDSharpType?[] result = new IDSharpType[delta];
+            IDSharpType[] result = new IDSharpType[delta];
 
             int i = 0;
             int index = 0;

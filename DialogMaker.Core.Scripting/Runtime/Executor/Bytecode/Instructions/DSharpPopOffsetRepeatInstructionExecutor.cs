@@ -5,26 +5,28 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.PopOffsetRepeat"/> operation
     /// </summary>
-    public class DSharpPopOffsetRepeatInstructionExecutor : DSharpInstructionExecutor
+    public unsafe class DSharpPopOffsetRepeatInstructionExecutor : DSharpInstructionExecutor
     {
         #region Controls
 
-        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
+#if DEBUG
             if (CheckArguments(instruction, context, 2, out var error))
             {
                 return error;
             }
+#endif
 
-            uint offset = *(uint*)instruction.Arguments[0];
-            uint count = *(uint*)instruction.Arguments[1];
+            uint offset = *(uint*)instruction->Arguments[0];
+            uint count = *(uint*)instruction->Arguments[1];
 
             context.Stack.Pop(offset, count);
 
             return DSharpMethodExecutionCallback.Complete();
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
@@ -49,7 +51,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpPopOffsetRepeatInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

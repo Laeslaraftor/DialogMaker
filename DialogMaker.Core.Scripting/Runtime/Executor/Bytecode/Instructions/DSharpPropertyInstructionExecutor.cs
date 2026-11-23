@@ -9,7 +9,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, CallingExecutionParameters parameters)
+        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, CallingExecutionParameters parameters)
         {
             var property = parameters.Member;
             var instance = parameters.Instance;
@@ -48,7 +48,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return DSharpMethodExecutionCallback.Call(instance, accessor, args);
         }
 
-        protected override DSharpRuntimePropertyInfo* ReplaceMember(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimePropertyInfo* member)
+        protected override DSharpRuntimePropertyInfo* ReplaceMember(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimePropertyInfo* member)
         {
             return context.ReplaceProperty(member);
         }

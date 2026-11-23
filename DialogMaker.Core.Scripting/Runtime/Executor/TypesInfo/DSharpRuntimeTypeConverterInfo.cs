@@ -25,6 +25,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <summary>
         /// Pointer to converter method
         /// </summary>
-        public delegate*<DSharpObject*, DSharpLiteralValue> Converter;
+        public delegate*<DSharpObject*, DSharpNumber> Converter;
     }
 }

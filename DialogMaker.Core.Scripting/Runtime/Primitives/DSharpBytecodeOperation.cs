@@ -66,7 +66,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(2)]
         [RequestsStackValues(1)]
-        [Executor(typeof(DSharpPopStackMoveInstructionExecutor))]
+        [Executor(typeof(DSharpStackMoveInstructionExecutor))]
         StackMove,
         /// <summary>
         /// Load value from local variable to stack

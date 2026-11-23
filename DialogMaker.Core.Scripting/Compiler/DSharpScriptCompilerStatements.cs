@@ -3,7 +3,6 @@ using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
-using MessagePack.Resolvers;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -700,7 +699,7 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         #region Resolving types
 
-        private void ResolveParameters(List<ParameterExpressionNode> variables, IList<DSharpMethodBuilderParameter> parameters, DSharpCompilerContext context)
+        private void ResolveParameters(IDSharpMemberInfo member, List<ParameterExpressionNode> variables, IList<DSharpMethodBuilderParameter> parameters, DSharpCompilerContext context)
         {
             foreach (var parameter in parameters)
             {
@@ -708,19 +707,36 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             parameters.Clear();
+            bool nowParametersWithDefaultValue = false;
 
             foreach (var parameter in variables)
             {
                 if (parameter.Type == null)
                 {
-                    throw new InvalidOperationException($"Parameter must have a type: {parameter}");
+                    throw new DSharpCompilerException("Parameter must have a type", parameter);
+                }
+                if (parameter.DefaultValueExpression != null)
+                {
+                    if (parameter.Mode == DSharpMethodParameterMode.Out ||
+                        parameter.Mode == DSharpMethodParameterMode.Ref)
+                    {
+                        throw new DSharpCompilerException("\"ref\" and \"out\" parameters cannot have default value", parameter);
+                    }
+
+                    nowParametersWithDefaultValue = true;
+                }
+                else if (nowParametersWithDefaultValue)
+                {
+                    throw new DSharpCompilerException("Required default value", parameter);
                 }
 
                 DSharpMethodBuilderParameter parameterBuilder = new(Assembly)
                 {
                     Name = parameter.Name,
                     Mode = parameter.Mode,
-                    TypeGetter = () => context.ResolveType(parameter.Type)
+                    TypeGetter = () => context.ResolveType(parameter.Type),
+                    DefaultValueExpression = parameter.DefaultValueExpression,
+                    DefaultValueGetter = p => CompileParameterDefaultValue(member, p)
                 };
 
                 _createdParameters.Add(parameterBuilder, parameter);
@@ -908,7 +924,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     throw new ArgumentException($"Invalid parameters at: {info.Value}", error);
                 }
 
-                ResolveParameters(info.Value.Parameters, info.Key.Parameters, context);
+                ResolveParameters(info.Key, info.Value.Parameters, info.Key.Parameters, context);
             }
             foreach (var info in _createdOperators)
             {
@@ -922,7 +938,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 }
 
                 ValidateInvokableNodeParameters(info.Value);
-                ResolveParameters(info.Value.Parameters, info.Key.Parameters, context);
+                ResolveParameters(info.Key, info.Value.Parameters, info.Key.Parameters, context);
             }
             foreach (var info in _createdDelegates)
             {
@@ -937,7 +953,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                     context.CurrentMember = invokeInfo.Key;
                     context.Scope = GetScope(invokeInfo.Key);
 
-                    ResolveParameters(invokeInfo.Value.PrimaryConstructorParameters, invokeInfo.Key.Parameters, context);
+                    ResolveParameters(invokeInfo.Key, invokeInfo.Value.PrimaryConstructorParameters, invokeInfo.Key.Parameters, context);
 
                     if (invokeInfo.Value.DelegateReturnType != null && invokeInfo.Value.DelegateReturnType.Token.Type != DSharpTokenType.Void)
                     {
@@ -953,7 +969,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 context.Scope = GetScope(info.Key);
 
                 ValidateInvokableNodeParameters(info.Value);
-                ResolveParameters(info.Value.Parameters, info.Key.Parameters, context);
+                ResolveParameters(info.Key, info.Value.Parameters, info.Key.Parameters, context);
 
                 if (info.Value.ReturnType != null && info.Value.ReturnType.Token.Type != DSharpTokenType.Void)
                 {
@@ -967,7 +983,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 context.Scope = GetScope(info.Key.DeclaringType!);
 
                 ValidateInvokableNodeParameters(info.Value);
-                ResolveParameters(info.Value.Parameters, info.Key.Parameters, context);
+                ResolveParameters(info.Key, info.Value.Parameters, info.Key.Parameters, context);
             }
 
             bool TryGetBaseTypeToSetup(TypeInfoNode typeInfo, out KeyValuePair<IDSharpType, ObjectDeclarationNode> result)

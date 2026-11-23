@@ -5,16 +5,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.StoreProperty"/> operation
     /// </summary>
-    public class DSharpStorePropertyInstructionExecutor : DSharpPropertyInstructionExecutor
+    public unsafe class DSharpStorePropertyInstructionExecutor : DSharpPropertyInstructionExecutor
     {
         #region Controls
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
 
-        protected override unsafe DSharpRuntimeMethodInfo* GetAccessor(DSharpRuntimePropertyInfo* property)
+        protected override DSharpRuntimeMethodInfo* GetAccessor(DSharpRuntimePropertyInfo* property)
         {
             return property->Setter;
         }
@@ -28,7 +28,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpStorePropertyInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

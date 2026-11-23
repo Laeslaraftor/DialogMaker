@@ -9,12 +9,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
+#if DEBUG
             if (CheckStackValues(instruction, context, 2, out var error))
             {
                 return error;
             }
+#endif
 
             var left = context.Stack.Peek(1);
             var right = context.Stack.Peek();
@@ -25,7 +27,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return DSharpMethodExecutionCallback.Complete();
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
@@ -55,16 +57,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 leftType != null && rightType != null &&
                 !leftType->ConverterInfo.IsNull && !rightType->ConverterInfo.IsNull)
             {
-                var leftDecimal = left.ReadAsDecimal();
-                var rightDecimal = right.ReadAsDecimal();
+                var leftDecimal = left.ReadAsNumber();
+                var rightDecimal = right.ReadAsNumber();
 
-                return leftDecimal == rightDecimal;
+                return (leftDecimal == rightDecimal).Read<bool>();
             }
 
-            return DSharpStack.FrameInfo.ValueEquals(left, right);
+            return DSharpStack.FrameInfo.ValueEquals(ref left, ref right);
         }
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public unsafe static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

@@ -587,7 +587,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <param name="isArray">Is array structure</param>
         /// <returns>Pointer to structure</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpObject* CreateStructure(DSharpRuntimeTypeInfo* type, UnmanagedArray<byte> buffer, bool isArray)
+        public static DSharpObject* CreateStructure(DSharpRuntimeTypeInfo* type, in UnmanagedArray<byte> buffer, bool isArray)
         {
             return CreateStructure(type, default, buffer, isArray);
         }
@@ -599,7 +599,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <param name="buffer">Buffer that will be filled with structure</param>
         /// <param name="isArray">Is array structure</param>
         /// <returns>Pointer to structure</returns>
-        public static DSharpObject* CreateStructure(DSharpRuntimeTypeInfo* type, UnmanagedArray<byte> data, UnmanagedArray<byte> buffer, bool isArray)
+        public static DSharpObject* CreateStructure(DSharpRuntimeTypeInfo* type, in UnmanagedArray<byte> data, in UnmanagedArray<byte> buffer, bool isArray)
         {
             if (type->Size > buffer.Length)
             {
@@ -609,6 +609,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             DSharpObject* obj = (DSharpObject*)buffer.GetItemReference(0);
             obj->Attributes = DSharpObjectAttributes.StoredInBuffer;
             obj->Type = type;
+            obj->Extra = null;
 
             if (isArray)
             {
@@ -630,7 +631,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             if (data.Length > 0)
             {
                 var dataBuffer = data.GetItemReference(0);
-                Buffer.MemoryCopy(dataBuffer, objectDataBuffer, sizeForData, data.Length);
+                var dataLength = data.Length;
+                Buffer.MemoryCopy(dataBuffer, objectDataBuffer, sizeForData, dataLength);
+
+                if (sizeForData > dataLength)
+                {
+                    var delta = sizeForData - dataLength;
+                    RuntimeExtensions.FillZero(dataBuffer + dataLength, delta);
+                }
             }
             else
             {
@@ -646,7 +654,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <param name="stack">Stack that contains structure or value type in last value</param>
         /// <param name="buffer">Buffer that will be used for creating structure</param>
         /// <returns>Created structure</returns>
-        public static DSharpObject* CreateStructureFromStack(DSharpStack stack, UnmanagedArray<byte> buffer)
+        public static DSharpObject* CreateStructureFromStack(DSharpStack stack, in UnmanagedArray<byte> buffer)
         {
             if (stack.Count == 0)
             {

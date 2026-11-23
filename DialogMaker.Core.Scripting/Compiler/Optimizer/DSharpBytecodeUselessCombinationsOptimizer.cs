@@ -25,6 +25,24 @@ namespace DialogMaker.Core.Scripting.Compiler
             DSharpBytecodeOperation.LoadProperty,
             DSharpBytecodeOperation.LoadIndexer
         ]);
+        private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _storeOperations = new([
+            DSharpBytecodeOperation.StoreLocal,
+            DSharpBytecodeOperation.StoreField,
+            DSharpBytecodeOperation.StoreInstanceField,
+            DSharpBytecodeOperation.StoreProperty,
+            DSharpBytecodeOperation.StoreIndexer
+        ]);
+        private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _loadOperations = new([
+            DSharpBytecodeOperation.LoadLocal,
+            DSharpBytecodeOperation.LoadField,
+            DSharpBytecodeOperation.LoadInstanceField,
+            DSharpBytecodeOperation.LoadProperty,
+            DSharpBytecodeOperation.LoadIndexer
+        ]);
+        private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _conditionalJumpOperations = new([
+            DSharpBytecodeOperation.JumpIfFalse,
+            DSharpBytecodeOperation.JumpIfTrue
+        ]);
         private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _potentialLoadMemberOperations = new([.. _loadMemberOperations.Append(DSharpBytecodeOperation.Call)]);
         private static readonly Range _uselessPopCombinationsRange = new(0, 5);
         private static readonly ReadOnlyCollection<UselessCombination> _uselessCombinations = new([
@@ -151,6 +169,25 @@ namespace DialogMaker.Core.Scripting.Compiler
                     new(DSharpBytecodeOperation.Return),
                 ],
                 UselessCombinationRemoveFirst
+            ),
+            new(
+                [
+                    new(_loadOperations, true),
+                    new(_loadOperations, true),
+                    InstructionDefinition.Any,
+                    new(DSharpBytecodeOperation.PopPreviousTwo),
+                    new(_storeOperations, true),
+                    new(DSharpBytecodeOperation.Pop),
+                ],
+                UselessCombinationStoreValuePop
+            ),
+            new(
+                [
+                    new(DSharpBytecodeOperation.PopPreviousTwo),
+                    new(_conditionalJumpOperations, true),
+                    new(DSharpBytecodeOperation.Pop),
+                ],
+                UselessCombinationJumpConditionPop
             )
         ]);
         private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _finalUselessOperations = new([
@@ -236,6 +273,47 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         #region Optimizations
 
+        private static int UselessCombinationJumpConditionPop(UselessCombination uselessCombination, DSharpBytecodeBuilder builder, int startIndex)
+        {
+            if (builder.Instructions[startIndex + 1] is not ReferenceInstruction referenceInstruction ||
+                referenceInstruction.ReferencedInstruction?.Operation != DSharpBytecodeOperation.Pop)
+            {
+                return 0;
+            }
+
+            ReplaceInstructionReferences(builder, startIndex);
+            
+            var popAfterJump = builder.Instructions[startIndex + 1];
+            var popAllAfterJump = builder.PopRepeat(3);
+            builder.Instructions.Remove(popAllAfterJump);
+            builder.Instructions[startIndex + 1] = popAllAfterJump;
+
+            ReplaceInstructionReferences(builder, popAfterJump, popAllAfterJump);
+
+            int referencedInstructionIndex = builder.Instructions.IndexOf(referenceInstruction.ReferencedInstruction);
+            var popAllJump = builder.PopRepeat(3);
+            builder.Instructions.Remove(popAllJump);
+            builder.Instructions[referencedInstructionIndex] = popAllJump;
+
+            ReplaceInstructionReferences(builder, referenceInstruction.ReferencedInstruction, popAllJump);
+
+            return 1;
+        }
+        private static int UselessCombinationStoreValuePop(UselessCombination uselessCombination, DSharpBytecodeBuilder builder, int startIndex)
+        {
+            ReplaceInstructionReferences(builder, startIndex + 3);
+
+            int popIndex = startIndex + 4;
+            var oldPop = builder.Instructions[popIndex];
+            var popRepeat = builder.PopRepeat(3);
+
+            builder.Instructions.Remove(popRepeat);
+            builder.Instructions[popIndex] = popRepeat;
+
+            ReplaceInstructionReferences(builder, oldPop, popRepeat);
+
+            return 1;
+        }
         private static int UselessCombinationRemoveMultiplyByOne(UselessCombination uselessCombination, DSharpBytecodeBuilder builder, int startIndex)
         {
             if (builder.Instructions[startIndex] is not LiteralInstruction literalInstruction ||

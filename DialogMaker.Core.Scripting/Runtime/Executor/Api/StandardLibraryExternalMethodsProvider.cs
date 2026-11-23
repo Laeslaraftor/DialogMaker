@@ -153,6 +153,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                         return EnvironmentGetNewLine;
                     }
                 }
+                else if (declaringType.Name == nameof(BitConverter))
+                {
+                    if (methodInfo.Name == "GetIsLittleEndian")
+                    {
+                        return GetIsLittleEndian;
+                    }
+                }
             }
             else if (declaringType.Namespace == "System.Threading")
             {
@@ -716,6 +723,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
             _objectsContainer.Unlock(obj);
 
             return null;
+        }
+
+        #endregion
+
+        #region BitConverter
+
+        private static DSharpExternalMethodResult? GetIsLittleEndian(DSharpExternalCallingArgs _)
+        {
+            return BitConverter.IsLittleEndian;
         }
 
         #endregion

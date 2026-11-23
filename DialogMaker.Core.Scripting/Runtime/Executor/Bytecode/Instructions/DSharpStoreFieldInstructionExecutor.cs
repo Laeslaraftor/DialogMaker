@@ -5,16 +5,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.StoreField"/> operation
     /// </summary>
-    public class DSharpStoreFieldInstructionExecutor : DSharpFieldInstructionExecutor
+    public unsafe class DSharpStoreFieldInstructionExecutor : DSharpFieldInstructionExecutor
     {
         #region Controls
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
 
-        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeFieldInfo* runtimeInfo)
+        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeFieldInfo* runtimeInfo)
         {
             return Store(instruction, ref context, runtimeInfo, false);
         }
@@ -28,14 +28,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpStoreFieldInstructionExecutor Instance = new();
 
-        internal static unsafe DSharpMethodExecutionCallback Store(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeFieldInfo* field, bool isInstance)
+        internal static unsafe DSharpMethodExecutionCallback Store(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeFieldInfo* field, bool isInstance)
         {
             int stackValuesCount = isInstance ? 2 : 1;
+            DSharpMethodExecutionCallback error;
 
-            if (CheckStackValues(instruction, context, stackValuesCount, out var error))
+#if DEBUG
+            if (CheckStackValues(instruction, context, stackValuesCount, out error))
             {
                 return error;
             }
+#endif
 
             DSharpObject* instance = null;
 
@@ -61,7 +64,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return DSharpMethodExecutionCallback.Complete();
         }
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

@@ -12,7 +12,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <param name="size">Size of type in bytes</param>
         /// <param name="token">Token that represents type</param>
         /// <param name="shortName">Short name of type</param>
-        public DSharpBuildInTypeInfo(string fullName, int size, DSharpTokenType? token, DSharpLiteralType? literalType, string? shortName, delegate*<DSharpObject*, DSharpLiteralValue> converter)
+        public DSharpBuildInTypeInfo(string fullName, int size, DSharpTokenType? token, DSharpLiteralType? literalType, string? shortName, delegate*<DSharpObject*, DSharpNumber> converter)
         {
             FullName = fullName;
             ShortName = shortName;
@@ -42,7 +42,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <param name="fullName">Full name of type</param>
         /// <param name="size">Size of type in bytes</param>
         /// <param name="token">Token that represents type</param>
-        public DSharpBuildInTypeInfo(string fullName, int size, DSharpTokenType token, DSharpLiteralType? literalType, delegate*<DSharpObject*, DSharpLiteralValue> converter)
+        public DSharpBuildInTypeInfo(string fullName, int size, DSharpTokenType token, DSharpLiteralType? literalType, delegate*<DSharpObject*, DSharpNumber> converter)
             : this(fullName, size, token, literalType, token.ToString().ToLower(), converter)
         {
         }
@@ -53,7 +53,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <param name="size">Size of type in bytes</param>
         /// <param name="token">Token that represents type</param>
         /// <param name="minMax">Minimal and maximal value of current type</param>
-        public DSharpBuildInTypeInfo(string fullName, int size, DSharpTokenType token, DSharpLiteralType literalType, delegate*<DSharpObject*, DSharpLiteralValue> converter, MinMaxValues minMax)
+        public DSharpBuildInTypeInfo(string fullName, int size, DSharpTokenType token, DSharpLiteralType literalType, delegate*<DSharpObject*, DSharpNumber> converter, MinMaxValues minMax)
             : this(fullName, size, token, literalType, token.ToString().ToLower(), converter)
         {
             MinMax = minMax;
@@ -107,7 +107,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <summary>
         /// D# object converter to C# object
         /// </summary>
-        public delegate*<DSharpObject*, DSharpLiteralValue> Converter { get; }
+        public delegate*<DSharpObject*, DSharpNumber> Converter { get; }
         /// <summary>
         /// Minimal and maximal value of current type
         /// </summary>
@@ -133,7 +133,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         {
             try
             {
-                return Convert(obj).AsNumber<T>();
+                return Convert(obj).Convert<T>();
             }
             catch (Exception error)
             {
@@ -146,7 +146,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <param name="obj">D# object instance</param>
         /// <returns>C# object</returns>
         /// <exception cref="InvalidOperationException">Type has no converter</exception>
-        public DSharpLiteralValue Convert(DSharpObject* obj)
+        public DSharpNumber Convert(DSharpObject* obj)
         {
             if (Converter == null)
             {

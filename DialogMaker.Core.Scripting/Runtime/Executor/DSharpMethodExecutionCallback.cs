@@ -49,21 +49,30 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         #region Static
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpMethodExecutionCallback Complete() => new()
+        public static DSharpMethodExecutionCallback Complete()
         {
-            Type = DSharpMethodExecutionCallbackType.ExecutionComplete,
-        };
+            DSharpMethodExecutionCallback result = default;
+            result.Type = DSharpMethodExecutionCallbackType.ExecutionComplete;
+
+            return result;
+        }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpMethodExecutionCallback Return() => new()
+        public static DSharpMethodExecutionCallback Return()
         {
-            Type = DSharpMethodExecutionCallbackType.Returned,
-        };
+            DSharpMethodExecutionCallback result = default;
+            result.Type = DSharpMethodExecutionCallbackType.Returned;
+
+            return result;
+        }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpMethodExecutionCallback Throw(DSharpObject* exception) => new()
+        public static DSharpMethodExecutionCallback Throw(DSharpObject* exception)
         {
-            Type = DSharpMethodExecutionCallbackType.UnhandledException,
-            UnhandledException = exception
-        };
+            DSharpMethodExecutionCallback result = default;
+            result.Type = DSharpMethodExecutionCallbackType.UnhandledException;
+            result.UnhandledException = exception;
+
+            return result;
+        }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DSharpMethodExecutionCallback Call(DSharpObject* objectInstance, DSharpRuntimeMethodInfo* nextMethod, UnmanagedArray<DSharpExecutionLocalVariable> arguments)
         {
@@ -75,23 +84,29 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             return Call(objectInstance, nextMethod, genericParameters, arguments, 0);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpMethodExecutionCallback Call(DSharpObject* objectInstance, DSharpRuntimeMethodInfo* nextMethod, UnmanagedDictionary<Pointer<DSharpMetadataToken>, Pointer<DSharpMetadataToken>> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments, uint extraScopeOffset) => new()
+        public static DSharpMethodExecutionCallback Call(DSharpObject* objectInstance, DSharpRuntimeMethodInfo* nextMethod, UnmanagedDictionary<Pointer<DSharpMetadataToken>, Pointer<DSharpMetadataToken>> genericParameters, UnmanagedArray<DSharpExecutionLocalVariable> arguments, uint extraScopeOffset)
         {
-            Type = DSharpMethodExecutionCallbackType.RequiredCallingNextMethod,
-            NextMethod = nextMethod,
-            ObjectInstance = objectInstance,
-            CallingGenericParameters = genericParameters,
-            CallingArguments = arguments,
-            ExtraScopeOffset = extraScopeOffset
-        };
+            DSharpMethodExecutionCallback result = default;
+            result.Type = DSharpMethodExecutionCallbackType.RequiredCallingNextMethod;
+            result.NextMethod = nextMethod;
+            result.ObjectInstance = objectInstance;
+            result.CallingGenericParameters = genericParameters;
+            result.CallingArguments = arguments;
+            result.ExtraScopeOffset = extraScopeOffset;
+
+            return result;
+        }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpMethodExecutionCallback InitializeObject(DSharpObject* objectInstance, DSharpRuntimeMethodInfo* constructor, UnmanagedArray<DSharpExecutionLocalVariable> arguments) => new()
+        public static DSharpMethodExecutionCallback InitializeObject(DSharpObject* objectInstance, DSharpRuntimeMethodInfo* constructor, UnmanagedArray<DSharpExecutionLocalVariable> arguments)
         {
-            Type = DSharpMethodExecutionCallbackType.InitializeObject,
-            NextMethod = constructor,
-            ObjectInstance = objectInstance,
-            CallingArguments = arguments
-        };
+            DSharpMethodExecutionCallback result = default;
+            result.Type = DSharpMethodExecutionCallbackType.InitializeObject;
+            result.NextMethod = constructor;
+            result.ObjectInstance = objectInstance;
+            result.CallingArguments = arguments;
+
+            return result;
+        }
 
 
         #endregion

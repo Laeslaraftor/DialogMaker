@@ -6,20 +6,21 @@
     /// <param name="name">Name of parameter</param>
     /// <param name="type">Type of parameter</param>
     /// <param name="mode">Parameter mode</param>
-    public readonly struct DSharpParameterInfo(string name, IDSharpType type, DSharpMethodParameterMode mode) 
+    public readonly struct DSharpParameterInfo(string name, IDSharpType type, DSharpMethodParameterMode mode, DSharpPresetValue? defaultValue = null) 
         : IDSharpParameterInfo, IEquatable<DSharpParameterInfo>, IEquatable<IDSharpParameterInfo>
     {
         public string Name { get; } = name;
         public IDSharpType Type { get; } = type;
         public DSharpMethodParameterMode Mode { get; } = mode;
+        public DSharpPresetValue? DefaultValue { get; } = defaultValue;
 
         #region Controls
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Name, Type, Mode);
+            return HashCode.Combine(Name, Type, Mode, DefaultValue);
         }
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return (obj is DSharpParameterInfo other && Equals(other)) ||
                    (obj is IDSharpParameterInfo other2 && Equals(other2));
@@ -28,18 +29,21 @@
         {
             return Name == other.Name &&
                    Type == other.Type &&
-                   Mode == other.Mode;
+                   Mode == other.Mode &&
+                   DefaultValue == other.DefaultValue;
         }
-        public bool Equals(IDSharpParameterInfo other)
+        public bool Equals(IDSharpParameterInfo? other)
         {
-            return Name == other.Name &&
+            return other != null &&
+                   Name == other.Name &&
                    Type == other.Type &&
-                   Mode == other.Mode;
+                   Mode == other.Mode &&
+                   DefaultValue == other.DefaultValue;
         }
 
         public override string ToString()
         {
-            return $"{Mode.ToString().ToLower()} {Type} {(string.IsNullOrEmpty(Name) ? string.Empty : Name)}";
+            return $"{Mode.ToString().ToLower()} {Type} {(string.IsNullOrEmpty(Name) ? string.Empty : Name)}{(DefaultValue != null ? " = " + DefaultValue.ToString() : string.Empty)}";
         }
 
         #endregion
@@ -82,7 +86,7 @@
         /// <param name="stream">Stream for reading</param>
         /// <param name="assembly">Assembly for finding parameter type by metadata token</param>
         /// <returns>Parameter information from stream</returns>
-        public DSharpParameterInfo Read(Stream stream, IDSharpAssembly assembly)
+        public static DSharpParameterInfo Read(Stream stream, IDSharpAssembly assembly)
         {
             var name = stream.ReadString();
             var typeToken = DSharpMetadataToken.Read(stream);

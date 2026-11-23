@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
     /// <summary>
     /// Base class of D# instruction executor
     /// </summary>
-    public abstract class DSharpInstructionExecutor
+    public abstract unsafe class DSharpInstructionExecutor
     {
         #region Controls
 
@@ -15,7 +15,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// Get pointer to executor method
         /// </summary>
         /// <returns>Pointer to executor method</returns>
-        public unsafe abstract delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer();
+        public abstract delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer();
 
         /// <summary>
         /// Execute instruction
@@ -23,21 +23,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="instruction">Executing instruction information</param>
         /// <param name="context">Execution context</param>
         /// <returns>Is successfully executed</returns>
-        public abstract DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context);
+        public abstract DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context);
         /// <summary>
         /// Get count of arguments
         /// </summary>
         /// <param name="typesProvider">Runtime types provider for finding parameter type by metadata token</param>
         /// <param name="stream">Unmanaged stream for reading parameter information</param>
         /// <returns>Count of arguments</returns>
-        public unsafe abstract int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream);
+        public abstract int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream);
         /// <summary>
         /// Read arguments from stream and write it to arguments array
         /// </summary>
         /// <param name="typesProvider">Runtime types provider for finding parameter type by metadata token</param>
         /// <param name="stream">Unmanaged stream for reading parameter information</param>
         /// <param name="arguments">Array for writing arguments</param>
-        public unsafe abstract void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments);
+        public abstract void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments);
 
         /// <summary>
         /// Check provided arguments count
@@ -46,11 +46,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="context">Current execution context</param>
         /// <param name="requiredArgumentsCount">Requires amount of arguments</param>
         /// <returns>Is arguments count matched</returns>
-        protected static bool CheckArguments(DSharpRuntimeInstruction instruction, DSharpExecutionContext context, int requiredArgumentsCount, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
+        protected static bool CheckArguments(DSharpRuntimeInstruction* instruction, DSharpExecutionContext context, int requiredArgumentsCount, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
         {
-            if (instruction.Arguments.Length != requiredArgumentsCount)
+            if (instruction->Arguments.Length != requiredArgumentsCount)
             {
-                errorCallback = context.ThrowExecutionException($"{instruction.Operation} instruction requires {requiredArgumentsCount} arguments, got: {instruction.Arguments.Length}");
+                errorCallback = context.ThrowExecutionException($"{instruction->Operation} instruction requires {requiredArgumentsCount} arguments, got: {instruction->Arguments.Length}");
                 return true;
             }
 
@@ -64,11 +64,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="context">Current execution context</param>
         /// <param name="requiredValuesCount">Requires amount of values is stack</param>
         /// <returns>Is stack values enough</returns>
-        protected static bool CheckStackValues(DSharpRuntimeInstruction instruction, DSharpExecutionContext context, int requiredValuesCount, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
+        protected static bool CheckStackValues(DSharpRuntimeInstruction* instruction, DSharpExecutionContext context, int requiredValuesCount, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
         {
             if (context.Stack.Count < requiredValuesCount)
             {
-                errorCallback = context.ThrowExecutionException($"{instruction.Operation} instruction requires {requiredValuesCount} values in stack, now: {context.Stack.Count}");
+                errorCallback = context.ThrowExecutionException($"{instruction->Operation} instruction requires {requiredValuesCount} values in stack, now: {context.Stack.Count}");
                 return true;
             }
 
@@ -82,7 +82,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="offset">Stack peek offset</param>
         /// <returns>Pointer to object instance</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected unsafe static DSharpObject* GetInstance(DSharpExecutionContext context, uint offset)
+        protected static DSharpObject* GetInstance(in DSharpExecutionContext context, uint offset)
         {
             return GetInstance(context, offset, false, out _);
         }
@@ -94,11 +94,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="error">Error that occurred while finding object instance</param>
         /// <returns>Pointer to object instance</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected unsafe static DSharpObject* GetInstance(DSharpExecutionContext context, uint offset, [NotNullWhen(true)] out DSharpMethodExecutionCallback error)
+        protected static DSharpObject* GetInstance(in DSharpExecutionContext context, uint offset, [NotNullWhen(true)] out DSharpMethodExecutionCallback error)
         {
             return GetInstance(context, offset, true, out error);
         }
-        private unsafe static DSharpObject* GetInstance(DSharpExecutionContext context, uint offset, bool checkNullReference, [NotNullWhen(true)] out DSharpMethodExecutionCallback error)
+        private static DSharpObject* GetInstance(in DSharpExecutionContext context, uint offset, bool checkNullReference, [NotNullWhen(true)] out DSharpMethodExecutionCallback error)
         {
             var instanceFrame = context.Stack.PeekOnlyValues(offset);
 
@@ -136,7 +136,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="context">Current execution context</param>
         /// <param name="handler">Object handler</param>
         /// <returns>Result of operation</returns>
-        protected unsafe DSharpMethodExecutionCallback TryGetInstanceFromStack(ref DSharpExecutionContext context, HandleObject handler)
+        protected DSharpMethodExecutionCallback TryGetInstanceFromStack(ref DSharpExecutionContext context, HandleObject handler)
         {
             var stackValue = context.Stack.Peek();
             DSharpObject* instance;
@@ -176,7 +176,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// </summary>
         /// <param name="context">Current execution context</param>
         /// <param name="obj">Pointer to object instance</param>
-        protected unsafe delegate DSharpMethodExecutionCallback HandleObject(ref DSharpExecutionContext context, DSharpObject* obj);
+        protected delegate DSharpMethodExecutionCallback HandleObject(ref DSharpExecutionContext context, DSharpObject* obj);
 
         #endregion
 

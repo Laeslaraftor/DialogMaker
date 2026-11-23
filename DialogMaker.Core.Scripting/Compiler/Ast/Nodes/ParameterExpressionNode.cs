@@ -91,7 +91,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                     stream.ThrowPositionException("Parameter default value not allowed in current context");
                 }
 
-                stream.Check(DSharpTokenType.Assign);
+                stream.Eat(DSharpTokenType.Assign);
                 result.DefaultValueExpression = ParseExpression(stream);
                 result.DefaultValueExpression.Parent = result;
             }

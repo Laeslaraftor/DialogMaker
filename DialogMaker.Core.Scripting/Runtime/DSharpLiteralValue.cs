@@ -158,6 +158,15 @@ namespace DialogMaker.Core.Scripting.Runtime
             _numberValue = character;
             Type = DSharpLiteralType.Char;
         }
+        /// <summary>
+        /// Create literal value based on D# number
+        /// </summary>
+        /// <param name="number">D# number as value literal value</param>
+        public DSharpLiteralValue(DSharpNumber number)
+        {
+            _numberValue = number;
+            Type = number.Type;
+        }
 
         /// <summary>
         /// Type of literal value
@@ -312,6 +321,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         public static implicit operator DSharpLiteralValue(decimal number) => new(number);
         public static implicit operator DSharpLiteralValue(bool boolean) => new(boolean);
         public static implicit operator DSharpLiteralValue(char character) => new(character);
+        public static implicit operator DSharpLiteralValue(DSharpNumber number) => new(number);
 
         #endregion
 

@@ -208,7 +208,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <summary>
         /// UTF-16 string
         /// </summary>
-        public static readonly DSharpBuildInTypeInfo String = new("System.String", -1, DSharpTokenType.String, DSharpLiteralType.String, &ToString);
+        public static readonly DSharpBuildInTypeInfo String = new("System.String", -1, DSharpTokenType.String, DSharpLiteralType.String, null);
 
         /// <summary>
         /// Dictionary of all build-in value types
@@ -501,21 +501,21 @@ namespace DialogMaker.Core.Scripting.Runtime
         #region Converters
 
         private static DSharpLiteralValue ToString(DSharpObject* obj) => DSharpObjectConverter.ToString(obj);
-        private static DSharpLiteralValue ToByte(DSharpObject* obj) => DSharpObjectConverter.ToByte(obj);
-        private static DSharpLiteralValue ToSByte(DSharpObject* obj) => DSharpObjectConverter.ToSByte(obj);
-        private static DSharpLiteralValue ToInt16(DSharpObject* obj) => DSharpObjectConverter.ToInt16(obj);
-        private static DSharpLiteralValue ToUInt16(DSharpObject* obj) => DSharpObjectConverter.ToUInt16(obj);
-        private static DSharpLiteralValue ToInt32(DSharpObject* obj) => DSharpObjectConverter.ToInt32(obj);
-        private static DSharpLiteralValue ToUInt32(DSharpObject* obj) => DSharpObjectConverter.ToUInt32(obj);
-        private static DSharpLiteralValue ToInt64(DSharpObject* obj) => DSharpObjectConverter.ToInt64(obj);
-        private static DSharpLiteralValue ToUInt64(DSharpObject* obj) => DSharpObjectConverter.ToUInt64(obj);
-        private static DSharpLiteralValue ToSingle(DSharpObject* obj) => DSharpObjectConverter.ToSingle(obj);
-        private static DSharpLiteralValue ToDouble(DSharpObject* obj) => DSharpObjectConverter.ToDouble(obj);
-        private static DSharpLiteralValue ToDecimal(DSharpObject* obj) => DSharpObjectConverter.ToDecimal(obj);
-        private static DSharpLiteralValue ToIntPtr(DSharpObject* obj) => DSharpObjectConverter.ToIntPtr(obj);
-        private static DSharpLiteralValue ToUIntPtr(DSharpObject* obj) => DSharpObjectConverter.ToUIntPtr(obj);
-        private static DSharpLiteralValue ToChar(DSharpObject* obj) => DSharpObjectConverter.ToChar(obj);
-        private static DSharpLiteralValue ToBoolean(DSharpObject* obj) => DSharpObjectConverter.ToBoolean(obj);
+        private static DSharpNumber ToByte(DSharpObject* obj) => *DSharpObject.GetData(obj);
+        private static DSharpNumber ToSByte(DSharpObject* obj) => *(sbyte*)DSharpObject.GetData(obj);
+        private static DSharpNumber ToInt16(DSharpObject* obj) => *(short*)DSharpObject.GetData(obj);
+        private static DSharpNumber ToUInt16(DSharpObject* obj) => *(ushort*)DSharpObject.GetData(obj);
+        private static DSharpNumber ToInt32(DSharpObject* obj) => *(int*)DSharpObject.GetData(obj);
+        private static DSharpNumber ToUInt32(DSharpObject* obj) => *(uint*)DSharpObject.GetData(obj);
+        private static DSharpNumber ToInt64(DSharpObject* obj) => *(long*)DSharpObject.GetData(obj);
+        private static DSharpNumber ToUInt64(DSharpObject* obj) => *(ulong*)DSharpObject.GetData(obj);
+        private static DSharpNumber ToSingle(DSharpObject* obj) => *(float*)DSharpObject.GetData(obj);
+        private static DSharpNumber ToDouble(DSharpObject* obj) => *(double*)DSharpObject.GetData(obj);
+        private static DSharpNumber ToDecimal(DSharpObject* obj) => *(decimal*)DSharpObject.GetData(obj);
+        private static DSharpNumber ToIntPtr(DSharpObject* obj) => *(nint*)DSharpObject.GetData(obj);
+        private static DSharpNumber ToUIntPtr(DSharpObject* obj) => *(nuint*)DSharpObject.GetData(obj);
+        private static DSharpNumber ToChar(DSharpObject* obj) => *(char*)DSharpObject.GetData(obj);
+        private static DSharpNumber ToBoolean(DSharpObject* obj) => *(bool*)DSharpObject.GetData(obj);
 
         #endregion
     }

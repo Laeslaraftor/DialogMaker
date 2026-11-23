@@ -902,6 +902,10 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         }
         public IDSharpType FillGeneric(IDSharpType genericType, IDSharpType? parent, out Dictionary<IDSharpMemberInfo, IDSharpMemberInfo> totalReplacedMembers, params IEnumerable<IDSharpType> genericParameters)
         {
+            return FillGeneric(genericType, parent, null, out totalReplacedMembers, genericParameters);
+        }
+        public IDSharpType FillGeneric(IDSharpType genericType, IDSharpType? parent, IDictionary<IDSharpMemberInfo, IDSharpMemberInfo>? extraReplacedMembers, out Dictionary<IDSharpMemberInfo, IDSharpMemberInfo> totalReplacedMembers, params IEnumerable<IDSharpType> genericParameters)
+        {
             if (genericType.GenericTemplate != null)
             {
                 genericType = genericType.GenericTemplate;
@@ -937,6 +941,18 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
                 replacedTypes.Add(genericTypeParameter, parameter);
                 i++;
+            }
+
+            if (extraReplacedMembers != null)
+            {
+                foreach (var info in extraReplacedMembers)
+                {
+                    if (info.Key is IDSharpType typeKey &&
+                        info.Value is IDSharpType typeValue)
+                    {
+                        replacedTypes.TryAdd(typeKey, typeValue);
+                    }
+                }
             }
 
             return ReplaceTypes(genericType, parent, replacedTypes, out totalReplacedMembers);
@@ -1284,9 +1300,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             {
                 foreach (var parameter in parameters)
                 {
-                    newParameters.Add(new(this)
+                    newParameters.Add(new(this, parameter)
                     {
-                        Name = parameter.Name,
                         Type = GetTypeToken(ReplaceGenericParameters(parameter.Type, replacedTypes))
                     });
                 }

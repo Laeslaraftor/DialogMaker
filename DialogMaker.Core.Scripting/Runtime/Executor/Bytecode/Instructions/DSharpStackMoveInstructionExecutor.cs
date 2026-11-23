@@ -5,26 +5,28 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.StackMove"/> operation
     /// </summary>
-    public class DSharpPopStackMoveInstructionExecutor : DSharpInstructionExecutor
+    public unsafe class DSharpStackMoveInstructionExecutor : DSharpInstructionExecutor
     {
         #region Controls
 
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
+#if DEBUG
             if (CheckArguments(instruction, context, 2, out var error))
             {
                 return error;
             }
+#endif
 
-            uint offset = (uint)instruction.Arguments[0];
-            int moveOffset = (int)instruction.Arguments[1];
+            uint offset = (uint)instruction->Arguments[0];
+            int moveOffset = (int)instruction->Arguments[1];
 
             context.Stack.Move(offset, moveOffset);
 
             return DSharpMethodExecutionCallback.Complete();
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
@@ -47,9 +49,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// <summary>
         /// Global instance of <see cref="DSharpBytecodeOperation.StackMove"/> operation executor
         /// </summary>
-        public static readonly DSharpPopStackMoveInstructionExecutor Instance = new();
+        public static readonly DSharpStackMoveInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

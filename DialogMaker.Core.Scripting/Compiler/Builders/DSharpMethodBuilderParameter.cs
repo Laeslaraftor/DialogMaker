@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Scripting.Runtime;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+using DialogMaker.Core.Scripting.Runtime;
 using System.ComponentModel;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
@@ -9,6 +10,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
     /// <param name="assembly">Assembly that contains calling member</param>
     public class DSharpMethodBuilderParameter(DSharpAssemblyBuilder assembly) : IDSharpParameterInfo, INotifyPropertyChanged
     {
+        public DSharpMethodBuilderParameter(DSharpAssemblyBuilder assembly, IDSharpParameterInfo other)
+            : this(assembly)
+        {
+            Name = other.Name;
+            Type = assembly.GetTypeToken(other.Type);
+            Mode = other.Mode;
+            DefaultValueGetter = p => other.DefaultValue;
+        }
         public DSharpMethodBuilderParameter(DSharpMethodBuilderParameter other)
             : this(other.Assembly)
         {
@@ -16,6 +25,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             Type = other.Type;
             Mode = other.Mode;
             TypeGetter = other.TypeGetter;
+            DefaultValueGetter = p => other.DefaultValue;
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -33,6 +43,27 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 {
                     field = value;
                     OnPropertyChanged(nameof(Name));
+                }
+            }
+        }
+        public DSharpPresetValue? DefaultValue
+        {
+            get
+            {
+                if (field == null && DefaultValueGetter != null)
+                {
+                    field = DefaultValueGetter(this);
+                    DefaultValueGetter = null;
+                }
+
+                return field;
+            }
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged(nameof(DefaultValue));
                 }
             }
         }
@@ -77,6 +108,30 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 {
                     field = value;
                     OnPropertyChanged(nameof(TypeGetter));
+                }
+            }
+        }
+        public ExpressionNode? DefaultValueExpression
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged(nameof(DefaultValueExpression));
+                }
+            }
+        }
+        public Func<DSharpMethodBuilderParameter, DSharpPresetValue?>? DefaultValueGetter
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged(nameof(DefaultValueGetter));
                 }
             }
         }

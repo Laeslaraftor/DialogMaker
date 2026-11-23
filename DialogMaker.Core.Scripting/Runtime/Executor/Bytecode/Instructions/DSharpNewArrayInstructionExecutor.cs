@@ -6,16 +6,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// <summary>
     /// Executor of <see cref="DSharpBytecodeOperation.NewArray"/> operation
     /// </summary>
-    public class DSharpNewArrayInstructionExecutor : DSharpTypeInstructionExecutor
+    public unsafe class DSharpNewArrayInstructionExecutor : DSharpTypeInstructionExecutor
     {
         #region Controls
 
-        public override unsafe delegate*<DSharpRuntimeInstruction, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
 
-        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* runtimeInfo)
+        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* runtimeInfo)
         {
             return Create(instruction, ref context, runtimeInfo, false);
         }
@@ -30,12 +30,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         public static readonly DSharpNewArrayInstructionExecutor Instance = new();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static unsafe DSharpMethodExecutionCallback Create(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* arrayType, bool isStackAlloc)
+        internal static DSharpMethodExecutionCallback Create(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* arrayType, bool isStackAlloc)
         {
+#if DEBUG
             if (CheckStackValues(instruction, context, 1, out var error))
             {
                 return error;
             }
+#endif
 
             int length;
 
@@ -69,7 +71,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
         }
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
             return Instance.Execute(instruction, ref context);
         }

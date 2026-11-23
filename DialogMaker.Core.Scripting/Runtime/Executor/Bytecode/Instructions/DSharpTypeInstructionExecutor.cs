@@ -14,7 +14,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return typesProvider.GetRuntimeInfo(metadataToken);
         }
 
-        protected override unsafe DSharpRuntimeTypeInfo* RuntimeInformationHandler(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* runtimeInfo)
+        protected override unsafe DSharpRuntimeTypeInfo* RuntimeInformationHandler(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* runtimeInfo)
         {
             return context.ReplaceType(runtimeInfo);
         }

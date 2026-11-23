@@ -122,7 +122,15 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <exception cref="Exception">Unable to read type identifier</exception>
         public static bool CanParseIdentifier(AstParserStream stream, int offset, out int endOffset)
         {
-            var current = stream.Peek(offset) ?? throw new Exception("Unable to read type identifier");
+            var current = stream.Peek(offset);
+
+            if (current == null)
+            {
+                stream.ThrowPositionException("Unable to read type identifier");
+                endOffset = 0;
+                return false;
+            }
+
             endOffset = -1;
             int voidPointerOffset = -1;
 
@@ -162,7 +170,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
         /// <exception cref="Exception">Unable to read type identifier</exception>
         public static TypeInfoNode ParseOnlyIdentifier(AstParserStream stream, bool canBePrimary)
         {
-            var current = stream.Current ?? throw new Exception("Unable to read type identifier");
+            var current = stream.Current;
+
+            if (current == null)
+            {
+                stream.ThrowPositionException("Unable to read type identifier");
+                return null;
+            }
+
             TypeInfoNode result;
 
             if (IsStandardTypeIdentifier(current.Type))
@@ -208,7 +223,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 }
                 else
                 {
-                    throw new Exception($"Invalid expression provided: {accessExpression}, required {nameof(MemberAccessExpressionNode)} or {nameof(IdentifierExpressionNode)}");
+                    throw new DSharpCompilerException($"Invalid expression provided: {accessExpression}, required {nameof(MemberAccessExpressionNode)} or {nameof(IdentifierExpressionNode)}", accessExpression);
                 }
             }
 

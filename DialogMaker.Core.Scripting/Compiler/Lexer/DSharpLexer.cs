@@ -599,7 +599,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
                     AddToken(DSharpTokenType.Tilde, "~", startLine, startColumn);
                     break;
                 default:
-                    throw new Exception($"Unknown character '{current}' at {_line}:{_column}");
+                    throw new DSharpException($"Unknown character '{current}' at {_line}:{_column}");
             }
         }
         private void AddToken(DSharpTokenType type, string value, int line = -1, int column = -1)

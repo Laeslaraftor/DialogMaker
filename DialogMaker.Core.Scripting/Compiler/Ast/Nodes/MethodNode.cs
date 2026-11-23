@@ -72,7 +72,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Ast.Nodes
                 IsUnsafe = memberInfo.IsUnsafe,
             };
 
-            ParseParameters(stream, method.Parameters);
+            ParseParameters(stream, method.Parameters, allowDefaultValue: true);
             WhereNode.ParseAll(stream, method.GenericDescriptions);
 
             if (stream.Check(DSharpTokenType.Lambda))

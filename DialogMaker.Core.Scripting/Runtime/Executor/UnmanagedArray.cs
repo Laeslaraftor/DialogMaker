@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
@@ -41,19 +42,23 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         {
             get
             {
+#if DEBUG
                 if (0 > index || index >= _length)
                 {
                     throw new IndexOutOfRangeException();
                 }
+#endif
 
                 return _items[index];
             }
             set
             {
+#if DEBUG
                 if (0 > index || index >= _length)
                 {
                     throw new IndexOutOfRangeException();
                 }
+#endif
 
                 _items[index] = value;
             }
@@ -70,12 +75,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <param name="index">Item index</param>
         /// <returns>Reference to item on specified index</returns>
         /// <exception cref="IndexOutOfRangeException"></exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T* GetItemReference(int index)
         {
+#if DEBUG
             if (0 > index || index >= Length)
             {
                 throw new IndexOutOfRangeException();
             }
+#endif
 
             return &_items[index];
         }
@@ -83,6 +91,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// Get pointer to first item
         /// </summary>
         /// <returns>Pointer to first item</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T* AsPointer() => _items;
         /// <summary>
         /// Get casted item on specified index
@@ -90,6 +99,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <typeparam name="TCast">New item type</typeparam>
         /// <param name="index">Item index</param>
         /// <returns>Casted type on specified index</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public TCast Cast<TCast>(int index) where TCast : unmanaged
         {
             return *(TCast*)GetItemReference(index);
@@ -99,6 +109,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// </summary>
         /// <typeparam name="TCast">New item type</typeparam>
         /// <returns>Array with new items type</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public UnmanagedArray<TCast> Cast<TCast>() where TCast : unmanaged
         {
             return new((TCast*)_items, _length);
@@ -107,6 +118,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// Fill array with specified value
         /// </summary>
         /// <param name="value">Value for filling array</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Fill(T value)
         {
             if (0 > _length)

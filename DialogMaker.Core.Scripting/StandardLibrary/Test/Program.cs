@@ -199,6 +199,35 @@ public unsafe class Program
                 Console.Write("Inverted text: ");
                 Console.WriteLine(invertText);
             }
+            else if (value == "loopTest")
+            {
+                string textIterationsAmount;
+                int iterationsAmount = 0;
+
+                do
+                {
+                    Console.Write("Enter amount of iterations: ");
+                    textIterationsAmount = Console.ReadLine();
+                } 
+                while (!int.TryParse(textIterationsAmount, out iterationsAmount));
+
+                int sum = 0;
+                var startTicks = Environment.TickCount;
+
+                Console.WriteLine("Start ticks: " + startTicks);
+
+                for (int i = 0; i < iterationsAmount; i++)
+                {
+                    sum += i;
+                }
+
+                var endTicks = Environment.TickCount;
+                
+                TimeSpan startTime = TimeSpan.FromMilliseconds(startTicks);
+                TimeSpan endTime = TimeSpan.FromMilliseconds(endTicks);
+                Console.WriteLine("End ticks: " + endTicks);
+                Console.WriteLine("Duration: " + (endTime - startTime).TotalSeconds + "s");
+            }
             else if (value == "exit")
             {
                 break;
@@ -311,6 +340,8 @@ public unsafe class Program
         Console.WriteLine("Events test:");
         EventsTest();
 
+        Console.WriteLine();
+        MethodWithDefaultParametersTest();
         Console.WriteLine();
 
         try
@@ -741,6 +772,20 @@ public unsafe class Program
 
         Console.WriteLine();
         enemy.Kill();
+    }
+    private static void MethodWithDefaultParametersTest()
+    {
+        PrintMessageNewLine("some message");
+    }
+
+    private static void PrintMessageNewLine(string message, bool newLine = true)
+    {
+        if (newLine)
+        {
+            Console.WriteLine();
+        }
+
+        Console.WriteLine(message);
     }
 
     private static void StaticEnemyEventHander(object? sender, EventArgs e)

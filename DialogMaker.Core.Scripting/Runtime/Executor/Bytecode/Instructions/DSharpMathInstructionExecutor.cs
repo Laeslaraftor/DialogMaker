@@ -1,5 +1,4 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
-using System.Diagnostics.CodeAnalysis;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -7,66 +6,32 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// Base class of math instruction that takes last 2 numbers from stack,
     /// performs math operation and add result to stack
     /// </summary>
-    public abstract class DSharpMathInstructionExecutor : DSharpInstructionExecutor
+    public unsafe abstract class DSharpMathInstructionExecutor : DSharpInstructionExecutor
     {
-        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction instruction, ref DSharpExecutionContext context)
+        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
+#if DEBUG
             if (CheckStackValues(instruction, context, 2, out var error))
             {
                 return error;
             }
+#endif
 
-            var left = context.Stack.Peek(1);
-            var right = context.Stack.Peek(0);
-
-            if (IsNotValidOrCantPerform(instruction, context, left, right, out var valuesError))
-            {
-                return valuesError;
-            }
-
-            var booleanType = context.TypesProvider.Boolean;
-
-            if (left.ObjectType == booleanType &&
-                right.ObjectType == booleanType)
-            {
-                var value = PerformMathOperation(left.ReadAsBoolean(), right.ReadAsBoolean());
-                context.Stack.Push(value);
-
-                return DSharpMethodExecutionCallback.Complete();
-            }
-
-            var leftValue = left.ReadAsDecimal();
-
-            if (leftValue == null)
-            {
-                return context.ThrowExecutionException($"Unable to perform math operation: unsupported left value \"{left.ValueType}\"");
-            }
-
-            var rightValue = right.ReadAsDecimal();
-
-            if (rightValue == null)
-            {
-                return context.ThrowExecutionException($"Unable to perform math operation: unsupported right value \"{right.ValueType}\"");
-            }
-
-            var resultValue = PerformMathOperation(leftValue.Value, rightValue.Value, ref context, out var mathError);
+            var left = context.Stack.Peek(1).ReadAsNumber();
+            var right = context.Stack.Peek(0).ReadAsNumber();
+            var resultValue = PerformMathOperation(left, right, ref context, out var mathError);
 
             if (mathError != null)
             {
                 return mathError.Value;
             }
 
-            var bigger = GetBigger(left, right);
-
-            if (!context.Stack.Push(bigger.ObjectType, resultValue))
-            {
-                return context.ThrowExecutionException($"Unable to perform math operation: unsupported result value {resultValue} with type {bigger.ValueType}");
-            }
+            context.Stack.Push(resultValue);
 
             return DSharpMethodExecutionCallback.Complete();
         }
 
-        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
+        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
             return 0;
         }
@@ -80,62 +45,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// <param name="left">Left value</param>
         /// <param name="right">Right value</param>
         /// <returns>Result of math operation</returns>
-        protected abstract decimal PerformMathOperation(decimal left, decimal right, ref DSharpExecutionContext context, out DSharpMethodExecutionCallback? error);
-        /// <summary>
-        /// Perform math operation between two boolean values
-        /// </summary>
-        /// <param name="left">Left boolean value</param>
-        /// <param name="right">Right boolean value</param>
-        /// <returns>Result of math operation</returns>
-        protected abstract bool PerformMathOperation(bool left, bool right);
-        protected abstract bool CanPerform(DSharpStack.FrameInfo left, DSharpStack.FrameInfo right, DSharpExecutionContext context);
-
-        private bool IsNotValidOrCantPerform(DSharpRuntimeInstruction instruction, DSharpExecutionContext context, DSharpStack.FrameInfo left, DSharpStack.FrameInfo right, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
-        {
-            if (IsNotValid(instruction, context, left.ValueType, right.ValueType, out errorCallback))
-            {
-                return false;
-            }
-            if (!CanPerform(left, right, context))
-            {
-                errorCallback = context.ThrowExecutionException($"{instruction.Operation} can not be performed between {left} and {right}");
-                return true;
-            }
-
-            errorCallback = default;
-            return false;
-        }
-        private DSharpStack.FrameInfo GetBigger(DSharpStack.FrameInfo left, DSharpStack.FrameInfo right)
-        {
-            if (right.Size > left.Size)
-            {
-                return right;
-            }
-
-            return left;
-        }
-
-        #region Static
-
-        internal static bool IsNotValid(DSharpRuntimeInstruction instruction, DSharpExecutionContext context, DSharpStackValueType left, DSharpStackValueType right, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
-        {
-            if (left != DSharpStackValueType.Structure &&
-                left != DSharpStackValueType.Reference)
-            {
-                errorCallback = context.ThrowExecutionException($"Unable to perform math operation: left value \"{left}\" is not supported");
-                return true;
-            }
-            if (right != DSharpStackValueType.Structure &&
-                right != DSharpStackValueType.Reference)
-            {
-                errorCallback = context.ThrowExecutionException($"Unable to perform math operation: right value \"{right}\" is not supported");
-                return true;
-            }
-
-            errorCallback = default;
-            return false;
-        }
-
-        #endregion
+        protected abstract DSharpNumber PerformMathOperation(in DSharpNumber left, in DSharpNumber right, ref DSharpExecutionContext context, out DSharpMethodExecutionCallback? error);
     }
 }
