@@ -9,7 +9,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
@@ -27,9 +27,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpShiftRightInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            return Instance.Execute(instruction, ref context);
+            Instance.Execute(instruction, ref context);
         }
 
         #endregion

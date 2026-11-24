@@ -11,35 +11,20 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public unsafe override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        public override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-#if DEBUG
-            if (CheckStackValues(instruction, context, 1, out var error))
-            {
-                return error;
-            }
-#endif
-
-            var lastValue = context.Stack.Peek();
-            var number = lastValue.ReadAsNumber();
-            var obj = lastValue.ReadAsObject();
-
-            number = DSharpNumberMathExecutor.Increment(ref number);
-            Unsafe.CopyBlockUnaligned(DSharpObject.GetData(obj), &number, (uint)number.Size);
-            //number.Write(DSharpObject.GetData(obj));
-
-            return DSharpMethodExecutionCallback.Complete();
+            InstanceExecute(instruction, ref context);
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
+        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
             return 0;
         }
-        public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
+        public override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
         {
         }
 
@@ -52,9 +37,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpIncrementInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            return Instance.Execute(instruction, ref context);
+#if DEBUG
+            if (CheckStackValues(instruction, ref context, 1))
+            {
+                return;
+            }
+#endif
+
+            var lastValue = context.Stack.Peek();
+            var obj = lastValue.ReadAsStructure();
+            var number = DSharpNumber.FromObject(obj);
+
+            number = DSharpNumberMathExecutor.Increment(ref number);
+            Unsafe.CopyBlockUnaligned(obj + 1, &number, (uint)number.Size);
         }
 
         #endregion

@@ -9,12 +9,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
 
-        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpMetadataToken* member)
+        protected override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpMetadataToken* member)
         {
             DSharpRuntimeTypeInfo* typeToInstantiate;
             DSharpRuntimeMethodInfo* constructor = null;
@@ -41,7 +41,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
             else
             {
-                return context.ThrowExecutionException($"Got unexpected member for creating new instance: {member->Type}");
+                *context.Callback = context.ThrowExecutionException($"Got unexpected member for creating new instance: {member->Type}");
+                return;
             }
 
             DSharpObject* newInstance;
@@ -65,16 +66,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                     args = DSharpCallInstructionExecutor.CreateArguments(context, constructor, 1);
                 }
 
-                return DSharpMethodExecutionCallback.InitializeObject(newInstance, constructor, args);
+                *context.Callback = DSharpMethodExecutionCallback.InitializeObject(newInstance, constructor, args);
+                return;
             }
             if (typeToInstantiate->Initializer != null)
             {
-                return DSharpMethodExecutionCallback.Call(newInstance, typeToInstantiate->Initializer, default);
+                *context.Callback = DSharpMethodExecutionCallback.Call(newInstance, typeToInstantiate->Initializer, default);
+                return;
             }
 
             newInstance->IsInitialized = true;
-
-            return DSharpMethodExecutionCallback.Complete();
         }
 
         protected override DSharpMetadataToken* GetRuntimeInformation(DSharpRuntimeInformationProvider typesProvider, DSharpMetadataToken metadataToken)
@@ -101,9 +102,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpNewInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            return Instance.Execute(instruction, ref context);
+            Instance.Execute(instruction, ref context);
         }
 
         #endregion

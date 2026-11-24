@@ -15,7 +15,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// Get pointer to executor method
         /// </summary>
         /// <returns>Pointer to executor method</returns>
-        public abstract delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer();
+        public abstract delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer();
 
         /// <summary>
         /// Execute instruction
@@ -23,7 +23,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="instruction">Executing instruction information</param>
         /// <param name="context">Execution context</param>
         /// <returns>Is successfully executed</returns>
-        public abstract DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context);
+        public abstract void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context);
         /// <summary>
         /// Get count of arguments
         /// </summary>
@@ -39,6 +39,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="arguments">Array for writing arguments</param>
         public abstract void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments);
 
+#if DEBUG
         /// <summary>
         /// Check provided arguments count
         /// </summary>
@@ -46,15 +47,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="context">Current execution context</param>
         /// <param name="requiredArgumentsCount">Requires amount of arguments</param>
         /// <returns>Is arguments count matched</returns>
-        protected static bool CheckArguments(DSharpRuntimeInstruction* instruction, DSharpExecutionContext context, int requiredArgumentsCount, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected static bool CheckArguments(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, int requiredArgumentsCount)
         {
             if (instruction->Arguments.Length != requiredArgumentsCount)
             {
-                errorCallback = context.ThrowExecutionException($"{instruction->Operation} instruction requires {requiredArgumentsCount} arguments, got: {instruction->Arguments.Length}");
+                *context.Callback = context.ThrowExecutionException($"{instruction->Operation} instruction requires {requiredArgumentsCount} arguments, got: {instruction->Arguments.Length}");
                 return true;
             }
 
-            errorCallback = default;
             return false;
         }
         /// <summary>
@@ -64,17 +65,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="context">Current execution context</param>
         /// <param name="requiredValuesCount">Requires amount of values is stack</param>
         /// <returns>Is stack values enough</returns>
-        protected static bool CheckStackValues(DSharpRuntimeInstruction* instruction, DSharpExecutionContext context, int requiredValuesCount, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected static bool CheckStackValues(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, int requiredValuesCount)
         {
             if (context.Stack.Count < requiredValuesCount)
             {
-                errorCallback = context.ThrowExecutionException($"{instruction->Operation} instruction requires {requiredValuesCount} values in stack, now: {context.Stack.Count}");
+                *context.Callback = context.ThrowExecutionException($"{instruction->Operation} instruction requires {requiredValuesCount} values in stack, now: {context.Stack.Count}");
                 return true;
             }
 
-            errorCallback = default;
             return false;
         }
+#endif
         /// <summary>
         /// Get object instance from stack with specified offset
         /// </summary>
@@ -82,9 +84,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="offset">Stack peek offset</param>
         /// <returns>Pointer to object instance</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static DSharpObject* GetInstance(in DSharpExecutionContext context, uint offset)
+        protected static DSharpObject* GetInstance(ref DSharpExecutionContext context, uint offset)
         {
-            return GetInstance(context, offset, false, out _);
+            return GetInstance(ref context, offset, false);
         }
         /// <summary>
         /// Get object instance from stack with specified offset
@@ -94,17 +96,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <param name="error">Error that occurred while finding object instance</param>
         /// <returns>Pointer to object instance</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected static DSharpObject* GetInstance(in DSharpExecutionContext context, uint offset, [NotNullWhen(true)] out DSharpMethodExecutionCallback error)
-        {
-            return GetInstance(context, offset, true, out error);
-        }
-        private static DSharpObject* GetInstance(in DSharpExecutionContext context, uint offset, bool checkNullReference, [NotNullWhen(true)] out DSharpMethodExecutionCallback error)
+        protected static DSharpObject* GetInstance(ref DSharpExecutionContext context, uint offset, bool throwOnError)
         {
             var instanceFrame = context.Stack.PeekOnlyValues(offset);
 
             if (instanceFrame.ValueType == DSharpStackValueType.Null)
             {
-                error = checkNullReference ? context.ThrowExecutionException("Null object reference") : default;
+                if (throwOnError)
+                {
+                    *context.Callback = context.ThrowExecutionException("Null object reference");
+                }
+
                 return null;
             }
 
@@ -120,69 +122,20 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
             }
             else
             {
-                error = checkNullReference ? context.ThrowExecutionException($"Invalid instance value: {instanceFrame.ValueType}") : default;
+                if (throwOnError)
+                {
+                    *context.Callback = context.ThrowExecutionException($"Invalid instance value: {instanceFrame.ValueType}");
+                }
+
                 return null;
             }
-
-            error = DSharpMethodExecutionCallback.Complete();
 
             return instance;
         }
 
-        /// <summary>
-        /// Try to get object instance from stack.
-        /// It can be reference to object or structure
-        /// </summary>
-        /// <param name="context">Current execution context</param>
-        /// <param name="handler">Object handler</param>
-        /// <returns>Result of operation</returns>
-        protected DSharpMethodExecutionCallback TryGetInstanceFromStack(ref DSharpExecutionContext context, HandleObject handler)
-        {
-            var stackValue = context.Stack.Peek();
-            DSharpObject* instance;
-            int instanceBufferSize;
-
-            if (stackValue.ValueType == DSharpStackValueType.Reference)
-            {
-                instance = (DSharpObject*)stackValue.ReadReference();
-                goto HandleObject;
-            }
-            else if (DSharpObjectsContainer.TryGetSizeForStructureFromStack(context.Stack, out var size))
-            {
-                instanceBufferSize = size;
-                goto CreateStructure;
-            }
-            else
-            {
-                return context.ThrowExecutionException("No instance provided");
-            }
-
-        CreateStructure:
-            byte* structureBuffer = stackalloc byte[instanceBufferSize];
-            UnmanagedArray<byte> buffer = new(structureBuffer, instanceBufferSize);
-            instance = DSharpObjectsContainer.CreateStructureFromStack(context.Stack, buffer);
-            goto HandleObject;
-
-        HandleObject:
-            return handler(ref context, instance);
-        }
-
-        #endregion
-
-        #region Delegates
-
-        /// <summary>
-        /// Object handler
-        /// </summary>
-        /// <param name="context">Current execution context</param>
-        /// <param name="obj">Pointer to object instance</param>
-        protected delegate DSharpMethodExecutionCallback HandleObject(ref DSharpExecutionContext context, DSharpObject* obj);
-
         #endregion
 
         #region Static
-
-        private static Dictionary<DSharpBytecodeOperation, DSharpInstructionExecutor>? _executors;
 
         /// <summary>
         /// Try get executor implementation for D# operation
@@ -192,31 +145,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <returns>Is executor found</returns>
         public static bool TryGetExecutor(DSharpBytecodeOperation operation, [NotNullWhen(true)] out DSharpInstructionExecutor? result)
         {
-            var executors = GetExecutors();
-            return executors.TryGetValue(operation, out result);
-        }
-
-        private static Dictionary<DSharpBytecodeOperation, DSharpInstructionExecutor> GetExecutors()
-        {
-            if (_executors != null)
+            if (DSharpOperationExecutorInfos.Operations.TryGetValue(operation, out var info))
             {
-                return _executors;
+                result = info.ExecutorInstance;
+                return true;
             }
 
-            _executors = [];
-
-            foreach (var info in DSharpBytecodeOperationHelper.Values.Values)
-            {
-                if (info.Executor == null)
-                {
-                    continue;
-                }
-
-                var instance = info.Executor.GetInstance();
-                _executors.Add(info.Value, instance);
-            }
-
-            return _executors;
+            result = null;
+            return false;
         }
 
         #endregion

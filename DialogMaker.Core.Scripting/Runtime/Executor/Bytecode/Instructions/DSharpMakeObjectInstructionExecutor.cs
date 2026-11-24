@@ -9,17 +9,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
 
-        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* type)
+        protected override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* type)
         {
 #if DEBUG
-            if (CheckStackValues(instruction, context, 1, out var error))
+            if (CheckStackValues(instruction, ref context, 1))
             {
-                return error;
+                return;
             }
 #endif
 
@@ -35,8 +35,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             {
                 context.Stack.PushRedirectObject(type, dataAddress);
             }
-
-            return DSharpMethodExecutionCallback.Complete();
         }
 
         #endregion
@@ -48,9 +46,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpMakeObjectInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            return Instance.Execute(instruction, ref context);
+            Instance.Execute(instruction, ref context);
         }
 
         #endregion

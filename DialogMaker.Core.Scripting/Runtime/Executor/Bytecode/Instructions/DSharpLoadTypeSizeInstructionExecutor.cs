@@ -9,7 +9,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
@@ -27,7 +27,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             arguments[1] = (nint)stream->Read<DSharpLoadTypeSizeMode>();
         }
 
-        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* runtimeInfo)
+        protected override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* runtimeInfo)
         {
             var mode = (DSharpLoadTypeSizeMode)instruction->Arguments[1];
 
@@ -39,8 +39,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             {
                 context.Stack.Push(runtimeInfo->ItemSize);
             }
-
-            return DSharpMethodExecutionCallback.Complete();
         }
 
         #endregion
@@ -52,9 +50,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpLoadTypeSizeInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            return Instance.Execute(instruction, ref context);
+            Instance.Execute(instruction, ref context);
         }
 
         #endregion

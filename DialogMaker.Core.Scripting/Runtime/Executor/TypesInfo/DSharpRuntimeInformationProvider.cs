@@ -609,6 +609,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                     Converter = buildInTypeInfo.Converter
                 };
             }
+            else
+            {
+                info->ConverterInfo = new()
+                {
+                    ConvertingType = DSharpLiteralType.Null
+                };
+            }
 
             for (int i = 0; i < constructors.Length; i++)
             {

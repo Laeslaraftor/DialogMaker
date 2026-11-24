@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -9,12 +10,62 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public unsafe override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        public override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        {
+            InstanceExecute(instruction, ref context);
+        }
+
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
+        {
+            return &InstanceExecute;
+        }
+        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
+        {
+            var member = stream->Read<DSharpGetAddressMember>();
+
+            if (member == DSharpGetAddressMember.Variable)
+            {
+                stream->Read<int>();
+            }
+            else if (member == DSharpGetAddressMember.Field)
+            {
+                stream->Read<DSharpMetadataToken>();
+            }
+
+            return 2;
+        }
+        public override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
+        {
+            var member = stream->Read<DSharpGetAddressMember>();
+            arguments[0] = (int)member;
+
+            if (member == DSharpGetAddressMember.Variable)
+            {
+                arguments[1] = stream->Read<int>();
+            }
+            else if (member == DSharpGetAddressMember.Field)
+            {
+                var fieldToken = stream->Read<DSharpMetadataToken>();
+                arguments[1] = (nint)typesProvider.GetField(fieldToken);
+            }
+        }
+
+        #endregion
+
+        #region Static
+
+        /// <summary>
+        /// Global instance of <see cref="DSharpBytecodeOperation.GetAddress"/> operation executor
+        /// </summary>
+        public static readonly DSharpGetAddressInstructionExecutor Instance = new();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
 #if DEBUG
-            if (CheckArguments(instruction, context, 2, out var error))
+            if (CheckArguments(instruction, ref context, 2))
             {
-                return error;
+                return;
             }
 #endif
 
@@ -54,11 +105,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 }
                 else
                 {
-                    var instance = GetInstance(context, 0, out var instanceError);
+                    var instance = GetInstance(ref context, 0, throwOnError: true);
 
                     if (instance == null)
                     {
-                        return instanceError;
+                        return;
                     }
 
                     valueAddress = (nint)field->GetDataPointer(instance);
@@ -66,57 +117,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
 
             context.Stack.PushStructure(context.TypesProvider.IntPtr, new UnmanagedArray<byte>((byte*)&valueAddress, sizeof(nint)));
-
-            return DSharpMethodExecutionCallback.Complete();
-        }
-
-        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
-        {
-            return &InstanceExecute;
-        }
-        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
-        {
-            var member = stream->Read<DSharpGetAddressMember>();
-
-            if (member == DSharpGetAddressMember.Variable)
-            {
-                stream->Read<int>();
-            }
-            else if (member == DSharpGetAddressMember.Field)
-            {
-                stream->Read<DSharpMetadataToken>();
-            }
-
-            return 2;
-        }
-        public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
-        {
-            var member = stream->Read<DSharpGetAddressMember>();
-            arguments[0] = (int)member;
-
-            if (member == DSharpGetAddressMember.Variable)
-            {
-                arguments[1] = stream->Read<int>();
-            }
-            else if (member == DSharpGetAddressMember.Field)
-            {
-                var fieldToken = stream->Read<DSharpMetadataToken>();
-                arguments[1] = (nint)typesProvider.GetField(fieldToken);
-            }
-        }
-
-        #endregion
-
-        #region Static
-
-        /// <summary>
-        /// Global instance of <see cref="DSharpBytecodeOperation.GetAddress"/> operation executor
-        /// </summary>
-        public static readonly DSharpGetAddressInstructionExecutor Instance = new();
-
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
-        {
-            return Instance.Execute(instruction, ref context);
         }
 
         #endregion

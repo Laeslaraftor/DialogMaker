@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+using DialogMaker.Core.Scripting.Runtime.Executor;
 using DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors;
 using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
@@ -376,6 +377,20 @@ namespace DialogMaker.Core.Scripting.Runtime
 
                 return field;
             }
+        }
+
+        /// <summary>
+        /// Create D# number from number instance
+        /// </summary>
+        /// <param name="obj">D# number instance</param>
+        /// <returns>D# number</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static DSharpNumber FromObject(DSharpObject* obj)
+        {
+            var number = Unsafe.ReadUnaligned<DSharpNumber>(obj + 1);
+            number._type = obj->Type->ConverterInfo.ConvertingType;
+
+            return number;
         }
 
         /// <summary>

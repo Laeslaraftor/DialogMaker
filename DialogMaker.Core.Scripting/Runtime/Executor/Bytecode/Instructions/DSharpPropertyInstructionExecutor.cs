@@ -9,7 +9,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, CallingExecutionParameters parameters)
+        protected override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, CallingExecutionParameters parameters)
         {
             var property = parameters.Member;
             var instance = parameters.Instance;
@@ -17,11 +17,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             if (instance != null)
             {
-                instance = GetInstance(context, parameters.ArgumentsCount, out var error);
+                instance = GetInstance(ref context, parameters.ArgumentsCount, throwOnError: true);
 
                 if (instance == null)
                 {
-                    return error;
+                    return;
                 }
                 if (parameters.CallingType == DSharpMethodCallingType.Virtual)
                 {
@@ -33,19 +33,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                     else if (property->DeclaringType->ObjectType == DSharpObjectType.Interface ||
                              property->IsAbstract)
                     {
-                        return context.ThrowExecutionException($"Unable to find end-point property for \"{property->ToString()}\" in {instance->Type->ToString()}");
+                        *context.Callback = context.ThrowExecutionException($"Unable to find end-point property for \"{property->ToString()}\" in {instance->Type->ToString()}");
+                        return;
                     }
                 }
             }
 
             if (accessor == null)
             {
-                return context.ThrowExecutionException($"Trying to access property \"{property->ToString()}\" without implementation");
+                *context.Callback = context.ThrowExecutionException($"Trying to access property \"{property->ToString()}\" without implementation");
+                return;
             }
 
             var args = DSharpCallInstructionExecutor.CreateArguments(context, accessor, 0);
 
-            return DSharpMethodExecutionCallback.Call(instance, accessor, args);
+            *context.Callback = DSharpMethodExecutionCallback.Call(instance, accessor, args);
         }
 
         protected override DSharpRuntimePropertyInfo* ReplaceMember(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimePropertyInfo* member)

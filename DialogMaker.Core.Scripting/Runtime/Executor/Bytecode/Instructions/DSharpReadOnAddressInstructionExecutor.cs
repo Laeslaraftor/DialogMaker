@@ -9,22 +9,23 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
 
-        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* runtimeInfo)
+        protected override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* runtimeInfo)
         {
-            var instance = GetInstance(context, 0, out var error);
+            var instance = GetInstance(ref context, 0, throwOnError: true);
 
             if (instance == null)
             {
-                return error;
+                return;
             }
             if (instance->Type != context.TypesProvider.IntPtr)
             {
-                return context.ThrowExecutionException($"Unable to read value on address: invalid address value, required \"{context.TypesProvider.IntPtr->ToString()}\", but got \"{instance->Type->ToString()}\"");
+                *context.Callback = context.ThrowExecutionException($"Unable to read value on address: invalid address value, required \"{context.TypesProvider.IntPtr->ToString()}\", but got \"{instance->Type->ToString()}\"");
+                return;
             }
             if (runtimeInfo->IsValueType)
             {
@@ -49,8 +50,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                     context.Stack.PushReference(obj, true);
                 }
             }
-
-            return DSharpMethodExecutionCallback.Complete();
         }
 
         #endregion
@@ -62,9 +61,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpReadOnAddressInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            return Instance.Execute(instruction, ref context);
+            Instance.Execute(instruction, ref context);
         }
 
         #endregion

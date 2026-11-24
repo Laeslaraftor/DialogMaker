@@ -130,7 +130,7 @@ namespace DialogMaker.Core.Scripting.CodeAnalyzer
 
         #region Constants
 
-        private const string GenerateValuesAttributeName = "DialogMaker.Core.Scripting.CodeAnalyzer.GenerateInformationAttribute";
+        public const string GenerateValuesAttributeName = "DialogMaker.Core.Scripting.CodeAnalyzer.GenerateInformationAttribute";
 
         #endregion
 

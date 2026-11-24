@@ -1,4 +1,5 @@
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -9,11 +10,39 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        public override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        {
+            InstanceExecute(instruction, ref context);
+        }
+
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
+        {
+            return &InstanceExecute;
+        }
+        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
+        {
+            return -1;
+        }
+        public override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
+        {
+        }
+
+        #endregion
+
+        #region Static
+
+        /// <summary>
+        /// Global instance of <see cref="DSharpBytecodeOperation.Throw"/> operation executor
+        /// </summary>
+        public static readonly DSharpThrowInstructionExecutor Instance = new();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
             if (context.Stack.Count == 0)
             {
-                return DSharpMethodExecutionCallback.Throw(null);
+                *context.Callback = DSharpMethodExecutionCallback.Throw(null);
+                return;
             }
 
             var lastValue = context.Stack.Peek();
@@ -27,38 +56,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 if (exceptionInstance != null &&
                     !exceptionInstance->Type->IsInheritFrom(context.TypesProvider.Exception))
                 {
-                    return context.ThrowExecutionException($"Throwing available only for exceptions, but got \"{exceptionInstance->Type->ToString()}\"");
+                    *context.Callback = context.ThrowExecutionException($"Throwing available only for exceptions, but got \"{exceptionInstance->Type->ToString()}\"");
+                    return;
                 }
 #endif
             }
 
-            return DSharpMethodExecutionCallback.Throw(exceptionInstance);
-        }
-
-        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
-        {
-            return &InstanceExecute;
-        }
-        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
-        {
-            return -1;
-        }
-        public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
-        {
-        }
-
-        #endregion
-
-        #region Static
-
-        /// <summary>
-        /// Global instance of <see cref="DSharpBytecodeOperation.Throw"/> operation executor
-        /// </summary>
-        public static readonly DSharpThrowInstructionExecutor Instance = new();
-
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
-        {
-            return Instance.Execute(instruction, ref context);
+            *context.Callback = DSharpMethodExecutionCallback.Throw(exceptionInstance);
         }
 
         #endregion

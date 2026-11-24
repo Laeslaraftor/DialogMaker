@@ -175,10 +175,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             var bytecode = executor->Bytecode;
             int scopesCount = Math.Max(1, (int)bytecode->ScopesCount);
             Span<DSharpExecutionScope> scopes = stackalloc DSharpExecutionScope[scopesCount];
-            DSharpExecutionContext context = new(objectsContainer, thread, executor->MethodInfo, executor);
+            DSharpMethodExecutionCallback callback = DSharpMethodExecutionCallback.Complete();
+            DSharpExecutionContext context = new(objectsContainer, thread, executor->MethodInfo, executor, &callback);
             DSharpMethodExecutionCallback? result = null;
             int instructionsLength = bytecode->Instructions.Length;
-            var instructions = bytecode->Instructions.GetItemReference(0);
+            DSharpRuntimeInstruction* instructions = bytecode->Instructions.GetItemReference(0);
 #if DEBUG
             Dictionary<DSharpBytecodeOperation, OperationTime> operationsDurations = [];
             Dictionary<DSharpBytecodeOperation, int> operationsCount = [];
@@ -188,12 +189,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             while (context.InstructionIndex < instructionsLength)
             {
                 var instructionIndex = context.InstructionIndex;
-                var instruction = &instructions[(int)instructionIndex];
+                var instruction = instructions + instructionIndex;
 
 #if DEBUG
                 stopwatch.Restart();
 #endif
-                var callback = DSharpRuntimeInstruction.Execute(instruction, ref context);
+                DSharpRuntimeInstruction.Execute(instruction, ref context);
 #if DEBUG
                 stopwatch.Stop();
 

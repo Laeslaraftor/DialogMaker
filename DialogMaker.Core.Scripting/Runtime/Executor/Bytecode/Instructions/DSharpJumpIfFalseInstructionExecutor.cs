@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -9,36 +9,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-
-        protected override sealed bool CanJump(DSharpRuntimeInstruction* instruction, DSharpExecutionContext context)
+        public override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            var lastValue = context.Stack.Peek();
-            return !lastValue.ReadAsBoolean();
-        }
-        protected override unsafe bool IsNotValid(DSharpRuntimeInstruction* instruction, DSharpExecutionContext context, [NotNullWhen(true)] out DSharpMethodExecutionCallback errorCallback)
-        {
-            if (base.IsNotValid(instruction, context, out errorCallback))
-            {
-                return true;
-            }
-            if (!CheckStackValues(instruction, context, 1, out errorCallback))
-            {
-                var lastValue = context.Stack.Peek();
-
-                if (lastValue.ObjectType != context.TypesProvider.Boolean)
-                {
-                    errorCallback = context.ThrowExecutionException($"Unable to jump with condition: last stack value should be boolean, got {lastValue.ValueType}");
-                    return true;
-                }
-
-                return false;
-            }
-
-            return true;
+            InstanceExecute(instruction, ref context);
         }
 
         #endregion
@@ -50,9 +27,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpJumpIfFalseInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            return Instance.Execute(instruction, ref context);
+            if (!*context.Stack.FastStructureDataPeek<bool>())
+            {
+                context.InstructionIndex = *(uint*)instruction->Arguments[0];
+            }
         }
 
         #endregion

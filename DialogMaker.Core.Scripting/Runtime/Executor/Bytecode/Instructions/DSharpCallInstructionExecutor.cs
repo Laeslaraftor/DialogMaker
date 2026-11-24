@@ -9,14 +9,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
 
-        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, CallingExecutionParameters parameters)
+        protected override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, CallingExecutionParameters parameters)
         {
-            return Call(instruction, ref context, parameters);
+            Call(instruction, ref context, parameters);
         }
 
         protected override DSharpRuntimeMethodInfo* ReplaceMember(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeMethodInfo* member)
@@ -46,7 +46,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpCallInstructionExecutor Instance = new();
 
-        internal static DSharpMethodExecutionCallback Call(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, CallingExecutionParameters parameters, uint extraScopeOffset = 0, uint argumentsOffset = 0)
+        internal static void Call(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, CallingExecutionParameters parameters, uint extraScopeOffset = 0, uint argumentsOffset = 0)
         {
             var instance = parameters.Instance;
             var method = parameters.Member;
@@ -62,7 +62,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                          method->IsAbstract)
                 {
                     var methods = instance->Type->Methods;
-                    return context.ThrowExecutionException($"Unable to find end-point method for \"{method->ToString()}\" in \"{instance->Type->ToString()}\"");
+                    *context.Callback = context.ThrowExecutionException($"Unable to find end-point method for \"{method->ToString()}\" in \"{instance->Type->ToString()}\"");
+                    return;
                 }
             }
 
@@ -70,15 +71,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             if (!method->IsExtern && method->Bytecode.IsNull)
             {
-                return context.ThrowExecutionException($"Trying to call method \"{method->ToString()}\" without implementation");
+                *context.Callback = context.ThrowExecutionException($"Trying to call method \"{method->ToString()}\" without implementation");
+                return;
             }
 
-            return DSharpMethodExecutionCallback.Call(instance, method, argumentsInfo.GenericParameters, argumentsInfo.Arguments, extraScopeOffset);
+            *context.Callback = DSharpMethodExecutionCallback.Call(instance, method, argumentsInfo.GenericParameters, argumentsInfo.Arguments, extraScopeOffset);
         }
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            return Instance.Execute(instruction, ref context);
+            Instance.Execute(instruction, ref context);
         }
 
         #endregion

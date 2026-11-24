@@ -99,7 +99,24 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             return _frames[index];
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal DSharpObject* FastStructurePeek(int offset = 0)
+        {
+            return _frames[_frameIndex - offset].ReadAsStructure();
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal T* FastStructureDataPeek<T>(int offset = 0)
+            where T : unmanaged
+        {
+            return _frames[_frameIndex - offset].ReadAsStructureData<T>();
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal DSharpNumber FastNumberPeek(int offset = 0)
+        {
+            return _frames[_frameIndex - offset].ReadAsNumber();
+        }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FrameInfo PushTypedNull(DSharpRuntimeTypeInfo* typeInfo)
         {
             if (typeInfo->IsValueType)
@@ -143,6 +160,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         public void Push(nuint value) => PushNumber(_runtimeInformationProvider.UIntPtr, value);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Push(void* value) => Push((nint)value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Push(DSharpRuntimeTypeInfo* type, decimal value)
         {
             if (type == _runtimeInformationProvider.Byte)
@@ -255,61 +273,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             Unsafe.WriteUnaligned((void*)frame->StackPointer, obj);
             Unsafe.CopyBlockUnaligned((void*)(frame->StackPointer + sizeof(DSharpObject)), number, (uint)size);
-
-            //switch (number._type)
-            //{
-            //    case DSharpLiteralType.Null:
-            //        PushNull();
-            //        break;
-            //    case DSharpLiteralType.Bool:
-            //        Push(number._bool);
-            //        break;
-            //    case DSharpLiteralType.Byte:
-            //        Push(number._byte);
-            //        break;
-            //    case DSharpLiteralType.SByte:
-            //        Push(number._sbyte);
-            //        break;
-            //    case DSharpLiteralType.Char:
-            //        Push(number._char);
-            //        break;
-            //    case DSharpLiteralType.Short:
-            //        Push(number._short);
-            //        break;
-            //    case DSharpLiteralType.UShort:
-            //        Push(number._ushort);
-            //        break;
-            //    case DSharpLiteralType.Int:
-            //        Push(number._int);
-            //        break;
-            //    case DSharpLiteralType.UInt:
-            //        Push(number._uint);
-            //        break;
-            //    case DSharpLiteralType.Long:
-            //        Push(number._long);
-            //        break;
-            //    case DSharpLiteralType.ULong:
-            //        Push(number._ulong);
-            //        break;
-            //    case DSharpLiteralType.NInt:
-            //        Push(number._nint);
-            //        break;
-            //    case DSharpLiteralType.NUInt:
-            //        Push(number._nuint);
-            //        break;
-            //    case DSharpLiteralType.Float:
-            //        Push(number._float);
-            //        break;
-            //    case DSharpLiteralType.Double:
-            //        Push(number._double);
-            //        break;
-            //    case DSharpLiteralType.Decimal:
-            //        Push(number._decimal);
-            //        break;
-            //    default:
-            //        throw new ArgumentException($"Unsupported literal type: {number._type}");
-            //}
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Push(DSharpLiteralType type, nint valuePointer)
         {
             switch (type)
@@ -367,6 +332,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
             ;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Push(DSharpLiteralValue literalValue)
         {
             if (literalValue.IsNull)
@@ -395,7 +361,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 throw new ArgumentException($"Unsupported literal value ({literalValue.Type})", nameof(literalValue));
             }
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void PushReference(nint value, bool isPointerToPointer = false) => PushReference((DSharpObject*)value, isPointerToPointer: isPointerToPointer);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FrameInfo PushReference(DSharpObject* value, bool force = false, bool isPointerToPointer = false)
         {
             if (!isPointerToPointer && value != null && !value->IsReferenceObject && !force)
@@ -412,6 +380,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             return *frame;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DSharpMethodExecutor* PushMethodExecutor(DSharpRuntimeMethodInfo* methodInfo, int reservedSize = 0, uint scopeOffset = 0)
         {
             var scope = StartScope();
@@ -423,6 +392,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             return executor;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FrameInfo PushRedirectObject(DSharpRuntimeTypeInfo* type, nint dataAddress)
         {
             var frame = AllocateSized(DSharpStackValueType.Structure, sizeof(DSharpObject));
@@ -439,16 +409,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             return *frame;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FrameInfo* PushStructureRef(DSharpRuntimeTypeInfo* type, bool asArray = false) => CreateStructure(type, new(0, 0), asArray);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FrameInfo PushStructure(DSharpRuntimeTypeInfo* type, bool asArray = false) => *CreateStructure(type, new(0, 0), asArray);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FrameInfo PushStructure(DSharpRuntimeTypeInfo* type, UnmanagedArray<byte> dataBuffer) => *CreateStructure(type, dataBuffer, false);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FrameInfo PushStructure(DSharpRuntimeTypeInfo* type, UnmanagedArray<byte> dataBuffer, bool asArray) => *CreateStructure(type, dataBuffer, asArray);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FrameInfo PushStructure<T>(DSharpRuntimeTypeInfo* type, T value)
             where T : unmanaged
         {
             T* valuePointer = &value;
             return PushStructure(type, new UnmanagedArray<byte>((byte*)valuePointer, sizeof(T)));
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FrameInfo PushStructure(DSharpObject* structure, bool unbox)
         {
             if (structure->IsReferenceObject && !unbox)
@@ -460,15 +436,16 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             var frame = AllocateSized(DSharpStackValueType.Structure, size);
             var obj = (DSharpObject*)frame->StackPointer;
 
-            RuntimeExtensions.FillZero(obj, size);
             DSharpObject.Copy(structure, obj);
 
             obj->Placement = DSharpObjectPlacement.Buffer;
 
             return *frame;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public FrameInfo* Push(DSharpStackValueType type, int size) => AllocateSized(type, size);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Buffer* AllocateBuffer(int size)
         {
             if (IsDisposed)
@@ -508,6 +485,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             return buffer;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool FreeBuffer(Buffer* buffer)
         {
             if (IsDisposed)
@@ -561,6 +539,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             return true;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void PopCount(uint count)
         {
             if (IsDisposed)
@@ -595,6 +574,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             Pop(offset, 1);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Pop(uint offset, uint count)
         {
             if (IsDisposed)
@@ -652,6 +632,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             var currentFrame = &_frames[_frameIndex];
             _allocatedStackSize = (int)((currentFrame->StackPointer + currentFrame->Size) - (nint)_stack);
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Move(uint offset, int moveOffset)
         {
             ObjectDisposedException.ThrowIf(IsDisposed, this);
@@ -778,6 +759,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Scope StartScope()
         {
             uint stackCount = Count;
@@ -787,6 +769,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             return *scope;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public uint CloseScope(Scope scope, uint offset)
         {
             uint scopeStackCount = scope.StackCount - offset;
@@ -1084,8 +1067,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public readonly DSharpNumber ReadAsNumber()
             {
-                var obj = ReadAsObject();
-                return obj->Type->ConverterInfo.Converter(obj);
+                var obj = ReadAsStructure();
+                return DSharpNumber.FromObject(obj);
             }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public readonly decimal? ReadAsDecimal()
@@ -1106,8 +1089,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public readonly bool ReadAsBoolean()
             {
-                DSharpObject* obj = ReadAsObject();
-                return *(bool*)DSharpObject.GetData(obj);
+                if (ValueType == DSharpStackValueType.Reference)
+                {
+                    return *(bool*)DSharpObject.GetData((DSharpObject*)ReadReference());
+                }
+
+                return Unsafe.ReadUnaligned<bool>(ReadAsStructureData<byte>());
             }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public readonly nint ReadReference()
@@ -1122,6 +1109,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 }
 
                 return *(nint*)StackPointer;
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public readonly T* ReadAsStructureData<T>()
+                where T : unmanaged
+            {
+                return (T*)(StackPointer + sizeof(DSharpObject));
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public readonly DSharpObject* ReadAsStructure()
+            {
+                return (DSharpObject*)StackPointer;
             }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public readonly DSharpObject* ReadAsObject()

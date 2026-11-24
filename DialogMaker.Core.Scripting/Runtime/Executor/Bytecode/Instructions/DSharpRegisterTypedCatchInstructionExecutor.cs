@@ -1,4 +1,5 @@
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -9,42 +10,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        public override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-#if DEBUG
-            if (CheckArguments(instruction, context, 2, out var error))
-            {
-                return error;
-            }
-#endif
-            if (0 >= context.CurrentTryCatchFinallyId)
-            {
-                return context.ThrowExecutionException("Unable to register catch block with no any try-catch-finally block");
-            }
-
-            int instructionIndex = *(int*)instruction->Arguments[0];
-            var exceptionType = (DSharpRuntimeTypeInfo*)instruction->Arguments[1];
-            exceptionType = context.ReplaceType(exceptionType);
-
-            if (!context.AddCatchBlock(exceptionType, instructionIndex))
-            {
-                return context.ThrowExecutionException($"Current try-catch-finally block already contains catch block that handles \"{exceptionType->ToString()}\"");
-            }
-
-            return DSharpMethodExecutionCallback.Complete();
+            InstanceExecute(instruction, ref context);
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
+        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
             stream->Read<int>();
             stream->Read<DSharpMetadataToken>();
             return 2;
         }
-        public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
+        public override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
         {
             arguments[0] = stream->ReadSafePointer<int>();
             var typeToken = stream->Read<DSharpMetadataToken>();
@@ -61,9 +42,29 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpRegisterTypedCatchInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            return Instance.Execute(instruction, ref context);
+#if DEBUG
+            if (CheckArguments(instruction, ref context, 2))
+            {
+                return;
+            }
+#endif
+            if (0 >= context.CurrentTryCatchFinallyId)
+            {
+                *context.Callback = context.ThrowExecutionException("Unable to register catch block with no any try-catch-finally block");
+                return;
+            }
+
+            int instructionIndex = *(int*)instruction->Arguments[0];
+            var exceptionType = (DSharpRuntimeTypeInfo*)instruction->Arguments[1];
+            exceptionType = context.ReplaceType(exceptionType);
+
+            if (!context.AddCatchBlock(exceptionType, instructionIndex))
+            {
+                *context.Callback = context.ThrowExecutionException($"Current try-catch-finally block already contains catch block that handles \"{exceptionType->ToString()}\"");
+            }
         }
 
         #endregion

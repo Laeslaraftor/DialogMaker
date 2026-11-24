@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -9,30 +10,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public unsafe override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        public override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            DSharpMethodExecutionCallback error;
-
-#if DEBUG
-            if (CheckStackValues(instruction, context, 1, out error))
-            {
-                return error;
-            }
-#endif
-
-            var instance = GetInstance(context, 0, out error);
-
-            if (instance == null)
-            {
-                return error;
-            }
-
-            context.ObjectsContainer.Unlock(instance);
-
-            return DSharpMethodExecutionCallback.Complete();
+            InstanceExecute(instruction, ref context);
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
@@ -53,9 +36,24 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpUnlockInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            return Instance.Execute(instruction, ref context);
+#if DEBUG
+            if (CheckStackValues(instruction, ref context, 1))
+            {
+                return;
+            }
+#endif
+
+            var instance = GetInstance(ref context, 0, throwOnError: true);
+
+            if (instance == null)
+            {
+                return;
+            }
+
+            context.ObjectsContainer.Unlock(instance);
         }
 
         #endregion

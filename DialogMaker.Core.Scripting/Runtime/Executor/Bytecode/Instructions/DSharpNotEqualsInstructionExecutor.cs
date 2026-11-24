@@ -1,4 +1,5 @@
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -9,33 +10,20 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        public override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-#if DEBUG
-            if (CheckStackValues(instruction, context, 2, out var error))
-            {
-                return error;
-            }
-#endif
-
-            var left = context.Stack.Peek(1);
-            var right = context.Stack.Peek();
-            bool result = !DSharpEqualsInstructionExecutor.Equals(left, right);
-
-            context.Stack.Push(result);
-
-            return DSharpMethodExecutionCallback.Complete();
+            InstanceExecute(instruction, ref context);
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
+        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
             return 0;
         }
-        public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
+        public override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
         {
         }
 
@@ -48,9 +36,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpNotEqualsInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            return Instance.Execute(instruction, ref context);
+#if DEBUG
+            if (CheckStackValues(instruction, ref context, 2))
+            {
+                return;
+            }
+#endif
+
+            var left = context.Stack.Peek(1);
+            var right = context.Stack.Peek();
+            bool result = !DSharpEqualsInstructionExecutor.Equals(ref left, ref right);
+
+            context.Stack.Push(result);
         }
 
         #endregion

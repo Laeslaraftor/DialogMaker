@@ -10,14 +10,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
 
-        protected override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* runtimeInfo)
+        protected override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* runtimeInfo)
         {
-            return Create(instruction, ref context, runtimeInfo, false);
+            Create(instruction, ref context, runtimeInfo, false);
         }
 
         #endregion
@@ -30,12 +30,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         public static readonly DSharpNewArrayInstructionExecutor Instance = new();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static DSharpMethodExecutionCallback Create(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* arrayType, bool isStackAlloc)
+        internal static void Create(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* arrayType, bool isStackAlloc)
         {
 #if DEBUG
-            if (CheckStackValues(instruction, context, 1, out var error))
+            if (CheckStackValues(instruction, ref context, 1))
             {
-                return error;
+                return;
             }
 #endif
 
@@ -48,7 +48,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
             catch (Exception exception)
             {
-                return context.ThrowExecutionException($"Unable to get array length: {exception}");
+                *context.Callback = context.ThrowExecutionException($"Unable to get array length: {exception}");
+                return;
             }
 
             DSharpObject* arrayInstance;
@@ -59,21 +60,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }   
             catch (Exception exception)
             {
-                return context.ThrowExecutionException(exception);
+                *context.Callback = context.ThrowExecutionException(exception);
+                return;
             }
 
             if (!isStackAlloc)
             {
                 context.Stack.PushReference(arrayInstance);
             }
-
-            return DSharpMethodExecutionCallback.Complete();
-
         }
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            return Instance.Execute(instruction, ref context);
+            Instance.Execute(instruction, ref context);
         }
 
         #endregion

@@ -1,13 +1,16 @@
-﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions;
+﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
+using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions;
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+#if DEBUG
 using System.Diagnostics;
+#endif
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
 {
     /// <summary>
     /// D# execution context
     /// </summary>
-    public readonly unsafe struct DSharpExecutionContext(DSharpObjectsContainer objectsContainer, DSharpThread thread, DSharpRuntimeMethodInfo* currentMethod, DSharpMethodExecutor* executor)
+    public readonly unsafe struct DSharpExecutionContext(DSharpObjectsContainer objectsContainer, DSharpThread thread, DSharpRuntimeMethodInfo* currentMethod, DSharpMethodExecutor* executor, DSharpMethodExecutionCallback* callback)
     {
         /// <summary>
         /// Runtime types provider
@@ -62,6 +65,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <inheritdoc cref="DSharpMethodExecutor.UnhandledException"/>
         /// </summary>
         public DSharpObject* UnhandledException => _executor->UnhandledException;
+        /// <summary>
+        /// Pointer to current operation executor callback
+        /// </summary>
+        public readonly DSharpMethodExecutionCallback* Callback = callback;
 
         private readonly DSharpMethodExecutor* _executor = executor;
 

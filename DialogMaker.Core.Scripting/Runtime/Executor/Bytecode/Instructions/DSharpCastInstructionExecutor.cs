@@ -9,17 +9,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
 
-        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* type)
+        protected override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* type)
         {
 #if DEBUG
-            if (CheckStackValues(instruction, context, 1, out var error))
+            if (CheckStackValues(instruction, ref context, 1))
             {
-                return error;
+                return;
             }
 #endif
 
@@ -29,7 +29,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             {
                 if (!type->IsValueType)
                 {
-                    return DSharpMethodExecutionCallback.Complete();
+                    *context.Callback = DSharpMethodExecutionCallback.Complete();
+                    return;
                 }
 
                 context.Stack.Pop();
@@ -43,11 +44,13 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
                 if (obj == null)
                 {
-                    return context.ThrowExecutionException("Unable to cast null object");
+                    *context.Callback = context.ThrowExecutionException("Unable to cast null object");
+                    return;
                 }
                 else if (!obj->Type->IsValueType)
                 {
-                    return context.ThrowExecutionException($"Cast available only for value types, got: {obj->Type->ToString()}");
+                    *context.Callback = context.ThrowExecutionException($"Cast available only for value types, got: {obj->Type->ToString()}");
+                    return;
                 }
                 if (obj->Type == type)
                 {
@@ -63,7 +66,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                         context.Stack.PushReference(boxed, true);
                     }
 
-                    return DSharpMethodExecutionCallback.Complete();
+                    return;
                 }
                 if (obj->Type == context.TypesProvider.Boolean)
                 {
@@ -79,10 +82,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
             else
             {
-                return context.ThrowExecutionException($"Unable to cast \"{lastValue.ValueType}\" to \"{type->ToString()}\"");
+                *context.Callback = context.ThrowExecutionException($"Unable to cast \"{lastValue.ValueType}\" to \"{type->ToString()}\"");
             }
-
-            return DSharpMethodExecutionCallback.Complete();
         }
 
         #endregion
@@ -94,9 +95,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpCastInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            return Instance.Execute(instruction, ref context);
+            Instance.Execute(instruction, ref context);
         }
 
         #endregion

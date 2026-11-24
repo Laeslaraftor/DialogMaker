@@ -8,7 +8,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        public override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
             var args = instruction->Arguments;
             var member = (T*)args[0];
@@ -31,20 +31,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             if (!IsStatic(member))
             {
-                if (CheckStackValues(instruction, context, (int)argumentsCount + 1, out var error))
+#if DEBUG
+                if (CheckStackValues(instruction, ref context, (int)argumentsCount + 1))
                 {
-                    return error;
+                    return;
                 }
+#endif
 
-                instance = GetInstance(context, argumentsCount, out error);
+                instance = GetInstance(ref context, argumentsCount, throwOnError: true);
 
                 if (instance == null)
                 {
-                    return error;
+                    return;
                 }
             }
 
-            return Execute(instruction, ref context, new()
+            Execute(instruction, ref context, new()
             {
                 Member = member,
                 Instance = instance,
@@ -94,7 +96,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
         }
 
-        protected abstract DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, CallingExecutionParameters parameters);
+        protected abstract void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, CallingExecutionParameters parameters);
 
         protected abstract T* GetMember(DSharpRuntimeInformationProvider typesProvider, DSharpMetadataToken metadataToken);
         protected abstract T* ReplaceMember(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, T* member);

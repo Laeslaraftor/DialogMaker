@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -9,42 +10,20 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public unsafe override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        public override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            var methodInfoAddressInstance = GetInstance(context, 0);
-
-            if (methodInfoAddressInstance == null)
-            {
-                return context.ThrowExecutionException("Invalid runtime method information address");
-            }
-
-            var methodInfo = (DSharpRuntimeMethodInfo*)DSharpObjectConverter.ToIntPtr(methodInfoAddressInstance);
-
-            if (methodInfo->GenericTypes.Length > 0)
-            {
-                return context.ThrowExecutionException("Dynamic calling not supported generic methods");
-            }
-
-            var instance = GetInstance(context, (uint)methodInfo->ParametersType.Length + 1);
-
-            return DSharpCallInstructionExecutor.Call(instruction, ref context, new()
-            {
-                ArgumentsCount = (uint)methodInfo->ParametersType.Length,
-                CallingType = DSharpMethodCallingType.Virtual,
-                Instance = instance,
-                Member = methodInfo
-            }, argumentsOffset: 1);
+            InstanceExecute(instruction, ref context);
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
+        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
             return 0;
         }
-        public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
+        public override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
         {
         }
 
@@ -57,9 +36,34 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpDynamicCallInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            return Instance.Execute(instruction, ref context);
+            var methodInfoAddressInstance = GetInstance(ref context, 0);
+
+            if (methodInfoAddressInstance == null)
+            {
+                *context.Callback = context.ThrowExecutionException("Invalid runtime method information address");
+                return;
+            }
+
+            var methodInfo = (DSharpRuntimeMethodInfo*)DSharpObjectConverter.ToIntPtr(methodInfoAddressInstance);
+
+            if (methodInfo->GenericTypes.Length > 0)
+            {
+                *context.Callback = context.ThrowExecutionException("Dynamic calling not supported generic methods");
+                return;
+            }
+
+            var instance = GetInstance(ref context, (uint)methodInfo->ParametersType.Length + 1);
+
+            DSharpCallInstructionExecutor.Call(instruction, ref context, new()
+            {
+                ArgumentsCount = (uint)methodInfo->ParametersType.Length,
+                CallingType = DSharpMethodCallingType.Virtual,
+                Instance = instance,
+                Member = methodInfo
+            }, argumentsOffset: 1);
         }
 
         #endregion

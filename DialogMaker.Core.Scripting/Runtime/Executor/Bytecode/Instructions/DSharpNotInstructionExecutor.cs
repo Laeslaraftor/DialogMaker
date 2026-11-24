@@ -1,4 +1,5 @@
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -9,40 +10,20 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        public override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-#if DEBUG
-            if (CheckStackValues(instruction, context, 1, out var error))
-            {
-                return error;
-            }
-#endif
-
-            var value = context.Stack.Peek();
-            var obj = value.ReadAsObject();
-
-#if DEBUG
-            if (obj == null || obj->Type != context.TypesProvider.Boolean)
-            {
-                return context.ThrowExecutionException($"Unable to invert value because it is not boolean: {value.ValueType}");
-            }
-#endif
-
-            var data = DSharpObject.GetData<bool>(obj);
-            *data = !*data;
-
-            return DSharpMethodExecutionCallback.Complete();
+            InstanceExecute(instruction, ref context);
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
+        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
             return 0;
         }
-        public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
+        public override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
         {
         }
 
@@ -55,9 +36,29 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpNotInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            return Instance.Execute(instruction, ref context);
+#if DEBUG
+            if (CheckStackValues(instruction, ref context, 1))
+            {
+                return;
+            }
+
+            var value = context.Stack.Peek();
+            var obj = value.ReadAsObject();
+            var data = DSharpObject.GetData<bool>(obj);
+
+            if (obj == null || obj->Type != context.TypesProvider.Boolean)
+            {
+                *context.Callback = context.ThrowExecutionException($"Unable to invert value because it is not boolean: {value.ValueType}");
+                return;
+            }
+#else
+            var data = context.Stack.FastStructureDataPeek<bool>();
+#endif
+
+            *data = !*data;
         }
 
         #endregion

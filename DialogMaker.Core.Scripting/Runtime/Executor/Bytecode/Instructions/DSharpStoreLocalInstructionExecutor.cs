@@ -1,4 +1,5 @@
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -9,13 +10,42 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        public override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        {
+            InstanceExecute(instruction, ref context);
+        }
+
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
+        {
+            return &InstanceExecute;
+        }
+        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
+        {
+            stream->Read<uint>();
+            return 1;
+        }
+        public override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
+        {
+            arguments[0] = stream->ReadSafePointer<uint>();
+        }
+
+        #endregion
+
+        #region Static
+
+        /// <summary>
+        /// Global instance of <see cref="DSharpBytecodeOperation.StoreLocal"/> operation executor
+        /// </summary>
+        public static readonly DSharpStoreLocalInstructionExecutor Instance = new();
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
 #if DEBUG
-            if (CheckArguments(instruction, context, 1, out var error) ||
-                CheckStackValues(instruction, context, 1, out error))
+            if (CheckArguments(instruction, ref context, 1) ||
+                CheckStackValues(instruction, ref context, 1))
             {
-                return error;
+                return;
             }
 #endif
 
@@ -25,7 +55,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 #if DEBUG
             if (variableIndex >= variables->Length)
             {
-                return context.ThrowExecutionException($"Invalid local variable index \"{variableIndex}\" when available variables \"{variables->Length}\"");
+                *context.Callback = context.ThrowExecutionException($"Invalid local variable index \"{variableIndex}\" when available variables \"{variables->Length}\"");
+                return;
             }
 #endif
 
@@ -54,36 +85,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
 
             variable->Buffer.Mode = stackValue.Mode;
-
-            return DSharpMethodExecutionCallback.Complete();
-        }
-
-        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
-        {
-            return &InstanceExecute;
-        }
-        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
-        {
-            stream->Read<uint>();
-            return 1;
-        }
-        public override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
-        {
-            arguments[0] = stream->ReadSafePointer<uint>();
-        }
-
-        #endregion
-
-        #region Static
-
-        /// <summary>
-        /// Global instance of <see cref="DSharpBytecodeOperation.StoreLocal"/> operation executor
-        /// </summary>
-        public static readonly DSharpStoreLocalInstructionExecutor Instance = new();
-
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
-        {
-            return Instance.Execute(instruction, ref context);
         }
 
         #endregion

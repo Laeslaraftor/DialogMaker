@@ -12,7 +12,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <summary>
         /// Is here no converter
         /// </summary>
-        public readonly bool IsNull => Converter == null && ConvertingType != DSharpLiteralType.Null;
+        public readonly bool IsNull => Converter == null || ConvertingType == DSharpLiteralType.Null;
         /// <summary>
         /// Is number converter
         /// </summary>

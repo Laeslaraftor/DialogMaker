@@ -1,4 +1,5 @@
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -9,14 +10,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
 
-        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeFieldInfo* runtimeInfo)
+        protected override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeFieldInfo* runtimeInfo)
         {
-            return Store(instruction, ref context, runtimeInfo, false);
+            Store(instruction, ref context, runtimeInfo, false);
         }
 
         #endregion
@@ -28,15 +29,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpStoreFieldInstructionExecutor Instance = new();
 
-        internal static unsafe DSharpMethodExecutionCallback Store(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeFieldInfo* field, bool isInstance)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void Store(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeFieldInfo* field, bool isInstance)
         {
             int stackValuesCount = isInstance ? 2 : 1;
-            DSharpMethodExecutionCallback error;
 
 #if DEBUG
-            if (CheckStackValues(instruction, context, stackValuesCount, out error))
+            if (CheckStackValues(instruction, ref context, stackValuesCount))
             {
-                return error;
+                return;
             }
 #endif
 
@@ -44,11 +45,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             if (isInstance)
             {
-                instance = GetInstance(context, (uint)stackValuesCount - 1, out error);
+                instance = GetInstance(ref context, (uint)stackValuesCount - 1, throwOnError: true);
 
                 if (instance == null)
                 {
-                    return error;
+                    return;
                 }
             }
 
@@ -58,15 +59,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             }
             catch (Exception exception)
             {
-                return context.ThrowExecutionException(exception);
+                *context.Callback = context.ThrowExecutionException(exception);
+                return;
             }
-
-            return DSharpMethodExecutionCallback.Complete();
         }
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            return Instance.Execute(instruction, ref context);
+            Instance.Execute(instruction, ref context);
         }
 
         #endregion

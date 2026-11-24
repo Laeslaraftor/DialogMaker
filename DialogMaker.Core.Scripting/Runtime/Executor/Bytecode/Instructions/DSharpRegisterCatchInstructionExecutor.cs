@@ -1,4 +1,5 @@
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -9,39 +10,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        public override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-#if DEBUG
-            if (CheckArguments(instruction, context, 1, out var error))
-            {
-                return error;
-            }
-#endif
-            if (0 >= context.CurrentTryCatchFinallyId)
-            {
-                return context.ThrowExecutionException("Unable to register catch block with no any try-catch-finally block");
-            }
-
-            int instructionIndex = *(int*)instruction->Arguments[0];
-
-            if (!context.AddCatchBlock(null, instructionIndex))
-            {
-                return context.ThrowExecutionException("Current try-catch-finally block already contains catch block that handles all exceptions");
-            }
-
-            return DSharpMethodExecutionCallback.Complete();
+            InstanceExecute(instruction, ref context);
         }
 
-        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        public unsafe override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
+        public override int GetArgumentsCount(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream)
         {
             stream->Read<int>();
             return 1;
         }
-        public unsafe override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
+        public override void ReadArguments(DSharpRuntimeInformationProvider typesProvider, UnmanagedStream* stream, UnmanagedArray<nint> arguments)
         {
             arguments[0] = stream->ReadSafePointer<int>();
         }
@@ -55,9 +38,27 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpRegisterCatchInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            return Instance.Execute(instruction, ref context);
+#if DEBUG
+            if (CheckArguments(instruction, ref context, 1))
+            {
+                return;
+            }
+#endif
+            if (0 >= context.CurrentTryCatchFinallyId)
+            {
+                *context.Callback = context.ThrowExecutionException("Unable to register catch block with no any try-catch-finally block");
+                return;
+            }
+
+            int instructionIndex = *(int*)instruction->Arguments[0];
+
+            if (!context.AddCatchBlock(null, instructionIndex))
+            {
+                *context.Callback = context.ThrowExecutionException("Current try-catch-finally block already contains catch block that handles all exceptions");
+            }
         }
 
         #endregion

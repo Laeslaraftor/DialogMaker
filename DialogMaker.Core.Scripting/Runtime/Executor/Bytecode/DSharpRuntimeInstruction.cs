@@ -21,7 +21,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <summary>
         /// Pointer to executor method that implements <see cref="DSharpInstructionExecutor.Execute(DSharpRuntimeInstruction*, ref DSharpExecutionContext)"/>
         /// </summary>
-        public delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> Executor;
+        public delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> Executor;
 
         #region Static
 
@@ -32,7 +32,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <exception cref="InvalidOperationException">Executor not specified</exception>
         /// <returns>Instruction execution callback</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        public static void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
 #if DEBUG
             if (instruction->Executor == null)
@@ -42,7 +42,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
 #endif
             // Console.WriteLine($"{context.CurrentMethod->ToString()}: {instruction->Operation}:{context.InstructionIndex}");
 
-            return instruction->Executor(instruction, ref context);
+            instruction->Executor(instruction, ref context);
         }
 
         /// <summary>
@@ -68,15 +68,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
             var operation = stream->Read<DSharpBytecodeOperation>();
             int argumentsCount = 0;
             
+            if (!DSharpOperationExecutorInfos.Operations.TryGetValue(operation, out var executorInfo))
+            {
+                throw new DSharpException($"Executor for \"{operation}\" not found");
+            }
             if (DSharpBytecodeOperationHelper.Values.TryGetValue(operation, out var info) &&
                 info.ArgsCount != null)
             {
                 argumentsCount = info.ArgsCount.Count;
             }
-            if (!DSharpInstructionExecutor.TryGetExecutor(operation, out var executor))
-            {
-                throw new InvalidOperationException($"Unable to get executor for instruction: \"{operation}\"");
-            }
+
+            var executor = executorInfo.ExecutorInstance;
+
             if (argumentsCount > 0)
             {
                 int startArgumentsPosition = stream->Position;
@@ -91,7 +94,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
             DSharpRuntimeInstruction instruction = new()
             {
                 Operation = operation,
-                Executor = executor.GetExecutorPointer()
+                Executor = executorInfo.ExecutorMethod
             };
 
             if (argumentsCount != 0 && memoryBuilder.Pointer != 0)

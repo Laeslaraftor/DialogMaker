@@ -9,17 +9,17 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, void> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
 
-        protected override unsafe DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* type)
+        protected override void Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context, DSharpRuntimeTypeInfo* type)
         {
 #if DEBUG
-            if (CheckStackValues(instruction, context, 1, out var error))
+            if (CheckStackValues(instruction, ref context, 1))
             {
-                return error;
+                return;
             }
 #endif
 
@@ -29,7 +29,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             {
                 if (!type->IsValueType)
                 {
-                    return DSharpMethodExecutionCallback.Complete();
+                    return;
                 }
 
                 context.Stack.Pop();
@@ -38,7 +38,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             else if (lastValue.ValueType != DSharpStackValueType.Structure &&
                      lastValue.ValueType != DSharpStackValueType.Reference)
             {
-                return context.ThrowExecutionException($"Unable to cast \"{lastValue.ValueType}\"");
+                *context.Callback = context.ThrowExecutionException($"Unable to cast \"{lastValue.ValueType}\"");
+                return;
             }
 
             var obj = lastValue.ReadAsObject();
@@ -46,7 +47,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             if (obj == null)
             {
                 PushNullOrEmpty(context.Stack, type);
-                return DSharpMethodExecutionCallback.Complete();
+                return;
             }
             else if (obj->Type->IsInheritFrom(type))
             {
@@ -62,7 +63,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                     context.Stack.PushReference(boxed, true);
                 }
 
-                return DSharpMethodExecutionCallback.Complete();
+                return;
             }
             else if (obj->Type->IsValueType &&
                      obj->Type->BuildInValueTypeIndex != -1 &&
@@ -87,7 +88,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 if (!obj->Type->IsValueType &&
                     type->IsInheritFrom(obj->Type))
                 {
-                    return DSharpMethodExecutionCallback.Complete();
+                    return;
                 }
 
                 var convertOperator = FindConvertOperator(obj->Type, type);
@@ -99,18 +100,19 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
                 if (convertOperator == null)
                 {
                     PushNullOrEmpty(context.Stack, type);
-                    return DSharpMethodExecutionCallback.Complete();
+                    return;
                 }
 
-                return DSharpCallInstructionExecutor.Call(instruction, ref context, new()
+                DSharpCallInstructionExecutor.Call(instruction, ref context, new()
                 {
                     CallingType = DSharpMethodCallingType.Default,
                     Member = convertOperator
                 }, 1);
+
+                return;
             }
 
             PushNullOrEmpty(context.Stack, type);
-            return DSharpMethodExecutionCallback.Complete();
         }
 
         #endregion
@@ -122,9 +124,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// </summary>
         public static readonly DSharpAsInstructionExecutor Instance = new();
 
-        private static DSharpMethodExecutionCallback InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
+        private static void InstanceExecute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
-            return Instance.Execute(instruction, ref context);
+            Instance.Execute(instruction, ref context);
         }
 
         private static void PushNullOrEmpty(DSharpStack stack, DSharpRuntimeTypeInfo* type)
@@ -139,7 +141,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             stack.PushNull();
         }
-        private static unsafe DSharpRuntimeMethodInfo* FindConvertOperator(DSharpRuntimeTypeInfo* searchType, DSharpRuntimeTypeInfo* convertType)
+        private static DSharpRuntimeMethodInfo* FindConvertOperator(DSharpRuntimeTypeInfo* searchType, DSharpRuntimeTypeInfo* convertType)
         {
             for (int i = 0; i < searchType->Methods.Length; i++)
             {
