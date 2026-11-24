@@ -14,7 +14,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
     {
         public string Name { get; } = name;
         public ReadOnlyCollection<IDSharpAssembly> References { get; } = new(references);
-        public ReferenceReadOnlyList<DSharpTypeBuilder> Types
+        public ReadOnlyCollection<DSharpTypeBuilder> Types
         {
             get
             {
@@ -22,7 +22,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
-        public ReferenceReadOnlyList<DSharpFieldBuilder> GlobalVariables
+        public ReadOnlyCollection<DSharpFieldBuilder> GlobalVariables
         {
             get
             {
@@ -30,7 +30,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return field;
             }
         }
-        public ReferenceReadOnlyList<DSharpMethodBuilder> GlobalFunctions
+        public ReadOnlyCollection<DSharpMethodBuilder> GlobalFunctions
         {
             get
             {

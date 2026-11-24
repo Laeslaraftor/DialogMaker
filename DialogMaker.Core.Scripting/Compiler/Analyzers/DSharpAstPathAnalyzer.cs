@@ -1,5 +1,4 @@
-﻿using Acly.Data;
-using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
+﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 
 namespace DialogMaker.Core.Scripting.Compiler.Analyzers

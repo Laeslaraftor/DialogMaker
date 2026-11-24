@@ -1,219 +1,713 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
 using System.Runtime.CompilerServices;
+using DialogMaker.Core.Scripting.Runtime.Executor;
 
 namespace DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors
 {
-    internal sealed class DSharpNumberMathExecutor : IDSharpNumberMathExecutor
+    internal static class DSharpNumberMathExecutor
     {
         #region Operators
 
-        public DSharpNumber Add(DSharpNumber left, DSharpNumber right)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber Add(ref DSharpNumber left, ref DSharpNumber right)
         {
-            var kind = GetKindAndBigger(left, right, out var bigger, out var kindLeft, out var kindRight);
-            return _mathExecutors[kind].Add(kindLeft, kindRight).Convert(bigger);
-        }
-        public DSharpNumber Subtract(DSharpNumber left, DSharpNumber right)
-        {
-            var kind = GetKindAndBigger(left, right, out var bigger, out var kindLeft, out var kindRight);
-            return _mathExecutors[kind].Subtract(kindLeft, kindRight).Convert(bigger);
-        }
-        public DSharpNumber Mod(DSharpNumber left, DSharpNumber right)
-        {
-            var kind = GetKindAndBigger(left, right, out var bigger, out var kindLeft, out var kindRight);
-            return _mathExecutors[kind].Mod(kindLeft, kindRight).Convert(bigger);
-        }
-        public DSharpNumber Multiply(DSharpNumber left, DSharpNumber right)
-        {
-            var kind = GetKindAndBigger(left, right, out var bigger, out var kindLeft, out var kindRight);
-            return _mathExecutors[kind].Multiply(kindLeft, kindRight).Convert(bigger);
-        }
-        public DSharpNumber Divide(DSharpNumber left, DSharpNumber right)
-        {
-            var kind = GetKindAndBigger(left, right, out var bigger, out var kindLeft, out var kindRight);
-            return _mathExecutors[kind].Divide(kindLeft, kindRight).Convert(bigger);
-        }
-        public DSharpNumber Xor(DSharpNumber left, DSharpNumber right)
-        {
-            var kind = GetKindAndBigger(left, right, out var bigger, out var kindLeft, out var kindRight);
-            return _mathExecutors[kind].Xor(kindLeft, kindRight).Convert(bigger);
-        }
-        public DSharpNumber Or(DSharpNumber left, DSharpNumber right)
-        {
-            var kind = GetKindAndBigger(left, right, out var bigger, out var kindLeft, out var kindRight);
-            return _mathExecutors[kind].Or(kindLeft, kindRight).Convert(bigger);
-        }
-        public DSharpNumber And(DSharpNumber left, DSharpNumber right)
-        {
-            var kind = GetKindAndBigger(left, right, out var bigger, out var kindLeft, out var kindRight);
-            return _mathExecutors[kind].And(kindLeft, kindRight).Convert(bigger);
-        }
-        public DSharpNumber ShiftLeft(DSharpNumber left, DSharpNumber right)
-        {
-            var kind = GetKindAndBigger(left, right, out var bigger, out var kindLeft, out var kindRight);
-            return _mathExecutors[kind].ShiftLeft(kindLeft, kindRight).Convert(bigger);
-        }
-        public DSharpNumber ShiftRight(DSharpNumber left, DSharpNumber right)
-        {
-            var kind = GetKindAndBigger(left, right, out var bigger, out var kindLeft, out var kindRight);
-            return _mathExecutors[kind].ShiftRight(kindLeft, kindRight).Convert(bigger);
-        }
+            if (left._type == right._type)
+            {
+                return left._type switch
+                {
+                    DSharpLiteralType.Bool => unchecked(left._byte + right._byte) != 0,
+                    DSharpLiteralType.Byte => unchecked(left._byte + right._byte),
+                    DSharpLiteralType.SByte => unchecked(left._sbyte + right._sbyte),
+                    DSharpLiteralType.Char => unchecked(left._char + right._char),
+                    DSharpLiteralType.Short => unchecked(left._short + right._short),
+                    DSharpLiteralType.UShort => unchecked(left._ushort + right._ushort),
+                    DSharpLiteralType.Int => unchecked(left._int + right._int),
+                    DSharpLiteralType.UInt => unchecked(left._uint + right._uint),
+                    DSharpLiteralType.Long => unchecked(left._long + right._long),
+                    DSharpLiteralType.ULong => unchecked(left._ulong + right._ulong),
+                    DSharpLiteralType.NInt => unchecked(left._nint + right._nint),
+                    DSharpLiteralType.NUInt => unchecked(left._nuint + right._nuint),
+                    DSharpLiteralType.Float => left._float + right._float,
+                    DSharpLiteralType.Double => left._double + right._double,
+                    DSharpLiteralType.Decimal => left._decimal + right._decimal,
+                    _ => throw new ArgumentException($"Invalid number type: {left._type}"),
+                };
+            }
 
-        public DSharpNumber LogicalAnd(DSharpNumber left, DSharpNumber right)
-        {
-            var kind = GetKind(left, right, out var kindLeft, out var kindRight);
-            return _mathExecutors[kind].LogicalAnd(kindLeft, kindRight);
+            var kind = GetKindAndBigger(ref left, ref right, out var bigger, out var kindLeft, out var kindRight);
+            return _mathExecutors[(int)kind].Add(ref kindLeft, ref kindRight).Convert(bigger);
         }
-        public DSharpNumber LogicalOr(DSharpNumber left, DSharpNumber right)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber Subtract(ref DSharpNumber left, ref DSharpNumber right)
         {
-            var kind = GetKind(left, right, out var kindLeft, out var kindRight);
-            return _mathExecutors[kind].LogicalOr(kindLeft, kindRight);
-        }
+            if (left._type == right._type)
+            {
+                switch (left._type)
+                {
+                    case DSharpLiteralType.Bool: return unchecked(left._byte - right._byte) != 0;
+                    case DSharpLiteralType.Byte: return unchecked(left._byte - right._byte);
+                    case DSharpLiteralType.SByte: return unchecked(left._sbyte - right._sbyte);
+                    case DSharpLiteralType.Char: return unchecked(left._char - right._char);
+                    case DSharpLiteralType.Short: return unchecked(left._short - right._short);
+                    case DSharpLiteralType.UShort: return unchecked(left._ushort - right._ushort);
+                    case DSharpLiteralType.Int: return unchecked(left._int - right._int);
+                    case DSharpLiteralType.UInt: return unchecked(left._uint - right._uint);
+                    case DSharpLiteralType.Long: return unchecked(left._long - right._long);
+                    case DSharpLiteralType.ULong: return unchecked(left._ulong - right._ulong);
+                    case DSharpLiteralType.NInt: return unchecked(left._nint - right._nint);
+                    case DSharpLiteralType.NUInt: return unchecked(left._nuint - right._nuint);
+                    case DSharpLiteralType.Float: return left._float - right._float;
+                    case DSharpLiteralType.Double: return left._double - right._double;
+                    case DSharpLiteralType.Decimal: return left._decimal - right._decimal;
+                }
+            }
 
-        public DSharpNumber LogicalEquals(DSharpNumber left, DSharpNumber right)
-        {
-            var kind = GetKind(left, right, out var kindLeft, out var kindRight);
-            return _mathExecutors[kind].LogicalEquals(kindLeft, kindRight);
+            var kind = GetKindAndBigger(ref left, ref right, out var bigger, out var kindLeft, out var kindRight);
+            return _mathExecutors[(int)kind].Subtract(ref kindLeft, ref kindRight).Convert(bigger);
         }
-        public DSharpNumber LogicalNotEquals(DSharpNumber left, DSharpNumber right)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber Mod(ref DSharpNumber left, ref DSharpNumber right)
         {
-            var kind = GetKind(left, right, out var kindLeft, out var kindRight);
-            return _mathExecutors[kind].LogicalNotEquals(kindLeft, kindRight);
-        }
+            if (left._type == right._type)
+            {
+                switch (left._type)
+                {
+                    case DSharpLiteralType.Bool: return unchecked(left._byte % right._byte) != 0;
+                    case DSharpLiteralType.Byte: return unchecked(left._byte % right._byte);
+                    case DSharpLiteralType.SByte: return unchecked(left._sbyte % right._sbyte);
+                    case DSharpLiteralType.Char: return unchecked(left._char % right._char);
+                    case DSharpLiteralType.Short: return unchecked(left._short % right._short);
+                    case DSharpLiteralType.UShort: return unchecked(left._ushort % right._ushort);
+                    case DSharpLiteralType.Int: return unchecked(left._int % right._int);
+                    case DSharpLiteralType.UInt: return unchecked(left._uint % right._uint);
+                    case DSharpLiteralType.Long: return unchecked(left._long % right._long);
+                    case DSharpLiteralType.ULong: return unchecked(left._ulong % right._ulong);
+                    case DSharpLiteralType.NInt: return unchecked(left._nint % right._nint);
+                    case DSharpLiteralType.NUInt: return unchecked(left._nuint % right._nuint);
+                    case DSharpLiteralType.Float: return left._float % right._float;
+                    case DSharpLiteralType.Double: return left._double % right._double;
+                    case DSharpLiteralType.Decimal: return left._decimal % right._decimal;
+                }
+            }
 
-        public DSharpNumber LogicalLess(DSharpNumber left, DSharpNumber right)
-        {
-            var kind = GetKind(left, right, out var kindLeft, out var kindRight);
-            return _mathExecutors[kind].LogicalLess(kindLeft, kindRight);
+            var kind = GetKindAndBigger(ref left, ref right, out var bigger, out var kindLeft, out var kindRight);
+            return _mathExecutors[(int)kind].Mod(ref kindLeft, ref kindRight).Convert(bigger);
         }
-        public DSharpNumber LogicalLessOrEquals(DSharpNumber left, DSharpNumber right)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber Multiply(ref DSharpNumber left, ref DSharpNumber right)
         {
-            var kind = GetKind(left, right, out var kindLeft, out var kindRight);
-            return _mathExecutors[kind].LogicalLessOrEquals(kindLeft, kindRight);
-        }
-        public DSharpNumber LogicalGreater(DSharpNumber left, DSharpNumber right)
-        {
-            var kind = GetKind(left, right, out var kindLeft, out var kindRight);
-            return _mathExecutors[kind].LogicalGreater(kindLeft, kindRight);
-        }
-        public DSharpNumber LogicalGreaterOrEquals(DSharpNumber left, DSharpNumber right)
-        {
-            var kind = GetKind(left, right, out var kindLeft, out var kindRight);
-            return _mathExecutors[kind].LogicalGreaterOrEquals(kindLeft, kindRight);
-        }
+            if (left._type == right._type)
+            {
+                switch (left._type)
+                {
+                    case DSharpLiteralType.Bool: return unchecked(left._byte * right._byte) != 0;
+                    case DSharpLiteralType.Byte: return unchecked(left._byte * right._byte);
+                    case DSharpLiteralType.SByte: return unchecked(left._sbyte * right._sbyte);
+                    case DSharpLiteralType.Char: return unchecked(left._char * right._char);
+                    case DSharpLiteralType.Short: return unchecked(left._short * right._short);
+                    case DSharpLiteralType.UShort: return unchecked(left._ushort * right._ushort);
+                    case DSharpLiteralType.Int: return unchecked(left._int * right._int);
+                    case DSharpLiteralType.UInt: return unchecked(left._uint * right._uint);
+                    case DSharpLiteralType.Long: return unchecked(left._long * right._long);
+                    case DSharpLiteralType.ULong: return unchecked(left._ulong * right._ulong);
+                    case DSharpLiteralType.NInt: return unchecked(left._nint * right._nint);
+                    case DSharpLiteralType.NUInt: return unchecked(left._nuint * right._nuint);
+                    case DSharpLiteralType.Float: return left._float * right._float;
+                    case DSharpLiteralType.Double: return left._double * right._double;
+                    case DSharpLiteralType.Decimal: return left._decimal * right._decimal;
+                }
+            }
 
-        public DSharpNumber Invert(DSharpNumber value)
-        {
-            var kind = GetKindAndConvert(value, out var kindValue);
-            return _mathExecutors[kind].Invert(kindValue).Convert(value.Type);
+            var kind = GetKindAndBigger(ref left, ref right, out var bigger, out var kindLeft, out var kindRight);
+            return _mathExecutors[(int)kind].Multiply(ref kindLeft, ref kindRight).Convert(bigger);
         }
-        public DSharpNumber Not(DSharpNumber value)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber Divide(ref DSharpNumber left, ref DSharpNumber right)
         {
-            var kind = GetKindAndConvert(value, out var kindValue);
-            return _mathExecutors[kind].Not(kindValue).Convert(value.Type);
+            if (left._type == right._type)
+            {
+                switch (left._type)
+                {
+                    case DSharpLiteralType.Bool:     return unchecked(left._byte / right._byte) != 0;
+                    case DSharpLiteralType.Byte:     return unchecked(left._byte / right._byte);
+                    case DSharpLiteralType.SByte:   return unchecked(left._sbyte / right._sbyte);
+                    case DSharpLiteralType.Char:     return unchecked(left._char / right._char);
+                    case DSharpLiteralType.Short:   return unchecked(left._short / right._short);
+                    case DSharpLiteralType.UShort: return unchecked(left._ushort / right._ushort);
+                    case DSharpLiteralType.Int:       return unchecked(left._int / right._int);
+                    case DSharpLiteralType.UInt:     return unchecked(left._uint / right._uint);
+                    case DSharpLiteralType.Long:     return unchecked(left._long / right._long);
+                    case DSharpLiteralType.ULong:   return unchecked(left._ulong / right._ulong);
+                    case DSharpLiteralType.NInt:     return unchecked(left._nint / right._nint);
+                    case DSharpLiteralType.NUInt:   return unchecked(left._nuint / right._nuint);
+                    case DSharpLiteralType.Float:             return left._float / right._float;
+                    case DSharpLiteralType.Double:           return left._double / right._double;
+                    case DSharpLiteralType.Decimal:         return left._decimal / right._decimal;
+                }
+            }
+
+            var kind = GetKindAndBigger(ref left, ref right, out var bigger, out var kindLeft, out var kindRight);
+            return _mathExecutors[(int)kind].Divide(ref kindLeft, ref kindRight).Convert(bigger);
         }
-        public DSharpNumber Increment(DSharpNumber value)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber Xor(ref DSharpNumber left, ref DSharpNumber right)
         {
-            var kind = GetKindAndConvert(value, out var kindValue);
-            return _mathExecutors[kind].Increment(kindValue).Convert(value.Type);
+            if (left._type == right._type)
+            {
+                switch (left._type)
+                {
+                    case DSharpLiteralType.Bool: return left._bool ^ right._bool;
+                    case DSharpLiteralType.Byte: return unchecked(left._byte ^ right._byte);
+                    case DSharpLiteralType.SByte: return unchecked(left._sbyte ^ right._sbyte);
+                    case DSharpLiteralType.Char: return unchecked(left._char ^ right._char);
+                    case DSharpLiteralType.Short: return unchecked(left._short ^ right._short);
+                    case DSharpLiteralType.UShort: return unchecked(left._ushort ^ right._ushort);
+                    case DSharpLiteralType.Int: return unchecked(left._int ^ right._int);
+                    case DSharpLiteralType.UInt: return unchecked(left._uint ^ right._uint);
+                    case DSharpLiteralType.Long: return unchecked(left._long ^ right._long);
+                    case DSharpLiteralType.ULong: return unchecked(left._ulong ^ right._ulong);
+                    case DSharpLiteralType.NInt: return unchecked(left._nint ^ right._nint);
+                    case DSharpLiteralType.NUInt: return unchecked(left._nuint ^ right._nuint);
+                    case DSharpLiteralType.Float: return left._float ^ right._float;
+                    case DSharpLiteralType.Double: return left._double ^ right._double;
+                    case DSharpLiteralType.Decimal: return left._decimal ^ right._decimal;
+                }
+            }
+
+            var kind = GetKindAndBigger(ref left, ref right, out var bigger, out var kindLeft, out var kindRight);
+            return _mathExecutors[(int)kind].Xor(ref kindLeft, ref kindRight).Convert(bigger);
         }
-        public DSharpNumber Decrement(DSharpNumber value)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber Or(ref DSharpNumber left, ref DSharpNumber right)
         {
-            var kind = GetKindAndConvert(value, out var kindValue);
-            return _mathExecutors[kind].Decrement(kindValue).Convert(value.Type);
+            if (left._type == right._type)
+            {
+                return left._type switch
+                {
+                    DSharpLiteralType.Bool => left._bool | right._bool,
+                    DSharpLiteralType.Byte => unchecked(left._byte | right._byte),
+                    DSharpLiteralType.SByte => unchecked(left._sbyte | right._sbyte),
+                    DSharpLiteralType.Char => unchecked(left._char | right._char),
+                    DSharpLiteralType.Short => unchecked(left._short | right._short),
+                    DSharpLiteralType.UShort => unchecked(left._ushort | right._ushort),
+                    DSharpLiteralType.Int => unchecked(left._int | right._int),
+                    DSharpLiteralType.UInt => unchecked(left._uint | right._uint),
+                    DSharpLiteralType.Long => unchecked(left._long | right._long),
+                    DSharpLiteralType.ULong => unchecked(left._ulong | right._ulong),
+                    DSharpLiteralType.NInt => unchecked(left._nint | right._nint),
+                    DSharpLiteralType.NUInt => unchecked(left._nuint | right._nuint),
+                    DSharpLiteralType.Float => left._float | right._float,
+                    DSharpLiteralType.Double => left._double | right._double,
+                    DSharpLiteralType.Decimal => left._decimal | right._decimal,
+                    _ => throw new ArgumentException($"Invalid number type: {left._type}"),
+                };
+            }
+
+            var kind = GetKindAndBigger(ref left, ref right, out var bigger, out var kindLeft, out var kindRight);
+            return _mathExecutors[(int)kind].Or(ref kindLeft, ref kindRight).Convert(bigger);
         }
-        public DSharpNumber BitInvert(DSharpNumber value)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber And(ref DSharpNumber left, ref DSharpNumber right)
         {
-            var kind = GetKindAndConvert(value, out var kindValue);
-            return _mathExecutors[kind].BitInvert(kindValue).Convert(value.Type);
+            if (left._type == right._type)
+            {
+                return left._type switch
+                {
+                    DSharpLiteralType.Bool => left._bool & right._bool,
+                    DSharpLiteralType.Byte => unchecked(left._byte & right._byte),
+                    DSharpLiteralType.SByte => unchecked(left._sbyte & right._sbyte),
+                    DSharpLiteralType.Char => unchecked(left._char & right._char),
+                    DSharpLiteralType.Short => unchecked(left._short & right._short),
+                    DSharpLiteralType.UShort => unchecked(left._ushort & right._ushort),
+                    DSharpLiteralType.Int => unchecked(left._int & right._int),
+                    DSharpLiteralType.UInt => unchecked(left._uint & right._uint),
+                    DSharpLiteralType.Long => unchecked(left._long & right._long),
+                    DSharpLiteralType.ULong => unchecked(left._ulong & right._ulong),
+                    DSharpLiteralType.NInt => unchecked(left._nint & right._nint),
+                    DSharpLiteralType.NUInt => unchecked(left._nuint & right._nuint),
+                    DSharpLiteralType.Float => left._float & right._float,
+                    DSharpLiteralType.Double => left._double & right._double,
+                    DSharpLiteralType.Decimal => left._decimal & right._decimal,
+                    _ => throw new ArgumentException($"Invalid number type: {left._type}"),
+                };
+            }
+
+            var kind = GetKindAndBigger(ref left, ref right, out var bigger, out var kindLeft, out var kindRight);
+            return _mathExecutors[(int)kind].And(ref kindLeft, ref kindRight).Convert(bigger);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber ShiftLeft(ref DSharpNumber left, ref DSharpNumber right)
+        {
+            if (left._type == right._type)
+            {
+                return left._type switch
+                {
+                    DSharpLiteralType.Bool => (left._byte << right._byte) != 0,
+                    DSharpLiteralType.Byte => unchecked(left._byte << right._byte),
+                    DSharpLiteralType.SByte => unchecked(left._sbyte << right._sbyte),
+                    DSharpLiteralType.Char => unchecked(left._char << right._char),
+                    DSharpLiteralType.Short => unchecked(left._short << right._short),
+                    DSharpLiteralType.UShort => unchecked(left._ushort << right._ushort),
+                    DSharpLiteralType.Int => unchecked(left._int << right._int),
+                    DSharpLiteralType.UInt => unchecked(left._uint << unchecked((int)right._uint)),
+                    DSharpLiteralType.Long => unchecked(left._long << unchecked((int)right._long)),
+                    DSharpLiteralType.ULong => unchecked(left._ulong << unchecked((int)right._ulong)),
+                    DSharpLiteralType.NInt => unchecked(left._nint << unchecked((int)right._nint)),
+                    DSharpLiteralType.NUInt => unchecked(left._nuint << unchecked((int)right._nuint)),
+                    DSharpLiteralType.Float => left._float << right._float,
+                    DSharpLiteralType.Double => left._double << right._double,
+                    DSharpLiteralType.Decimal => left._decimal << right._decimal,
+                    _ => throw new ArgumentException($"Invalid number type: {left._type}"),
+                };
+            }
+
+            var kind = GetKindAndBigger(ref left, ref right, out var bigger, out var kindLeft, out var kindRight);
+            return _mathExecutors[(int)kind].ShiftLeft(ref kindLeft, ref kindRight).Convert(bigger);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber ShiftRight(ref DSharpNumber left, ref DSharpNumber right)
+        {
+            if (left._type == right._type)
+            {
+                return left._type switch
+                {
+                    DSharpLiteralType.Bool => (left._byte >> right._byte) != 0,
+                    DSharpLiteralType.Byte => unchecked(left._byte >> right._byte),
+                    DSharpLiteralType.SByte => unchecked(left._sbyte >> right._sbyte),
+                    DSharpLiteralType.Char => unchecked(left._char >> right._char),
+                    DSharpLiteralType.Short => unchecked(left._short >> right._short),
+                    DSharpLiteralType.UShort => unchecked(left._ushort >> right._ushort),
+                    DSharpLiteralType.Int => unchecked(left._int >> right._int),
+                    DSharpLiteralType.UInt => unchecked(left._uint >> unchecked((int)right._uint)),
+                    DSharpLiteralType.Long => unchecked(left._long >> unchecked((int)right._long)),
+                    DSharpLiteralType.ULong => unchecked(left._ulong >> unchecked((int)right._ulong)),
+                    DSharpLiteralType.NInt => unchecked(left._nint >> unchecked((int)right._nint)),
+                    DSharpLiteralType.NUInt => unchecked(left._nuint >> unchecked((int)right._nuint)),
+                    DSharpLiteralType.Float => left._float >> right._float,
+                    DSharpLiteralType.Double => left._double >> right._double,
+                    DSharpLiteralType.Decimal => left._decimal >> right._decimal,
+                    _ => throw new ArgumentException($"Invalid number type: {left._type}"),
+                };
+            }
+
+            var kind = GetKindAndBigger(ref left, ref right, out var bigger, out var kindLeft, out var kindRight);
+            return _mathExecutors[(int)kind].ShiftRight(ref kindLeft, ref kindRight).Convert(bigger);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber LogicalAnd(ref DSharpNumber left, ref DSharpNumber right)
+        {
+            if (left._type == right._type)
+            {
+                return left._type switch
+                {
+                    DSharpLiteralType.Bool => left._bool && right._bool,
+                    DSharpLiteralType.Byte => unchecked(left._byte * right._byte) != 0,
+                    DSharpLiteralType.SByte => unchecked(left._sbyte * right._sbyte) != 0,
+                    DSharpLiteralType.Char => unchecked(left._char * right._char) != 0,
+                    DSharpLiteralType.Short => unchecked(left._short * right._short) != 0,
+                    DSharpLiteralType.UShort => unchecked(left._ushort * right._ushort) != 0,
+                    DSharpLiteralType.Int => unchecked(left._int * right._int) != 0,
+                    DSharpLiteralType.UInt => unchecked(left._uint * right._uint) != 0,
+                    DSharpLiteralType.Long => unchecked(left._long * right._long) != 0,
+                    DSharpLiteralType.ULong => unchecked(left._ulong * right._ulong) != 0,
+                    DSharpLiteralType.NInt => unchecked(left._nint * right._nint) != 0,
+                    DSharpLiteralType.NUInt => unchecked(left._nuint * right._nuint) != 0,
+                    DSharpLiteralType.Float => (left._float * right._float) != 0,
+                    DSharpLiteralType.Double => (left._double * right._double) != 0,
+                    DSharpLiteralType.Decimal => (left._decimal * right._decimal) != 0,
+                    _ => throw new ArgumentException($"Invalid number type: {left._type}"),
+                };
+            }
+
+            var kind = GetKind(ref left, ref right, out var kindLeft, out var kindRight);
+            return _mathExecutors[(int)kind].LogicalAnd(ref kindLeft, ref kindRight);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber LogicalOr(ref DSharpNumber left, ref DSharpNumber right)
+        {
+            if (left._type == right._type)
+            {
+                return left._type switch
+                {
+                    DSharpLiteralType.Bool => left._bool || right._bool,
+                    DSharpLiteralType.Byte => unchecked(left._byte + right._byte) != 0,
+                    DSharpLiteralType.SByte => unchecked(left._sbyte + right._sbyte) != 0,
+                    DSharpLiteralType.Char => unchecked(left._char + right._char) != 0,
+                    DSharpLiteralType.Short => unchecked(left._short + right._short) != 0,
+                    DSharpLiteralType.UShort => unchecked(left._ushort + right._ushort) != 0,
+                    DSharpLiteralType.Int => unchecked(left._int + right._int) != 0,
+                    DSharpLiteralType.UInt => unchecked(left._uint + right._uint) != 0,
+                    DSharpLiteralType.Long => unchecked(left._long + right._long) != 0,
+                    DSharpLiteralType.ULong => unchecked(left._ulong + right._ulong) != 0,
+                    DSharpLiteralType.NInt => unchecked(left._nint + right._nint) != 0,
+                    DSharpLiteralType.NUInt => unchecked(left._nuint + right._nuint) != 0,
+                    DSharpLiteralType.Float => (left._float + right._float) != 0,
+                    DSharpLiteralType.Double => (left._double + right._double) != 0,
+                    DSharpLiteralType.Decimal => (left._decimal + right._decimal) != 0,
+                    _ => throw new ArgumentException($"Invalid number type: {left._type}"),
+                };
+            }
+
+            var kind = GetKind(ref left, ref right, out var kindLeft, out var kindRight);
+            return _mathExecutors[(int)kind].LogicalOr(ref kindLeft, ref kindRight);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber LogicalEquals(ref DSharpNumber left, ref DSharpNumber right)
+        {
+            if (left._type == right._type)
+            {
+                return left._type switch
+                {
+                    DSharpLiteralType.Bool => left._bool == right._bool,
+                    DSharpLiteralType.Byte => left._byte == right._byte,
+                    DSharpLiteralType.SByte => left._sbyte == right._sbyte,
+                    DSharpLiteralType.Char => left._char == right._char,
+                    DSharpLiteralType.Short => left._short == right._short,
+                    DSharpLiteralType.UShort => left._ushort == right._ushort,
+                    DSharpLiteralType.Int => left._int == right._int,
+                    DSharpLiteralType.UInt => left._uint == right._uint,
+                    DSharpLiteralType.Long => left._long == right._long,
+                    DSharpLiteralType.ULong => left._ulong == right._ulong,
+                    DSharpLiteralType.NInt => left._nint == right._nint,
+                    DSharpLiteralType.NUInt => left._nuint == right._nuint,
+                    DSharpLiteralType.Float => left._float == right._float,
+                    DSharpLiteralType.Double => left._double == right._double,
+                    DSharpLiteralType.Decimal => left._decimal == right._decimal,
+                    _ => throw new ArgumentException($"Invalid number type: {left._type}"),
+                };
+            }
+
+            var kind = GetKind(ref left, ref right, out var kindLeft, out var kindRight);
+            return _mathExecutors[(int)kind].LogicalEquals(ref kindLeft, ref kindRight);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber LogicalNotEquals(ref DSharpNumber left, ref DSharpNumber right)
+        {
+            if (left._type == right._type)
+            {
+                return left._type switch
+                {
+                    DSharpLiteralType.Bool => left._bool != right._bool,
+                    DSharpLiteralType.Byte => left._byte != right._byte,
+                    DSharpLiteralType.SByte => left._sbyte != right._sbyte,
+                    DSharpLiteralType.Char => left._char != right._char,
+                    DSharpLiteralType.Short => left._short != right._short,
+                    DSharpLiteralType.UShort => left._ushort != right._ushort,
+                    DSharpLiteralType.Int => left._int != right._int,
+                    DSharpLiteralType.UInt => left._uint != right._uint,
+                    DSharpLiteralType.Long => left._long != right._long,
+                    DSharpLiteralType.ULong => left._ulong != right._ulong,
+                    DSharpLiteralType.NInt => left._nint != right._nint,
+                    DSharpLiteralType.NUInt => left._nuint != right._nuint,
+                    DSharpLiteralType.Float => left._float != right._float,
+                    DSharpLiteralType.Double => left._double != right._double,
+                    DSharpLiteralType.Decimal => left._decimal != right._decimal,
+                    _ => throw new ArgumentException($"Invalid number type: {left._type}"),
+                };
+            }
+
+            var kind = GetKind(ref left, ref right, out var kindLeft, out var kindRight);
+            return _mathExecutors[(int)kind].LogicalNotEquals(ref kindLeft, ref kindRight);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber LogicalLess(ref DSharpNumber left, ref DSharpNumber right)
+        {
+            if (left._type == right._type)
+            {
+                return left._type switch
+                {
+                    DSharpLiteralType.Bool => left._byte < right._byte,
+                    DSharpLiteralType.Byte => left._byte < right._byte,
+                    DSharpLiteralType.SByte => left._sbyte < right._sbyte,
+                    DSharpLiteralType.Char => left._char < right._char,
+                    DSharpLiteralType.Short => left._short < right._short,
+                    DSharpLiteralType.UShort => left._ushort < right._ushort,
+                    DSharpLiteralType.Int => left._int < right._int,
+                    DSharpLiteralType.UInt => left._uint < right._uint,
+                    DSharpLiteralType.Long => left._long < right._long,
+                    DSharpLiteralType.ULong => left._ulong < right._ulong,
+                    DSharpLiteralType.NInt => left._nint < right._nint,
+                    DSharpLiteralType.NUInt => left._nuint < right._nuint,
+                    DSharpLiteralType.Float => left._float < right._float,
+                    DSharpLiteralType.Double => left._double < right._double,
+                    DSharpLiteralType.Decimal => left._decimal < right._decimal,
+                    _ => throw new ArgumentException($"Invalid number type: {left._type}"),
+                };
+            }
+
+            var kind = GetKind(ref left, ref right, out var kindLeft, out var kindRight);
+            return _mathExecutors[(int)kind].LogicalLess(ref kindLeft, ref kindRight);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber LogicalLessOrEquals(ref DSharpNumber left, ref DSharpNumber right)
+        {
+            if (left._type == right._type)
+            {
+                return left._type switch
+                {
+                    DSharpLiteralType.Bool => left._byte <= right._byte,
+                    DSharpLiteralType.Byte => left._byte <= right._byte,
+                    DSharpLiteralType.SByte => left._sbyte <= right._sbyte,
+                    DSharpLiteralType.Char => left._char <= right._char,
+                    DSharpLiteralType.Short => left._short <= right._short,
+                    DSharpLiteralType.UShort => left._ushort <= right._ushort,
+                    DSharpLiteralType.Int => left._int <= right._int,
+                    DSharpLiteralType.UInt => left._uint <= right._uint,
+                    DSharpLiteralType.Long => left._long <= right._long,
+                    DSharpLiteralType.ULong => left._ulong <= right._ulong,
+                    DSharpLiteralType.NInt => left._nint <= right._nint,
+                    DSharpLiteralType.NUInt => left._nuint <= right._nuint,
+                    DSharpLiteralType.Float => left._float <= right._float,
+                    DSharpLiteralType.Double => left._double <= right._double,
+                    DSharpLiteralType.Decimal => left._decimal <= right._decimal,
+                    _ => throw new ArgumentException($"Invalid number type: {left._type}"),
+                };
+            }
+
+            var kind = GetKind(ref left, ref right, out var kindLeft, out var kindRight);
+            return _mathExecutors[(int)kind].LogicalLessOrEquals(ref kindLeft, ref kindRight);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber LogicalGreater(ref DSharpNumber left, ref DSharpNumber right)
+        {
+            if (left._type == right._type)
+            {
+                return left._type switch
+                {
+                    DSharpLiteralType.Bool => left._byte > right._byte,
+                    DSharpLiteralType.Byte => left._byte > right._byte,
+                    DSharpLiteralType.SByte => left._sbyte > right._sbyte,
+                    DSharpLiteralType.Char => left._char > right._char,
+                    DSharpLiteralType.Short => left._short > right._short,
+                    DSharpLiteralType.UShort => left._ushort > right._ushort,
+                    DSharpLiteralType.Int => left._int > right._int,
+                    DSharpLiteralType.UInt => left._uint > right._uint,
+                    DSharpLiteralType.Long => left._long > right._long,
+                    DSharpLiteralType.ULong => left._ulong > right._ulong,
+                    DSharpLiteralType.NInt => left._nint > right._nint,
+                    DSharpLiteralType.NUInt => left._nuint > right._nuint,
+                    DSharpLiteralType.Float => left._float > right._float,
+                    DSharpLiteralType.Double => left._double > right._double,
+                    DSharpLiteralType.Decimal => left._decimal > right._decimal,
+                    _ => throw new ArgumentException($"Invalid number type: {left._type}"),
+                };
+            }
+
+            var kind = GetKind(ref left, ref right, out var kindLeft, out var kindRight);
+            return _mathExecutors[(int)kind].LogicalGreater(ref kindLeft, ref kindRight);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber LogicalGreaterOrEquals(ref DSharpNumber left, ref DSharpNumber right)
+        {
+            if (left._type == right._type)
+            {
+                return left._type switch
+                {
+                    DSharpLiteralType.Bool => left._byte >= right._byte,
+                    DSharpLiteralType.Byte => left._byte >= right._byte,
+                    DSharpLiteralType.SByte => left._sbyte >= right._sbyte,
+                    DSharpLiteralType.Char => left._char >= right._char,
+                    DSharpLiteralType.Short => left._short >= right._short,
+                    DSharpLiteralType.UShort => left._ushort >= right._ushort,
+                    DSharpLiteralType.Int => left._int >= right._int,
+                    DSharpLiteralType.UInt => left._uint >= right._uint,
+                    DSharpLiteralType.Long => left._long >= right._long,
+                    DSharpLiteralType.ULong => left._ulong >= right._ulong,
+                    DSharpLiteralType.NInt => left._nint >= right._nint,
+                    DSharpLiteralType.NUInt => left._nuint >= right._nuint,
+                    DSharpLiteralType.Float => left._float >= right._float,
+                    DSharpLiteralType.Double => left._double >= right._double,
+                    DSharpLiteralType.Decimal => left._decimal >= right._decimal,
+                    _ => throw new ArgumentException($"Invalid number type: {left._type}"),
+                };
+            }
+
+            var kind = GetKind(ref left, ref right, out var kindLeft, out var kindRight);
+            return _mathExecutors[(int)kind].LogicalGreaterOrEquals(ref kindLeft, ref kindRight);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public unsafe static DSharpNumber Invert(ref DSharpNumber value)
+        {
+            return value._type switch
+            {
+                DSharpLiteralType.Bool => !value._bool,
+                DSharpLiteralType.Byte => -value._byte,
+                DSharpLiteralType.SByte => -value._sbyte,
+                DSharpLiteralType.Char => -value._char,
+                DSharpLiteralType.Short => -value._short,
+                DSharpLiteralType.UShort => -value._ushort,
+                DSharpLiteralType.Int => -value._int,
+                DSharpLiteralType.UInt => -value._uint,
+                DSharpLiteralType.Long => -value._long,
+                DSharpLiteralType.ULong => value._ulong == 0 ? ulong.MaxValue : 0UL,
+                DSharpLiteralType.NInt => -value._nint,
+                DSharpLiteralType.NUInt => (nuint)(value._nuint == 0 ? (sizeof(nuint) == sizeof(ulong) ? ulong.MaxValue : uint.MaxValue) : 0),
+                DSharpLiteralType.Float => -value._float,
+                DSharpLiteralType.Double => -value._double,
+                DSharpLiteralType.Decimal => -value._decimal,
+                _ => throw new ArgumentException($"Invalid number type: {value._type}"),
+            };
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber Not(ref DSharpNumber value)
+        {
+            return Invert(ref value);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber Increment(ref DSharpNumber value)
+        {
+            return value._type switch
+            {
+                DSharpLiteralType.Bool => true,
+                DSharpLiteralType.Byte => unchecked(value._byte + 1),
+                DSharpLiteralType.SByte => unchecked(value._sbyte + 1),
+                DSharpLiteralType.Char => unchecked(value._char + 1),
+                DSharpLiteralType.Short => unchecked(value._short + 1),
+                DSharpLiteralType.UShort => unchecked(value._ushort + 1),
+                DSharpLiteralType.Int => unchecked(value._int + 1),
+                DSharpLiteralType.UInt => unchecked(value._uint + 1),
+                DSharpLiteralType.Long => unchecked(value._long + 1),
+                DSharpLiteralType.ULong => unchecked(value._ulong + 1),
+                DSharpLiteralType.NInt => unchecked(value._nint + 1),
+                DSharpLiteralType.NUInt => unchecked(value._nuint + 1),
+                DSharpLiteralType.Float => unchecked(value._float + 1),
+                DSharpLiteralType.Double => unchecked(value._double + 1),
+                DSharpLiteralType.Decimal => unchecked(value._decimal + 1),
+                _ => throw new ArgumentException($"Invalid number type: {value._type}"),
+            };
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber Decrement(ref DSharpNumber value)
+        {
+            return value._type switch
+            {
+                DSharpLiteralType.Bool => false,
+                DSharpLiteralType.Byte => unchecked(value._byte - 1),
+                DSharpLiteralType.SByte => unchecked(value._sbyte - 1),
+                DSharpLiteralType.Char => unchecked(value._char - 1),
+                DSharpLiteralType.Short => unchecked(value._short - 1),
+                DSharpLiteralType.UShort => unchecked(value._ushort - 1),
+                DSharpLiteralType.Int => unchecked(value._int - 1),
+                DSharpLiteralType.UInt => unchecked(value._uint - 1),
+                DSharpLiteralType.Long => unchecked(value._long - 1),
+                DSharpLiteralType.ULong => unchecked(value._ulong - 1),
+                DSharpLiteralType.NInt => unchecked(value._nint - 1),
+                DSharpLiteralType.NUInt => unchecked(value._nuint - 1),
+                DSharpLiteralType.Float => unchecked(value._float - 1),
+                DSharpLiteralType.Double => unchecked(value._double - 1),
+                DSharpLiteralType.Decimal => unchecked(value._decimal - 1),
+                _ => throw new ArgumentException($"Invalid number type: {value._type}"),
+            };
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static DSharpNumber BitInvert(ref DSharpNumber value)
+        {
+            return value._type switch
+            {
+                DSharpLiteralType.Bool => !value._bool,
+                DSharpLiteralType.Byte => ~value._byte,
+                DSharpLiteralType.SByte => ~value._sbyte,
+                DSharpLiteralType.Char => ~value._char,
+                DSharpLiteralType.Short => ~value._short,
+                DSharpLiteralType.UShort => ~value._ushort,
+                DSharpLiteralType.Int => ~value._int,
+                DSharpLiteralType.UInt => ~value._uint,
+                DSharpLiteralType.Long => ~value._long,
+                DSharpLiteralType.ULong => ~value._ulong,
+                DSharpLiteralType.NInt => ~value._nint,
+                DSharpLiteralType.NUInt => ~value._nuint,
+                DSharpLiteralType.Float => ~value._float,
+                DSharpLiteralType.Double => ~value._double,
+                DSharpLiteralType.Decimal => ~value._decimal,
+                _ => throw new ArgumentException($"Invalid number type: {value._type}"),
+            };
         }
 
         #endregion
 
         #region Static
 
-        public static readonly DSharpNumberMathExecutor Instance = new();
-
-        private static readonly Dictionary<DSharpNumberKind, IDSharpNumberMathExecutor> _mathExecutors = new()
+        private static readonly IDSharpNumberMathExecutor[] _mathExecutors =
         {
-            [DSharpNumberKind.Int64] = DSharpInt64MathExecutor.Instance,
-            [DSharpNumberKind.UInt64] = DSharpUInt64MathExecutor.Instance,
-            [DSharpNumberKind.Double] = DSharpDoubleMathExecutor.Instance,
-            [DSharpNumberKind.Decimal] = DSharpDecimalMathExecutor.Instance,
+            DSharpInt64MathExecutor.Instance,
+            DSharpUInt64MathExecutor.Instance,
+            DSharpDoubleMathExecutor.Instance,
+            DSharpDecimalMathExecutor.Instance,
         };
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpNumber Perform(DSharpNumber value, DSharpUnaryOperator @operator)
+        public static DSharpNumber Perform(ref DSharpNumber value, DSharpUnaryOperator @operator)
         {
             return @operator switch
             {
-                DSharpUnaryOperator.Minus => Instance.Invert(value),
-                DSharpUnaryOperator.Not => Instance.Not(value),
-                DSharpUnaryOperator.Increment => Instance.Increment(value),
-                DSharpUnaryOperator.Decrement => Instance.Decrement(value),
-                DSharpUnaryOperator.BitInvert => Instance.BitInvert(value),
+                DSharpUnaryOperator.Minus => Invert(ref value),
+                DSharpUnaryOperator.Not => Not(ref value),
+                DSharpUnaryOperator.Increment => Increment(ref value),
+                DSharpUnaryOperator.Decrement => Decrement(ref value),
+                DSharpUnaryOperator.BitInvert => BitInvert(ref value),
                 _ => throw new ArgumentException($"Invalid unary operator \"{@operator}\"", nameof(@operator))
             };
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpNumber Perform(DSharpNumber left, DSharpNumber right, DSharpBinaryOperator @operator)
+        public static DSharpNumber Perform(ref DSharpNumber left, ref DSharpNumber right, DSharpBinaryOperator @operator)
         {
             return @operator switch
             {
-                DSharpBinaryOperator.Plus => Instance.Add(left, right),
-                DSharpBinaryOperator.Minus => Instance.Subtract(left, right),
-                DSharpBinaryOperator.Multiply => Instance.Multiply(left, right),
-                DSharpBinaryOperator.Divide => Instance.Divide(left, right),
-                DSharpBinaryOperator.Mod => Instance.Mod(left, right),
-                DSharpBinaryOperator.LogicalXor => Instance.Xor(left, right),
-                DSharpBinaryOperator.Or => Instance.Or(left, right),
-                DSharpBinaryOperator.And => Instance.And(left, right),
-                DSharpBinaryOperator.ShiftLeft => Instance.ShiftLeft(left, right),
-                DSharpBinaryOperator.ShiftRight => Instance.ShiftRight(left, right),
-                DSharpBinaryOperator.LogicalAnd => Instance.LogicalAnd(left, right),
-                DSharpBinaryOperator.LogicalOr => Instance.LogicalOr(left, right),
-                DSharpBinaryOperator.LogicalEquals => Instance.LogicalEquals(left, right),
-                DSharpBinaryOperator.LogicalNotEquals => Instance.LogicalNotEquals(left, right),
-                DSharpBinaryOperator.LogicalLess => Instance.LogicalLess(left, right),
-                DSharpBinaryOperator.LogicalLessOrEquals => Instance.LogicalLessOrEquals(left, right),
-                DSharpBinaryOperator.LogicalGreater => Instance.LogicalGreater(left, right),
-                DSharpBinaryOperator.LogicalGreaterOrEquals => Instance.LogicalGreaterOrEquals(left, right),
+                DSharpBinaryOperator.Plus => Add(ref left, ref right),
+                DSharpBinaryOperator.Minus => Subtract(ref left, ref right),
+                DSharpBinaryOperator.Multiply => Multiply(ref left, ref right),
+                DSharpBinaryOperator.Divide => Divide(ref left, ref right),
+                DSharpBinaryOperator.Mod => Mod(ref left, ref right),
+                DSharpBinaryOperator.LogicalXor => Xor(ref left, ref right),
+                DSharpBinaryOperator.Or => Or(ref left, ref right),
+                DSharpBinaryOperator.And => And(ref left, ref right),
+                DSharpBinaryOperator.ShiftLeft => ShiftLeft(ref left, ref right),
+                DSharpBinaryOperator.ShiftRight => ShiftRight(ref left, ref right),
+                DSharpBinaryOperator.LogicalAnd => LogicalAnd(ref left, ref right),
+                DSharpBinaryOperator.LogicalOr => LogicalOr(ref left, ref right),
+                DSharpBinaryOperator.LogicalEquals => LogicalEquals(ref left, ref right),
+                DSharpBinaryOperator.LogicalNotEquals => LogicalNotEquals(ref left, ref right),
+                DSharpBinaryOperator.LogicalLess => LogicalLess(ref left, ref right),
+                DSharpBinaryOperator.LogicalLessOrEquals => LogicalLessOrEquals(ref left, ref right),
+                DSharpBinaryOperator.LogicalGreater => LogicalGreater(ref left, ref right),
+                DSharpBinaryOperator.LogicalGreaterOrEquals => LogicalGreaterOrEquals(ref left, ref right),
                 _ => throw new ArgumentException($"Invalid binary operator \"{@operator}\"", nameof(@operator))
             };
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpNumberKind GetKindAndConvert(DSharpNumber value, out DSharpNumber convertedValue)
+        public static DSharpNumberKind GetKindAndConvert(ref DSharpNumber value, out DSharpNumber convertedValue)
         {
-            var result = GetKind(value);
-            convertedValue = Convert(value, result);
+            var result = GetKind(ref value);
+            convertedValue = Convert(ref value, result);
 
             return result;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpNumberKind GetKindAndBigger(DSharpNumber left, DSharpNumber right, out DSharpLiteralType biggerType, out DSharpNumber convertedLeft, out DSharpNumber convertedRight)
+        public static DSharpNumberKind GetKindAndBigger(ref DSharpNumber left, ref DSharpNumber right, out DSharpLiteralType biggerType, out DSharpNumber convertedLeft, out DSharpNumber convertedRight)
         {
-            biggerType = GetBiggerType(left, right);
-            return GetKind(left, right, out convertedLeft, out convertedRight);
+            biggerType = GetBiggerType(ref left, ref right);
+            return GetKind(ref left, ref right, out convertedLeft, out convertedRight);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpLiteralType GetBiggerType(DSharpNumber left, DSharpNumber right)
+        public static DSharpLiteralType GetBiggerType(ref DSharpNumber left, ref DSharpNumber right)
         {
             return (DSharpLiteralType)Math.Max((byte)left.Type, (byte)right.Type);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpNumberKind GetKind(DSharpNumber left, DSharpNumber right, out DSharpNumber convertedLeft, out DSharpNumber convertedRight)
+        public static DSharpNumberKind GetKind(ref DSharpNumber left, ref DSharpNumber right, out DSharpNumber convertedLeft, out DSharpNumber convertedRight)
         {
-            var leftKind = GetKind(left);
-            var rightKind = GetKind(right);
+            var leftKind = GetKind(ref left);
+            var rightKind = GetKind(ref right);
             var result = (DSharpNumberKind)Math.Max((int)leftKind, (int)rightKind);
 
-            convertedLeft = Convert(left, result);
-            convertedRight = Convert(right, result);
+            convertedLeft = Convert(ref left, result);
+            convertedRight = Convert(ref right, result);
 
             return result;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpNumberKind GetKind(DSharpNumber number)
+        public static DSharpNumberKind GetKind(ref DSharpNumber number)
         {
             var type = number.Type;
 
@@ -229,7 +723,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static DSharpNumber Convert(DSharpNumber number, DSharpNumberKind kind)
+        private static DSharpNumber Convert(ref DSharpNumber number, DSharpNumberKind kind)
         {
             return kind switch
             {

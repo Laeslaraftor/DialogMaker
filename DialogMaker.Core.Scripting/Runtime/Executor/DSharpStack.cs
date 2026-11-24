@@ -1,10 +1,7 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
-using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
-using Newtonsoft.Json.Linq;
+﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
 using System.Collections;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
 {
@@ -14,7 +11,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     /// <param name="memoryManager">Memory manager for allocating memory for stack</param>
     /// <param name="stackCapacity">Stack capacity in frames</param>
     public unsafe class DSharpStack(DSharpVmMemoryManager memoryManager, DSharpRuntimeInformationProvider runtimeInformationProvider, int stackCapacity)
-        : Disposable, IEnumerable<DSharpStack.FrameInfo>
+        : DSharpDisposable, IEnumerable<DSharpStack.FrameInfo>
     {
         /// <summary>
         /// Create new instance of D# stack
@@ -242,61 +239,76 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             return true;
         }
-        public void Push(DSharpNumber number)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Push(DSharpNumber* number)
         {
-            switch (number._type)
-            {
-                case DSharpLiteralType.Null:
-                    PushNull();
-                    break;
-                case DSharpLiteralType.Bool:
-                    Push(number._bool);
-                    break;
-                case DSharpLiteralType.Byte:
-                    Push(number._byte);
-                    break;
-                case DSharpLiteralType.SByte:
-                    Push(number._sbyte);
-                    break;
-                case DSharpLiteralType.Char:
-                    Push(number._char);
-                    break;
-                case DSharpLiteralType.Short:
-                    Push(number._short);
-                    break;
-                case DSharpLiteralType.UShort:
-                    Push(number._ushort);
-                    break;
-                case DSharpLiteralType.Int:
-                    Push(number._int);
-                    break;
-                case DSharpLiteralType.UInt:
-                    Push(number._uint);
-                    break;
-                case DSharpLiteralType.Long:
-                    Push(number._long);
-                    break;
-                case DSharpLiteralType.ULong:
-                    Push(number._ulong);
-                    break;
-                case DSharpLiteralType.NInt:
-                    Push(number._nint);
-                    break;
-                case DSharpLiteralType.NUInt:
-                    Push(number._nuint);
-                    break;
-                case DSharpLiteralType.Float:
-                    Push(number._float);
-                    break;
-                case DSharpLiteralType.Double:
-                    Push(number._double);
-                    break;
-                case DSharpLiteralType.Decimal:
-                    Push(number._decimal);
-                    break;
-                default:
-                    throw new ArgumentException($"Unsupported literal type: {number._type}");
-            }
+            var type = _runtimeInformationProvider.GetRuntimeInfo(number->_type);
+            var size = number->Size;
+            var pointer = &number;
+
+            var frame = AllocateSized(DSharpStackValueType.Structure, size + sizeof(DSharpObject));
+            frame->IsNumber = true;
+
+            DSharpObject obj = default;
+            obj.Type = type;
+            obj.Attributes = DSharpObjectAttributes.StoredInBuffer;
+
+            Unsafe.WriteUnaligned((void*)frame->StackPointer, obj);
+            Unsafe.CopyBlockUnaligned((void*)(frame->StackPointer + sizeof(DSharpObject)), number, (uint)size);
+
+            //switch (number._type)
+            //{
+            //    case DSharpLiteralType.Null:
+            //        PushNull();
+            //        break;
+            //    case DSharpLiteralType.Bool:
+            //        Push(number._bool);
+            //        break;
+            //    case DSharpLiteralType.Byte:
+            //        Push(number._byte);
+            //        break;
+            //    case DSharpLiteralType.SByte:
+            //        Push(number._sbyte);
+            //        break;
+            //    case DSharpLiteralType.Char:
+            //        Push(number._char);
+            //        break;
+            //    case DSharpLiteralType.Short:
+            //        Push(number._short);
+            //        break;
+            //    case DSharpLiteralType.UShort:
+            //        Push(number._ushort);
+            //        break;
+            //    case DSharpLiteralType.Int:
+            //        Push(number._int);
+            //        break;
+            //    case DSharpLiteralType.UInt:
+            //        Push(number._uint);
+            //        break;
+            //    case DSharpLiteralType.Long:
+            //        Push(number._long);
+            //        break;
+            //    case DSharpLiteralType.ULong:
+            //        Push(number._ulong);
+            //        break;
+            //    case DSharpLiteralType.NInt:
+            //        Push(number._nint);
+            //        break;
+            //    case DSharpLiteralType.NUInt:
+            //        Push(number._nuint);
+            //        break;
+            //    case DSharpLiteralType.Float:
+            //        Push(number._float);
+            //        break;
+            //    case DSharpLiteralType.Double:
+            //        Push(number._double);
+            //        break;
+            //    case DSharpLiteralType.Decimal:
+            //        Push(number._decimal);
+            //        break;
+            //    default:
+            //        throw new ArgumentException($"Unsupported literal type: {number._type}");
+            //}
         }
         public void Push(DSharpLiteralType type, nint valuePointer)
         {
@@ -630,10 +642,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 }
 
                 Unsafe.CopyBlockUnaligned(destinationStack, (void*)sourceFrame->StackPointer, (uint)sourceFrame->Size);
-                //for (int d = 0; d < sourceFrame->Size; d++)
-                //{
-                //    destinationStack[d] = *(byte*)(sourceFrame->StackPointer + d);
-                //}
 
                 destinationStackOffset += sourceFrame->Size - destinationFrame->Size;
                 sourceFrame->StackPointer = (nint)destinationStack;
@@ -794,6 +802,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             return delta;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private FrameInfo* AllocateValue<T>(DSharpStackValueType type, T value)
             where T : unmanaged
         {
@@ -803,6 +812,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
             return frame;
         }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private FrameInfo* AllocateSized(DSharpStackValueType type, int size)
         {
             if (IsDisposed)

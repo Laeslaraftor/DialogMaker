@@ -90,6 +90,164 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
 
         }
+        extension(float)
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static float operator |(float left, float right)
+            {
+                return BitConverter.Int32BitsToSingle(BitConverter.SingleToInt32Bits(left) | BitConverter.SingleToInt32Bits(right));
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static float operator &(float left, float right)
+            {
+                return BitConverter.Int32BitsToSingle(BitConverter.SingleToInt32Bits(left) & BitConverter.SingleToInt32Bits(right));
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static float operator >>(float left, float right)
+            {
+                return BitConverter.Int32BitsToSingle(BitConverter.SingleToInt32Bits(left) >> unchecked((int)right));
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static float operator <<(float left, float right)
+            {
+                return BitConverter.Int32BitsToSingle(BitConverter.SingleToInt32Bits(left) << unchecked((int)right));
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static float operator ^(float left, float right)
+            {
+                return BitConverter.Int32BitsToSingle(BitConverter.SingleToInt32Bits(left) ^ BitConverter.SingleToInt32Bits(right));
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static float operator ~(float value)
+            {
+                return BitConverter.Int32BitsToSingle(~BitConverter.SingleToInt32Bits(value));
+            }
+        }
+        extension(double)
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static double operator |(double left, double right)
+            {
+                return BitConverter.Int64BitsToDouble(BitConverter.DoubleToInt64Bits(left) | BitConverter.DoubleToInt64Bits(right));
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static double operator &(double left, double right)
+            {
+                return BitConverter.Int64BitsToDouble(BitConverter.DoubleToInt64Bits(left) & BitConverter.DoubleToInt64Bits(right));
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static double operator >>(double left, double right)
+            {
+                return BitConverter.Int64BitsToDouble(BitConverter.DoubleToInt64Bits(left) >> unchecked((int)right));
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static double operator <<(double left, double right)
+            {
+                return BitConverter.Int64BitsToDouble(BitConverter.DoubleToInt64Bits(left) << unchecked((int)right));
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static double operator ^(double left, double right)
+            {
+                return BitConverter.Int64BitsToDouble(BitConverter.DoubleToInt64Bits(left) ^ BitConverter.DoubleToInt64Bits(right));
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static double operator ~(double value)
+            {
+                return BitConverter.Int64BitsToDouble(~BitConverter.DoubleToInt64Bits(value));
+            }
+        }
+        extension(decimal)
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static decimal operator |(decimal left, decimal right)
+            {
+                decimal result = 0;
+                decimal* v = &result;
+                int* l = (int*)&left;
+                int* r = (int*)&right;
+
+                for (int i = 0; i < sizeof(decimal) / sizeof(int); i++)
+                {
+                    v[i] = l[i] | r[i];
+                }
+
+                return result;
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static decimal operator &(decimal left, decimal right)
+            {
+                decimal result = 0;
+                decimal* v = &result;
+                int* l = (int*)&left;
+                int* r = (int*)&right;
+
+                for (int i = 0; i < sizeof(decimal) / sizeof(int); i++)
+                {
+                    v[i] = l[i] & r[i];
+                }
+
+                return result;
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static decimal operator >>(decimal left, decimal right)
+            {
+                decimal result = 0;
+                decimal* v = &result;
+                int* l = (int*)&left;
+                int shift = unchecked((int)right);
+
+                for (int i = 0; i < sizeof(decimal) / sizeof(int); i++)
+                {
+                    v[i] = l[i] >> shift;
+                }
+
+                return result;
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static decimal operator <<(decimal left, decimal right)
+            {
+                decimal result = 0;
+                decimal* v = &result;
+                int* l = (int*)&left;
+                int shift = unchecked((int)right);
+
+                for (int i = 0; i < sizeof(decimal) / sizeof(int); i++)
+                {
+                    v[i] = l[i] << shift;
+                }
+
+                return result;
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static decimal operator ^(decimal left, decimal right)
+            {
+                decimal result = 0;
+                decimal* v = &result;
+                int* l = (int*)&left;
+                int* r = (int*)&right;
+
+                for (int i = 0; i < sizeof(decimal) / sizeof(int); i++)
+                {
+                    v[i] = l[i] ^ r[i];
+                }
+
+                return result;
+            }
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public static decimal operator ~(decimal value)
+            {
+                decimal result = 0;
+                decimal* v = &result;
+                int* l = (int*)&value;
+
+                for (int i = 0; i < sizeof(decimal) / sizeof(int); i++)
+                {
+                    v[i] = ~l[i];
+                }
+
+                return result;
+            }
+        }
 
         /// <summary>
         /// Check specified is buffer empty (all values is 0)

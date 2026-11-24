@@ -1,4 +1,6 @@
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -22,9 +24,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             var number = lastValue.ReadAsNumber();
             var obj = lastValue.ReadAsObject();
 
-            number++;
-
-            number.Write(DSharpObject.GetData(obj));
+            number = DSharpNumberMathExecutor.Increment(ref number);
+            Unsafe.CopyBlockUnaligned(DSharpObject.GetData(obj), &number, (uint)number.Size);
+            //number.Write(DSharpObject.GetData(obj));
 
             return DSharpMethodExecutionCallback.Complete();
         }

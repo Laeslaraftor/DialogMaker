@@ -1,3 +1,5 @@
+using DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors;
+
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
     /// <summary>
@@ -7,21 +9,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     {
         #region Controls
 
-        public override unsafe delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
+        public override delegate*<DSharpRuntimeInstruction*, ref DSharpExecutionContext, DSharpMethodExecutionCallback> GetExecutorPointer()
         {
             return &InstanceExecute;
         }
-        protected override DSharpNumber PerformMathOperation(in DSharpNumber left, in DSharpNumber right, ref DSharpExecutionContext context, out DSharpMethodExecutionCallback? error)
+        protected override sealed DSharpNumber PerformMathOperation(ref DSharpNumber left, ref DSharpNumber right, ref DSharpExecutionContext context)
         {
             try
             {
-                error = null;
-                return left / right;
+                return DSharpNumberMathExecutor.Divide(ref left, ref right);
             }
             catch (DivideByZeroException)
             {
-                error = context.ThrowDivideByZeroException();
-                return 0;
+                DSharpNumber result = default;
+                result._type = DSharpLiteralType.Null;
+
+                return result;
             }
         }
 

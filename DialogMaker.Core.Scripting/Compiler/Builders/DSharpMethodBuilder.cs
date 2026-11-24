@@ -148,7 +148,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             set;
         }
         public List<DSharpMethodBuilderParameter> Parameters { get; } = [];
-        public ReferenceReadOnlyList<DSharpTypeBuilder> GenericParameters
+        public ReadOnlyCollection<DSharpTypeBuilder> GenericParameters
         {
             get
             {

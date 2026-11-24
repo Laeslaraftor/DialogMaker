@@ -4,101 +4,101 @@
     {
         public static readonly DSharpUInt64MathExecutor Instance = new();
 
-        public DSharpNumber Add(DSharpNumber left, DSharpNumber right)
+        public DSharpNumber Add(ref DSharpNumber left, ref DSharpNumber right)
         {
             return unchecked(left.Read<ulong>() + right.Read<ulong>());
         }
-        public DSharpNumber Subtract(DSharpNumber left, DSharpNumber right)
+        public DSharpNumber Subtract(ref DSharpNumber left, ref DSharpNumber right)
         {
             return unchecked(left.Read<ulong>() - right.Read<ulong>());
         }
-        public DSharpNumber Mod(DSharpNumber left, DSharpNumber right)
+        public DSharpNumber Mod(ref DSharpNumber left, ref DSharpNumber right)
         {
             return unchecked(left.Read<ulong>() % right.Read<ulong>());
         }
-        public DSharpNumber Multiply(DSharpNumber left, DSharpNumber right)
+        public DSharpNumber Multiply(ref DSharpNumber left, ref DSharpNumber right)
         {
             return unchecked(left.Read<ulong>() * right.Read<ulong>());
         }
-        public DSharpNumber Divide(DSharpNumber left, DSharpNumber right)
+        public DSharpNumber Divide(ref DSharpNumber left, ref DSharpNumber right)
         {
             return unchecked(left.Read<ulong>() / right.Read<ulong>());
         }
-        public DSharpNumber Xor(DSharpNumber left, DSharpNumber right)
+        public DSharpNumber Xor(ref DSharpNumber left, ref DSharpNumber right)
         {
             return unchecked(left.Read<ulong>() ^ right.Read<ulong>());
         }
-        public DSharpNumber Or(DSharpNumber left, DSharpNumber right)
+        public DSharpNumber Or(ref DSharpNumber left, ref DSharpNumber right)
         {
             return left.Read<ulong>() | right.Read<ulong>();
         }
-        public DSharpNumber And(DSharpNumber left, DSharpNumber right)
+        public DSharpNumber And(ref DSharpNumber left, ref DSharpNumber right)
         {
             return left.Read<ulong>() & right.Read<ulong>();
         }
-        public DSharpNumber ShiftLeft(DSharpNumber left, DSharpNumber right)
+        public DSharpNumber ShiftLeft(ref DSharpNumber left, ref DSharpNumber right)
         {
             return unchecked(left.Read<ulong>() << (int)right.Read<ulong>());
         }
-        public DSharpNumber ShiftRight(DSharpNumber left, DSharpNumber right)
+        public DSharpNumber ShiftRight(ref DSharpNumber left, ref DSharpNumber right)
         {
             return unchecked(left.Read<ulong>() >> (int)right.Read<ulong>());
         }
 
-        public DSharpNumber LogicalAnd(DSharpNumber left, DSharpNumber right)
+        public DSharpNumber LogicalAnd(ref DSharpNumber left, ref DSharpNumber right)
         {
             return left.Read<ulong>() != 0 && right.Read<ulong>() != 0;
         }
-        public DSharpNumber LogicalOr(DSharpNumber left, DSharpNumber right)
+        public DSharpNumber LogicalOr(ref DSharpNumber left, ref DSharpNumber right)
         {
             return left.Read<ulong>() != 0 || right.Read<ulong>() != 0;
         }
 
-        public DSharpNumber LogicalEquals(DSharpNumber left, DSharpNumber right)
+        public DSharpNumber LogicalEquals(ref DSharpNumber left, ref DSharpNumber right)
         {
             return left.Read<ulong>() == right.Read<ulong>();
         }
-        public DSharpNumber LogicalNotEquals(DSharpNumber left, DSharpNumber right)
+        public DSharpNumber LogicalNotEquals(ref DSharpNumber left, ref DSharpNumber right)
         {
             return left.Read<ulong>() != right.Read<ulong>();
         }
 
-        public DSharpNumber LogicalLess(DSharpNumber left, DSharpNumber right)
+        public DSharpNumber LogicalLess(ref DSharpNumber left, ref DSharpNumber right)
         {
             return left.Read<ulong>() < right.Read<ulong>();
         }
-        public DSharpNumber LogicalLessOrEquals(DSharpNumber left, DSharpNumber right)
+        public DSharpNumber LogicalLessOrEquals(ref DSharpNumber left, ref DSharpNumber right)
         {
             return left.Read<ulong>() <= right.Read<ulong>();
         }
-        public DSharpNumber LogicalGreater(DSharpNumber left, DSharpNumber right)
+        public DSharpNumber LogicalGreater(ref DSharpNumber left, ref DSharpNumber right)
         {
             return left.Read<ulong>() > right.Read<ulong>();
         }
-        public DSharpNumber LogicalGreaterOrEquals(DSharpNumber left, DSharpNumber right)
+        public DSharpNumber LogicalGreaterOrEquals(ref DSharpNumber left, ref DSharpNumber right)
         {
             return left.Read<ulong>() >= right.Read<ulong>();
         }
 
-        public DSharpNumber Invert(DSharpNumber value)
+        public DSharpNumber Invert(ref DSharpNumber value)
         {
             var number = value.Read<ulong>();
             return number == 0 ? ulong.MaxValue : 0;
         }
-        public DSharpNumber Not(DSharpNumber value)
+        public DSharpNumber Not(ref DSharpNumber value)
         {
             var number = value.Read<ulong>();
             return number == 0 ? 1UL : 0UL;
         }
-        public DSharpNumber Increment(DSharpNumber value)
+        public DSharpNumber Increment(ref DSharpNumber value)
         {
             return unchecked(value.Read<ulong>() + 1);
         }
-        public DSharpNumber Decrement(DSharpNumber value)
+        public DSharpNumber Decrement(ref DSharpNumber value)
         {
             return unchecked(value.Read<ulong>() - 1);
         }
-        public DSharpNumber BitInvert(DSharpNumber value)
+        public DSharpNumber BitInvert(ref DSharpNumber value)
         {
             return ~value.Read<ulong>();
         }

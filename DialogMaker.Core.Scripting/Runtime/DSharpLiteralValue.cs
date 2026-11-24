@@ -1,10 +1,7 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
-using DialogMaker.Core.Scripting.Compiler.Lexer;
-using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Numerics;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime
@@ -392,7 +389,8 @@ namespace DialogMaker.Core.Scripting.Runtime
                 throw new ArgumentException("Performing math operation available only for number literal values", nameof(value));
             }
 
-            value._numberValue = DSharpNumber.MathOperation(value._numberValue.Value, @operator);
+            var number = value._numberValue.Value;
+            value._numberValue = DSharpNumber.MathOperation(ref number, @operator);
             value.Type = value._numberValue.Value.Type;
 
             return value;
@@ -424,7 +422,9 @@ namespace DialogMaker.Core.Scripting.Runtime
             }
 
             DSharpLiteralValue result = default;
-            result._numberValue = DSharpNumber.MathOperation(left._numberValue.Value, right._numberValue.Value, @operator);
+            var leftNumber = left._numberValue.Value;
+            var rightNumber = right._numberValue.Value;
+            result._numberValue = DSharpNumber.MathOperation(ref leftNumber, ref rightNumber, @operator);
             result.Type = result._numberValue.Value.Type;
 
             return result;

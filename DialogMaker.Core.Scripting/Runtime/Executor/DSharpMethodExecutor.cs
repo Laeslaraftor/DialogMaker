@@ -179,24 +179,54 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             DSharpMethodExecutionCallback? result = null;
             int instructionsLength = bytecode->Instructions.Length;
             var instructions = bytecode->Instructions.GetItemReference(0);
-            //Dictionary<DSharpBytecodeOperation, TimeSpan> operationsDurations = [];
-            //Stopwatch stopwatch = new();
+#if DEBUG
+            Dictionary<DSharpBytecodeOperation, OperationTime> operationsDurations = [];
+            Dictionary<DSharpBytecodeOperation, int> operationsCount = [];
+            Stopwatch stopwatch = new();
+#endif
 
             while (context.InstructionIndex < instructionsLength)
             {
                 var instructionIndex = context.InstructionIndex;
                 var instruction = &instructions[(int)instructionIndex];
 
-                //stopwatch.Restart();
+#if DEBUG
+                stopwatch.Restart();
+#endif
                 var callback = DSharpRuntimeInstruction.Execute(instruction, ref context);
-                //stopwatch.Stop();
+#if DEBUG
+                stopwatch.Stop();
 
-                //TimeSpan duration = stopwatch.Elapsed;
+                var operation = instruction->Operation;
+                TimeSpan duration = stopwatch.Elapsed;
 
-                //if (!operationsDurations.TryAdd(instruction->Operation, duration))
-                //{
-                //    operationsDurations[instruction->Operation] = duration;
-                //}
+                if (operationsDurations.TryGetValue(operation, out var timeInfo))
+                {
+                    if (duration > timeInfo.Max)
+                    {
+                        timeInfo.Max = duration;
+                    }
+
+                    timeInfo.Sum += duration;
+                    operationsDurations[operation] = timeInfo;
+                }
+                else
+                {
+                    operationsDurations.Add(operation, new()
+                    {
+                        Max = duration,
+                        Sum = duration
+                    });
+                }
+                if (operationsCount.TryGetValue(operation, out var count))
+                {
+                    operationsCount[operation] = count + 1;
+                }
+                else
+                {
+                    operationsCount.Add(operation, 1);
+                }
+#endif
 
                 if (context.InstructionIndex == instructionIndex)
                 {
@@ -212,8 +242,30 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             result ??= DSharpMethodExecutionCallback.Complete();
             executor->LastCallback = result;
 
+#if DEBUG
+            Debug.WriteLine(string.Empty);
+            Debug.WriteLine($"Execution time for \"{executor->MethodInfo->Name}\":");
+
+            foreach (var info in operationsDurations)
+            {
+                Debug.WriteLine($"{info.Key}: max {info.Value.Max}, avg {info.Value.Sum / operationsCount[info.Key]}");
+            }
+#endif
+
             return result.Value;
         }
+
+        #endregion
+
+        #region Types
+
+#if DEBUG
+        private struct OperationTime
+        {
+            public TimeSpan Max;
+            public TimeSpan Sum;
+        }
+#endif
 
         #endregion
     }

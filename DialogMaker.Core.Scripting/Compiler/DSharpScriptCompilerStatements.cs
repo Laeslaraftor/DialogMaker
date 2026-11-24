@@ -3,6 +3,7 @@ using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
+using System.Collections.ObjectModel;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -10,7 +11,7 @@ namespace DialogMaker.Core.Scripting.Compiler
     {
         internal event EventHandler<TypeSetupRequestEventArgs>? TypeToSetupRequested;
 
-        public ReferenceReadOnlyList<DSharpTypeBuilder> Types
+        public ReadOnlyCollection<DSharpTypeBuilder> Types
         {
             get
             {

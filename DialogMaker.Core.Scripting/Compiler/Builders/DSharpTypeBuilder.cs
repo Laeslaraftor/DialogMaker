@@ -71,7 +71,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 return result;
             }
         }
-        public ReferenceReadOnlyList<IDSharpType> BaseTypes
+        public ReadOnlyCollection<IDSharpType> BaseTypes
         {
             get
             {

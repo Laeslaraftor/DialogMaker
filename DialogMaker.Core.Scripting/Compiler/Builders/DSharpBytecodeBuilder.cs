@@ -3,7 +3,7 @@ using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
 using DialogMaker.Core.Scripting.Compiler.Lexer;
 using DialogMaker.Core.Scripting.Runtime;
 using DialogMaker.Core.Scripting.Runtime.Executor;
-using System.Data.Common;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace DialogMaker.Core.Scripting.Compiler.Builders
@@ -1414,7 +1414,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             return result;
         }
 
-        private T CreateInstruction<T>(params object?[] parameters)
+        private T CreateInstruction<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] T>(params object?[] parameters)
             where T : Instruction
         {
             var result = (T)Activator.CreateInstance(typeof(T), parameters)!;

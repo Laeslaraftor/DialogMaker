@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast.Nodes;
-using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
 using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
@@ -9,7 +8,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     /// </summary>
     /// <param name="executor">D# virtual machine</param>
     /// <param name="stackCapacity">Stack capacity in items</param>
-    public unsafe class DSharpThread(DSharpVm executor, DSharpObjectsContainer objectsContainer, DSharpVmMemoryManager memoryManager, IDSharpExternalMethodsProvider externalMethodsProvider, int stackCapacity) : Disposable
+    public unsafe class DSharpThread(DSharpVm executor, DSharpObjectsContainer objectsContainer, DSharpVmMemoryManager memoryManager, IDSharpExternalMethodsProvider externalMethodsProvider, int stackCapacity) 
+        : DSharpDisposable
     {
         /// <summary>
         /// D# virtual machine

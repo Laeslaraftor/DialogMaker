@@ -66,6 +66,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <typeparam name="T">Required number type</typeparam>
         /// <returns>Number</returns>
         /// <exception cref="InvalidOperationException">Invalid number type</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public T Read<T>() where T : unmanaged
         {
             var type = _type;
@@ -151,8 +152,13 @@ namespace DialogMaker.Core.Scripting.Runtime
                     throw new InvalidOperationException($"Invalid number type: {type}");
             };
         }
+        /// <summary>
+        /// Write number to buffer
+        /// </summary>
+        /// <param name="buffer">Buffer for writing number</param>
+        /// <exception cref="InvalidOperationException">Invalid number type</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Write(void* buffer)
+        public readonly void Write(void* buffer)
         {
             var type = _type;
 
@@ -263,7 +269,8 @@ namespace DialogMaker.Core.Scripting.Runtime
         }
         public readonly bool Equals(DSharpNumber other)
         {
-            return DSharpNumberMathExecutor.Instance.LogicalEquals(this, other).Read<bool>();
+            var current = this;
+            return DSharpNumberMathExecutor.LogicalEquals(ref current, ref other).Read<bool>();
         }
         public readonly override string ToString()
         {
@@ -294,26 +301,26 @@ namespace DialogMaker.Core.Scripting.Runtime
 
         #region Math operators
 
-        public static DSharpNumber operator ==(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Instance.LogicalEquals(left, right);
-        public static DSharpNumber operator !=(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Instance.LogicalNotEquals(left, right);
-        public static DSharpNumber operator +(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Instance.Add(left, right);
-        public static DSharpNumber operator -(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Instance.Subtract(left, right);
-        public static DSharpNumber operator *(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Instance.Multiply(left, right);
-        public static DSharpNumber operator /(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Instance.Divide(left, right);
-        public static DSharpNumber operator %(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Instance.Mod(left, right);
-        public static DSharpNumber operator ^(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Instance.Xor(left, right);
-        public static DSharpNumber operator <<(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Instance.ShiftLeft(left, right);
-        public static DSharpNumber operator >>(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Instance.ShiftRight(left, right);
-        public static DSharpNumber operator |(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Instance.Or(left, right);
-        public static DSharpNumber operator &(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Instance.And(left, right);
-        public static DSharpNumber operator >(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Instance.LogicalGreater(left, right);
-        public static DSharpNumber operator >=(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Instance.LogicalGreaterOrEquals(left, right);
-        public static DSharpNumber operator <(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Instance.LogicalLess(left, right);
-        public static DSharpNumber operator <=(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Instance.LogicalLessOrEquals(left, right);
-        public static DSharpNumber operator !(DSharpNumber value) => DSharpNumberMathExecutor.Instance.Not(value);
-        public static DSharpNumber operator ++(DSharpNumber value) => DSharpNumberMathExecutor.Instance.Increment(value);
-        public static DSharpNumber operator --(DSharpNumber value) => DSharpNumberMathExecutor.Instance.Decrement(value);
-        public static DSharpNumber operator ~(DSharpNumber value) => DSharpNumberMathExecutor.Instance.BitInvert(value);
+        public static DSharpNumber operator ==(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.LogicalEquals(ref left, ref right);
+        public static DSharpNumber operator !=(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.LogicalNotEquals(ref left, ref right);
+        public static DSharpNumber operator +(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Add(ref left, ref right);
+        public static DSharpNumber operator -(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Subtract(ref left, ref right);
+        public static DSharpNumber operator *(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Multiply(ref left, ref right);
+        public static DSharpNumber operator /(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Divide(ref left, ref right);
+        public static DSharpNumber operator %(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Mod(ref left, ref right);
+        public static DSharpNumber operator ^(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Xor(ref left, ref right);
+        public static DSharpNumber operator <<(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.ShiftLeft(ref left, ref right);
+        public static DSharpNumber operator >>(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.ShiftRight(ref left, ref right);
+        public static DSharpNumber operator |(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Or(ref left, ref right);
+        public static DSharpNumber operator &(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.And(ref left, ref right);
+        public static DSharpNumber operator >(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.LogicalGreater(ref left, ref right);
+        public static DSharpNumber operator >=(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.LogicalGreaterOrEquals(ref left, ref right);
+        public static DSharpNumber operator <(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.LogicalLess(ref left, ref right);
+        public static DSharpNumber operator <=(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.LogicalLessOrEquals(ref left, ref right);
+        public static DSharpNumber operator !(DSharpNumber value) => DSharpNumberMathExecutor.Not(ref value);
+        public static DSharpNumber operator ++(DSharpNumber value) => DSharpNumberMathExecutor.Increment(ref value);
+        public static DSharpNumber operator --(DSharpNumber value) => DSharpNumberMathExecutor.Decrement(ref value);
+        public static DSharpNumber operator ~(DSharpNumber value) => DSharpNumberMathExecutor.BitInvert(ref value);
 
         #endregion
 
@@ -381,12 +388,11 @@ namespace DialogMaker.Core.Scripting.Runtime
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DSharpNumber Create<T>(DSharpLiteralType type, T value) where T : unmanaged
         {
-            DSharpNumber* result = stackalloc DSharpNumber[1];
-            result->_decimal = 0;
-            result->_type = type;
-            Unsafe.WriteUnaligned(result, value);
+            Unsafe.SkipInit<DSharpNumber>(out var result);
+            result._type = type;
+            Unsafe.WriteUnaligned(&result, value);
 
-            return *result;
+            return result;
         }
 
         /// <summary>
@@ -396,9 +402,9 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <param name="operator">Math unary operator</param>
         /// <returns>Math operation result</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpNumber MathOperation(DSharpNumber value, DSharpUnaryOperator @operator)
+        public static DSharpNumber MathOperation(ref DSharpNumber value, DSharpUnaryOperator @operator)
         {
-            return DSharpNumberMathExecutor.Perform(value, @operator);
+            return DSharpNumberMathExecutor.Perform(ref value, @operator);
         }
         /// <summary>
         /// Perform math operation between numbers
@@ -408,9 +414,9 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <param name="operator">Math binary operator</param>
         /// <returns>Math operation result</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpNumber MathOperation(DSharpNumber left, DSharpNumber right, DSharpBinaryOperator @operator)
+        public static DSharpNumber MathOperation(ref DSharpNumber left, ref DSharpNumber right, DSharpBinaryOperator @operator)
         {
-            return DSharpNumberMathExecutor.Perform(left, right, @operator);
+            return DSharpNumberMathExecutor.Perform(ref left, ref right, @operator);
         }
 
         #endregion

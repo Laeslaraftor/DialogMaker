@@ -17,7 +17,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Lexer
         /// <summary>
         /// List of script tokens
         /// </summary>
-        public ReferenceReadOnlyList<DSharpToken> Tokens
+        public ReadOnlyCollection<DSharpToken> Tokens
         {
             get
             {

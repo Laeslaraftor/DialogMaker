@@ -1,4 +1,5 @@
 using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
@@ -22,8 +23,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             var number = lastValue.ReadAsNumber();
             var obj = lastValue.ReadAsObject();
 
-            number--;
-
+            number = DSharpNumberMathExecutor.Decrement(ref number);
             number.Write(DSharpObject.GetData(obj));
 
             return DSharpMethodExecutionCallback.Complete();

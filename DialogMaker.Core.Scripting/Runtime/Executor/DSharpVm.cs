@@ -9,7 +9,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     /// <summary>
     /// D# virtual machine
     /// </summary>
-    public class DSharpVm : Disposable
+    public class DSharpVm : DSharpDisposable
     {
         /// <param name="runtimeInformationProvider">Runtime information provider</param>
         /// <param name="stackCapacity">Stack capacity in items</param>

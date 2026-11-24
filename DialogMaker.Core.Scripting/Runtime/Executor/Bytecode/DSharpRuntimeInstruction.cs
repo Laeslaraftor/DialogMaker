@@ -66,18 +66,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         public static DSharpRuntimeInstruction Create(DSharpRuntimeInformationProvider typesProvider, ref MemoryBuilder memoryBuilder, UnmanagedStream* stream)
         {
             var operation = stream->Read<DSharpBytecodeOperation>();
-            var argsCountAttribute = operation.GetEnumAttribute<ArgsCountAttribute>();
-            int argumentsCount;
-
+            int argumentsCount = 0;
+            
+            if (DSharpBytecodeOperationHelper.Values.TryGetValue(operation, out var info) &&
+                info.ArgsCount != null)
+            {
+                argumentsCount = info.ArgsCount.Count;
+            }
             if (!DSharpInstructionExecutor.TryGetExecutor(operation, out var executor))
             {
                 throw new InvalidOperationException($"Unable to get executor for instruction: \"{operation}\"");
             }
-            if (argsCountAttribute == null || argsCountAttribute.Count == 0)
-            {
-                argumentsCount = 0;
-            }
-            else
+            if (argumentsCount > 0)
             {
                 int startArgumentsPosition = stream->Position;
                 argumentsCount = executor.GetArgumentsCount(typesProvider, stream);

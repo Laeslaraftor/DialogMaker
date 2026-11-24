@@ -1,4 +1,5 @@
-﻿#if NETSTANDARD2_1_OR_GREATER
+﻿using System.Collections;
+#if NETSTANDARD2_1_OR_GREATER
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -21,5 +22,25 @@ namespace DialogMaker.Core.Scripting
             }
         }
 #endif
+
+        extension(IEnumerable enumerable)
+        {
+            public int IndexOf(object item)
+            {
+                int index = 0;
+
+                foreach (var value in enumerable)
+                {
+                    if (Equals(value, item))
+                    {
+                        return index;
+                    }
+
+                    index++;
+                }
+
+                return -1;
+            }
+        }
     }
 }

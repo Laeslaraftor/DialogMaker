@@ -32,6 +32,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <typeparam name="T">Destination type</typeparam>
         /// <param name="number">Number that need to be converted</param>
         /// <returns>Converted value</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T Convert<T>(in DSharpNumber number) where T : unmanaged
         {
             var size = sizeof(T);

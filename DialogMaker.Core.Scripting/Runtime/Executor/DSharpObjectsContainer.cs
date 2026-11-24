@@ -1,5 +1,4 @@
-﻿using Acly.Data;
-using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
 using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
@@ -7,7 +6,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     /// <summary>
     /// Objects instances container
     /// </summary>
-    public unsafe class DSharpObjectsContainer : Disposable
+    public unsafe class DSharpObjectsContainer : DSharpDisposable
     {
         public DSharpObjectsContainer(IDSharpAssembly assembly, DSharpVmMemoryManager memoryManager, DSharpRuntimeInformationProvider runtimeInformationProvider)
         {

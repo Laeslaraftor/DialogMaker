@@ -8,6 +8,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
     /// </summary>
     public unsafe abstract class DSharpMathInstructionExecutor : DSharpInstructionExecutor
     {
+        protected bool HasMathError;
+        protected DSharpMethodExecutionCallback? MathError;
+
         public override DSharpMethodExecutionCallback Execute(DSharpRuntimeInstruction* instruction, ref DSharpExecutionContext context)
         {
 #if DEBUG
@@ -19,14 +22,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 
             var left = context.Stack.Peek(1).ReadAsNumber();
             var right = context.Stack.Peek(0).ReadAsNumber();
-            var resultValue = PerformMathOperation(left, right, ref context, out var mathError);
+            var resultValue = PerformMathOperation(ref left, ref right, ref context);
 
-            if (mathError != null)
+            if (resultValue._type == DSharpLiteralType.Null)
             {
-                return mathError.Value;
+                return context.ThrowDivideByZeroException();
             }
 
-            context.Stack.Push(resultValue);
+            context.Stack.Push(&resultValue);
 
             return DSharpMethodExecutionCallback.Complete();
         }
@@ -45,6 +48,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
         /// <param name="left">Left value</param>
         /// <param name="right">Right value</param>
         /// <returns>Result of math operation</returns>
-        protected abstract DSharpNumber PerformMathOperation(in DSharpNumber left, in DSharpNumber right, ref DSharpExecutionContext context, out DSharpMethodExecutionCallback? error);
+        protected abstract DSharpNumber PerformMathOperation(ref DSharpNumber left, ref DSharpNumber right, ref DSharpExecutionContext context);
     }
 }

@@ -6,12 +6,13 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
   </PropertyGroup>
-  <!--<PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))">
+  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))">
     <EnableAotAnalyzer>true</EnableAotAnalyzer>
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <IsAotCompatible>true</IsAotCompatible>
-  </PropertyGroup>-->
+  </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="StandardLibrary\**" />
@@ -20,21 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Acly" Version="1.15.0" />
-    <PackageReference Include="MessagePack" Version="3.1.7" />
-    <PackageReference Include="MessagePackAnalyzer" Version="3.1.7">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\DialogMaker.Core.Scripting.CodeAnalyzer\DialogMaker.Core.Scripting.CodeAnalyzer.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Using Include="Acly" />
   </ItemGroup>
 
 </Project>

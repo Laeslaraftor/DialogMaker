@@ -9,7 +9,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     /// <summary>
     /// D# virtual machine memory manager
     /// </summary>
-    public class DSharpVmMemoryManager : Disposable
+    public class DSharpVmMemoryManager : DSharpDisposable
     {
         /// <summary>
         /// Amount of memory that currently used in bytes

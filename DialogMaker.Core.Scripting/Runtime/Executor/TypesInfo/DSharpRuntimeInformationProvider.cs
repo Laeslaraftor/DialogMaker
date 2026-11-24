@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
     /// </summary>
     /// <param name="assembly">Assembly that contains providing types information</param>
     /// <param name="memoryManager">Memory manager for allocating memory for runtime information</param>
-    public unsafe class DSharpRuntimeInformationProvider(IDSharpAssembly assembly, DSharpVmMemoryManager memoryManager) : Disposable
+    public unsafe class DSharpRuntimeInformationProvider(IDSharpAssembly assembly, DSharpVmMemoryManager memoryManager) : DSharpDisposable
     {
         /// <summary>
         /// Assembly that contains providing types information
@@ -247,6 +247,34 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
         #region Controls
 
+        /// <summary>
+        /// Get runtime type info for literal
+        /// </summary>
+        /// <param name="type">Literal type for getting it runtime type</param>
+        /// <returns>Runtime type info</returns>
+        /// <exception cref="ArgumentException">Invalid literal type</exception>
+        public DSharpRuntimeTypeInfo* GetRuntimeInfo(DSharpLiteralType type)
+        {
+            return type switch
+            {
+                DSharpLiteralType.Bool => Boolean,
+                DSharpLiteralType.Byte => Byte,
+                DSharpLiteralType.SByte => SByte,
+                DSharpLiteralType.Char => Char,
+                DSharpLiteralType.Short => Int16,
+                DSharpLiteralType.UShort => UInt16,
+                DSharpLiteralType.Int => Int32,
+                DSharpLiteralType.UInt => UInt32,
+                DSharpLiteralType.Long => Int64,
+                DSharpLiteralType.ULong => UInt64,
+                DSharpLiteralType.NInt => IntPtr,
+                DSharpLiteralType.NUInt => UIntPtr,
+                DSharpLiteralType.Float => Single,
+                DSharpLiteralType.Double => Double,
+                DSharpLiteralType.Decimal => Decimal,
+                _ => throw new ArgumentException($"Invalid literal type: {type}", nameof(type))
+            };
+        }
         /// <summary>
         /// Get runtime information about specified type
         /// </summary>

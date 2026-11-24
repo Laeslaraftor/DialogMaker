@@ -1,3 +1,5 @@
+using DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors;
+
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
 {
     /// <summary>
@@ -12,10 +14,9 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.Instructions
             return &InstanceExecute;
         }
 
-        protected override DSharpNumber PerformMathOperation(in DSharpNumber left, in DSharpNumber right, ref DSharpExecutionContext context, out DSharpMethodExecutionCallback? error)
+        protected override sealed DSharpNumber PerformMathOperation(ref DSharpNumber left, ref DSharpNumber right, ref DSharpExecutionContext context)
         {
-            error = null;
-            return left > right;
+            return DSharpNumberMathExecutor.LogicalGreater(ref left, ref right);
         }
 
         #endregion

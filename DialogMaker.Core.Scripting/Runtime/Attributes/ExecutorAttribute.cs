@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace DialogMaker.Core.Scripting.Runtime
@@ -8,11 +9,15 @@ namespace DialogMaker.Core.Scripting.Runtime
     /// </summary>
     /// <param name="type">Type of D# operation executor</param>
     [AttributeUsage(AttributeTargets.Field)]
-    public sealed class ExecutorAttribute(Type type) : Attribute
+    public sealed class ExecutorAttribute([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor | DynamicallyAccessedMemberTypes.PublicFields)] Type type) : Attribute
     {
         /// <summary>
         /// Type of D# operation executor
         /// </summary>
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor |
+                                    DynamicallyAccessedMemberTypes.PublicFields)]
+        [field: DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor |
+                                           DynamicallyAccessedMemberTypes.PublicFields)]
         public Type ExecutorType { get; } = type;
 
         #region Controls
