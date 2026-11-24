@@ -283,6 +283,30 @@ namespace DialogMaker.Core.Scripting.Runtime
             }
         }
 
+        /// <summary>
+        /// Literal values size. LiteralSizes[(int)DSharpLiteralType]
+        /// </summary>
+        internal static readonly int[] LiteralSizes =
+        [
+            0,
+            Boolean.Size,
+            Byte.Size,
+            SByte.Size,
+            Char.Size,
+            Int16.Size,
+            UInt16.Size,
+            Int32.Size,
+            UInt32.Size,
+            Int64.Size,
+            UInt64.Size,
+            IntPtr.Size,
+            UIntPtr.Size,
+            Single.Size,
+            Double.Size,
+            Decimal.Size,
+            String.Size,
+        ];
+
         private static readonly Dictionary<DSharpLiteralType, DSharpBuildInTypeInfo> _literalTypesInfo = [];
 
         #region Controls

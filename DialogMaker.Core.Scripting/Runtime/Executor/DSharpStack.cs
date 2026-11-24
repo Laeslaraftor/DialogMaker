@@ -261,7 +261,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         public void Push(DSharpNumber* number)
         {
             var type = _runtimeInformationProvider.GetRuntimeInfo(number->_type);
-            var size = number->Size;
+            var size = DSharpBuildInTypes.LiteralSizes[(int)number->_type];
             var pointer = &number;
 
             var frame = AllocateSized(DSharpStackValueType.Structure, size + sizeof(DSharpObject));

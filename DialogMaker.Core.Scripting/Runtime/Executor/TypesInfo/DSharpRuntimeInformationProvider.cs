@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.Bytecode;
+using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 {
@@ -244,6 +245,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         private readonly Dictionary<DSharpMetadataToken, Pointer<DSharpRuntimePropertyInfo>> _properties = [];
         private readonly Dictionary<DSharpMetadataToken, Pointer<DSharpRuntimeFieldInfo>> _fields = [];
         private readonly DSharpVmMemoryManager _memoryManager = memoryManager;
+        private readonly DSharpRuntimeTypeInfo*[] _literalTypes = new DSharpRuntimeTypeInfo*[DSharpLiteralTypeHelper.Values.Length];
 
         #region Controls
 
@@ -253,27 +255,38 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <param name="type">Literal type for getting it runtime type</param>
         /// <returns>Runtime type info</returns>
         /// <exception cref="ArgumentException">Invalid literal type</exception>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DSharpRuntimeTypeInfo* GetRuntimeInfo(DSharpLiteralType type)
         {
-            return type switch
+            var runtimeType = _literalTypes[(int)type];
+
+            if (runtimeType == null)
             {
-                DSharpLiteralType.Bool => Boolean,
-                DSharpLiteralType.Byte => Byte,
-                DSharpLiteralType.SByte => SByte,
-                DSharpLiteralType.Char => Char,
-                DSharpLiteralType.Short => Int16,
-                DSharpLiteralType.UShort => UInt16,
-                DSharpLiteralType.Int => Int32,
-                DSharpLiteralType.UInt => UInt32,
-                DSharpLiteralType.Long => Int64,
-                DSharpLiteralType.ULong => UInt64,
-                DSharpLiteralType.NInt => IntPtr,
-                DSharpLiteralType.NUInt => UIntPtr,
-                DSharpLiteralType.Float => Single,
-                DSharpLiteralType.Double => Double,
-                DSharpLiteralType.Decimal => Decimal,
-                _ => throw new ArgumentException($"Invalid literal type: {type}", nameof(type))
-            };
+                runtimeType = type switch
+                {
+                    DSharpLiteralType.Bool => Boolean,
+                    DSharpLiteralType.Byte => Byte,
+                    DSharpLiteralType.SByte => SByte,
+                    DSharpLiteralType.Char => Char,
+                    DSharpLiteralType.Short => Int16,
+                    DSharpLiteralType.UShort => UInt16,
+                    DSharpLiteralType.Int => Int32,
+                    DSharpLiteralType.UInt => UInt32,
+                    DSharpLiteralType.Long => Int64,
+                    DSharpLiteralType.ULong => UInt64,
+                    DSharpLiteralType.NInt => IntPtr,
+                    DSharpLiteralType.NUInt => UIntPtr,
+                    DSharpLiteralType.Float => Single,
+                    DSharpLiteralType.Double => Double,
+                    DSharpLiteralType.Decimal => Decimal,
+                    DSharpLiteralType.String => String,
+                    _ => throw new ArgumentException($"Invalid literal type: {type}", nameof(type))
+                };
+
+                _literalTypes[(int)type] = runtimeType;
+            }
+
+            return runtimeType;
         }
         /// <summary>
         /// Get runtime information about specified type

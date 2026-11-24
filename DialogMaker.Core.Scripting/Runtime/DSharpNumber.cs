@@ -20,7 +20,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <summary>
         /// Current number size in bytes
         /// </summary>
-        public readonly int Size => Sizes[_type];
+        public readonly int Size => DSharpBuildInTypes.LiteralSizes[(int)_type];
 
         #region Fields
 
@@ -362,14 +362,7 @@ namespace DialogMaker.Core.Scripting.Runtime
                     for (int i = 0; i < literalValues.Length; i++)
                     {
                         var literalValue = literalValues[i];
-
-                        if (!DSharpBuildInTypes.TryGetTypeInfo(literalValue, out var info) ||
-                            0 >= info.Size)
-                        {
-                            continue;
-                        }
-
-                        sizes.Add(literalValue, info.Size);
+                        sizes.Add(literalValue, DSharpBuildInTypes.LiteralSizes[i]);
                     }
 
                     field = new(sizes);
