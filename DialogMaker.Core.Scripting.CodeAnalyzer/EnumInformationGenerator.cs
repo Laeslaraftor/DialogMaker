@@ -227,9 +227,9 @@ namespace DialogMaker.Core.Scripting.CodeAnalyzer
         public static EnumInformationGenerator Create(INamedTypeSymbol enumType)
         {
             var values = enumType.GetMembers()
-                .OfType<IFieldSymbol>()
-                .Where(f => f.HasConstantValue)
-                .ToImmutableArray();
+                                 .OfType<IFieldSymbol>()
+                                 .Where(f => f.HasConstantValue)
+                                 .ToImmutableArray();
 
             return new(enumType, values);
         }

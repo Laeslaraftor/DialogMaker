@@ -13,6 +13,8 @@ public unsafe class Program
     }
 
     private static int _counter = 0;
+    private static int _first = 0;
+    private static int _second = 0;
 
     public static void Main()
     {
@@ -227,6 +229,44 @@ public unsafe class Program
                 TimeSpan endTime = TimeSpan.FromMilliseconds(endTicks);
                 Console.WriteLine("End ticks: " + endTicks);
                 Console.WriteLine("Duration: " + (endTime - startTime).TotalSeconds + "s");
+            }
+            else if (value == "staticMath")
+            {
+                string firstNumberText;
+                string secondNumberText;
+                int firstNumber = 0;
+                int secondNumber = 0;
+
+                do
+                {
+                    Console.Write("Enter first number: ");
+                    firstNumberText = Console.ReadLine();
+                } 
+                while (!int.TryParse(firstNumberText, out firstNumber));
+                do
+                {
+                    Console.Write("Enter second number: ");
+                    secondNumberText = Console.ReadLine();
+                } 
+                while (!int.TryParse(secondNumberText, out secondNumber));
+
+                _first = firstNumber;
+                _second = secondNumber;
+
+                Console.WriteLine(_first + " + " + _second + " = " + (_first + _second));
+                Console.WriteLine(_first + " - " + _second + " = " + (_first - _second));
+                Console.WriteLine(_first + " * " + _second + " = " + (_first * _second));
+                Console.WriteLine(_first + " / " + _second + " = " + (_first / _second));
+                Console.WriteLine(_first + " % " + _second + " = " + (_first % _second));
+                Console.WriteLine(_first + " ^ " + _second + " = " + (_first ^ _second));
+                Console.WriteLine(_first + " << " + _second + " = " + (_first << _second));
+                Console.WriteLine(_first + " >> " + _second + " = " + (_first >> _second));
+                Console.WriteLine(_first + " == " + _second + " = " + (_first == _second));
+                Console.WriteLine(_first + " != " + _second + " = " + (_first != _second));
+                Console.WriteLine(_first + " < " + _second + " = " + (_first < _second));
+                Console.WriteLine(_first + " <= " + _second + " = " + (_first <= _second));
+                Console.WriteLine(_first + " > " + _second + " = " + (_first > _second));
+                Console.WriteLine(_first + " >= " + _second + " = " + (_first >= _second));
             }
             else if (value == "exit")
             {

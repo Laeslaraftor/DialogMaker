@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using DialogMaker.Core.Scripting.Runtime.Executor;
 
 namespace DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors
@@ -42,24 +41,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors
         {
             if (left._type == right._type)
             {
-                switch (left._type)
+                return left._type switch
                 {
-                    case DSharpLiteralType.Bool: return unchecked(left._byte - right._byte) != 0;
-                    case DSharpLiteralType.Byte: return unchecked(left._byte - right._byte);
-                    case DSharpLiteralType.SByte: return unchecked(left._sbyte - right._sbyte);
-                    case DSharpLiteralType.Char: return unchecked(left._char - right._char);
-                    case DSharpLiteralType.Short: return unchecked(left._short - right._short);
-                    case DSharpLiteralType.UShort: return unchecked(left._ushort - right._ushort);
-                    case DSharpLiteralType.Int: return unchecked(left._int - right._int);
-                    case DSharpLiteralType.UInt: return unchecked(left._uint - right._uint);
-                    case DSharpLiteralType.Long: return unchecked(left._long - right._long);
-                    case DSharpLiteralType.ULong: return unchecked(left._ulong - right._ulong);
-                    case DSharpLiteralType.NInt: return unchecked(left._nint - right._nint);
-                    case DSharpLiteralType.NUInt: return unchecked(left._nuint - right._nuint);
-                    case DSharpLiteralType.Float: return left._float - right._float;
-                    case DSharpLiteralType.Double: return left._double - right._double;
-                    case DSharpLiteralType.Decimal: return left._decimal - right._decimal;
-                }
+                    DSharpLiteralType.Bool => unchecked(left._byte - right._byte) != 0,
+                    DSharpLiteralType.Byte => unchecked(left._byte - right._byte),
+                    DSharpLiteralType.SByte => unchecked(left._sbyte - right._sbyte),
+                    DSharpLiteralType.Char => unchecked(left._char - right._char),
+                    DSharpLiteralType.Short => unchecked(left._short - right._short),
+                    DSharpLiteralType.UShort => unchecked(left._ushort - right._ushort),
+                    DSharpLiteralType.Int => unchecked(left._int - right._int),
+                    DSharpLiteralType.UInt => unchecked(left._uint - right._uint),
+                    DSharpLiteralType.Long => unchecked(left._long - right._long),
+                    DSharpLiteralType.ULong => unchecked(left._ulong - right._ulong),
+                    DSharpLiteralType.NInt => unchecked(left._nint - right._nint),
+                    DSharpLiteralType.NUInt => unchecked(left._nuint - right._nuint),
+                    DSharpLiteralType.Float => left._float - right._float,
+                    DSharpLiteralType.Double => left._double - right._double,
+                    DSharpLiteralType.Decimal => left._decimal - right._decimal,
+                    _ => throw new ArgumentException($"Invalid number type: {left._type}"),
+                };
             }
 
             var kind = GetKindAndBigger(ref left, ref right, out var bigger, out var kindLeft, out var kindRight);
@@ -70,24 +70,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors
         {
             if (left._type == right._type)
             {
-                switch (left._type)
+                return left._type switch
                 {
-                    case DSharpLiteralType.Bool: return unchecked(left._byte % right._byte) != 0;
-                    case DSharpLiteralType.Byte: return unchecked(left._byte % right._byte);
-                    case DSharpLiteralType.SByte: return unchecked(left._sbyte % right._sbyte);
-                    case DSharpLiteralType.Char: return unchecked(left._char % right._char);
-                    case DSharpLiteralType.Short: return unchecked(left._short % right._short);
-                    case DSharpLiteralType.UShort: return unchecked(left._ushort % right._ushort);
-                    case DSharpLiteralType.Int: return unchecked(left._int % right._int);
-                    case DSharpLiteralType.UInt: return unchecked(left._uint % right._uint);
-                    case DSharpLiteralType.Long: return unchecked(left._long % right._long);
-                    case DSharpLiteralType.ULong: return unchecked(left._ulong % right._ulong);
-                    case DSharpLiteralType.NInt: return unchecked(left._nint % right._nint);
-                    case DSharpLiteralType.NUInt: return unchecked(left._nuint % right._nuint);
-                    case DSharpLiteralType.Float: return left._float % right._float;
-                    case DSharpLiteralType.Double: return left._double % right._double;
-                    case DSharpLiteralType.Decimal: return left._decimal % right._decimal;
-                }
+                    DSharpLiteralType.Bool => unchecked(left._byte % right._byte) != 0,
+                    DSharpLiteralType.Byte => unchecked(left._byte % right._byte),
+                    DSharpLiteralType.SByte => unchecked(left._sbyte % right._sbyte),
+                    DSharpLiteralType.Char => unchecked(left._char % right._char),
+                    DSharpLiteralType.Short => unchecked(left._short % right._short),
+                    DSharpLiteralType.UShort => unchecked(left._ushort % right._ushort),
+                    DSharpLiteralType.Int => unchecked(left._int % right._int),
+                    DSharpLiteralType.UInt => unchecked(left._uint % right._uint),
+                    DSharpLiteralType.Long => unchecked(left._long % right._long),
+                    DSharpLiteralType.ULong => unchecked(left._ulong % right._ulong),
+                    DSharpLiteralType.NInt => unchecked(left._nint % right._nint),
+                    DSharpLiteralType.NUInt => unchecked(left._nuint % right._nuint),
+                    DSharpLiteralType.Float => left._float % right._float,
+                    DSharpLiteralType.Double => left._double % right._double,
+                    DSharpLiteralType.Decimal => left._decimal % right._decimal,
+                    _ => throw new ArgumentException($"Invalid number type: {left._type}"),
+                };
             }
 
             var kind = GetKindAndBigger(ref left, ref right, out var bigger, out var kindLeft, out var kindRight);
@@ -98,24 +99,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors
         {
             if (left._type == right._type)
             {
-                switch (left._type)
+                return left._type switch
                 {
-                    case DSharpLiteralType.Bool: return unchecked(left._byte * right._byte) != 0;
-                    case DSharpLiteralType.Byte: return unchecked(left._byte * right._byte);
-                    case DSharpLiteralType.SByte: return unchecked(left._sbyte * right._sbyte);
-                    case DSharpLiteralType.Char: return unchecked(left._char * right._char);
-                    case DSharpLiteralType.Short: return unchecked(left._short * right._short);
-                    case DSharpLiteralType.UShort: return unchecked(left._ushort * right._ushort);
-                    case DSharpLiteralType.Int: return unchecked(left._int * right._int);
-                    case DSharpLiteralType.UInt: return unchecked(left._uint * right._uint);
-                    case DSharpLiteralType.Long: return unchecked(left._long * right._long);
-                    case DSharpLiteralType.ULong: return unchecked(left._ulong * right._ulong);
-                    case DSharpLiteralType.NInt: return unchecked(left._nint * right._nint);
-                    case DSharpLiteralType.NUInt: return unchecked(left._nuint * right._nuint);
-                    case DSharpLiteralType.Float: return left._float * right._float;
-                    case DSharpLiteralType.Double: return left._double * right._double;
-                    case DSharpLiteralType.Decimal: return left._decimal * right._decimal;
-                }
+                    DSharpLiteralType.Bool => unchecked(left._byte * right._byte) != 0,
+                    DSharpLiteralType.Byte => unchecked(left._byte * right._byte),
+                    DSharpLiteralType.SByte => unchecked(left._sbyte * right._sbyte),
+                    DSharpLiteralType.Char => unchecked(left._char * right._char),
+                    DSharpLiteralType.Short => unchecked(left._short * right._short),
+                    DSharpLiteralType.UShort => unchecked(left._ushort * right._ushort),
+                    DSharpLiteralType.Int => unchecked(left._int * right._int),
+                    DSharpLiteralType.UInt => unchecked(left._uint * right._uint),
+                    DSharpLiteralType.Long => unchecked(left._long * right._long),
+                    DSharpLiteralType.ULong => unchecked(left._ulong * right._ulong),
+                    DSharpLiteralType.NInt => unchecked(left._nint * right._nint),
+                    DSharpLiteralType.NUInt => unchecked(left._nuint * right._nuint),
+                    DSharpLiteralType.Float => left._float * right._float,
+                    DSharpLiteralType.Double => left._double * right._double,
+                    DSharpLiteralType.Decimal => left._decimal * right._decimal,
+                    _ => throw new ArgumentException($"Invalid number type: {left._type}"),
+                };
             }
 
             var kind = GetKindAndBigger(ref left, ref right, out var bigger, out var kindLeft, out var kindRight);
@@ -126,24 +128,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors
         {
             if (left._type == right._type)
             {
-                switch (left._type)
+                return left._type switch
                 {
-                    case DSharpLiteralType.Bool:     return unchecked(left._byte / right._byte) != 0;
-                    case DSharpLiteralType.Byte:     return unchecked(left._byte / right._byte);
-                    case DSharpLiteralType.SByte:   return unchecked(left._sbyte / right._sbyte);
-                    case DSharpLiteralType.Char:     return unchecked(left._char / right._char);
-                    case DSharpLiteralType.Short:   return unchecked(left._short / right._short);
-                    case DSharpLiteralType.UShort: return unchecked(left._ushort / right._ushort);
-                    case DSharpLiteralType.Int:       return unchecked(left._int / right._int);
-                    case DSharpLiteralType.UInt:     return unchecked(left._uint / right._uint);
-                    case DSharpLiteralType.Long:     return unchecked(left._long / right._long);
-                    case DSharpLiteralType.ULong:   return unchecked(left._ulong / right._ulong);
-                    case DSharpLiteralType.NInt:     return unchecked(left._nint / right._nint);
-                    case DSharpLiteralType.NUInt:   return unchecked(left._nuint / right._nuint);
-                    case DSharpLiteralType.Float:             return left._float / right._float;
-                    case DSharpLiteralType.Double:           return left._double / right._double;
-                    case DSharpLiteralType.Decimal:         return left._decimal / right._decimal;
-                }
+                    DSharpLiteralType.Bool => unchecked(left._byte / right._byte) != 0,
+                    DSharpLiteralType.Byte => unchecked(left._byte / right._byte),
+                    DSharpLiteralType.SByte => unchecked(left._sbyte / right._sbyte),
+                    DSharpLiteralType.Char => unchecked(left._char / right._char),
+                    DSharpLiteralType.Short => unchecked(left._short / right._short),
+                    DSharpLiteralType.UShort => unchecked(left._ushort / right._ushort),
+                    DSharpLiteralType.Int => unchecked(left._int / right._int),
+                    DSharpLiteralType.UInt => unchecked(left._uint / right._uint),
+                    DSharpLiteralType.Long => unchecked(left._long / right._long),
+                    DSharpLiteralType.ULong => unchecked(left._ulong / right._ulong),
+                    DSharpLiteralType.NInt => unchecked(left._nint / right._nint),
+                    DSharpLiteralType.NUInt => unchecked(left._nuint / right._nuint),
+                    DSharpLiteralType.Float => left._float / right._float,
+                    DSharpLiteralType.Double => left._double / right._double,
+                    DSharpLiteralType.Decimal => left._decimal / right._decimal,
+                    _ => throw new ArgumentException($"Invalid number type: {left._type}"),
+                };
             }
 
             var kind = GetKindAndBigger(ref left, ref right, out var bigger, out var kindLeft, out var kindRight);
@@ -154,24 +157,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors
         {
             if (left._type == right._type)
             {
-                switch (left._type)
+                return left._type switch
                 {
-                    case DSharpLiteralType.Bool: return left._bool ^ right._bool;
-                    case DSharpLiteralType.Byte: return unchecked(left._byte ^ right._byte);
-                    case DSharpLiteralType.SByte: return unchecked(left._sbyte ^ right._sbyte);
-                    case DSharpLiteralType.Char: return unchecked(left._char ^ right._char);
-                    case DSharpLiteralType.Short: return unchecked(left._short ^ right._short);
-                    case DSharpLiteralType.UShort: return unchecked(left._ushort ^ right._ushort);
-                    case DSharpLiteralType.Int: return unchecked(left._int ^ right._int);
-                    case DSharpLiteralType.UInt: return unchecked(left._uint ^ right._uint);
-                    case DSharpLiteralType.Long: return unchecked(left._long ^ right._long);
-                    case DSharpLiteralType.ULong: return unchecked(left._ulong ^ right._ulong);
-                    case DSharpLiteralType.NInt: return unchecked(left._nint ^ right._nint);
-                    case DSharpLiteralType.NUInt: return unchecked(left._nuint ^ right._nuint);
-                    case DSharpLiteralType.Float: return left._float ^ right._float;
-                    case DSharpLiteralType.Double: return left._double ^ right._double;
-                    case DSharpLiteralType.Decimal: return left._decimal ^ right._decimal;
-                }
+                    DSharpLiteralType.Bool => left._bool ^ right._bool,
+                    DSharpLiteralType.Byte => unchecked(left._byte ^ right._byte),
+                    DSharpLiteralType.SByte => unchecked(left._sbyte ^ right._sbyte),
+                    DSharpLiteralType.Char => unchecked(left._char ^ right._char),
+                    DSharpLiteralType.Short => unchecked(left._short ^ right._short),
+                    DSharpLiteralType.UShort => unchecked(left._ushort ^ right._ushort),
+                    DSharpLiteralType.Int => unchecked(left._int ^ right._int),
+                    DSharpLiteralType.UInt => unchecked(left._uint ^ right._uint),
+                    DSharpLiteralType.Long => unchecked(left._long ^ right._long),
+                    DSharpLiteralType.ULong => unchecked(left._ulong ^ right._ulong),
+                    DSharpLiteralType.NInt => unchecked(left._nint ^ right._nint),
+                    DSharpLiteralType.NUInt => unchecked(left._nuint ^ right._nuint),
+                    DSharpLiteralType.Float => left._float ^ right._float,
+                    DSharpLiteralType.Double => left._double ^ right._double,
+                    DSharpLiteralType.Decimal => left._decimal ^ right._decimal,
+                    _ => throw new ArgumentException($"Invalid number type: {left._type}"),
+                };
             }
 
             var kind = GetKindAndBigger(ref left, ref right, out var bigger, out var kindLeft, out var kindRight);
@@ -352,7 +356,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors
             return _mathExecutors[(int)kind].LogicalOr(ref kindLeft, ref kindRight);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpNumber LogicalEquals(ref DSharpNumber left, ref DSharpNumber right)
+        public static DSharpNumber Equals(ref DSharpNumber left, ref DSharpNumber right)
         {
             if (left._type == right._type)
             {
@@ -381,7 +385,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors
             return _mathExecutors[(int)kind].LogicalEquals(ref kindLeft, ref kindRight);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpNumber LogicalNotEquals(ref DSharpNumber left, ref DSharpNumber right)
+        public static DSharpNumber NotEquals(ref DSharpNumber left, ref DSharpNumber right)
         {
             if (left._type == right._type)
             {
@@ -410,7 +414,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors
             return _mathExecutors[(int)kind].LogicalNotEquals(ref kindLeft, ref kindRight);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpNumber LogicalLess(ref DSharpNumber left, ref DSharpNumber right)
+        public static DSharpNumber Less(ref DSharpNumber left, ref DSharpNumber right)
         {
             if (left._type == right._type)
             {
@@ -439,7 +443,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors
             return _mathExecutors[(int)kind].LogicalLess(ref kindLeft, ref kindRight);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpNumber LogicalLessOrEquals(ref DSharpNumber left, ref DSharpNumber right)
+        public static DSharpNumber LessOrEqual(ref DSharpNumber left, ref DSharpNumber right)
         {
             if (left._type == right._type)
             {
@@ -468,7 +472,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors
             return _mathExecutors[(int)kind].LogicalLessOrEquals(ref kindLeft, ref kindRight);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpNumber LogicalGreater(ref DSharpNumber left, ref DSharpNumber right)
+        public static DSharpNumber Greater(ref DSharpNumber left, ref DSharpNumber right)
         {
             if (left._type == right._type)
             {
@@ -497,7 +501,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors
             return _mathExecutors[(int)kind].LogicalGreater(ref kindLeft, ref kindRight);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static DSharpNumber LogicalGreaterOrEquals(ref DSharpNumber left, ref DSharpNumber right)
+        public static DSharpNumber GreaterOrEqual(ref DSharpNumber left, ref DSharpNumber right)
         {
             if (left._type == right._type)
             {
@@ -665,12 +669,12 @@ namespace DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors
                 DSharpBinaryOperator.ShiftRight => ShiftRight(ref left, ref right),
                 DSharpBinaryOperator.LogicalAnd => LogicalAnd(ref left, ref right),
                 DSharpBinaryOperator.LogicalOr => LogicalOr(ref left, ref right),
-                DSharpBinaryOperator.LogicalEquals => LogicalEquals(ref left, ref right),
-                DSharpBinaryOperator.LogicalNotEquals => LogicalNotEquals(ref left, ref right),
-                DSharpBinaryOperator.LogicalLess => LogicalLess(ref left, ref right),
-                DSharpBinaryOperator.LogicalLessOrEquals => LogicalLessOrEquals(ref left, ref right),
-                DSharpBinaryOperator.LogicalGreater => LogicalGreater(ref left, ref right),
-                DSharpBinaryOperator.LogicalGreaterOrEquals => LogicalGreaterOrEquals(ref left, ref right),
+                DSharpBinaryOperator.LogicalEquals => Equals(ref left, ref right),
+                DSharpBinaryOperator.LogicalNotEquals => NotEquals(ref left, ref right),
+                DSharpBinaryOperator.LogicalLess => Less(ref left, ref right),
+                DSharpBinaryOperator.LogicalLessOrEquals => LessOrEqual(ref left, ref right),
+                DSharpBinaryOperator.LogicalGreater => Greater(ref left, ref right),
+                DSharpBinaryOperator.LogicalGreaterOrEquals => GreaterOrEqual(ref left, ref right),
                 _ => throw new ArgumentException($"Invalid binary operator \"{@operator}\"", nameof(@operator))
             };
         }

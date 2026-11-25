@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis.CSharp;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace DialogMaker.Core.Scripting.CodeAnalyzer
@@ -22,20 +23,13 @@ namespace DialogMaker.Core.Scripting.CodeAnalyzer
         }
         extension(ISymbol symbol)
         {
-            public bool Compare(ISymbol? other)
-            {
-                return SymbolEqualityComparer.Default.Equals(symbol, other);
-            }
-        }
-        extension(INamedTypeSymbol namedType)
-        {
             public string FullName
             {
                 get
                 {
-                    var @namespace = namedType.ContainingNamespace;
-                    string result = namedType.Name;
-                    var declaringType = namedType.ContainingType;
+                    var @namespace = symbol.ContainingNamespace;
+                    string result = symbol.Name;
+                    var declaringType = symbol.ContainingType;
 
                     while (declaringType is ITypeSymbol declaring)
                     {
@@ -50,7 +44,17 @@ namespace DialogMaker.Core.Scripting.CodeAnalyzer
                     return result;
                 }
             }
-            public string? Namespace => namedType.ContainingNamespace?.ToDisplayString();
+            public string? Namespace => symbol.ContainingNamespace?.ToDisplayString();
+
+            public bool Compare(ISymbol? other)
+            {
+                return SymbolEqualityComparer.Default.Equals(symbol, other);
+            }
+            public bool TryGetAttribute(string fullName, [NotNullWhen(true)] out AttributeData? result)
+            {
+                result = symbol.GetAttributes().FirstOrDefault(a => a.AttributeClass?.FullName == fullName);
+                return result != null;
+            }
         }
         extension<TKey, TValue>(ImmutableArray<KeyValuePair<TKey, TValue>> items)
         {
@@ -87,7 +91,14 @@ namespace DialogMaker.Core.Scripting.CodeAnalyzer
                 }
                 if (typedConstant.Kind == TypedConstantKind.Type || typedConstant.Type?.SpecialType == SpecialType.System_Object)
                 {
-                    return "typeof(" + typedConstant.Value?.ToString() + ")";
+                    string? name = typedConstant.Value?.ToString();
+
+                    if (name != null && typedConstant.Value is IErrorTypeSymbol && 
+                        CodeGeneratorHelper.GeneratedTypes.TryGetValue(name, out name))
+                    {
+                    }
+
+                    return "typeof(" + name + ")";
                 }
                 if (typedConstant.Kind == TypedConstantKind.Enum)
                 {

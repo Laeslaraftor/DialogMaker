@@ -40,6 +40,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <exception cref="IndexOutOfRangeException"></exception>
         public T this[int index]
         {
+            [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
 #if DEBUG
@@ -51,6 +52,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
                 return _items[index];
             }
+            [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
 #if DEBUG
@@ -85,7 +87,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
 #endif
 
-            return &_items[index];
+            return _items + index;
         }
         /// <summary>
         /// Get pointer to first item

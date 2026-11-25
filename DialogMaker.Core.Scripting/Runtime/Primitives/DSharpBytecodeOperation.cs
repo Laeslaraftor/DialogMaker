@@ -10,6 +10,8 @@ namespace DialogMaker.Core.Scripting.Runtime
     [GenerateInformation(EnumValuesInformation.Full)]
     public enum DSharpBytecodeOperation : byte
     {
+        #region Default operations
+
         /// <summary>
         /// Push value to stack
         /// </summary>
@@ -465,16 +467,23 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// Increase last stack value by 1.
         /// </summary>
         [ArgsCount(0)]
-        [RequestsStackValues(2)]
+        [RequestsStackValues(1)]
         [Executor(typeof(DSharpIncrementInstructionExecutor))]
         Increment,
         /// <summary>
         /// Decrease last stack value by 1
         /// </summary>
         [ArgsCount(0)]
-        [RequestsStackValues(2)]
+        [RequestsStackValues(1)]
         [Executor(typeof(DSharpDecrementInstructionExecutor))]
         Decrement,
+        /// <summary>
+        /// Invert all bits in number that on last stack value
+        /// </summary>
+        [ArgsCount(0)]
+        [RequestsStackValues(1)]
+        [Executor(typeof(DSharpBitInvertInstructionExecutor))]
+        BitInvert,
 
         /// <summary>
         /// OR (|). 
@@ -603,5 +612,471 @@ namespace DialogMaker.Core.Scripting.Runtime
         [RequestsStackValues(1)]
         [Executor(typeof(DSharpMakeObjectInstructionExecutor))]
         MakeObject,
+
+        #endregion
+
+        #region Extra
+
+        /// <summary>
+        /// Sums two variables and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 + value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        [Executor(typeof(DSharpAddVariablesInstructionExecutor))]
+        AddVariables,
+        /// <summary>
+        /// Subtract second variable from first and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 - value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [Executor(typeof(DSharpSubtractVariablesInstructionExecutor))]
+        [RequestsStackValues(0)]
+        SubtractVariables,
+        /// <summary>
+        /// Multiply variables value and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 * value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        [Executor(typeof(DSharpMultiplyVariablesInstructionExecutor))]
+        MultiplyVariables,
+        /// <summary>
+        /// Subtract first variable value by second variable value and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 / value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        [Executor(typeof(DSharpDivideVariablesInstructionExecutor))]
+        DivideVariables,
+        /// <summary>
+        /// Divide first variable value by variable value and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 % value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        [Executor(typeof(DSharpModVariablesInstructionExecutor))]
+        ModVariables,
+        /// <summary>
+        /// Apply inversion mask on first variable value bits by second variable value bits and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 ^ value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        [Executor(typeof(DSharpXorVariablesInstructionExecutor))]
+        XorVariables,
+        /// <summary>
+        /// Apply additive mask on first variable value bits by second variable value bits and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 | value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        [Executor(typeof(DSharpOrVariablesInstructionExecutor))]
+        OrVariables,
+        /// <summary>
+        /// Apply multiplicative mask on first variable value bits by second variable value bits and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 & value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        [Executor(typeof(DSharpAddVariablesInstructionExecutor))]
+        AndVariables,
+        /// <summary>
+        /// Shift to left first variable value bits by second variable value as offset and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 << value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        [Executor(typeof(DSharpShiftLeftVariablesInstructionExecutor))]
+        ShiftLeftVariables,
+        /// <summary>
+        /// Shift to right first variable value bits by second variable value as offset and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 >> value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        [Executor(typeof(DSharpShiftRightVariablesInstructionExecutor))]
+        ShiftRightVariables,
+        /// <summary>
+        /// Compares values that stored in variables and push result into stack (boolean)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 == value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        [Executor(typeof(DSharpEqualsVariablesInstructionExecutor))]
+        EqualsVariables,
+        /// <summary>
+        /// Compares values that stored in variables and push opposite result into stack (boolean).
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 != value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        [Executor(typeof(DSharpNotEqualsVariablesInstructionExecutor))]
+        NotEqualsVariables,
+        /// <summary>
+        /// Compares first variable less to second and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 < value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        [Executor(typeof(DSharpLessVariablesInstructionExecutor))]
+        LessVariables,
+        /// <summary>
+        /// Compares first variable less or equals to second and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 <= value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        [Executor(typeof(DSharpLessOrEqualVariablesInstructionExecutor))]
+        LessOrEqualVariables,
+        /// <summary>
+        /// Compares first variable greater to second and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 > value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        [Executor(typeof(DSharpGreaterVariablesInstructionExecutor))]
+        GreaterVariables,
+        /// <summary>
+        /// Compares first variable greater or equals to second and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 >= value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        [Executor(typeof(DSharpGreaterOrEqualVariablesInstructionExecutor))]
+        GreaterOrEqualVariables,
+
+        /// <summary>
+        /// Sums two field and push result into stack.
+        /// Stack:
+        /// 0: right instance (if non-static field)
+        /// 0-1: left instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 + value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpAddFieldsInstructionExecutor))]
+        AddFields,
+        /// <summary>
+        /// Subtract second field from first and push result into stack.
+        /// Stack:
+        /// 0: right instance (if non-static field)
+        /// 0-1: left instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 - value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [Executor(typeof(DSharpSubtractFieldsInstructionExecutor))]
+        [RequestsStackValues(-2)]
+        SubtractFields,
+        /// <summary>
+        /// Multiply field value and push result into stack.
+        /// Stack:
+        /// 0: right instance (if non-static field)
+        /// 0-1: left instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 * value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpMultiplyFieldsInstructionExecutor))]
+        MultiplyFields,
+        /// <summary>
+        /// Subtract first field value by second field value and push result into stack.
+        /// Stack:
+        /// 0: right instance (if non-static field)
+        /// 0-1: left instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 / value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpDivideFieldsInstructionExecutor))]
+        DivideFields,
+        /// <summary>
+        /// Divide first field value by field value and push result into stack.
+        /// Stack:
+        /// 0: right instance (if non-static field)
+        /// 0-1: left instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 % value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpModFieldsInstructionExecutor))]
+        ModFields,
+        /// <summary>
+        /// Apply inversion mask on first field value bits by second field value bits and push result into stack.
+        /// Stack:
+        /// 0: right instance (if non-static field)
+        /// 0-1: left instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 ^ value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpXorFieldsInstructionExecutor))]
+        XorFields,
+        /// <summary>
+        /// Apply additive mask on first field value bits by second field value bits and push result into stack.
+        /// Stack:
+        /// 0: right instance (if non-static field)
+        /// 0-1: left instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 | value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpOrFieldsInstructionExecutor))]
+        OrFields,
+        /// <summary>
+        /// Apply multiplicative mask on first field value bits by second field value bits and push result into stack.
+        /// Stack:
+        /// 0: right instance (if non-static field)
+        /// 0-1: left instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 & value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpAddFieldsInstructionExecutor))]
+        AndFields,
+        /// <summary>
+        /// Shift to left first field value bits by second field value as offset and push result into stack.
+        /// Stack:
+        /// 0: right instance (if non-static field)
+        /// 0-1: left instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 << value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpShiftLeftFieldsInstructionExecutor))]
+        ShiftLeftFields,
+        /// <summary>
+        /// Shift to right first field value bits by second field value as offset and push result into stack.
+        /// Stack:
+        /// 0: right instance (if non-static field)
+        /// 0-1: left instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 >> value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpShiftRightFieldsInstructionExecutor))]
+        ShiftRightFields,
+        /// <summary>
+        /// Compares values that stored in fields and push result into stack (boolean).
+        /// Stack:
+        /// 0: right instance (if non-static field)
+        /// 0-1: left instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 == value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpEqualsFieldsInstructionExecutor))]
+        EqualsFields,
+        /// <summary>
+        /// Compares values that stored in fields and push opposite result into stack (boolean).
+        /// Stack:
+        /// 0: right instance (if non-static field)
+        /// 0-1: left instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 != value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpNotEqualsFieldsInstructionExecutor))]
+        NotEqualsFields,
+        /// <summary>
+        /// Compares first field less to second and push result into stack.
+        /// Stack:
+        /// 0: right instance (if non-static field)
+        /// 0-1: left instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 < value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpLessFieldsInstructionExecutor))]
+        LessFields,
+        /// <summary>
+        /// Compares first field less or equals to second and push result into stack.
+        /// Stack:
+        /// 0: right instance (if non-static field)
+        /// 0-1: left instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 <= value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpLessOrEqualFieldsInstructionExecutor))]
+        LessOrEqualFields,
+        /// <summary>
+        /// Compares first field greater to second and push result into stack.
+        /// Stack:
+        /// 0: right instance (if non-static field)
+        /// 0-1: left instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 > value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpGreaterFieldsInstructionExecutor))]
+        GreaterFields,
+        /// <summary>
+        /// Compares first field greater or equals to second and push result into stack.
+        /// Stack:
+        /// 0: right instance (if non-static field)
+        /// 0-1: left instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 >= value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpGreaterOrEqualFieldsInstructionExecutor))]
+        GreaterOrEqualFields,
+
+        /// <summary>
+        /// Invert variable value and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>-value or !value</c>
+        /// </remarks>
+        [ArgsCount(1)]
+        [RequestsStackValues(0)]
+        InvertVariable,
+        /// <summary>
+        /// Increment variable value by 1.
+        /// First argument is variable index,
+        /// second argument is flag (bool) that indicates when result is need to be pushed to stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value++</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        IncrementVariable,
+        /// <summary>
+        /// Decrement variable value by 1.
+        /// First argument is variable index,
+        /// second argument is flag (bool) that indicates when result is need to be pushed to stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value--</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        DecrementVariable,
+        /// <summary>
+        /// Inverts bits in variable value and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>~value</c>
+        /// </remarks>
+        [ArgsCount(1)]
+        [RequestsStackValues(0)]
+        BitInvertVariable,
+
+        /// <summary>
+        /// Invert field value and push result into stack.
+        /// Stack:
+        /// 0: instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>-field or !field</c>
+        /// </remarks>
+        [ArgsCount(1)]
+        [RequestsStackValues(-1)]
+        InvertField,
+        /// <summary>
+        /// Increment field value by 1.
+        /// First argument is field metadata token,
+        /// second argument is flag (bool) that indicates when result is need to be pushed to stack.
+        /// Stack:
+        /// 0: instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>field++</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        IncrementField,
+        /// <summary>
+        /// Decrement variable value by 1.
+        /// First argument is field metadata token,
+        /// second argument is flag (bool) that indicates when result is need to be pushed to stack.
+        /// Stack:
+        /// 0: instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>field--</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        DecrementField,
+        /// <summary>
+        /// Inverts bits in field value and push result into stack.
+        /// Stack:
+        /// 0: instance (if non-static field)
+        /// </summary>
+        /// <remarks>
+        /// <c>~field</c>
+        /// </remarks>
+        [ArgsCount(1)]
+        [RequestsStackValues(-1)]
+        BitInvertField,
+
+        #endregion
     }
 }

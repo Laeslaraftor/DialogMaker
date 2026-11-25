@@ -473,21 +473,23 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// Check type is number
         /// </summary>
         /// <param name="type">Type to check</param>
+        /// <param name="orBoolean">Count boolean type as number</param>
         /// <returns>Is specified type number</returns>
-        public static bool IsNumber(this DSharpBuildInTypeInfo type)
+        public static bool IsNumber(this DSharpBuildInTypeInfo type, bool orBoolean = false)
         {
-            return type.Size > 0 && type != Boolean;
+            return type.Size > 0 && (orBoolean || type != Boolean);
         }
         /// <summary>
         /// Check type is number
         /// </summary>
         /// <param name="type">Type to check</param>
+        /// <param name="orBoolean">Count boolean type as number</param>
         /// <returns>Is specified type number</returns>
-        public static bool IsNumber(this IDSharpType type)
+        public static bool IsNumber(this IDSharpType type, bool orBoolean = false)
         {
             if (TryGetInfo(type, out var info))
             {
-                return info.IsNumber();
+                return info.IsNumber(orBoolean);
             }
 
             return false;
@@ -518,6 +520,30 @@ namespace DialogMaker.Core.Scripting.Runtime
             }
 
             return DSharpCastAvailability.Implicit;
+        }
+        /// <summary>
+        /// Get bigger type between two types. Both types should be build-in primitives
+        /// </summary>
+        /// <param name="current">Current type</param>
+        /// <param name="other">Other type</param>
+        /// <returns>Bigger type between two types</returns>
+        public static IDSharpType GetBigger(this IDSharpType current, IDSharpType other)
+        {
+            if (current == other)
+            {
+                return current;
+            }
+            if (!TryGetInfo(current, out var currentInfo) || 0 >= currentInfo.Size ||
+                !TryGetInfo(other, out var otherInfo) || 0 >= otherInfo.Size)
+            {
+                throw new DSharpException($"Both types should be build-in primitives, got \"{current}\" and \"{other}\"");
+            }
+            if (currentInfo.Size == otherInfo.Size)
+            {
+                return currentInfo.IsUnsigned() ? current : other;
+            }
+
+            return currentInfo.Size > otherInfo.Size ? current : other;
         }
 
         #endregion

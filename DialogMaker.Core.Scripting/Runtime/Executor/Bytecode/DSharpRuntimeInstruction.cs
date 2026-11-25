@@ -59,8 +59,8 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode
         /// <summary>
         /// Create base runtime information about instruction.
         /// </summary>
-        /// <param name="typesProvider"></param>
-        /// <param name="stream"></param>
+        /// <param name="typesProvider">Types provider for searching necessary types</param>
+        /// <param name="stream">Bytecode stream from which instruction will be read</param>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
         public static DSharpRuntimeInstruction Create(DSharpRuntimeInformationProvider typesProvider, ref MemoryBuilder memoryBuilder, UnmanagedStream* stream)

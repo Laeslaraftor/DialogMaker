@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
-using DialogMaker.Core.Scripting.Runtime.Executor;
+﻿using DialogMaker.Core.Scripting.Runtime.Executor;
 using DialogMaker.Core.Scripting.Runtime.Numbers.MathExecutors;
 using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
@@ -271,7 +270,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         public readonly bool Equals(DSharpNumber other)
         {
             var current = this;
-            return DSharpNumberMathExecutor.LogicalEquals(ref current, ref other).Read<bool>();
+            return DSharpNumberMathExecutor.Equals(ref current, ref other).Read<bool>();
         }
         public readonly override string ToString()
         {
@@ -302,8 +301,8 @@ namespace DialogMaker.Core.Scripting.Runtime
 
         #region Math operators
 
-        public static DSharpNumber operator ==(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.LogicalEquals(ref left, ref right);
-        public static DSharpNumber operator !=(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.LogicalNotEquals(ref left, ref right);
+        public static DSharpNumber operator ==(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Equals(ref left, ref right);
+        public static DSharpNumber operator !=(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.NotEquals(ref left, ref right);
         public static DSharpNumber operator +(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Add(ref left, ref right);
         public static DSharpNumber operator -(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Subtract(ref left, ref right);
         public static DSharpNumber operator *(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Multiply(ref left, ref right);
@@ -314,10 +313,10 @@ namespace DialogMaker.Core.Scripting.Runtime
         public static DSharpNumber operator >>(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.ShiftRight(ref left, ref right);
         public static DSharpNumber operator |(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Or(ref left, ref right);
         public static DSharpNumber operator &(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.And(ref left, ref right);
-        public static DSharpNumber operator >(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.LogicalGreater(ref left, ref right);
-        public static DSharpNumber operator >=(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.LogicalGreaterOrEquals(ref left, ref right);
-        public static DSharpNumber operator <(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.LogicalLess(ref left, ref right);
-        public static DSharpNumber operator <=(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.LogicalLessOrEquals(ref left, ref right);
+        public static DSharpNumber operator >(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Greater(ref left, ref right);
+        public static DSharpNumber operator >=(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.GreaterOrEqual(ref left, ref right);
+        public static DSharpNumber operator <(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.Less(ref left, ref right);
+        public static DSharpNumber operator <=(DSharpNumber left, DSharpNumber right) => DSharpNumberMathExecutor.LessOrEqual(ref left, ref right);
         public static DSharpNumber operator !(DSharpNumber value) => DSharpNumberMathExecutor.Not(ref value);
         public static DSharpNumber operator ++(DSharpNumber value) => DSharpNumberMathExecutor.Increment(ref value);
         public static DSharpNumber operator --(DSharpNumber value) => DSharpNumberMathExecutor.Decrement(ref value);

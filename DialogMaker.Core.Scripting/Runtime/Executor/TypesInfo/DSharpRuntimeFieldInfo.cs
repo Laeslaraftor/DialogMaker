@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Ast;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
@@ -126,6 +127,21 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
 
             stack.PushReference(*(DSharpObject**)value);
         }
+        /// <summary>
+        /// Read field value as D# number 
+        /// </summary>
+        /// <param name="instance">Object instance that contains current field</param>
+        /// <returns>D# that stored in field</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal DSharpNumber ReadAsNumber(DSharpObject* instance)
+        {
+            DSharpNumber number = default;
+            Unsafe.CopyBlockUnaligned(&number, GetDataPointer(instance), (uint)FieldType->Size);
+            //var number = *(DSharpNumber*)GetDataPointer(instance);
+            number._type = FieldType->ConverterInfo.ConvertingType;
+
+            return number;
+        }
 
         /// <summary>
         /// Write data from managed array to field
@@ -194,6 +210,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// </summary>
         /// <param name="instance">Object instance. No need to specify instance if field is static</param>
         /// <returns>Pointer to start field stat</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public byte* GetDataPointer(DSharpObject* instance)
         {
             byte* data;
@@ -228,6 +245,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             return declaringType + new string((ReadOnlySpan<char>)Name);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private int GetOffset(DSharpObject* instance)
         {
             if (IsStatic)
@@ -251,6 +269,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             throw new InvalidOperationException($"Unable to get instance field ({Name}: {MetadataToken}) offset at {instance->Type->ToString()}");
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private DSharpObject* GetValuePointer(DSharpObject* instance)
         {
             byte* data = GetDataPointer(instance);

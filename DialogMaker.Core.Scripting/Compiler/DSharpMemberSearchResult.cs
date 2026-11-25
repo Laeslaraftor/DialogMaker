@@ -1,4 +1,5 @@
-﻿using DialogMaker.Core.Scripting.Runtime;
+﻿using DialogMaker.Core.Scripting.Compiler.Builders;
+using DialogMaker.Core.Scripting.Runtime;
 
 namespace DialogMaker.Core.Scripting.Compiler
 {
@@ -51,5 +52,49 @@ namespace DialogMaker.Core.Scripting.Compiler
         /// Calling info for founded method
         /// </summary>
         public DSharpMethodCallingInfo? MethodCallingInfo { get; } = methodCallingInfo;
+
+        /// <summary>
+        /// Get type of value that return by current member
+        /// </summary>
+        /// <param name="assembly">Assembly for creating generic type if need</param>
+        /// <returns>Type of value that return by current member</returns>
+        public IDSharpType GetReturnType(DSharpAssemblyBuilder assembly)
+        {
+            IDSharpType? returnType = null;
+
+            if (ParameterInfo != null)
+            {
+                returnType = ParameterInfo.Type;
+            }
+            else if (IsMethodAsDelegate)
+            {
+                if (MemberInfo is not IDSharpCallableMember callable)
+                {
+                    throw new DSharpException($"Returning method as delegate requires callable member, got \"{MemberInfo}\"");
+                }
+
+                returnType = callable.GetDelegateType(assembly);
+            }
+            else if (MethodCallingInfo != null)
+            {
+                returnType = MethodCallingInfo.GetReturnType(assembly)
+                    ?? throw new DSharpException($"Callable {MethodCallingInfo.Callable} does not return value");
+            }
+            else if (MemberInfo.TryGetReturnType(out var memberReturnType))
+            {
+                returnType = memberReturnType;
+            }
+
+            if (returnType == null)
+            {
+                throw new DSharpException("Unable to get return type");
+            }
+            if (IsNullable && returnType.IsValueType())
+            {
+                return assembly.CreateNullable(returnType);
+            }
+
+            return returnType;
+        }
     }
 }

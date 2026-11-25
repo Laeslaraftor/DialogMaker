@@ -1,43 +1,20 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
+using static DialogMaker.Core.Scripting.CodeAnalyzer.CodeGeneratorHelper;
 
 namespace DialogMaker.Core.Scripting.CodeAnalyzer
 {
-    [Generator(LanguageNames.CSharp)]
-    public class ExecutorsInformationGenerator : IIncrementalGenerator
+    public static class ExecutorsInformationGenerator
     {
-        private const string OperationEnumFullName =
-            "DialogMaker.Core.Scripting.Runtime.DSharpBytecodeOperation";
-
-        private const string ExecutorAttributeFullName =
-            "DialogMaker.Core.Scripting.Runtime.ExecutorAttribute";
-
-        private const string InfoStructFullName =
-            "DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.DSharpOperationExecutorInfo";
-
-        private const string InstructionExecutorFullName =
-            "DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.DSharpInstructionExecutor";
-
-        private const string RuntimeInstructionFullName =
-            "DialogMaker.Core.Scripting.Runtime.Executor.Bytecode.DSharpRuntimeInstruction";
-
-        private const string ExecutionContextFullName =
-            "DialogMaker.Core.Scripting.Runtime.Executor.DSharpExecutionContext";
-
-        private const string MethodExecutionCallbackFullName =
-            "DialogMaker.Core.Scripting.Runtime.Executor.DSharpMethodExecutionCallback";
-
-        public void Initialize(IncrementalGeneratorInitializationContext context)
+        public static void Initialize(IncrementalGeneratorInitializationContext context)
         {
             var candidates = context.SyntaxProvider.CreateSyntaxProvider(
                 predicate: static (node, _) => IsCandidate(node),
-                transform: static (ctx, ct) => GetOperationInfo(ctx, ct))
+                transform: static (context, cancellationToken) => GetOperationInfo(context, cancellationToken))
                 .Where(static x => x != null)
                 .Select(static (x, _) => x!.Value);
 
@@ -46,9 +23,7 @@ namespace DialogMaker.Core.Scripting.CodeAnalyzer
             context.RegisterSourceOutput(collected, static (spc, operations) =>
             {
                 var source = GenerateSource(operations);
-                spc.AddSource(
-                    "DSharpOperationExecutorInfos.g.cs",
-                    SourceText.From(source, Encoding.UTF8));
+                spc.AddSource("DSharpOperationExecutorInfos.g.cs", SourceText.From(source, Encoding.UTF8));
             });
         }
 
@@ -74,53 +49,55 @@ namespace DialogMaker.Core.Scripting.CodeAnalyzer
             var enumSymbol = fieldSymbol.ContainingType;
 
             if (enumSymbol == null ||
-                enumSymbol.ToDisplayString() != OperationEnumFullName)
+                enumSymbol.FullName != OperationEnumFullName)
             {
                 return null;
             }
 
-            var enumFullName = enumSymbol.ToDisplayString();
             var executorAttribute = fieldSymbol.GetAttributes()
-                .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == ExecutorAttributeFullName);
+                                               .FirstOrDefault(a => a.AttributeClass?.FullName == ExecutorAttributeFullName);
 
             if (executorAttribute == null ||
-                executorAttribute.ConstructorArguments.Length == 0 ||
-                executorAttribute.ConstructorArguments[0].Value is not INamedTypeSymbol executorType)
+                executorAttribute.ConstructorArguments.Length == 0)
             {
                 return null;
             }
 
-            var instanceField = executorType
-                .GetMembers("Instance")
-                .OfType<IFieldSymbol>()
-                .FirstOrDefault(f =>
-                    f.IsStatic &&
-                    f.DeclaredAccessibility == Accessibility.Public &&
-                    SymbolEqualityComparer.Default.Equals(f.Type, executorType));
+            string? executorTypeFullName = null;
 
-            if (instanceField == null)
+            if (executorAttribute.ConstructorArguments[0].Value is IErrorTypeSymbol)
+            {
+                var textValue = executorAttribute.ConstructorArguments[0].Value?.ToString();
+
+                if (textValue == null ||
+                    !GeneratedTypes.TryGetValue(textValue, out executorTypeFullName))
+                {
+                    return null;
+                }
+            }
+            else if (executorAttribute.ConstructorArguments[0].Value is INamedTypeSymbol executorType)
+            {
+                executorTypeFullName = executorType.FullName;
+            }
+            if (executorTypeFullName == null)
             {
                 return null;
             }
 
-            return new OperationInfo(
-                enumSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) + "." + fieldSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                executorType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+            return new(fieldSymbol.FullName, executorTypeFullName);
         }
 
         private static string GenerateSource(ImmutableArray<OperationInfo> operations)
         {
-            var builder = new StringBuilder();
+            StringBuilder builder = new();
 
-            var indent = CodeGeneratorHelper.GetIndent(1);
-            var indent2 = CodeGeneratorHelper.GetIndent(2);
-            var indent3 = CodeGeneratorHelper.GetIndent(3);
+            var indent = GetIndent(1);
+            var indent2 = GetIndent(2);
+            var indent3 = GetIndent(3);
 
             builder.AppendLine("// <auto-generated/>");
-            builder.AppendLine("#nullable enable");
             builder.AppendLine();
-            builder.AppendLine("using System.Collections.Generic;");
-            builder.AppendLine("using System.Collections.ObjectModel;");
+            builder.AppendLine("#nullable enable");
             builder.AppendLine();
             builder.AppendLine("namespace DialogMaker.Core.Scripting.Runtime.Executor.Bytecode");
             builder.AppendLine("{");
@@ -132,10 +109,10 @@ namespace DialogMaker.Core.Scripting.CodeAnalyzer
             builder.AppendLine($"{indent2}/// <summary>");
             builder.AppendLine($"{indent2}/// Dictionary with operations and information about it. This contains all operations that have executor");
             builder.AppendLine($"{indent2}/// </summary>");
-            builder.AppendLine($"{indent2}public static readonly ReadOnlyDictionary<global::{OperationEnumFullName}, global::{InfoStructFullName}> Operations = new(new Dictionary<global::{OperationEnumFullName}, global::{InfoStructFullName}>()");
+            builder.AppendLine($"{indent2}public static readonly {ReadOnlyDictionaryFullName}<{OperationEnumFullName}, {InfoStructFullName}> Operations = new(new {DictionaryFullName}<{OperationEnumFullName}, {InfoStructFullName}>()");
             builder.AppendLine($"{indent2}{{");
 
-            foreach (var operation in operations.OrderBy(x => x.EnumMemberName))
+            foreach (var operation in operations)
             {
                 builder.Append($"{indent3}[{operation.EnumMemberName}] = new(");
                 builder.Append($"{operation.EnumMemberName}, {operation.ExecutorTypeName}.Instance");

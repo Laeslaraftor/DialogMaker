@@ -3986,10 +3986,70 @@ namespace DialogMaker.Core.Scripting.Compiler
             {
                 throw new InvalidOperationException($"Unable to compile binary operation. Unable to get type of left expression: {left}");
             }
-
             if (right.GetExpressionType(Assembly, context) is not IDSharpType rightType)
             {
                 throw new InvalidOperationException($"Unable to compile binary operation. Unable to get type of right expression: {right}");
+            }
+
+            DSharpMemberSearchResult? leftMemberResult = null;
+            DSharpMemberSearchResult? rightMemberResult = null;
+
+            try
+            {
+                if (context.TryResolveMember(left, out var leftResolvedMember))
+                {
+                    leftMemberResult = leftResolvedMember;
+                }
+                if (context.TryResolveMember(right, out var rightResolvedMember))
+                {
+                    rightMemberResult = rightResolvedMember;
+                }
+            }
+            catch
+            {
+            }
+
+            if (leftMemberResult != null && rightMemberResult != null &&
+                (leftMemberResult.Value.ParameterInfo != null && rightMemberResult.Value.ParameterInfo != null ||
+                 leftMemberResult.Value.ParameterInfo != null && rightMemberResult.Value.MemberInfo is IDSharpFieldInfo ||
+                 leftMemberResult.Value.MemberInfo is IDSharpFieldInfo && rightMemberResult.Value.ParameterInfo != null ||
+                 leftMemberResult.Value.MemberInfo is IDSharpFieldInfo && rightMemberResult.Value.MemberInfo is IDSharpFieldInfo))
+            {
+                var leftMember = leftMemberResult.Value;
+                var rightMember = rightMemberResult.Value;
+                var leftReturnType = leftMember.GetReturnType(Assembly);
+                var rightReturnType = rightMember.GetReturnType(Assembly);
+
+                if (leftReturnType.IsNumber(true) && rightReturnType.IsNumber(true))
+                {
+                    bool isCompiled = false;
+
+                    if (leftMember.ParameterInfo != null && 
+                        rightMember.ParameterInfo != null)
+                    {
+                        code.BinaryOperation(binaryOperator, leftMember.ParameterInfo, rightMember.ParameterInfo);
+                        isCompiled = true;
+                    }
+                    else if (leftMember.MemberInfo is IDSharpFieldInfo leftField &&
+                             rightMember.MemberInfo is IDSharpFieldInfo rightField)
+                    {
+                        if (leftField.IsStatic && rightField.IsStatic)
+                        {
+                            code.BinaryOperation(binaryOperator, leftField, rightField);
+                            isCompiled = true;
+                        }
+                    }
+
+                    if (isCompiled)
+                    {
+                        if (binaryOperator.IsLogical())
+                        {
+                            return Assembly.BoolType;
+                        }
+
+                        return leftReturnType.GetBigger(rightReturnType);
+                    }
+                }
             }
 
             IDSharpType? requestedType = null;

@@ -1,6 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
-
-namespace DialogMaker.Core.Scripting.Runtime
+﻿namespace DialogMaker.Core.Scripting.Runtime
 {
     /// <summary>
     /// Interface of D# operator

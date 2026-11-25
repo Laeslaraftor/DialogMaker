@@ -28,26 +28,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             public override Instruction Copy(DSharpBytecodeBuilder builder)
             {
-                int index = BytecodeBuilder.Method.Parameters.IndexOf(Parameter);
-                IDSharpParameterInfo parameter = Parameter;
-
-                if (index != -1)
-                {
-                    if (builder.Method.Parameters.Count > index)
-                    {
-                        parameter = builder.Method.Parameters[index];
-                    }
-                }
-                else
-                {
-                    index = BytecodeBuilder.LocalVariables.IndexOf(Parameter);
-
-                    if (builder.LocalVariables.Count > index)
-                    {
-                        parameter = builder.LocalVariables[index];
-                    }
-                }
-
+                IDSharpParameterInfo parameter = ReplaceParameter(BytecodeBuilder, builder, Parameter);
                 return new ParameterInstruction(builder, Operation, parameter);
             }
             public override object[] GetArguments()
@@ -58,6 +39,34 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             public override string ToString()
             {
                 return $"{Operation} [{Parameter?.Name}]";
+            }
+
+            #endregion
+
+            #region Static
+
+            internal static IDSharpParameterInfo ReplaceParameter(DSharpBytecodeBuilder currentBuilder, DSharpBytecodeBuilder newBuilder, IDSharpParameterInfo parameter)
+            {
+                int index = currentBuilder.Method.Parameters.IndexOf(parameter);
+
+                if (index != -1)
+                {
+                    if (newBuilder.Method.Parameters.Count > index)
+                    {
+                        parameter = newBuilder.Method.Parameters[index];
+                    }
+                }
+                else
+                {
+                    index = currentBuilder.LocalVariables.IndexOf(parameter);
+
+                    if (newBuilder.LocalVariables.Count > index)
+                    {
+                        parameter = newBuilder.LocalVariables[index];
+                    }
+                }
+
+                return parameter;
             }
 
             #endregion

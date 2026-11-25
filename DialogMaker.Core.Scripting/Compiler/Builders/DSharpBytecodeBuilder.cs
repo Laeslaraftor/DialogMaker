@@ -263,6 +263,11 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 {
                     typeInstruction.MemberInfo = ReplaceMember(typeInstruction.MemberInfo);
                 }
+                else if (instruction is TwoMembersInstruction twoMembersInstruction)
+                {
+                    twoMembersInstruction.FirstMember = ReplaceMember(twoMembersInstruction.FirstMember);
+                    twoMembersInstruction.SecondMember = ReplaceMember(twoMembersInstruction.SecondMember);
+                }
                 else if (instruction is CallingInstruction genericCallInstruction)
                 {
                     var callingInfo = genericCallInstruction.CallingInfo;
@@ -1249,6 +1254,14 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.Decrement);
         }
         /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.BitInvert"/>
+        /// </summary>
+        /// <returns></returns>
+        public Instruction BitInvert()
+        {
+            return CreateInstruction<Instruction>(this, DSharpBytecodeOperation.BitInvert);
+        }
+        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.GetAddress"/>
         /// </summary>
         /// <returns></returns>
@@ -1283,6 +1296,334 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
         #endregion
 
+        #region Extra math and comparison
+
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.AddVariables"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoParametersInstruction Add(IDSharpParameterInfo leftVariable, IDSharpParameterInfo rightVariable)
+        {
+            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.AddVariables, leftVariable, rightVariable);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.SubtractVariables"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoParametersInstruction Subtract(IDSharpParameterInfo leftVariable, IDSharpParameterInfo rightVariable)
+        {
+            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.SubtractVariables, leftVariable, rightVariable);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.MultiplyVariables"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoParametersInstruction Multiply(IDSharpParameterInfo leftVariable, IDSharpParameterInfo rightVariable)
+        {
+            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.MultiplyVariables, leftVariable, rightVariable);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.DivideVariables"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoParametersInstruction Divide(IDSharpParameterInfo leftVariable, IDSharpParameterInfo rightVariable)
+        {
+            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.DivideVariables, leftVariable, rightVariable);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.ModVariables"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoParametersInstruction Mod(IDSharpParameterInfo leftVariable, IDSharpParameterInfo rightVariable)
+        {
+            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.ModVariables, leftVariable, rightVariable);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.XorVariables"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoParametersInstruction Xor(IDSharpParameterInfo leftVariable, IDSharpParameterInfo rightVariable)
+        {
+            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.XorVariables, leftVariable, rightVariable);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.OrVariables"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoParametersInstruction Or(IDSharpParameterInfo leftVariable, IDSharpParameterInfo rightVariable)
+        {
+            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.OrVariables, leftVariable, rightVariable);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.AndVariables"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoParametersInstruction And(IDSharpParameterInfo leftVariable, IDSharpParameterInfo rightVariable)
+        {
+            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.AndVariables, leftVariable, rightVariable);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.ShiftLeftVariables"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoParametersInstruction ShiftLeft(IDSharpParameterInfo leftVariable, IDSharpParameterInfo rightVariable)
+        {
+            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.ShiftLeftVariables, leftVariable, rightVariable);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.ShiftRightVariables"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoParametersInstruction ShiftRight(IDSharpParameterInfo leftVariable, IDSharpParameterInfo rightVariable)
+        {
+            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.ShiftRightVariables, leftVariable, rightVariable);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.EqualsVariables"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoParametersInstruction Equals(IDSharpParameterInfo leftVariable, IDSharpParameterInfo rightVariable)
+        {
+            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.EqualsVariables, leftVariable, rightVariable);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.NotEqualsVariables"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoParametersInstruction NotEquals(IDSharpParameterInfo leftVariable, IDSharpParameterInfo rightVariable)
+        {
+            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.NotEqualsVariables, leftVariable, rightVariable);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.LessVariables"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoParametersInstruction Less(IDSharpParameterInfo leftVariable, IDSharpParameterInfo rightVariable)
+        {
+            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.LessVariables, leftVariable, rightVariable);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.LessOrEqualVariables"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoParametersInstruction LessOrEqual(IDSharpParameterInfo leftVariable, IDSharpParameterInfo rightVariable)
+        {
+            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.LessOrEqualVariables, leftVariable, rightVariable);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.GreaterVariables"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoParametersInstruction Greater(IDSharpParameterInfo leftVariable, IDSharpParameterInfo rightVariable)
+        {
+            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.GreaterVariables, leftVariable, rightVariable);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.GreaterOrEqualVariables"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoParametersInstruction GreaterOrEqual(IDSharpParameterInfo leftVariable, IDSharpParameterInfo rightVariable)
+        {
+            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.GreaterOrEqualVariables, leftVariable, rightVariable);
+        }
+
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.AddFields"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoMembersInstruction Add(IDSharpFieldInfo leftField, IDSharpFieldInfo rightField)
+        {
+            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.AddFields, leftField, rightField);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.SubtractFields"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoMembersInstruction Subtract(IDSharpFieldInfo leftField, IDSharpFieldInfo rightField)
+        {
+            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.SubtractFields, leftField, rightField);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.MultiplyFields"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoMembersInstruction Multiply(IDSharpFieldInfo leftField, IDSharpFieldInfo rightField)
+        {
+            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.MultiplyFields, leftField, rightField);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.DivideFields"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoMembersInstruction Divide(IDSharpFieldInfo leftField, IDSharpFieldInfo rightField)
+        {
+            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.DivideFields, leftField, rightField);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.ModFields"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoMembersInstruction Mod(IDSharpFieldInfo leftField, IDSharpFieldInfo rightField)
+        {
+            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.ModFields, leftField, rightField);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.XorFields"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoMembersInstruction Xor(IDSharpFieldInfo leftField, IDSharpFieldInfo rightField)
+        {
+            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.XorFields, leftField, rightField);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.OrFields"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoMembersInstruction Or(IDSharpFieldInfo leftField, IDSharpFieldInfo rightField)
+        {
+            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.OrFields, leftField, rightField);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.AndFields"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoMembersInstruction And(IDSharpFieldInfo leftField, IDSharpFieldInfo rightField)
+        {
+            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.AndFields, leftField, rightField);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.ShiftLeftFields"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoMembersInstruction ShiftLeft(IDSharpFieldInfo leftField, IDSharpFieldInfo rightField)
+        {
+            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.ShiftLeftFields, leftField, rightField);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.ShiftRightFields"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoMembersInstruction ShiftRight(IDSharpFieldInfo leftField, IDSharpFieldInfo rightField)
+        {
+            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.ShiftRightFields, leftField, rightField);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.EqualsFields"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoMembersInstruction Equals(IDSharpFieldInfo leftField, IDSharpFieldInfo rightField)
+        {
+            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.EqualsFields, leftField, rightField);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.NotEqualsFields"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoMembersInstruction NotEquals(IDSharpFieldInfo leftField, IDSharpFieldInfo rightField)
+        {
+            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.NotEqualsFields, leftField, rightField);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.LessFields"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoMembersInstruction Less(IDSharpFieldInfo leftField, IDSharpFieldInfo rightField)
+        {
+            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.LessFields, leftField, rightField);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.LessOrEqualFields"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoMembersInstruction LessOrEqual(IDSharpFieldInfo leftField, IDSharpFieldInfo rightField)
+        {
+            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.LessOrEqualFields, leftField, rightField);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.GreaterFields"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoMembersInstruction Greater(IDSharpFieldInfo leftField, IDSharpFieldInfo rightField)
+        {
+            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.GreaterFields, leftField, rightField);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.GreaterOrEqualFields"/>
+        /// </summary>
+        /// <returns></returns>
+        public TwoMembersInstruction GreaterOrEqual(IDSharpFieldInfo leftField, IDSharpFieldInfo rightField)
+        {
+            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.GreaterOrEqualFields, leftField, rightField);
+        }
+
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.InvertVariable"/>
+        /// </summary>
+        /// <returns></returns>
+        public ParameterInstruction Invert(IDSharpParameterInfo variable)
+        {
+            return CreateInstruction<ParameterInstruction>(this, DSharpBytecodeOperation.InvertVariable, variable);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.IncrementVariable"/>
+        /// </summary>
+        /// <returns></returns>
+        public BoolArgParameterInstruction Increment(IDSharpParameterInfo variable, bool pushResultIntoStack)
+        {
+            return CreateInstruction<BoolArgParameterInstruction>(this, DSharpBytecodeOperation.IncrementVariable, variable, pushResultIntoStack);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.DecrementVariable"/>
+        /// </summary>
+        /// <returns></returns>
+        public BoolArgParameterInstruction Decrement(IDSharpParameterInfo variable, bool pushResultIntoStack)
+        {
+            return CreateInstruction<BoolArgParameterInstruction>(this, DSharpBytecodeOperation.DecrementVariable, variable, pushResultIntoStack);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.BitInvertVariable"/>
+        /// </summary>
+        /// <returns></returns>
+        public ParameterInstruction BitInvert(IDSharpParameterInfo variable)
+        {
+            return CreateInstruction<ParameterInstruction>(this, DSharpBytecodeOperation.BitInvertVariable, variable);
+        }
+
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.InvertField"/>
+        /// </summary>
+        /// <returns></returns>
+        public TypeInstruction Invert(IDSharpFieldInfo field)
+        {
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.InvertField, field);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.IncrementField"/>
+        /// </summary>
+        /// <returns></returns>
+        public BoolArgTypeInstruction Increment(IDSharpFieldInfo field, bool pushResultIntoStack)
+        {
+            return CreateInstruction<BoolArgTypeInstruction>(this, DSharpBytecodeOperation.IncrementField, field, pushResultIntoStack);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.DecrementField"/>
+        /// </summary>
+        /// <returns></returns>
+        public BoolArgTypeInstruction Decrement(IDSharpFieldInfo field, bool pushResultIntoStack)
+        {
+            return CreateInstruction<BoolArgTypeInstruction>(this, DSharpBytecodeOperation.DecrementField, field, pushResultIntoStack);
+        }
+        /// <summary>
+        /// <inheritdoc cref="DSharpBytecodeOperation.BitInvertField"/>
+        /// </summary>
+        /// <returns></returns>
+        public TypeInstruction BitInvert(IDSharpFieldInfo field)
+        {
+            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.BitInvertField, field);
+        }
+
+        #endregion
+
         #region Operators
 
         /// <summary>
@@ -1305,6 +1646,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                     return Increment();
                 case DSharpUnaryOperator.Decrement:
                     return Decrement();
+                case DSharpUnaryOperator.BitInvert:
+                    return BitInvert();
                 default:
                     throw new ArgumentException($"Unknown operator \"{(DSharpTokenType)unaryOperator}\"", nameof(unaryOperator));
             }
@@ -1337,6 +1680,118 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 DSharpBinaryOperator.LogicalEquals => Equals(),
                 DSharpBinaryOperator.LogicalNotEquals => NotEquals(),
                 DSharpBinaryOperator.LogicalXor => Xor(),
+                _ => throw new ArgumentException($"Unknown operator \"{(DSharpTokenType)binaryOperator}\"", nameof(binaryOperator)),
+            };
+        }
+        /// <summary>
+        /// Add unary operation for variable
+        /// </summary>
+        /// <param name="unaryOperator">Unary operator</param>
+        /// <param name="variable">Variable for that unary operation is need to be performed</param>
+        /// <param name="pushResultIntoStack">
+        /// Flag (bool) that indicates when result is need to be pushed to stack.
+        /// Works only with increment and decrement instructions
+        /// </param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">Unknown operator</exception>
+        public Instruction UnaryOperation(DSharpUnaryOperator unaryOperator, IDSharpParameterInfo variable, bool pushResultIntoStack = true)
+        {
+            return unaryOperator switch
+            {
+                DSharpUnaryOperator.Not => Invert(variable),
+                DSharpUnaryOperator.Minus => Invert(variable),
+                DSharpUnaryOperator.Increment => Increment(variable, pushResultIntoStack),
+                DSharpUnaryOperator.Decrement => Decrement(variable, pushResultIntoStack),
+                DSharpUnaryOperator.BitInvert => BitInvert(variable),
+                _ => throw new ArgumentException($"Unknown operator \"{(DSharpTokenType)unaryOperator}\"", nameof(unaryOperator)),
+            };
+        }
+        /// <summary>
+        /// Add binary operation between variables
+        /// </summary>
+        /// <param name="binaryOperator">Binary operator</param>
+        /// <param name="leftVariable">Left operand variable</param>
+        /// <param name="rightVariable">Right operand variable</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">Unknown operator</exception>
+        public TwoParametersInstruction BinaryOperation(DSharpBinaryOperator binaryOperator, IDSharpParameterInfo leftVariable, IDSharpParameterInfo rightVariable)
+        {
+            return binaryOperator switch
+            {
+                DSharpBinaryOperator.Plus => Add(leftVariable, rightVariable),
+                DSharpBinaryOperator.Minus => Subtract(leftVariable, rightVariable),
+                DSharpBinaryOperator.Multiply => Multiply(leftVariable, rightVariable),
+                DSharpBinaryOperator.Divide => Divide(leftVariable, rightVariable),
+                DSharpBinaryOperator.Mod => Mod(leftVariable, rightVariable),
+                DSharpBinaryOperator.ShiftLeft => ShiftLeft(leftVariable, rightVariable),
+                DSharpBinaryOperator.ShiftRight => ShiftRight(leftVariable, rightVariable),
+                DSharpBinaryOperator.And => And(leftVariable, rightVariable),
+                DSharpBinaryOperator.Or => Or(leftVariable, rightVariable),
+                DSharpBinaryOperator.LogicalAnd => And(leftVariable, rightVariable),
+                DSharpBinaryOperator.LogicalOr => Or(leftVariable, rightVariable),
+                DSharpBinaryOperator.LogicalLess => Less(leftVariable, rightVariable),
+                DSharpBinaryOperator.LogicalLessOrEquals => LessOrEqual(leftVariable, rightVariable),
+                DSharpBinaryOperator.LogicalGreater => Greater(leftVariable, rightVariable),
+                DSharpBinaryOperator.LogicalGreaterOrEquals => GreaterOrEqual(leftVariable, rightVariable),
+                DSharpBinaryOperator.LogicalEquals => Equals(leftVariable, rightVariable),
+                DSharpBinaryOperator.LogicalNotEquals => NotEquals(leftVariable, rightVariable),
+                DSharpBinaryOperator.LogicalXor => Xor(leftVariable, rightVariable),
+                _ => throw new ArgumentException($"Unknown operator \"{(DSharpTokenType)binaryOperator}\"", nameof(binaryOperator)),
+            };
+        }
+        /// <summary>
+        /// Add unary operation for field
+        /// </summary>
+        /// <param name="unaryOperator">Unary operator</param>
+        /// <param name="field">Field for that unary operation is need to be performed</param>
+        /// <param name="pushResultIntoStack">
+        /// Flag (bool) that indicates when result is need to be pushed to stack.
+        /// Works only with increment and decrement instructions
+        /// </param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">Unknown operator</exception>
+        public TypeInstruction UnaryOperation(DSharpUnaryOperator unaryOperator, IDSharpFieldInfo field, bool pushResultIntoStack = true)
+        {
+            return unaryOperator switch
+            {
+                DSharpUnaryOperator.Not => Invert(field),
+                DSharpUnaryOperator.Minus => Invert(field),
+                DSharpUnaryOperator.Increment => Increment(field, pushResultIntoStack),
+                DSharpUnaryOperator.Decrement => Decrement(field, pushResultIntoStack),
+                DSharpUnaryOperator.BitInvert => BitInvert(field),
+                _ => throw new ArgumentException($"Unknown operator \"{(DSharpTokenType)unaryOperator}\"", nameof(unaryOperator)),
+            };
+        }
+        /// <summary>
+        /// Add binary operation between variables
+        /// </summary>
+        /// <param name="binaryOperator">Binary operator</param>
+        /// <param name="leftVariable">Left operand variable</param>
+        /// <param name="rightVariable">Right operand variable</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException">Unknown operator</exception>
+        public TwoMembersInstruction BinaryOperation(DSharpBinaryOperator binaryOperator, IDSharpFieldInfo leftField, IDSharpFieldInfo rightField)
+        {
+            return binaryOperator switch
+            {
+                DSharpBinaryOperator.Plus => Add(leftField, rightField),
+                DSharpBinaryOperator.Minus => Subtract(leftField, rightField),
+                DSharpBinaryOperator.Multiply => Multiply(leftField, rightField),
+                DSharpBinaryOperator.Divide => Divide(leftField, rightField),
+                DSharpBinaryOperator.Mod => Mod(leftField, rightField),
+                DSharpBinaryOperator.ShiftLeft => ShiftLeft(leftField, rightField),
+                DSharpBinaryOperator.ShiftRight => ShiftRight(leftField, rightField),
+                DSharpBinaryOperator.And => And(leftField, rightField),
+                DSharpBinaryOperator.Or => Or(leftField, rightField),
+                DSharpBinaryOperator.LogicalAnd => And(leftField, rightField),
+                DSharpBinaryOperator.LogicalOr => Or(leftField, rightField),
+                DSharpBinaryOperator.LogicalLess => Less(leftField, rightField),
+                DSharpBinaryOperator.LogicalLessOrEquals => LessOrEqual(leftField, rightField),
+                DSharpBinaryOperator.LogicalGreater => Greater(leftField, rightField),
+                DSharpBinaryOperator.LogicalGreaterOrEquals => GreaterOrEqual(leftField, rightField),
+                DSharpBinaryOperator.LogicalEquals => Equals(leftField, rightField),
+                DSharpBinaryOperator.LogicalNotEquals => NotEquals(leftField, rightField),
+                DSharpBinaryOperator.LogicalXor => Xor(leftField, rightField),
                 _ => throw new ArgumentException($"Unknown operator \"{(DSharpTokenType)binaryOperator}\"", nameof(binaryOperator)),
             };
         }

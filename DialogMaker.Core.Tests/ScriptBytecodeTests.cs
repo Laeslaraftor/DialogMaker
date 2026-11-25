@@ -71,6 +71,7 @@ namespace DialogMaker.Core.Tests
         [TestCase("System.Func`1", "Invoke")]
         [TestCase("System.Func`2", "Invoke")]
         [TestCase("System.TimeSpan", "get_TotalSeconds")]
+        [TestCase("System.TimeSpan", "FromUnits")]
         [TestCase("System.BitConverter", "Int64BitsToDouble")]
         [TestCase("System.Collections.Generic.HashSet`1", "Add")]
         [TestCase("System.Collections.Generic.List`1", "Add")]

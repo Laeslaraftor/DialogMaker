@@ -7,12 +7,11 @@ using System.Text;
 
 namespace DialogMaker.Core.Scripting.CodeAnalyzer
 {
-    [Generator(LanguageNames.CSharp)]
-    public class EnumHelperGenerator : IIncrementalGenerator
+    public static class EnumHelperGenerator
     {
         #region Controls
 
-        public void Initialize(IncrementalGeneratorInitializationContext context)
+        public static void Initialize(IncrementalGeneratorInitializationContext context)
         {
             var enumCandidates = context.SyntaxProvider.ForAttributeWithMetadataName(
                 GenerateValuesAttributeName,
