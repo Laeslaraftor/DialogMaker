@@ -1,6 +1,7 @@
 ﻿using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Collections.ObjectModel;
+using System.Reflection.Emit;
 using static DialogMaker.Core.Scripting.Compiler.Builders.DSharpBytecodeBuilder;
 
 namespace DialogMaker.Core.Scripting.Compiler
@@ -42,6 +43,48 @@ namespace DialogMaker.Core.Scripting.Compiler
         private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _conditionalJumpOperations = new([
             DSharpBytecodeOperation.JumpIfFalse,
             DSharpBytecodeOperation.JumpIfTrue
+        ]);
+        private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _nativeStoreOperations = new([
+            DSharpBytecodeOperation.StoreLocal,
+            DSharpBytecodeOperation.StoreField,
+            DSharpBytecodeOperation.StoreInstanceField
+        ]);
+        private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _assignableBinaryOperations = new([
+            DSharpBytecodeOperation.AddVariables,
+            DSharpBytecodeOperation.AddVariableField,
+            DSharpBytecodeOperation.SubtractVariables,
+            DSharpBytecodeOperation.SubtractVariableField,
+            DSharpBytecodeOperation.SubtractFieldVariable,
+            DSharpBytecodeOperation.SubtractFields,
+            DSharpBytecodeOperation.MultiplyVariables,
+            DSharpBytecodeOperation.MultiplyVariableField,
+            DSharpBytecodeOperation.MultiplyFields,
+            DSharpBytecodeOperation.DivideVariables,
+            DSharpBytecodeOperation.DivideVariableField,
+            DSharpBytecodeOperation.DivideFieldVariable,
+            DSharpBytecodeOperation.DivideFields,
+            DSharpBytecodeOperation.ModVariables,
+            DSharpBytecodeOperation.ModVariableField,
+            DSharpBytecodeOperation.ModFieldVariable,
+            DSharpBytecodeOperation.ModFields,
+            DSharpBytecodeOperation.XorVariables,
+            DSharpBytecodeOperation.XorVariableField,
+            DSharpBytecodeOperation.XorFieldVariable,
+            DSharpBytecodeOperation.XorFields,
+            DSharpBytecodeOperation.OrVariables,
+            DSharpBytecodeOperation.OrVariableField,
+            DSharpBytecodeOperation.OrFields,
+            DSharpBytecodeOperation.AndVariables,
+            DSharpBytecodeOperation.AndVariableField,
+            DSharpBytecodeOperation.AndFields,
+            DSharpBytecodeOperation.ShiftLeftVariables,
+            DSharpBytecodeOperation.ShiftLeftVariableField,
+            DSharpBytecodeOperation.ShiftLeftFieldVariable,
+            DSharpBytecodeOperation.ShiftLeftFields,
+            DSharpBytecodeOperation.ShiftRightVariables,
+            DSharpBytecodeOperation.ShiftRightVariableField,
+            DSharpBytecodeOperation.ShiftRightFieldVariable,
+            DSharpBytecodeOperation.ShiftRightFields,
         ]);
         private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _potentialLoadMemberOperations = new([.. _loadMemberOperations.Append(DSharpBytecodeOperation.Call)]);
         private static readonly Range _uselessPopCombinationsRange = new(0, 5);
@@ -188,6 +231,14 @@ namespace DialogMaker.Core.Scripting.Compiler
                     new(DSharpBytecodeOperation.Pop),
                 ],
                 UselessCombinationJumpConditionPop
+            ),
+            new(
+                [
+                    new(_assignableBinaryOperations, true),
+                    new(_nativeStoreOperations, true),
+                    new([DSharpBytecodeOperation.Pop, DSharpBytecodeOperation.PopRepeat], true),
+                ],
+                SimplifyMathOperation
             )
         ]);
         private static readonly ReadOnlyCollection<DSharpBytecodeOperation> _finalUselessOperations = new([
@@ -273,6 +324,156 @@ namespace DialogMaker.Core.Scripting.Compiler
 
         #region Optimizations
 
+        private static int SimplifyMathOperation(UselessCombination uselessCombination, DSharpBytecodeBuilder builder, int startIndex)
+        {
+            var math = builder.Instructions[startIndex];
+            var store = builder.Instructions[startIndex + 1];
+            var pop = builder.Instructions[startIndex + 2];
+
+            if (pop.Operation != DSharpBytecodeOperation.Pop &&
+                pop.Operation != DSharpBytecodeOperation.PopRepeat)
+            {
+                return 0;
+            }
+
+            Instruction? newInstruction = null;
+
+            if (math.Operation == DSharpBytecodeOperation.AddVariables)
+            {
+                if (math is not TwoParametersInstruction twoParameters ||
+                    store is not ParameterInstruction storeParameter)
+                {
+                    return 0;
+                }
+                if (storeParameter.Parameter == twoParameters.FirstParameter)
+                {
+                    newInstruction = builder.AssignAdd(storeParameter.Parameter, twoParameters.SecondParameter);
+                }
+                else if (storeParameter.Parameter == twoParameters.SecondParameter)
+                {
+                    newInstruction = builder.AssignAdd(storeParameter.Parameter, twoParameters.FirstParameter);
+                }
+            }
+            else if (math.Operation == DSharpBytecodeOperation.AddVariableField)
+            {
+                if (math is not ParameterMemberInstruction parameterMember ||
+                    parameterMember.MemberInfo is not IDSharpFieldInfo operandField)
+                {
+                    return 0;
+                }
+                if (store is TypeInstruction typeStore &&
+                    typeStore.MemberInfo is IDSharpFieldInfo storeField &&
+                    storeField == operandField)
+                {
+                    newInstruction = builder.AssignAdd(storeField, parameterMember.Parameter);
+                }
+                else if (store is ParameterInstruction parameterStore &&
+                         parameterMember.Parameter == parameterStore.Parameter)
+                {
+                    newInstruction = builder.AssignAdd(parameterStore.Parameter, operandField);
+                }
+            }
+            else if (math.Operation == DSharpBytecodeOperation.AddFields)
+            {
+                if (math is not TwoMembersInstruction twoMembers ||
+                    twoMembers.FirstMember is not IDSharpFieldInfo firstField ||
+                    twoMembers.SecondMember is not IDSharpFieldInfo secondField ||
+                    store is not TypeInstruction storeMember ||
+                    storeMember.MemberInfo is not IDSharpFieldInfo storeField)
+                {
+                    return 0;
+                }
+                if (storeField == firstField)
+                {
+                    newInstruction = builder.AssignAdd(storeField, secondField);
+                }
+                else if (storeField == secondField)
+                {
+                    newInstruction = builder.AssignAdd(storeField, firstField);
+                }
+            }
+            else if (math.Operation == DSharpBytecodeOperation.SubtractVariables)
+            {
+                if (math is not TwoParametersInstruction twoParameters ||
+                    store is not ParameterInstruction storeParameter ||
+                    twoParameters.FirstParameter != storeParameter.Parameter)
+                {
+                    return 0;
+                }
+
+                newInstruction = builder.AssignSubtract(twoParameters.FirstParameter, twoParameters.SecondParameter);
+            }
+            else if (math.Operation == DSharpBytecodeOperation.SubtractVariableField)
+            {
+                if (math is not ParameterMemberInstruction parameterMember ||
+                    parameterMember.MemberInfo is not IDSharpFieldInfo operandField ||
+                    store is not ParameterInstruction storeParameter ||
+                    parameterMember.Parameter != storeParameter.Parameter)
+                {
+                    return 0;
+                }
+
+                newInstruction = builder.AssignSubtract(parameterMember.Parameter, operandField);
+            }
+            else if (math.Operation == DSharpBytecodeOperation.SubtractFieldVariable)
+            {
+                if (math is not MemberParameterInstruction memberParameter ||
+                    memberParameter.MemberInfo is not IDSharpFieldInfo operandField ||
+                    store is not TypeInstruction storeMember ||
+                    storeMember.MemberInfo != operandField)
+                {
+                    return 0;
+                }
+
+                newInstruction = builder.AssignSubtract(operandField, memberParameter.Parameter);
+            }
+            else if (math.Operation == DSharpBytecodeOperation.SubtractFields)
+            {
+                if (math is not TwoMembersInstruction twoMembers ||
+                    twoMembers.FirstMember is not IDSharpFieldInfo firstField ||
+                    twoMembers.SecondMember is not IDSharpFieldInfo secondField ||
+                    store is not TypeInstruction storeMember ||
+                    storeMember.MemberInfo != firstField)
+                {
+                    return 0;
+                }
+
+                newInstruction = builder.AssignSubtract(firstField, secondField);
+            }
+
+            if (newInstruction == null)
+            {
+                return 0;
+            }
+
+            int offset = 1;
+
+            builder.Instructions.Remove(newInstruction);
+            ReplaceInstructionReferences(builder, math, newInstruction);
+            ReplaceInstructionReferences(builder, store, newInstruction);
+
+            builder.Instructions[startIndex] = newInstruction;
+            builder.Instructions.RemoveAt(startIndex + 1);
+
+            if (pop.Operation == DSharpBytecodeOperation.Pop)
+            {
+                ReplaceInstructionReferences(builder, startIndex + 1);
+                offset++;
+            }
+            else if (pop is IndexInstruction popRepeatInstruction)
+            {
+                popRepeatInstruction.Index--;
+
+                if (popRepeatInstruction.Index == 0)
+                {
+                    ReplaceInstructionReferences(builder, startIndex + 1);
+                    offset++;
+                }
+            }
+
+            return offset;
+        }
+
         private static int UselessCombinationJumpConditionPop(UselessCombination uselessCombination, DSharpBytecodeBuilder builder, int startIndex)
         {
             if (builder.Instructions[startIndex + 1] is not ReferenceInstruction referenceInstruction ||
@@ -282,7 +483,7 @@ namespace DialogMaker.Core.Scripting.Compiler
             }
 
             ReplaceInstructionReferences(builder, startIndex);
-            
+
             var popAfterJump = builder.Instructions[startIndex + 1];
             var popAllAfterJump = builder.PopRepeat(3);
             builder.Instructions.Remove(popAllAfterJump);

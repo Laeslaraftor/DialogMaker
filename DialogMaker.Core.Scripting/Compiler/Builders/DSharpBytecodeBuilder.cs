@@ -1570,14 +1570,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             return CreateInstruction<MemberParameterInstruction>(this, DSharpBytecodeOperation.SubtractFieldVariable, left, right);
         }
         /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.MultiplyFieldVariable"/>
-        /// </summary>
-        /// <returns></returns>
-        public MemberParameterInstruction Multiply(IDSharpFieldInfo left, IDSharpParameterInfo right)
-        {
-            return CreateInstruction<MemberParameterInstruction>(this, DSharpBytecodeOperation.MultiplyFieldVariable, left, right);
-        }
-        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.DivideFieldVariable"/>
         /// </summary>
         /// <returns></returns>
@@ -1602,22 +1594,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             return CreateInstruction<MemberParameterInstruction>(this, DSharpBytecodeOperation.XorFieldVariable, left, right);
         }
         /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.OrFieldVariable"/>
-        /// </summary>
-        /// <returns></returns>
-        public MemberParameterInstruction Or(IDSharpFieldInfo left, IDSharpParameterInfo right)
-        {
-            return CreateInstruction<MemberParameterInstruction>(this, DSharpBytecodeOperation.OrFieldVariable, left, right);
-        }
-        /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.AndFieldVariable"/>
-        /// </summary>
-        /// <returns></returns>
-        public MemberParameterInstruction And(IDSharpFieldInfo left, IDSharpParameterInfo right)
-        {
-            return CreateInstruction<MemberParameterInstruction>(this, DSharpBytecodeOperation.AndFieldVariable, left, right);
-        }
-        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.ShiftLeftFieldVariable"/>
         /// </summary>
         /// <returns></returns>
@@ -1632,22 +1608,6 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         public MemberParameterInstruction ShiftRight(IDSharpFieldInfo left, IDSharpParameterInfo right)
         {
             return CreateInstruction<MemberParameterInstruction>(this, DSharpBytecodeOperation.ShiftRightFieldVariable, left, right);
-        }
-        /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.EqualsFieldVariable"/>
-        /// </summary>
-        /// <returns></returns>
-        public MemberParameterInstruction Equals(IDSharpFieldInfo left, IDSharpParameterInfo right)
-        {
-            return CreateInstruction<MemberParameterInstruction>(this, DSharpBytecodeOperation.EqualsFieldVariable, left, right);
-        }
-        /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.NotEqualsFieldVariable"/>
-        /// </summary>
-        /// <returns></returns>
-        public MemberParameterInstruction NotEquals(IDSharpFieldInfo left, IDSharpParameterInfo right)
-        {
-            return CreateInstruction<MemberParameterInstruction>(this, DSharpBytecodeOperation.NotEqualsFieldVariable, left, right);
         }
 
         /// <summary>
@@ -2493,21 +2453,21 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
             {
                 DSharpBinaryOperator.Plus => Add(right, left),
                 DSharpBinaryOperator.Minus => Subtract(left, right),
-                DSharpBinaryOperator.Multiply => Multiply(left, right),
+                DSharpBinaryOperator.Multiply => Multiply(right, left),
                 DSharpBinaryOperator.Divide => Divide(left, right),
                 DSharpBinaryOperator.Mod => Mod(left, right),
                 DSharpBinaryOperator.ShiftLeft => ShiftLeft(left, right),
                 DSharpBinaryOperator.ShiftRight => ShiftRight(left, right),
-                DSharpBinaryOperator.And => And(left, right),
-                DSharpBinaryOperator.Or => Or(left, right),
-                DSharpBinaryOperator.LogicalAnd => And(left, right),
-                DSharpBinaryOperator.LogicalOr => Or(left, right),
+                DSharpBinaryOperator.And => And(right, left),
+                DSharpBinaryOperator.Or => Or(right, left),
+                DSharpBinaryOperator.LogicalAnd => And(right, left),
+                DSharpBinaryOperator.LogicalOr => Or(right, left),
                 DSharpBinaryOperator.LogicalLess => GreaterOrEqual(right, left),
                 DSharpBinaryOperator.LogicalLessOrEquals => Greater(right, left),
                 DSharpBinaryOperator.LogicalGreater => LessOrEqual(right, left),
                 DSharpBinaryOperator.LogicalGreaterOrEquals => Less(right, left),
-                DSharpBinaryOperator.LogicalEquals => Equals(left, right),
-                DSharpBinaryOperator.LogicalNotEquals => NotEquals(left, right),
+                DSharpBinaryOperator.LogicalEquals => Equals(right, left),
+                DSharpBinaryOperator.LogicalNotEquals => NotEquals(right, left),
                 DSharpBinaryOperator.LogicalXor => Xor(left, right),
                 _ => throw new ArgumentException($"Unknown operator \"{(DSharpTokenType)binaryOperator}\"", nameof(binaryOperator)),
             };

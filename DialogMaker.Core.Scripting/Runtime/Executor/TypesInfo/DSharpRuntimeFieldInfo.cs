@@ -135,9 +135,20 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal DSharpNumber ReadAsNumber(DSharpObject* instance)
         {
+            return ReadAsNumber(instance, out _);
+        }
+        /// <summary>
+        /// Read field value as D# number 
+        /// </summary>
+        /// <param name="instance">Object instance that contains current field</param>
+        /// <param name="dataPointer">Pointer to field data</param>
+        /// <returns>D# that stored in field</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal DSharpNumber ReadAsNumber(DSharpObject* instance, out byte* dataPointer)
+        {
             DSharpNumber number = default;
-            Unsafe.CopyBlockUnaligned(&number, GetDataPointer(instance), (uint)FieldType->Size);
-            //var number = *(DSharpNumber*)GetDataPointer(instance);
+            dataPointer = GetDataPointer(instance);
+            Unsafe.CopyBlockUnaligned(&number, dataPointer, (uint)FieldType->Size);
             number._type = FieldType->ConverterInfo.ConvertingType;
 
             return number;

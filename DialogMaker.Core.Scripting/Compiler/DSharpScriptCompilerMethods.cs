@@ -4038,13 +4038,27 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                         if (!leftField.IsStatic)
                         {
-                            CompileEndPointMember(method, code, left, null, ref settings, context);
-                            popInstanceCount++;                            
+                            var leftEndMember = CompileEndPointMember(method, code, left, null, ref settings, context);
+
+                            if (leftEndMember is not IDSharpFieldInfo field)
+                            {
+                                throw new DSharpCompilerException($"Left operand expression return unexpected member \"{leftEndMember}\" when field was expected", left);
+                            }
+
+                            leftField = field;
+                            popInstanceCount++;
                         }
                         if (!rightField.IsStatic)
                         {
-                            CompileEndPointMember(method, code, right, null, ref settings, context);
-                            popInstanceCount++;                            
+                            var rightEndMember = CompileEndPointMember(method, code, right, null, ref settings, context);
+
+                            if (rightEndMember is not IDSharpFieldInfo field)
+                            {
+                                throw new DSharpCompilerException($"Right operand expression return unexpected member \"{rightEndMember}\" when field was expected", right);
+                            }
+
+                            rightField = field;
+                            popInstanceCount++;
                         }
 
                         code.BinaryOperation(binaryOperator, leftField, rightField);
@@ -4062,7 +4076,14 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                         if (!rightSideField.IsStatic)
                         {
-                            CompileEndPointMember(method, code, right, null, ref settings, context);
+                            var rightEndMember = CompileEndPointMember(method, code, right, null, ref settings, context);
+
+                            if (rightEndMember is not IDSharpFieldInfo field)
+                            {
+                                throw new DSharpCompilerException($"Right operand expression return unexpected member \"{rightEndMember}\" when field was expected", right);
+                            }
+
+                            rightSideField = field;
                             removeInstance = true;
                         }
 
@@ -4081,7 +4102,14 @@ namespace DialogMaker.Core.Scripting.Compiler
 
                         if (!leftSideField.IsStatic)
                         {
-                            CompileEndPointMember(method, code, left, null, ref settings, context);
+                            var leftEndMember = CompileEndPointMember(method, code, left, null, ref settings, context);
+
+                            if (leftEndMember is not IDSharpFieldInfo field)
+                            {
+                                throw new DSharpCompilerException($"Left operand expression return unexpected member \"{leftEndMember}\" when field was expected", left);
+                            }
+
+                            leftSideField = field;
                             removeInstance = true;
                         }
 
