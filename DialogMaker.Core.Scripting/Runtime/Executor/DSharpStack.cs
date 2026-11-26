@@ -1114,7 +1114,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             public readonly T* ReadAsStructureData<T>()
                 where T : unmanaged
             {
-                return (T*)(StackPointer + sizeof(DSharpObject));
+                return (T*)DSharpObject.GetData(ReadAsStructure());
             }
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public readonly DSharpObject* ReadAsStructure()

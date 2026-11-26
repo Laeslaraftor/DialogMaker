@@ -19,7 +19,14 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <summary>
         /// Current number size in bytes
         /// </summary>
-        public readonly int Size => DSharpBuildInTypes.LiteralSizes[(int)_type];
+        public readonly int Size
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                return DSharpBuildInTypes.LiteralSizes[(int)_type];
+            }
+        }
 
         #region Fields
 
@@ -379,8 +386,19 @@ namespace DialogMaker.Core.Scripting.Runtime
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static DSharpNumber FromObject(DSharpObject* obj)
         {
-            var number = Unsafe.ReadUnaligned<DSharpNumber>(obj + 1);
-            number._type = obj->Type->ConverterInfo.ConvertingType;
+            return FromBufferAndType(DSharpObject.GetData(obj), obj->Type->ConverterInfo.ConvertingType);
+        }
+        /// <summary>
+        /// Create D# number from buffer that contains number with specified type
+        /// </summary>
+        /// <param name="buffer">Buffer that contains number</param>
+        /// <param name="type">Type of number that contained by buffer</param>
+        /// <returns>D# number</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static DSharpNumber FromBufferAndType(void* buffer, DSharpLiteralType type)
+        {
+            var number = Unsafe.ReadUnaligned<DSharpNumber>(buffer);
+            number._type = type;
 
             return number;
         }

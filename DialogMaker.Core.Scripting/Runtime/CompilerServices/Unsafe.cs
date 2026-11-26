@@ -11,6 +11,12 @@ namespace System.Runtime.CompilerServices
             *(T*)destination = value;
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Write<T>(void* destination, T value) 
+            where T : unmanaged
+        {
+            *(T*)destination = value;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T ReadUnaligned<T>(void* source)
             where T : unmanaged
         {

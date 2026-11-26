@@ -16,6 +16,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <summary>
         /// Minus operator. It multiplies value by -1
         /// </summary>
+        [Name("Invert")]
         Minus = DSharpTokenType.Minus,
         /// <summary>
         /// Increment operator (++). It add 1 to value 
@@ -32,10 +33,12 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <summary>
         /// Operator for getting reference to variable or field (<![CDATA[&someVariable]]>)
         /// </summary>
+        [Ignore]
         AddressOf = DSharpTokenType.And,
         /// <summary>
         /// Operator for accessing to value through address (<c>*pointer</c> or <c>*pointer = value</c>)
         /// </summary>
+        [Ignore]
         Dereference = DSharpTokenType.Multiply,
     }
 }

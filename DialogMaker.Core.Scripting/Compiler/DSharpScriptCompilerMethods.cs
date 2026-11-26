@@ -4024,7 +4024,7 @@ namespace DialogMaker.Core.Scripting.Compiler
                 {
                     bool isCompiled = false;
 
-                    if (leftMember.ParameterInfo != null && 
+                    if (leftMember.ParameterInfo != null &&
                         rightMember.ParameterInfo != null)
                     {
                         code.BinaryOperation(binaryOperator, leftMember.ParameterInfo, rightMember.ParameterInfo);
@@ -4033,10 +4033,63 @@ namespace DialogMaker.Core.Scripting.Compiler
                     else if (leftMember.MemberInfo is IDSharpFieldInfo leftField &&
                              rightMember.MemberInfo is IDSharpFieldInfo rightField)
                     {
-                        if (leftField.IsStatic && rightField.IsStatic)
+                        isCompiled = true;
+                        int popInstanceCount = 0;
+
+                        if (!leftField.IsStatic)
                         {
-                            code.BinaryOperation(binaryOperator, leftField, rightField);
-                            isCompiled = true;
+                            CompileEndPointMember(method, code, left, null, ref settings, context);
+                            popInstanceCount++;                            
+                        }
+                        if (!rightField.IsStatic)
+                        {
+                            CompileEndPointMember(method, code, right, null, ref settings, context);
+                            popInstanceCount++;                            
+                        }
+
+                        code.BinaryOperation(binaryOperator, leftField, rightField);
+
+                        if (popInstanceCount > 0)
+                        {
+                            code.PopOffsetRepeat(1, popInstanceCount);
+                        }
+                    }
+                    else if (leftMember.ParameterInfo != null &&
+                             rightMember.MemberInfo is IDSharpFieldInfo rightSideField)
+                    {
+                        isCompiled = true;
+                        bool removeInstance = false;
+
+                        if (!rightSideField.IsStatic)
+                        {
+                            CompileEndPointMember(method, code, right, null, ref settings, context);
+                            removeInstance = true;
+                        }
+
+                        code.BinaryOperation(binaryOperator, leftMember.ParameterInfo, rightSideField);
+
+                        if (removeInstance)
+                        {
+                            code.PopOffset(1);
+                        }
+                    }
+                    else if (leftMember.MemberInfo is IDSharpFieldInfo leftSideField &&
+                             rightMember.ParameterInfo != null)
+                    {
+                        isCompiled = true;
+                        bool removeInstance = false;
+
+                        if (!leftSideField.IsStatic)
+                        {
+                            CompileEndPointMember(method, code, left, null, ref settings, context);
+                            removeInstance = true;
+                        }
+
+                        code.BinaryOperation(binaryOperator, leftSideField, rightMember.ParameterInfo);
+
+                        if (removeInstance)
+                        {
+                            code.PopOffset(1);
                         }
                     }
 
@@ -4794,18 +4847,21 @@ namespace DialogMaker.Core.Scripting.Compiler
                 !context.Scope.TryGetCapturedVariable(identifier, out _, out _)))
             {
                 var localName = identifier.GetName(false);
-                bool success = false;
 
                 if (context.TryResolveVariable(localName, out var variable))
                 {
-                    success = true;
+                    if (unaryOperator == null && expressionType.IsNumber(true))
+                    {
+                        code.UnaryOperation(@operator, variable, !popLast);
+                        settings.LastOperationIsReturnsValue |= !popLast;
+
+                        return null;
+                    }
+
                     code.LoadLocal(variable);
                     AddOperator();
                     code.StoreLocal(variable);
-                }
 
-                if (success)
-                {
                     if (popLast)
                     {
                         code.Pop();
@@ -4821,6 +4877,25 @@ namespace DialogMaker.Core.Scripting.Compiler
 
             var member = CompileEndPointMember(method, code, expression, null, ref settings, context)
                 ?? throw new ArgumentException($"Unable to find member: {expression}", nameof(expression));
+
+            if (member is IDSharpFieldInfo field && unaryOperator == null && expressionType.IsNumber(true))
+            {
+                code.UnaryOperation(@operator, field, !popLast);
+
+                if (!field.IsStatic)
+                {
+                    if (popLast)
+                    {
+                        code.Pop();
+                    }
+                    else
+                    {
+                        code.PopOffset(1);
+                    }
+                }
+
+                return member;
+            }
 
             code.LoadPropertyOrField(member, settings.NextNonVirtualizedAccess);
 

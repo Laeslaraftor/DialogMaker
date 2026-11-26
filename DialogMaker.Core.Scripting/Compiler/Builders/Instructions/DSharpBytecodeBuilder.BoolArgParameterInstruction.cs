@@ -23,7 +23,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             public override Instruction Copy(DSharpBytecodeBuilder builder)
             {
-                return new BoolArgParameterInstruction(builder, Operation, Parameter, Value);
+                var variable = ReplaceParameter(BytecodeBuilder, builder, Parameter);
+                return new BoolArgParameterInstruction(builder, Operation, variable, Value);
             }
             public override object[] GetArguments()
             {
@@ -32,7 +33,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             public override string ToString()
             {
-                return $"{Operation} [{Value}, {Parameter?.Name}]";
+                return $"{Operation} [{Parameter?.Name}, {Value}]";
             }
 
             #endregion

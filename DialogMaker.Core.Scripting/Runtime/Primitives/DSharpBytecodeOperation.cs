@@ -779,6 +779,252 @@ namespace DialogMaker.Core.Scripting.Runtime
         GreaterOrEqualVariables,
 
         /// <summary>
+        /// Subtract second variable from first and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 - value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        SubtractVariableField,
+        /// <summary>
+        /// Multiply variables value and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 * value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        MultiplyVariableField,
+        /// <summary>
+        /// Subtract first variable value by second variable value and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 / value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        DivideVariableField,
+        /// <summary>
+        /// Divide first variable value by variable value and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 % value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        ModVariableField,
+        /// <summary>
+        /// Apply inversion mask on first variable value bits by second variable value bits and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 ^ value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        XorVariableField,
+        /// <summary>
+        /// Apply additive mask on first variable value bits by second variable value bits and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 | value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        OrVariableField,
+        /// <summary>
+        /// Apply multiplicative mask on first variable value bits by second variable value bits and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 & value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AndVariableField,
+        /// <summary>
+        /// Shift to left first variable value bits by second variable value as offset and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 << value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        ShiftLeftVariableField,
+        /// <summary>
+        /// Shift to right first variable value bits by second variable value as offset and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 >> value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        ShiftRightVariableField,
+        /// <summary>
+        /// Compares values that stored in variables and push result into stack (boolean)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 == value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        EqualsVariableField,
+        /// <summary>
+        /// Compares values that stored in variables and push opposite result into stack (boolean).
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 != value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        NotEqualsVariableField,
+
+        /// <summary>
+        /// Subtract second variable from first and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 - value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        SubtractFieldVariable,
+        /// <summary>
+        /// Multiply variables value and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 * value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        MultiplyFieldVariable,
+        /// <summary>
+        /// Subtract first variable value by second variable value and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 / value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        DivideFieldVariable,
+        /// <summary>
+        /// Divide first variable value by variable value and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 % value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        ModFieldVariable,
+        /// <summary>
+        /// Apply inversion mask on first variable value bits by second variable value bits and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 ^ value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        XorFieldVariable,
+        /// <summary>
+        /// Apply additive mask on first variable value bits by second variable value bits and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 | value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        OrFieldVariable,
+        /// <summary>
+        /// Apply multiplicative mask on first variable value bits by second variable value bits and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 & value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AndFieldVariable,
+        /// <summary>
+        /// Shift to left first variable value bits by second variable value as offset and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 << value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        ShiftLeftFieldVariable,
+        /// <summary>
+        /// Shift to right first variable value bits by second variable value as offset and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 >> value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        ShiftRightFieldVariable,
+        /// <summary>
+        /// Compares values that stored in variables and push result into stack (boolean)
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 == value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        EqualsFieldVariable,
+        /// <summary>
+        /// Compares values that stored in variables and push opposite result into stack (boolean).
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 != value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        NotEqualsFieldVariable,
+
+        /// <summary>
+        /// Sums two variables and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 + value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AddVariableField,
+        /// <summary>
+        /// Compares first variable less to second and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 < value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        LessVariableField,
+        /// <summary>
+        /// Compares first variable less or equals to second and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 <= value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        LessOrEqualVariableField,
+        /// <summary>
+        /// Compares first variable greater to second and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 > value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        GreaterVariableField,
+        /// <summary>
+        /// Compares first variable greater or equals to second and push result into stack
+        /// </summary>
+        /// <remarks>
+        /// <c>value1 >= value2</c>
+        /// </remarks>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        GreaterOrEqualVariableField,
+
+        /// <summary>
         /// Sums two field and push result into stack.
         /// Stack:
         /// 0: right instance (if non-static field)
@@ -988,13 +1234,255 @@ namespace DialogMaker.Core.Scripting.Runtime
         GreaterOrEqualFields,
 
         /// <summary>
+        /// Sums local variable values and assign value to first variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        AssignAddLocalLocal,
+        /// <summary>
+        /// Sums field and variable values and assign value to variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignAddLocalField,
+        /// <summary>
+        /// Sums field and variable values and assign value to field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignAddFieldLocal,
+        /// <summary>
+        /// Sums field values and assign value to first field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        AssignAddFieldField,
+        /// <summary>
+        /// Subtract second variable value from first and assign to first variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        AssignSubtractLocalLocal,
+        /// <summary>
+        /// Subtract field value from variable and assign to variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignSubtractLocalField,
+        /// <summary>
+        /// Subtract variable value from field and assign to field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignSubtractFieldLocal,
+        /// <summary>
+        /// Subtract second field value from first and assign to first field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        AssignSubtractFieldField,
+        /// <summary>
+        /// Multiply variable values and assign to first variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        AssignMultiplyLocalLocal,
+        /// <summary>
+        /// Multiply variable and field values and assign to variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignMultiplyLocalField,
+        /// <summary>
+        /// Multiply variable and field values and assign to field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignMultiplyFieldLocal,
+        /// <summary>
+        /// Multiply field values and assign to first field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        AssignMultiplyFieldField,
+        /// <summary>
+        /// Divide first variable value by second and assign to first variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        AssignDivideLocalLocal,
+        /// <summary>
+        /// Divide variable value by field and assign to variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignDivideLocalField,
+        /// <summary>
+        /// Divide field value by variable and assign to field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignDivideFieldLocal,
+        /// <summary>
+        /// Divide first field value by second and assign to first field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        AssignDivideFieldField,
+        /// <summary>
+        /// Divide first variable by second and assign remainder to first variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        AssignModLocalLocal,
+        /// <summary>
+        /// Divide variable by field and assign remainder to variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignModLocalField,
+        /// <summary>
+        /// Divide field by variable and assign remainder to field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignModFieldLocal,
+        /// <summary>
+        /// Divide first field by second and assign remainder to first field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        AssignModFieldField,
+        /// <summary>
+        /// Apply second variable value inversion bit mask to first and assign to first variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        AssignXorLocalLocal,
+        /// <summary>
+        /// Apply field value inversion bit mask to variable and assign to variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignXorLocalField,
+        /// <summary>
+        /// Apply variable value inversion bit mask to field and assign to field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignXorFieldLocal,
+        /// <summary>
+        /// Apply second field value inversion bit mask to first and assign to first field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        AssignXorFieldField,
+        /// <summary>
+        /// Apply second variable value additive bit mask to first and assign to first variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        AssignOrLocalLocal,
+        /// <summary>
+        /// Apply field value additive bit mask to variable and assign to variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignOrLocalField,
+        /// <summary>
+        /// Apply variable value additive bit mask to field and assign to field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignOrFieldLocal,
+        /// <summary>
+        /// Apply second field value additive bit mask to first and assign to first field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        AssignOrFieldField,
+        /// <summary>
+        /// Apply second variable value multiplicative bit mask to first and assign to first variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        AssignAndLocalLocal,
+        /// <summary>
+        /// Apply field value multiplicative bit mask to variable and assign to variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignAndLocalField,
+        /// <summary>
+        /// Apply variable value multiplicative bit mask to field and assign to field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignAndFieldLocal,
+        /// <summary>
+        /// Apply second field value multiplicative bit mask to first and assign to first field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        AssignAndFieldField,
+        /// <summary>
+        /// Shift left first variable value by second offset and assign to first variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        AssignShiftLeftLocalLocal,
+        /// <summary>
+        /// Shift left variable value by field offset and assign to variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignShiftLeftLocalField,
+        /// <summary>
+        /// Shift left field value by variable offset and assign to field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignShiftLeftFieldLocal,
+        /// <summary>
+        /// Shift left first field value by second offset and assign to first field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        AssignShiftLeftFieldField,
+        /// <summary>
+        /// Shift right first variable value by second offset and assign to first variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        AssignShiftRightLocalLocal,
+        /// <summary>
+        /// Shift right variable value by field offset and assign to variable
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignShiftRightLocalField,
+        /// <summary>
+        /// Shift right field value by variable offset and assign to field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        AssignShiftRightFieldLocal,
+        /// <summary>
+        /// Shift right first field value by second offset and assign to first field
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-2)]
+        AssignShiftRightFieldField,
+
+        /// <summary>
         /// Invert variable value and push result into stack
         /// </summary>
         /// <remarks>
         /// <c>-value or !value</c>
         /// </remarks>
-        [ArgsCount(1)]
+        [ArgsCount(2)]
         [RequestsStackValues(0)]
+        [Executor(typeof(DSharpInvertVariableInstructionExecutor))]
         InvertVariable,
         /// <summary>
         /// Increment variable value by 1.
@@ -1006,6 +1494,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </remarks>
         [ArgsCount(2)]
         [RequestsStackValues(0)]
+        [Executor(typeof(DSharpIncrementVariableInstructionExecutor))]
         IncrementVariable,
         /// <summary>
         /// Decrement variable value by 1.
@@ -1017,6 +1506,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </remarks>
         [ArgsCount(2)]
         [RequestsStackValues(0)]
+        [Executor(typeof(DSharpDecrementVariableInstructionExecutor))]
         DecrementVariable,
         /// <summary>
         /// Inverts bits in variable value and push result into stack
@@ -1024,8 +1514,9 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// <remarks>
         /// <c>~value</c>
         /// </remarks>
-        [ArgsCount(1)]
+        [ArgsCount(2)]
         [RequestsStackValues(0)]
+        [Executor(typeof(DSharpBitInvertVariableInstructionExecutor))]
         BitInvertVariable,
 
         /// <summary>
@@ -1038,6 +1529,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </remarks>
         [ArgsCount(1)]
         [RequestsStackValues(-1)]
+        [Executor(typeof(DSharpInvertFieldInstructionExecutor))]
         InvertField,
         /// <summary>
         /// Increment field value by 1.
@@ -1051,6 +1543,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </remarks>
         [ArgsCount(2)]
         [RequestsStackValues(-1)]
+        [Executor(typeof(DSharpIncrementFieldInstructionExecutor))]
         IncrementField,
         /// <summary>
         /// Decrement variable value by 1.
@@ -1064,6 +1557,7 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </remarks>
         [ArgsCount(2)]
         [RequestsStackValues(-1)]
+        [Executor(typeof(DSharpDecrementFieldInstructionExecutor))]
         DecrementField,
         /// <summary>
         /// Inverts bits in field value and push result into stack.
@@ -1075,7 +1569,179 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </remarks>
         [ArgsCount(1)]
         [RequestsStackValues(-1)]
+        [Executor(typeof(DSharpBitInvertFieldInstructionExecutor))]
         BitInvertField,
+
+        /// <summary>
+        /// Jump to instruction at specified index when variable value is true
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        JumpIfLocal,
+        /// <summary>
+        /// Jump to instruction at specified index when variable value is false
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(0)]
+        JumpIfNotLocal,
+        /// <summary>
+        /// Jump to instruction at specified index when first variable value equals to second
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(0)]
+        JumpIfLocalEqualsLocal,
+        /// <summary>
+        /// Jump to instruction at specified index when first variable value not equals to second
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(0)]
+        JumpIfLocalNotEqualsLocal,
+        /// <summary>
+        /// Jump to instruction at specified index when first variable value or second is true
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(0)]
+        JumpIfLocalOrLocal,
+        /// <summary>
+        /// Jump to instruction at specified index when first variable value and second is true
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(0)]
+        JumpIfLocalAndLocal,
+        /// <summary>
+        /// Jump to instruction at specified index when first variable value equals less then second
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(0)]
+        JumpIfLocalLessLocal,
+        /// <summary>
+        /// Jump to instruction at specified index when first variable value less or equal then second
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(0)]
+        JumpIfLocalLessOrEqualLocal,
+        /// <summary>
+        /// Jump to instruction at specified index when first variable value greater then second
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(0)]
+        JumpIfLocalGreaterLocal,
+        /// <summary>
+        /// Jump to instruction at specified index when first variable value greater or equal then second
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(0)]
+        JumpIfLocalGreaterOrEqualLocal,
+
+        /// <summary>
+        /// Jump to instruction at specified index when first variable value equals to field value
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(-1)]
+        JumpIfLocalEqualsField,
+        /// <summary>
+        /// Jump to instruction at specified index when first variable value not equals to field value
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(-1)]
+        JumpIfLocalNotEqualsField,
+        /// <summary>
+        /// Jump to instruction at specified index when first variable value or field value is true
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(-1)]
+        JumpIfLocalOrField,
+        /// <summary>
+        /// Jump to instruction at specified index when first variable value and field value is true
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(0)]
+        JumpIfLocalAndField,
+        /// <summary>
+        /// Jump to instruction at specified index when first variable value equals less then field value
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(-1)]
+        JumpIfLocalLessField,
+        /// <summary>
+        /// Jump to instruction at specified index when first variable value less or equal then field value
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(-1)]
+        JumpIfLocalLessOrEqualField,
+        /// <summary>
+        /// Jump to instruction at specified index when first variable value greater then field value
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(-1)]
+        JumpIfLocalGreaterField,
+        /// <summary>
+        /// Jump to instruction at specified index when first variable value greater or equal then field value
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(-1)]
+        JumpIfLocalGreaterOrEqualField,
+
+        /// <summary>
+        /// Jump to instruction at specified index when field value is true
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        JumpIfField,
+        /// <summary>
+        /// Jump to instruction at specified index when field value is false
+        /// </summary>
+        [ArgsCount(2)]
+        [RequestsStackValues(-1)]
+        JumpIfNotField,
+        /// <summary>
+        /// Jump to instruction at specified index when first field value equals to second
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(-2)]
+        JumpIfFieldEqualsField,
+        /// <summary>
+        /// Jump to instruction at specified index when first field value not equals to second
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(-2)]
+        JumpIfFieldNotEqualsField,
+        /// <summary>
+        /// Jump to instruction at specified index when first field value or second is true
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(-2)]
+        JumpIfFieldOrField,
+        /// <summary>
+        /// Jump to instruction at specified index when first field value and second is true
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(-2)]
+        JumpIfFieldAndField,
+        /// <summary>
+        /// Jump to instruction at specified index when first field value equals less then second
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(-2)]
+        JumpIfFieldLessField,
+        /// <summary>
+        /// Jump to instruction at specified index when first field value less or equal then second
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(-2)]
+        JumpIfFieldLessOrEqualField,
+        /// <summary>
+        /// Jump to instruction at specified index when first field value greater then second
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(-2)]
+        JumpIfFieldGreaterField,
+        /// <summary>
+        /// Jump to instruction at specified index when first field value greater or equal then second
+        /// </summary>
+        [ArgsCount(3)]
+        [RequestsStackValues(-2)]
+        JumpIfFieldGreaterOrEqualField,
 
         #endregion
     }

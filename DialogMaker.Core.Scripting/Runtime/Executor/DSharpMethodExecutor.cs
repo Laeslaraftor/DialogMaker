@@ -180,7 +180,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             DSharpMethodExecutionCallback? result = null;
             int instructionsLength = bytecode->Instructions.Length;
             DSharpRuntimeInstruction* instructions = bytecode->Instructions.GetItemReference(0);
-#if DEBUG
+#if DEBUG && false
             Dictionary<DSharpBytecodeOperation, OperationTime> operationsDurations = [];
             Dictionary<DSharpBytecodeOperation, int> operationsCount = [];
             Stopwatch stopwatch = new();
@@ -191,11 +191,11 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 var instructionIndex = context.InstructionIndex;
                 var instruction = instructions + instructionIndex;
 
-#if DEBUG
+#if DEBUG && false
                 stopwatch.Restart();
 #endif
                 DSharpRuntimeInstruction.Execute(instruction, ref context);
-#if DEBUG
+#if DEBUG && false
                 stopwatch.Stop();
 
                 var operation = instruction->Operation;
@@ -243,7 +243,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             result ??= DSharpMethodExecutionCallback.Complete();
             executor->LastCallback = result;
 
-#if DEBUG
+#if DEBUG && false
             Debug.WriteLine(string.Empty);
             Debug.WriteLine($"Execution time for \"{executor->MethodInfo->Name}\":");
 
@@ -260,7 +260,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
 
         #region Types
 
-#if DEBUG
+#if DEBUG && false
         private struct OperationTime
         {
             public TimeSpan Max;

@@ -230,6 +230,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <param name="obj">Object for copying his data</param>
         /// <param name="buffer">Buffer for writing object data</param>
         /// <param name="bufferSize">Buffer size</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void CopyData(DSharpObject* obj, void* buffer, int bufferSize)
         {
             var data = GetData(obj);
@@ -241,6 +242,25 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             }
 
             Buffer.MemoryCopy(data, buffer, Math.Min(bufferSize, size), size);
+        }
+        /// <summary>
+        /// Write data from specified buffer to object
+        /// </summary>
+        /// <param name="obj">Object for writing data into it</param>
+        /// <param name="buffer">Buffer for reading object data</param>
+        /// <param name="bufferSize">Buffer size</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void WriteData(DSharpObject* obj, void* buffer, int bufferSize)
+        {
+            var data = GetData(obj);
+            var size = GetSize(obj);
+
+            if (0 >= size)
+            {
+                return;
+            }
+
+            Unsafe.CopyBlockUnaligned(data, buffer, (uint)Math.Min(bufferSize, size));
         }
         /// <summary>
         /// Is null pointer to object or object data is null
