@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Internal.System.Runtime;
 
@@ -214,21 +215,17 @@ public unsafe class Program
                 while (!int.TryParse(textIterationsAmount, out iterationsAmount));
 
                 int sum = 0;
-                var startTicks = Environment.TickCount;
-
-                Console.WriteLine("Start ticks: " + startTicks);
+                Stopwatch stopwatch = new();
+                stopwatch.Start();
 
                 for (int i = 0; i < iterationsAmount; i++)
                 {
                     sum += i;
                 }
 
-                var endTicks = Environment.TickCount;
-                
-                TimeSpan startTime = TimeSpan.FromMilliseconds(startTicks);
-                TimeSpan endTime = TimeSpan.FromMilliseconds(endTicks);
-                Console.WriteLine("End ticks: " + endTicks);
-                Console.WriteLine("Duration: " + (endTime - startTime).TotalSeconds + "s");
+                stopwatch.Stop();
+
+                Console.WriteLine("Duration: " + stopwatch.Elapsed.TotalSeconds + "s");
             }
             else if (value == "staticMath")
             {

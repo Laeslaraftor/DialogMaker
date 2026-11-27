@@ -111,10 +111,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// </summary>
         public DSharpRuntimeMethodInfo* StaticInitializer;
         /// <summary>
-        /// Fields offsets to data 
-        /// </summary>
-        public UnmanagedDictionary<Pointer<DSharpRuntimeFieldInfo>, int> FieldsOffset;
-        /// <summary>
         /// Methods that was overriden
         /// </summary>
         public UnmanagedDictionary<Pointer<DSharpRuntimeMethodInfo>, Pointer<DSharpRuntimeMethodInfo>> OverridenMethods;
@@ -162,31 +158,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             }
 
             return false;
-        }
-        /// <summary>
-        /// Get max field offset in current type
-        /// </summary>
-        /// <returns>Max field offset in bytes</returns>
-        public readonly int GetMaxInstanceFieldOffset()
-        {
-            if (FieldsOffset.Count > 0)
-            {
-                return FieldsOffset[^1].Value;
-            }
-
-            var baseType = BaseType;
-
-            while (baseType != null)
-            {
-                var fieldsOffset = baseType->FieldsOffset;
-
-                if (fieldsOffset.Count > 0)
-                {
-                    return fieldsOffset[^1].Value;
-                }
-            }
-
-            return 0;
         }
 
         /// <summary>
@@ -258,38 +229,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         public readonly bool TryGetMethod(DSharpMetadataToken metadataToken, out DSharpRuntimeMethodInfo* result)
         {
             return TryGetMember(Methods, metadataToken, out result);
-        }
-        /// <summary>
-        /// Try to get field data offset
-        /// </summary>
-        /// <param name="metadataToken">Field metadata token</param>
-        /// <param name="result">Field data offset</param>
-        /// <returns>Is offset successfully found</returns>
-        public readonly bool TryGetFieldOffset(DSharpMetadataToken metadataToken, out int result)
-        {
-            var t = this;
-            var currentType = &t;
-
-            while (currentType != null)
-            {
-                var offsets = currentType->FieldsOffset;
-
-                for (int i = 0; i < offsets.Count; i++)
-                {
-                    var pair = offsets[i];
-
-                    if (pair.Key.AsPointer()->MetadataToken == metadataToken)
-                    {
-                        result = pair.Value;
-                        return true;
-                    }
-                }
-
-                currentType = currentType->BaseType;
-            }
-
-            result = -1;
-            return false;
         }
         /// <summary>
         /// Try to get overriden method

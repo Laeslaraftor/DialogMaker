@@ -5,7 +5,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
     public partial class DSharpBytecodeBuilder
     {
         public class ReferenceInstruction(DSharpBytecodeBuilder builder, DSharpBytecodeOperation operation)
-            : Instruction(builder, operation)
+            : Instruction(builder, operation), IReferenceInstruction
         {
             public Instruction? ReferencedInstruction { get; set; }
             public override int SizeInBytes => base.SizeInBytes + sizeof(int);
@@ -14,21 +14,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             public override void Write(Stream stream)
             {
-                if (ReferencedInstruction == null)
-                {
-                    throw new InvalidOperationException($"Referenced instruction not specified at \"{BytecodeBuilder.Method}\"");
-                }
-
                 base.Write(stream);
-
-                int index = BytecodeBuilder.Instructions.IndexOf(ReferencedInstruction);
-
-                if (index == -1)
-                {
-                    throw new InvalidOperationException($"Referenced instruction ({ReferencedInstruction}) not exists in bytecode at \"{BytecodeBuilder.Method}\"");
-                }
-
-                stream.Write(index);
+                Write(stream, this);
             }
 
             public override Instruction Copy(DSharpBytecodeBuilder builder)
@@ -50,14 +37,57 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
 
             public override string ToString()
             {
-                if (ReferencedInstruction == null)
+                return $"{Operation} [{ToStringReference(this)}]";
+            }
+
+            #endregion
+
+            #region Static
+
+            internal static string? ToStringReference<T>(T referenceInstruction)
+                where T : Instruction, IReferenceInstruction
+            {
+                var referencedInstruction = referenceInstruction.ReferencedInstruction;
+
+                if (referencedInstruction == null)
                 {
-                    return base.ToString();
+                    return null;
                 }
 
-                int index = BytecodeBuilder.Instructions.IndexOf(ReferencedInstruction);
+                int index = referenceInstruction.BytecodeBuilder.Instructions.IndexOf(referencedInstruction);
+                string reference;
 
-                return $"{Operation} [{index}: {ReferencedInstruction}]";
+                if (Equals(referencedInstruction, referenceInstruction) ||
+                    (referencedInstruction is IReferenceInstruction otherReference &&
+                    otherReference.ReferencedInstruction == referenceInstruction))
+                {
+                    reference = referencedInstruction.Operation.ToString();
+                }
+                else
+                {
+                    reference = referencedInstruction.ToString();
+                }
+
+                return $"{index}: {reference}";
+            }
+            internal static void Write<T>(Stream stream, T referenceInstruction)
+                where T : Instruction, IReferenceInstruction
+            {
+                var referencedInstruction = referenceInstruction.ReferencedInstruction;
+
+                if (referencedInstruction == null)
+                {
+                    throw new InvalidOperationException($"Referenced instruction not specified at \"{referenceInstruction.BytecodeBuilder.Method}\"");
+                }
+
+                int index = referenceInstruction.BytecodeBuilder.Instructions.IndexOf(referencedInstruction);
+
+                if (index == -1)
+                {
+                    throw new InvalidOperationException($"Referenced instruction ({referencedInstruction}) not exists in bytecode at \"{referenceInstruction.BytecodeBuilder.Method}\"");
+                }
+
+                stream.Write(index);
             }
 
             #endregion

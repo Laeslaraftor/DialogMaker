@@ -1,5 +1,4 @@
-﻿using DialogMaker.Core.Scripting.Compiler.Ast;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
@@ -34,6 +33,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// Type of value that contains in field
         /// </summary>
         public DSharpRuntimeTypeInfo* FieldType;
+        /// <summary>
+        /// Field data offset in bytes
+        /// </summary>
+        public int Offset;
 
         #region Controls
 
@@ -235,9 +238,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 data = DSharpObject.GetData(instance);
             }
 
-            int offset = GetOffset(instance);
-
-            return data + offset;
+            return data + Offset;
         }
 
         public readonly override string ToString()
@@ -254,30 +255,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             }
 
             return declaringType + new string((ReadOnlySpan<char>)Name);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int GetOffset(DSharpObject* instance)
-        {
-            if (IsStatic)
-            {
-                if (DeclaringType->TryGetFieldOffset(MetadataToken, out var offset))
-                {
-                    return offset;
-                }
-
-                throw new InvalidOperationException($"Unable to find data offset for static field: {MetadataToken} ({Name})");
-            }
-            if (instance == null)
-            {
-                throw new ArgumentException($"Unable to get instance field offset without object instance: {MetadataToken} ({Name})");
-            }
-            if (instance->Type->TryGetFieldOffset(MetadataToken, out var instanceOffset))
-            {
-                return instanceOffset;
-            }
-
-            throw new InvalidOperationException($"Unable to get instance field ({Name}: {MetadataToken}) offset at {instance->Type->ToString()}");
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -304,24 +281,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
         /// <returns>Size of structure with information about specified field</returns>
         public static int GetSize(IDSharpFieldInfo field)
         {
-            return sizeof(DSharpRuntimeFieldInfo) +
-                   field.Name.Length * sizeof(char);
-        }
-
-        /// <summary>
-        /// Get field data offset
-        /// </summary>
-        /// <param name="field">Field for getting it data offset</param>
-        /// <returns>Data offset is bytes</returns>
-        /// <exception cref="InvalidOperationException">Unable to find data offset for field</exception>
-        public static int GetOffset(DSharpRuntimeFieldInfo* field)
-        {
-            if (field->DeclaringType->TryGetFieldOffset(field->MetadataToken, out var offset))
-            {
-                return offset;
-            }
-
-            throw new InvalidOperationException($"Unable to find data offset for field: {field->ToString()}");
+            return sizeof(DSharpRuntimeFieldInfo) + field.Name.Length * sizeof(char);
         }
 
         #endregion

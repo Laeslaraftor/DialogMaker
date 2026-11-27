@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Diagnostics;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
 {
@@ -158,6 +159,38 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
                     if (methodInfo.Name == "GetIsLittleEndian")
                     {
                         return GetIsLittleEndian;
+                    }
+                }
+            }
+            else if (declaringType.Namespace == "System.Dotnet")
+            {
+                if (declaringType.Name == "DotnetObject")
+                {
+                    if (methodInfo.Name == nameof(CreateDotnetObject))
+                    {
+                        return CreateDotnetObject;
+                    }
+                    else if (methodInfo.Name == nameof(DisposeDotnetObject))
+                    {
+                        return DisposeDotnetObject;
+                    }
+                }
+            }
+            else if (declaringType.Namespace == "System.Diagnostics")
+            {
+                if (declaringType.Name == nameof(Stopwatch))
+                {
+                    if (methodInfo.Name == "GetFrequency")
+                    {
+                        return StopwatchGetFrequency;
+                    }
+                    else if (methodInfo.Name == "GetIsHighResolution")
+                    {
+                        return StopwatchGetIsHighResolution;
+                    }
+                    else if (methodInfo.Name == "GetTimestamp")
+                    {
+                        return StopwatchGetTimestamp;
                     }
                 }
             }
@@ -732,6 +765,65 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.Api
         private static DSharpExternalMethodResult? GetIsLittleEndian(DSharpExternalCallingArgs _)
         {
             return BitConverter.IsLittleEndian;
+        }
+
+        #endregion
+
+        #region Stopwatch
+
+        private static DSharpExternalMethodResult? StopwatchGetFrequency(DSharpExternalCallingArgs _)
+        {
+            return Stopwatch.Frequency;
+        }
+        private static DSharpExternalMethodResult? StopwatchGetIsHighResolution(DSharpExternalCallingArgs _)
+        {
+            return Stopwatch.IsHighResolution;
+        }
+        private static DSharpExternalMethodResult? StopwatchGetTimestamp(DSharpExternalCallingArgs _)
+        {
+            return Stopwatch.GetTimestamp();
+        }
+
+        #endregion
+
+        #region Dotnet wrappers
+
+        private DSharpExternalMethodResult? CreateDotnetObject(DSharpExternalCallingArgs args)
+        {
+            if (args.Arguments.Length != 2)
+            {
+                return false;
+            }
+
+            var handlerInstance = args.Arguments[0].Buffer.ReadAsObject();
+            var typeNameInstance = args.Arguments[1].Buffer.ReadAsObject();
+
+            if (handlerInstance == null || typeNameInstance == null)
+            {
+                return false;
+            }
+
+            var typeName = DSharpObjectConverter.ToString(typeNameInstance);
+
+            if (_objectsContainer.CreateDotnetWrapper(typeName, out var wrapper))
+            {
+                handlerInstance->DotnetId = wrapper.Id;
+                return true;
+            }
+
+            return false;
+        }
+        private DSharpExternalMethodResult? DisposeDotnetObject(DSharpExternalCallingArgs args)
+        {
+            if (args.Arguments.Length != 1)
+            {
+                return null;
+            }
+
+            var instance = args.Arguments[0].Buffer.ReadAsObject();
+            _objectsContainer.DisposeDotnetWrapper(instance->DotnetId);
+
+            return null;
         }
 
         #endregion

@@ -1,4 +1,5 @@
 ﻿using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
@@ -8,13 +9,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     /// </summary>
     public unsafe class DSharpObjectsContainer : DSharpDisposable
     {
-        public DSharpObjectsContainer(IDSharpAssembly assembly, DSharpVmMemoryManager memoryManager, DSharpRuntimeInformationProvider runtimeInformationProvider)
+        public DSharpObjectsContainer(IDSharpAssembly assembly, DSharpVmMemoryManager memoryManager, DSharpRuntimeInformationProvider runtimeInformationProvider, IDSharpDotnetObjectsFabric dotnetObjectsFabric)
         {
             Assembly = assembly;
             _runtimeInformationProvider = runtimeInformationProvider;
             _memoryManager = memoryManager;
             _waitersPool = new(CreateWaiterThread);
             _resetEventsFabric = _resetEventsPool.GetElement;
+            _dotnetObjectsFabric = dotnetObjectsFabric;
         }
 
         /// <summary>
@@ -29,11 +31,14 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         private readonly ElementsPool<WaiterThread> _waitersPool;
         private readonly ElementsPool<AutoResetEvent> _resetEventsPool = new();
         private readonly Func<AutoResetEvent> _resetEventsFabric;
+        private readonly IDSharpDotnetObjectsFabric _dotnetObjectsFabric;
+        private readonly Dictionary<int, DSharpDotnetObject> _dotnetObjects = [];
 #if NET9_0_OR_GREATER
         private readonly Lock _lockerLock = new();
 #else
         private readonly object _lockerLock = new();
 #endif
+        private int _dotnetObjectIndex = int.MinValue;
 
         #region Controls
 
@@ -347,6 +352,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         {
             obj->Type = type;
             obj->Attributes = baseAttributes;
+            obj->DotnetId = 0;
 
             if (isArray)
             {
@@ -356,6 +362,70 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             {
                 obj->Attributes |= DSharpObjectAttributes.Initialized;
             }
+        }
+
+        #endregion
+
+        #region .NET wrappers
+
+        /// <summary>
+        /// Try to get .NET object wrapper with specified id
+        /// </summary>
+        /// <param name="id">Id of .NET wrapper that need to be found</param>
+        /// <param name="result">.NET object wrapper that was found</param>
+        /// <returns>Is wrapper successfully found</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryGetDotnetWrapper(int id, [NotNullWhen(true)] out DSharpDotnetObject? result)
+        {
+            return _dotnetObjects.TryGetValue(id, out result);
+        }
+        /// <summary>
+        /// Create .NET object wrapper with specified full type name
+        /// </summary>
+        /// <param name="typeName">Full type name that need to be created</param>
+        /// <param name="result">Created .NET object wrapper</param>
+        /// <returns>Is .NET object wrapper successfully created</returns>
+        public bool CreateDotnetWrapper(string typeName, [NotNullWhen(true)] out DSharpDotnetObject? result)
+        {
+            ObjectDisposedException.ThrowIf(IsDisposed, this);
+
+            var id = _dotnetObjectIndex;
+            result = _dotnetObjectsFabric.Create(id, typeName);
+
+            if (result == null)
+            {
+                return false;
+            }
+
+            _dotnetObjectIndex++;
+
+            if (_dotnetObjectIndex == 0)
+            {
+                _dotnetObjectIndex++;
+            }
+
+            result.Disposed += OnDotnetWrapperDisposed;
+
+            _dotnetObjects.Add(id, result);
+
+            return true;
+        }
+        /// <summary>
+        /// Dispose .NET object wrapper with specified id
+        /// </summary>
+        /// <param name="wrapperId">Id of .NET object wrapper</param>
+        /// <returns>Is wrapper successfully disposed</returns>
+        public bool DisposeDotnetWrapper(int wrapperId)
+        {
+            if (!_dotnetObjects.TryGetValue(wrapperId, out var wrapper) ||
+                wrapper.IsDisposed)
+            {
+                return false;
+            }
+
+            wrapper.Dispose();
+
+            return true;
         }
 
         #endregion
@@ -563,8 +633,26 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 }
             }
 
+            foreach (var wrapper in _dotnetObjects.Values)
+            {
+                wrapper.Dispose();
+            }
 
+            _dotnetObjects.Clear();
             _objects.Clear();
+        }
+
+        #endregion
+
+        #region Events
+
+        private void OnDotnetWrapperDisposed(object? sender, EventArgs e)
+        {
+            if (sender is DSharpDotnetObject wrapper)
+            {
+                wrapper.Disposed -= OnDotnetWrapperDisposed;
+                _dotnetObjects.Remove(wrapper.Id);
+            }
         }
 
         #endregion
@@ -609,6 +697,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             obj->Attributes = DSharpObjectAttributes.StoredInBuffer;
             obj->Type = type;
             obj->Extra = null;
+            obj->DotnetId = 0;
 
             if (isArray)
             {

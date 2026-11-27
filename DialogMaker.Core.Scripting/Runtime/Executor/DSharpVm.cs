@@ -3,6 +3,7 @@ using DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo;
 using System.Collections;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Net;
 
 namespace DialogMaker.Core.Scripting.Runtime.Executor
 {
@@ -19,7 +20,10 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
             RuntimeTypesProvider = runtimeInformationProvider;
             StackCapacity = stackCapacity;
             _memoryManager = memoryManager;
-            _objectContainer = new(runtimeInformationProvider.Assembly, memoryManager, runtimeInformationProvider);
+            _standardLibraryDotnetObjecstFabric = new();
+            _multiDotnetObjectFabrics = new();
+            _multiDotnetObjectFabrics.Fabrics.Add(_standardLibraryDotnetObjecstFabric);
+            _objectContainer = new(runtimeInformationProvider.Assembly, memoryManager, runtimeInformationProvider, _multiDotnetObjectFabrics);
             _multiExternalMethodsProviders = new();
             _standardLibraryExternalMethodsProvider = new(_objectContainer);
             _multiExternalMethodsProviders.Providers.Add(_standardLibraryExternalMethodsProvider);
@@ -73,10 +77,28 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                 return field;
             }
         }
+        /// <summary>
+        /// .NET object wrapper fabrics
+        /// </summary>
+        public ObservableCollection<IDSharpDotnetObjectsFabric> DotnetObjectFabrics
+        {
+            get
+            {
+                if (field == null)
+                {
+                    field = [];
+                    field.CollectionChanged += OnDotnetObjectFabricsCollectionChanged;
+                }
+
+                return field;
+            }
+        }
 
         private readonly DSharpObjectsContainer _objectContainer;
         private readonly DSharpMultiExternalMethodsProviders _multiExternalMethodsProviders;
+        private readonly DSharpMultiDotnetObjectFabrics _multiDotnetObjectFabrics;
         private readonly StandardLibraryExternalMethodsProvider _standardLibraryExternalMethodsProvider;
+        private readonly StandardLibraryDotnetObjectsFabric _standardLibraryDotnetObjecstFabric;
         private readonly DSharpVmMemoryManager _memoryManager = new();
 
         /// <summary>
@@ -116,6 +138,57 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                     if (item is IDSharpExternalMethodsProvider provider)
                     {
                         _multiExternalMethodsProviders.Providers.Remove(provider);
+                    }
+                }
+            }
+
+            if (e.Action == NotifyCollectionChangedAction.Add)
+            {
+                Add(e.NewItems);
+            }
+            else if (e.Action == NotifyCollectionChangedAction.Remove)
+            {
+                Remove(e.OldItems);
+            }
+            else if (e.Action == NotifyCollectionChangedAction.Replace)
+            {
+                Remove(e.OldItems);
+                Add(e.NewItems);
+            }
+            else if (e.Action == NotifyCollectionChangedAction.Reset)
+            {
+                Remove(e.OldItems);
+            }
+        }
+        private void OnDotnetObjectFabricsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            void Add(IList? items)
+            {
+                if (items == null)
+                {
+                    return;
+                }
+
+                foreach (var item in items)
+                {
+                    if (item is IDSharpDotnetObjectsFabric fabric)
+                    {
+                        _multiDotnetObjectFabrics.Fabrics.Add(fabric);
+                    }
+                }
+            }
+            void Remove(IList? items)
+            {
+                if (items == null)
+                {
+                    return;
+                }
+
+                foreach (var item in items)
+                {
+                    if (item is IDSharpDotnetObjectsFabric fabric)
+                    {
+                        _multiDotnetObjectFabrics.Fabrics.Remove(fabric);
                     }
                 }
             }

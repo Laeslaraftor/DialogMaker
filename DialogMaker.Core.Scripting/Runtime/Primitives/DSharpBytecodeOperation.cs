@@ -1589,64 +1589,60 @@ namespace DialogMaker.Core.Scripting.Runtime
         BitInvertField,
 
         /// <summary>
-        /// Jump to instruction at specified index when variable value is true
-        /// </summary>
-        [ArgsCount(2)]
-        [RequestsStackValues(0)]
-        JumpIfLocal,
-        /// <summary>
-        /// Jump to instruction at specified index when variable value is false
-        /// </summary>
-        [ArgsCount(2)]
-        [RequestsStackValues(0)]
-        JumpIfNotLocal,
-        /// <summary>
         /// Jump to instruction at specified index when first variable value equals to second
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(0)]
+        [Executor(typeof(DSharpJumpIfLocalEqualsLocalInstructionExecutor))]
         JumpIfLocalEqualsLocal,
         /// <summary>
         /// Jump to instruction at specified index when first variable value not equals to second
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(0)]
+        [Executor(typeof(DSharpJumpIfLocalNotEqualsLocalInstructionExecutor))]
         JumpIfLocalNotEqualsLocal,
         /// <summary>
         /// Jump to instruction at specified index when first variable value or second is true
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(0)]
+        [Executor(typeof(DSharpJumpIfLocalOrLocalInstructionExecutor))]
         JumpIfLocalOrLocal,
         /// <summary>
         /// Jump to instruction at specified index when first variable value and second is true
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(0)]
+        [Executor(typeof(DSharpJumpIfLocalAndLocalInstructionExecutor))]
         JumpIfLocalAndLocal,
         /// <summary>
         /// Jump to instruction at specified index when first variable value equals less then second
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(0)]
+        [Executor(typeof(DSharpJumpIfLocalLessLocalInstructionExecutor))]
         JumpIfLocalLessLocal,
         /// <summary>
         /// Jump to instruction at specified index when first variable value less or equal then second
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(0)]
+        [Executor(typeof(DSharpJumpIfLocalLessOrEqualLocalInstructionExecutor))]
         JumpIfLocalLessOrEqualLocal,
         /// <summary>
         /// Jump to instruction at specified index when first variable value greater then second
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(0)]
+        [Executor(typeof(DSharpJumpIfLocalGreaterLocalInstructionExecutor))]
         JumpIfLocalGreaterLocal,
         /// <summary>
         /// Jump to instruction at specified index when first variable value greater or equal then second
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(0)]
+        [Executor(typeof(DSharpJumpIfLocalGreaterOrEqualLocalInstructionExecutor))]
         JumpIfLocalGreaterOrEqualLocal,
 
         /// <summary>
@@ -1654,109 +1650,113 @@ namespace DialogMaker.Core.Scripting.Runtime
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(-1)]
+        [Executor(typeof(DSharpJumpIfLocalEqualsFieldInstructionExecutor))]
         JumpIfLocalEqualsField,
         /// <summary>
         /// Jump to instruction at specified index when first variable value not equals to field value
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(-1)]
+        [Executor(typeof(DSharpJumpIfLocalNotEqualsFieldInstructionExecutor))]
         JumpIfLocalNotEqualsField,
         /// <summary>
         /// Jump to instruction at specified index when first variable value or field value is true
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(-1)]
+        [Executor(typeof(DSharpJumpIfLocalOrFieldInstructionExecutor))]
         JumpIfLocalOrField,
         /// <summary>
         /// Jump to instruction at specified index when first variable value and field value is true
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(0)]
+        [Executor(typeof(DSharpJumpIfLocalAndFieldInstructionExecutor))]
         JumpIfLocalAndField,
         /// <summary>
         /// Jump to instruction at specified index when first variable value equals less then field value
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(-1)]
+        [Executor(typeof(DSharpJumpIfLocalLessFieldInstructionExecutor))]
         JumpIfLocalLessField,
         /// <summary>
         /// Jump to instruction at specified index when first variable value less or equal then field value
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(-1)]
+        [Executor(typeof(DSharpJumpIfLocalLessOrEqualFieldInstructionExecutor))]
         JumpIfLocalLessOrEqualField,
         /// <summary>
         /// Jump to instruction at specified index when first variable value greater then field value
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(-1)]
+        [Executor(typeof(DSharpJumpIfLocalGreaterFieldInstructionExecutor))]
         JumpIfLocalGreaterField,
         /// <summary>
         /// Jump to instruction at specified index when first variable value greater or equal then field value
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(-1)]
+        [Executor(typeof(DSharpJumpIfLocalGreaterOrEqualFieldInstructionExecutor))]
         JumpIfLocalGreaterOrEqualField,
 
-        /// <summary>
-        /// Jump to instruction at specified index when field value is true
-        /// </summary>
-        [ArgsCount(2)]
-        [RequestsStackValues(-1)]
-        JumpIfField,
-        /// <summary>
-        /// Jump to instruction at specified index when field value is false
-        /// </summary>
-        [ArgsCount(2)]
-        [RequestsStackValues(-1)]
-        JumpIfNotField,
         /// <summary>
         /// Jump to instruction at specified index when first field value equals to second
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpJumpIfFieldEqualsFieldInstructionExecutor))]
         JumpIfFieldEqualsField,
         /// <summary>
         /// Jump to instruction at specified index when first field value not equals to second
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpJumpIfFieldNotEqualsFieldInstructionExecutor))]
         JumpIfFieldNotEqualsField,
         /// <summary>
         /// Jump to instruction at specified index when first field value or second is true
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpJumpIfFieldOrFieldInstructionExecutor))]
         JumpIfFieldOrField,
         /// <summary>
         /// Jump to instruction at specified index when first field value and second is true
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpJumpIfFieldAndFieldInstructionExecutor))]
         JumpIfFieldAndField,
         /// <summary>
         /// Jump to instruction at specified index when first field value equals less then second
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpJumpIfFieldLessFieldInstructionExecutor))]
         JumpIfFieldLessField,
         /// <summary>
         /// Jump to instruction at specified index when first field value less or equal then second
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpJumpIfFieldLessOrEqualFieldInstructionExecutor))]
         JumpIfFieldLessOrEqualField,
         /// <summary>
         /// Jump to instruction at specified index when first field value greater then second
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpJumpIfFieldGreaterFieldInstructionExecutor))]
         JumpIfFieldGreaterField,
         /// <summary>
         /// Jump to instruction at specified index when first field value greater or equal then second
         /// </summary>
         [ArgsCount(3)]
         [RequestsStackValues(-2)]
+        [Executor(typeof(DSharpJumpIfFieldGreaterOrEqualFieldInstructionExecutor))]
         JumpIfFieldGreaterOrEqualField,
 
         #endregion

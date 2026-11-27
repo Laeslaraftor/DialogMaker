@@ -202,8 +202,8 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                 var instruction = Instructions[i];
                 var otherInstruction = otherInstructions[i];
 
-                if (instruction is ReferenceInstruction reference &&
-                    otherInstruction is ReferenceInstruction otherReference &&
+                if (instruction is IReferenceInstruction reference &&
+                    otherInstruction is IReferenceInstruction otherReference &&
                     reference.ReferencedInstruction != null)
                 {
                     int index = Instructions.IndexOf(reference.ReferencedInstruction);
@@ -298,13 +298,13 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// </summary>
         /// <param name="instruction">Instruction that referenced by other</param>
         /// <returns>List of instructions that references to specified instruction</returns>
-        public List<ReferenceInstruction>? FindReferences(Instruction instruction)
+        public List<IReferenceInstruction>? FindReferences(Instruction instruction)
         {
-            List<ReferenceInstruction>? result = null;
+            List<IReferenceInstruction>? result = null;
 
             foreach (var i in Instructions)
             {
-                if (i is ReferenceInstruction referenceInstruction &&
+                if (i is IReferenceInstruction referenceInstruction &&
                     referenceInstruction.ReferencedInstruction == instruction)
                 {
                     result ??= [];
@@ -2091,202 +2091,246 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         #region Extra jumps
 
         /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfLocal"/>
-        /// </summary>
-        public ParameterInstruction JumpIf(IDSharpParameterInfo parameter)
-        {
-            return CreateInstruction<ParameterInstruction>(this, DSharpBytecodeOperation.JumpIfLocal, parameter);
-        }
-        /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfNotLocal"/>
-        /// </summary>
-        public ParameterInstruction JumpIfNot(IDSharpParameterInfo parameter)
-        {
-            return CreateInstruction<ParameterInstruction>(this, DSharpBytecodeOperation.JumpIfNotLocal, parameter);
-        }
-        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfLocalEqualsLocal"/>
         /// </summary>
-        public TwoParametersInstruction JumpIfEquals(IDSharpParameterInfo left, IDSharpParameterInfo right)
+        public TwoParametersReferenceInstruction JumpIfEquals(IDSharpParameterInfo left, IDSharpParameterInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.JumpIfLocalEqualsLocal, left, right);
+            var i = CreateInstruction<TwoParametersReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfLocalEqualsLocal, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfLocalNotEqualsLocal"/>
         /// </summary>
-        public TwoParametersInstruction JumpIfNotEquals(IDSharpParameterInfo left, IDSharpParameterInfo right)
+        public TwoParametersReferenceInstruction JumpIfNotEquals(IDSharpParameterInfo left, IDSharpParameterInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.JumpIfLocalNotEqualsLocal, left, right);
+            var i = CreateInstruction<TwoParametersReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfLocalNotEqualsLocal, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfLocalOrLocal"/>
         /// </summary>
-        public TwoParametersInstruction JumpIfOr(IDSharpParameterInfo left, IDSharpParameterInfo right)
+        public TwoParametersReferenceInstruction JumpIfOr(IDSharpParameterInfo left, IDSharpParameterInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.JumpIfLocalOrLocal, left, right);
+            var i = CreateInstruction<TwoParametersReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfLocalOrLocal, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfLocalAndLocal"/>
         /// </summary>
-        public TwoParametersInstruction JumpIfAnd(IDSharpParameterInfo left, IDSharpParameterInfo right)
+        public TwoParametersReferenceInstruction JumpIfAnd(IDSharpParameterInfo left, IDSharpParameterInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.JumpIfLocalAndLocal, left, right);
+            var i = CreateInstruction<TwoParametersReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfLocalAndLocal, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfLocalLessLocal"/>
         /// </summary>
-        public TwoParametersInstruction JumpIfLess(IDSharpParameterInfo left, IDSharpParameterInfo right)
+        public TwoParametersReferenceInstruction JumpIfLess(IDSharpParameterInfo left, IDSharpParameterInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.JumpIfLocalLessLocal, left, right);
+            var i = CreateInstruction<TwoParametersReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfLocalLessLocal, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfLocalLessOrEqualLocal"/>
         /// </summary>
-        public TwoParametersInstruction JumpIfLessOrEqual(IDSharpParameterInfo left, IDSharpParameterInfo right)
+        public TwoParametersReferenceInstruction JumpIfLessOrEqual(IDSharpParameterInfo left, IDSharpParameterInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.JumpIfLocalLessOrEqualLocal, left, right);
+            var i = CreateInstruction<TwoParametersReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfLocalLessOrEqualLocal, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfLocalGreaterLocal"/>
         /// </summary>
-        public TwoParametersInstruction JumpIfGreater(IDSharpParameterInfo left, IDSharpParameterInfo right)
+        public TwoParametersReferenceInstruction JumpIfGreater(IDSharpParameterInfo left, IDSharpParameterInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.JumpIfLocalGreaterLocal, left, right);
+            var i = CreateInstruction<TwoParametersReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfLocalGreaterLocal, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfLocalGreaterOrEqualLocal"/>
         /// </summary>
-        public TwoParametersInstruction JumpIfGreaterOrEqual(IDSharpParameterInfo left, IDSharpParameterInfo right)
+        public TwoParametersReferenceInstruction JumpIfGreaterOrEqual(IDSharpParameterInfo left, IDSharpParameterInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<TwoParametersInstruction>(this, DSharpBytecodeOperation.JumpIfLocalGreaterOrEqualLocal, left, right);
+            var i = CreateInstruction<TwoParametersReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfLocalGreaterOrEqualLocal, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
 
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfLocalEqualsField"/>
         /// </summary>
-        public ParameterMemberInstruction JumpIfEquals(IDSharpParameterInfo left, IDSharpFieldInfo right)
+        public ParameterMemberReferenceInstruction JumpIfEquals(IDSharpParameterInfo left, IDSharpFieldInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<ParameterMemberInstruction>(this, DSharpBytecodeOperation.JumpIfLocalEqualsField, left, right);
+            var i = CreateInstruction<ParameterMemberReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfLocalEqualsField, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfLocalNotEqualsField"/>
         /// </summary>
-        public ParameterMemberInstruction JumpIfNotEquals(IDSharpParameterInfo left, IDSharpFieldInfo right)
+        public ParameterMemberReferenceInstruction JumpIfNotEquals(IDSharpParameterInfo left, IDSharpFieldInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<ParameterMemberInstruction>(this, DSharpBytecodeOperation.JumpIfLocalNotEqualsField, left, right);
+            var i = CreateInstruction<ParameterMemberReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfLocalNotEqualsField, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfLocalOrField"/>
         /// </summary>
-        public ParameterMemberInstruction JumpIfOr(IDSharpParameterInfo left, IDSharpFieldInfo right)
+        public ParameterMemberReferenceInstruction JumpIfOr(IDSharpParameterInfo left, IDSharpFieldInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<ParameterMemberInstruction>(this, DSharpBytecodeOperation.JumpIfLocalOrField, left, right);
+            var i = CreateInstruction<ParameterMemberReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfLocalOrField, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfLocalAndField"/>
         /// </summary>
-        public ParameterMemberInstruction JumpIfAnd(IDSharpParameterInfo left, IDSharpFieldInfo right)
+        public ParameterMemberReferenceInstruction JumpIfAnd(IDSharpParameterInfo left, IDSharpFieldInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<ParameterMemberInstruction>(this, DSharpBytecodeOperation.JumpIfLocalAndField, left, right);
+            var i = CreateInstruction<ParameterMemberReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfLocalAndField, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfLocalLessField"/>
         /// </summary>
-        public ParameterMemberInstruction JumpIfLess(IDSharpParameterInfo left, IDSharpFieldInfo right)
+        public ParameterMemberReferenceInstruction JumpIfLess(IDSharpParameterInfo left, IDSharpFieldInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<ParameterMemberInstruction>(this, DSharpBytecodeOperation.JumpIfLocalLessField, left, right);
+            var i = CreateInstruction<ParameterMemberReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfLocalLessField, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfLocalLessOrEqualField"/>
         /// </summary>
-        public ParameterMemberInstruction JumpIfLessOrEqual(IDSharpParameterInfo left, IDSharpFieldInfo right)
+        public ParameterMemberReferenceInstruction JumpIfLessOrEqual(IDSharpParameterInfo left, IDSharpFieldInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<ParameterMemberInstruction>(this, DSharpBytecodeOperation.JumpIfLocalLessOrEqualField, left, right);
+            var i = CreateInstruction<ParameterMemberReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfLocalLessOrEqualField, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfLocalGreaterField"/>
         /// </summary>
-        public ParameterMemberInstruction JumpIfGreater(IDSharpParameterInfo left, IDSharpFieldInfo right)
+        public ParameterMemberReferenceInstruction JumpIfGreater(IDSharpParameterInfo left, IDSharpFieldInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<ParameterMemberInstruction>(this, DSharpBytecodeOperation.JumpIfLocalGreaterField, left, right);
+            var i = CreateInstruction<ParameterMemberReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfLocalGreaterField, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfLocalGreaterOrEqualField"/>
         /// </summary>
-        public ParameterMemberInstruction JumpIfGreaterOrEqual(IDSharpParameterInfo left, IDSharpFieldInfo right)
+        public ParameterMemberReferenceInstruction JumpIfGreaterOrEqual(IDSharpParameterInfo left, IDSharpFieldInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<ParameterMemberInstruction>(this, DSharpBytecodeOperation.JumpIfLocalGreaterOrEqualField, left, right);
+            var i = CreateInstruction<ParameterMemberReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfLocalGreaterOrEqualField, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         
         /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfField"/>
-        /// </summary>
-        public TypeInstruction JumpIf(IDSharpFieldInfo field)
-        {
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.JumpIfField, field);
-        }
-        /// <summary>
-        /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfNotField"/>
-        /// </summary>
-        public TypeInstruction JumpIfNot(IDSharpFieldInfo field)
-        {
-            return CreateInstruction<TypeInstruction>(this, DSharpBytecodeOperation.JumpIfNotField, field);
-        }
-        /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfFieldEqualsField"/>
         /// </summary>
-        public TwoMembersInstruction JumpIfEquals(IDSharpFieldInfo left, IDSharpFieldInfo right)
+        public TwoMembersReferenceInstruction JumpIfEquals(IDSharpFieldInfo left, IDSharpFieldInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.JumpIfFieldEqualsField, left, right);
+            var i = CreateInstruction<TwoMembersReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfFieldEqualsField, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfFieldNotEqualsField"/>
         /// </summary>
-        public TwoMembersInstruction JumpIfNotEquals(IDSharpFieldInfo left, IDSharpFieldInfo right)
+        public TwoMembersReferenceInstruction JumpIfNotEquals(IDSharpFieldInfo left, IDSharpFieldInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.JumpIfFieldNotEqualsField, left, right);
+            var i = CreateInstruction<TwoMembersReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfFieldNotEqualsField, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfFieldOrField"/>
         /// </summary>
-        public TwoMembersInstruction JumpIfOr(IDSharpFieldInfo left, IDSharpFieldInfo right)
+        public TwoMembersReferenceInstruction JumpIfOr(IDSharpFieldInfo left, IDSharpFieldInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.JumpIfFieldOrField, left, right);
+            var i = CreateInstruction<TwoMembersReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfFieldOrField, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfFieldAndField"/>
         /// </summary>
-        public TwoMembersInstruction JumpIfAnd(IDSharpFieldInfo left, IDSharpFieldInfo right)
+        public TwoMembersReferenceInstruction JumpIfAnd(IDSharpFieldInfo left, IDSharpFieldInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.JumpIfFieldAndField, left, right);
+            var i = CreateInstruction<TwoMembersReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfFieldAndField, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfFieldLessField"/>
         /// </summary>
-        public TwoMembersInstruction JumpIfLess(IDSharpFieldInfo left, IDSharpFieldInfo right)
+        public TwoMembersReferenceInstruction JumpIfLess(IDSharpFieldInfo left, IDSharpFieldInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.JumpIfFieldLessField, left, right);
+            var i = CreateInstruction<TwoMembersReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfFieldLessField, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfFieldLessOrEqualField"/>
         /// </summary>
-        public TwoMembersInstruction JumpIfLessOrEqual(IDSharpFieldInfo left, IDSharpFieldInfo right)
+        public TwoMembersReferenceInstruction JumpIfLessOrEqual(IDSharpFieldInfo left, IDSharpFieldInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.JumpIfFieldLessOrEqualField, left, right);
+            var i = CreateInstruction<TwoMembersReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfFieldLessOrEqualField, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfFieldGreaterField"/>
         /// </summary>
-        public TwoMembersInstruction JumpIfGreater(IDSharpFieldInfo left, IDSharpFieldInfo right)
+        public TwoMembersReferenceInstruction JumpIfGreater(IDSharpFieldInfo left, IDSharpFieldInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.JumpIfFieldGreaterField, left, right);
+            var i = CreateInstruction<TwoMembersReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfFieldGreaterField, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
         /// <summary>
         /// <inheritdoc cref="DSharpBytecodeOperation.JumpIfFieldGreaterOrEqualField"/>
         /// </summary>
-        public TwoMembersInstruction JumpIfGreaterOrEqual(IDSharpFieldInfo left, IDSharpFieldInfo right)
+        public TwoMembersReferenceInstruction JumpIfGreaterOrEqual(IDSharpFieldInfo left, IDSharpFieldInfo right, Instruction? reference = null)
         {
-            return CreateInstruction<TwoMembersInstruction>(this, DSharpBytecodeOperation.JumpIfFieldGreaterOrEqualField, left, right);
+            var i = CreateInstruction<TwoMembersReferenceInstruction>(this, DSharpBytecodeOperation.JumpIfFieldGreaterOrEqualField, left, right);
+            i.ReferencedInstruction = reference;
+
+            return i;
         }
 
         #endregion
@@ -2638,20 +2682,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <param name="right">Right operand variable</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public TwoParametersInstruction JumpIfBinaryOperation(DSharpBinaryOperator binaryOperator, IDSharpParameterInfo left, IDSharpParameterInfo right)
+        public TwoParametersReferenceInstruction JumpIfBinaryOperation(DSharpBinaryOperator binaryOperator, IDSharpParameterInfo left, IDSharpParameterInfo right, Instruction? reference = null)
         {
             return binaryOperator switch
             {
-                DSharpBinaryOperator.LogicalEquals => JumpIfEquals(left, right),
-                DSharpBinaryOperator.LogicalNotEquals => JumpIfNotEquals(left, right),
-                DSharpBinaryOperator.LogicalOr => JumpIfOr(left, right),
-                DSharpBinaryOperator.LogicalAnd => JumpIfAnd(left, right),
-                DSharpBinaryOperator.Or => JumpIfOr(left, right),
-                DSharpBinaryOperator.And => JumpIfAnd(left, right),
-                DSharpBinaryOperator.LogicalLess => JumpIfLess(left, right),
-                DSharpBinaryOperator.LogicalLessOrEquals => JumpIfLessOrEqual(left, right),
-                DSharpBinaryOperator.LogicalGreater => JumpIfGreater(left, right),
-                DSharpBinaryOperator.LogicalGreaterOrEquals => JumpIfGreaterOrEqual(left, right),
+                DSharpBinaryOperator.LogicalEquals => JumpIfEquals(left, right, reference),
+                DSharpBinaryOperator.LogicalNotEquals => JumpIfNotEquals(left, right, reference),
+                DSharpBinaryOperator.LogicalOr => JumpIfOr(left, right, reference),
+                DSharpBinaryOperator.LogicalAnd => JumpIfAnd(left, right, reference),
+                DSharpBinaryOperator.Or => JumpIfOr(left, right, reference),
+                DSharpBinaryOperator.And => JumpIfAnd(left, right, reference),
+                DSharpBinaryOperator.LogicalLess => JumpIfLess(left, right, reference),
+                DSharpBinaryOperator.LogicalLessOrEquals => JumpIfLessOrEqual(left, right, reference),
+                DSharpBinaryOperator.LogicalGreater => JumpIfGreater(left, right, reference),
+                DSharpBinaryOperator.LogicalGreaterOrEquals => JumpIfGreaterOrEqual(left, right, reference),
                 _ => throw new ArgumentException($"Invalid operator \"{(DSharpTokenType)binaryOperator}\"", nameof(binaryOperator))
             };
         }
@@ -2663,20 +2707,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <param name="right">Right operand field</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public ParameterMemberInstruction JumpIfBinaryOperation(DSharpBinaryOperator binaryOperator, IDSharpParameterInfo left, IDSharpFieldInfo right)
+        public ParameterMemberReferenceInstruction JumpIfBinaryOperation(DSharpBinaryOperator binaryOperator, IDSharpParameterInfo left, IDSharpFieldInfo right, Instruction? reference = null)
         {
             return binaryOperator switch
             {
-                DSharpBinaryOperator.LogicalEquals => JumpIfEquals(left, right),
-                DSharpBinaryOperator.LogicalNotEquals => JumpIfNotEquals(left, right),
-                DSharpBinaryOperator.LogicalOr => JumpIfOr(left, right),
-                DSharpBinaryOperator.LogicalAnd => JumpIfAnd(left, right),
-                DSharpBinaryOperator.Or => JumpIfOr(left, right),
-                DSharpBinaryOperator.And => JumpIfAnd(left, right),
-                DSharpBinaryOperator.LogicalLess => JumpIfLess(left, right),
-                DSharpBinaryOperator.LogicalLessOrEquals => JumpIfLessOrEqual(left, right),
-                DSharpBinaryOperator.LogicalGreater => JumpIfGreater(left, right),
-                DSharpBinaryOperator.LogicalGreaterOrEquals => JumpIfGreaterOrEqual(left, right),
+                DSharpBinaryOperator.LogicalEquals => JumpIfEquals(left, right, reference),
+                DSharpBinaryOperator.LogicalNotEquals => JumpIfNotEquals(left, right, reference),
+                DSharpBinaryOperator.LogicalOr => JumpIfOr(left, right, reference),
+                DSharpBinaryOperator.LogicalAnd => JumpIfAnd(left, right, reference),
+                DSharpBinaryOperator.Or => JumpIfOr(left, right, reference),
+                DSharpBinaryOperator.And => JumpIfAnd(left, right, reference),
+                DSharpBinaryOperator.LogicalLess => JumpIfLess(left, right, reference),
+                DSharpBinaryOperator.LogicalLessOrEquals => JumpIfLessOrEqual(left, right, reference),
+                DSharpBinaryOperator.LogicalGreater => JumpIfGreater(left, right, reference),
+                DSharpBinaryOperator.LogicalGreaterOrEquals => JumpIfGreaterOrEqual(left, right, reference),
                 _ => throw new ArgumentException($"Invalid operator \"{(DSharpTokenType)binaryOperator}\"", nameof(binaryOperator))
             };
         }
@@ -2688,20 +2732,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <param name="right">Right operand variable</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public ParameterMemberInstruction JumpIfBinaryOperation(DSharpBinaryOperator binaryOperator, IDSharpFieldInfo left, IDSharpParameterInfo right)
+        public ParameterMemberReferenceInstruction JumpIfBinaryOperation(DSharpBinaryOperator binaryOperator, IDSharpFieldInfo left, IDSharpParameterInfo right, Instruction? reference = null)
         {
             return binaryOperator switch
             {
-                DSharpBinaryOperator.LogicalEquals => JumpIfEquals(right, left),
-                DSharpBinaryOperator.LogicalNotEquals => JumpIfNotEquals(right, left),
-                DSharpBinaryOperator.LogicalOr => JumpIfOr(right, left),
-                DSharpBinaryOperator.LogicalAnd => JumpIfAnd(right, left),
-                DSharpBinaryOperator.Or => JumpIfOr(right, left),
-                DSharpBinaryOperator.And => JumpIfAnd(right, left),
-                DSharpBinaryOperator.LogicalLess => JumpIfGreaterOrEqual(right, left),
-                DSharpBinaryOperator.LogicalLessOrEquals => JumpIfGreater(right, left),
-                DSharpBinaryOperator.LogicalGreater => JumpIfLessOrEqual(right, left),
-                DSharpBinaryOperator.LogicalGreaterOrEquals => JumpIfLess(right, left),
+                DSharpBinaryOperator.LogicalEquals => JumpIfEquals(right, left, reference),
+                DSharpBinaryOperator.LogicalNotEquals => JumpIfNotEquals(right, left, reference),
+                DSharpBinaryOperator.LogicalOr => JumpIfOr(right, left, reference),
+                DSharpBinaryOperator.LogicalAnd => JumpIfAnd(right, left, reference),
+                DSharpBinaryOperator.Or => JumpIfOr(right, left, reference),
+                DSharpBinaryOperator.And => JumpIfAnd(right, left, reference),
+                DSharpBinaryOperator.LogicalLess => JumpIfGreaterOrEqual(right, left, reference),
+                DSharpBinaryOperator.LogicalLessOrEquals => JumpIfGreater(right, left, reference),
+                DSharpBinaryOperator.LogicalGreater => JumpIfLessOrEqual(right, left, reference),
+                DSharpBinaryOperator.LogicalGreaterOrEquals => JumpIfLess(right, left, reference),
                 _ => throw new ArgumentException($"Invalid operator \"{(DSharpTokenType)binaryOperator}\"", nameof(binaryOperator))
             };
         }
@@ -2713,20 +2757,20 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
         /// <param name="right">Right operand field</param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public TwoMembersInstruction JumpIfBinaryOperation(DSharpBinaryOperator binaryOperator, IDSharpFieldInfo left, IDSharpFieldInfo right)
+        public TwoMembersReferenceInstruction JumpIfBinaryOperation(DSharpBinaryOperator binaryOperator, IDSharpFieldInfo left, IDSharpFieldInfo right, Instruction? reference = null)
         {
             return binaryOperator switch
             {
-                DSharpBinaryOperator.LogicalEquals => JumpIfEquals(left, right),
-                DSharpBinaryOperator.LogicalNotEquals => JumpIfNotEquals(left, right),
-                DSharpBinaryOperator.LogicalOr => JumpIfOr(left, right),
-                DSharpBinaryOperator.LogicalAnd => JumpIfAnd(left, right),
-                DSharpBinaryOperator.Or => JumpIfOr(left, right),
-                DSharpBinaryOperator.And => JumpIfAnd(left, right),
-                DSharpBinaryOperator.LogicalLess => JumpIfLess(left, right),
-                DSharpBinaryOperator.LogicalLessOrEquals => JumpIfLessOrEqual(left, right),
-                DSharpBinaryOperator.LogicalGreater => JumpIfGreater(left, right),
-                DSharpBinaryOperator.LogicalGreaterOrEquals => JumpIfGreaterOrEqual(left, right),
+                DSharpBinaryOperator.LogicalEquals => JumpIfEquals(left, right, reference),
+                DSharpBinaryOperator.LogicalNotEquals => JumpIfNotEquals(left, right, reference),
+                DSharpBinaryOperator.LogicalOr => JumpIfOr(left, right, reference),
+                DSharpBinaryOperator.LogicalAnd => JumpIfAnd(left, right, reference),
+                DSharpBinaryOperator.Or => JumpIfOr(left, right, reference),
+                DSharpBinaryOperator.And => JumpIfAnd(left, right, reference),
+                DSharpBinaryOperator.LogicalLess => JumpIfLess(left, right, reference),
+                DSharpBinaryOperator.LogicalLessOrEquals => JumpIfLessOrEqual(left, right, reference),
+                DSharpBinaryOperator.LogicalGreater => JumpIfGreater(left, right, reference),
+                DSharpBinaryOperator.LogicalGreaterOrEquals => JumpIfGreaterOrEqual(left, right, reference),
                 _ => throw new ArgumentException($"Invalid operator \"{(DSharpTokenType)binaryOperator}\"", nameof(binaryOperator))
             };
         }

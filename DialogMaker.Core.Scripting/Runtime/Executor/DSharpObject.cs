@@ -7,7 +7,7 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
     /// <summary>
     /// D# object
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Explicit)]
     public unsafe struct DSharpObject
     {
         /// <summary>
@@ -111,14 +111,22 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
         /// <summary>
         /// Object type
         /// </summary>
+        [FieldOffset(0)]
         public DSharpRuntimeTypeInfo* Type;
         /// <summary>
         /// Object attributes
         /// </summary>
+        [FieldOffset(8)]
         public DSharpObjectAttributes Attributes;
+        /// <summary>
+        /// .NET object wrapper id that attached to this D# object
+        /// </summary>
+        [FieldOffset(12)]
+        public int DotnetId;
         /// <summary>
         /// Reserved pointer. This stores lock information or data buffer
         /// </summary>
+        [FieldOffset(16)]
         public void* Extra;
 
         public override string ToString()

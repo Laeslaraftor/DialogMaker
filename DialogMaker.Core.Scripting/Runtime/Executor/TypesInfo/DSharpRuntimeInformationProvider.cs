@@ -568,7 +568,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             int infoSize = layout.StaticSize +
                            generics.Length * sizeof(Pointer<DSharpRuntimeTypeInfo>) +
                            interfaces.Length * sizeof(Pointer<DSharpRuntimeTypeInfo>) +
-                           allFields.Count * sizeof(UnmanagedPair<Pointer<DSharpRuntimeFieldInfo>, UnmanagedArray<byte>>) +
                            overridenMethods.Count * sizeof(UnmanagedPair<Pointer<DSharpRuntimeMethodInfo>, Pointer<DSharpRuntimeMethodInfo>>) +
                            overridenProperties.Count * sizeof(UnmanagedPair<Pointer<DSharpRuntimePropertyInfo>, Pointer<DSharpRuntimePropertyInfo>>) +
                            memberInfoSize.Values.Sum() +
@@ -591,7 +590,6 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
             info->Methods = builder.AllocateArray<DSharpRuntimeMethodInfo>(methods.Count);
             info->Properties = builder.AllocateArray<DSharpRuntimePropertyInfo>(properties.Count);
             info->Fields = builder.AllocateArray<DSharpRuntimeFieldInfo>(fields.Count);
-            info->FieldsOffset = builder.AllocateDictionary<Pointer<DSharpRuntimeFieldInfo>, int>(allFields.Count);
             info->OverridenMethods = builder.AllocateDictionary<Pointer<DSharpRuntimeMethodInfo>, Pointer<DSharpRuntimeMethodInfo>>(overridenMethods.Count);
             info->OverridenProperties = builder.AllocateDictionary<Pointer<DSharpRuntimePropertyInfo>, Pointer<DSharpRuntimePropertyInfo>>(overridenProperties.Count);
             info->StaticFieldsData = builder.AllocateArray<byte>(layout.StaticSize);
@@ -650,17 +648,18 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor.TypesInfo
                 var field = fields[i];
                 var fieldInfo = info->Fields.GetItemReference(i);
                 CreateFieldInfo(info, fields[i], fieldInfo, ref builder);
+                int offset;
 
                 if (fieldInfo->IsStatic)
                 {
-                    int offset = layout.StaticFieldOffsets[field];
-                    info->FieldsOffset.Add(fieldInfo, offset);
+                    offset = layout.StaticFieldOffsets[field];
                 }
                 else
                 {
-                    int offset = fieldOffset + layout.InstanceFieldOffsets[field];
-                    info->FieldsOffset.Add(fieldInfo, offset);
+                    offset = fieldOffset + layout.InstanceFieldOffsets[field];
                 }
+
+                fieldInfo->Offset = offset;
             }
             for (int i = 0; i < properties.Count; i++)
             {

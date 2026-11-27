@@ -3,6 +3,7 @@ using DialogMaker.Core.Scripting.Compiler.Builders;
 using DialogMaker.Core.Scripting.Runtime;
 using System.Diagnostics;
 using static DialogMaker.Core.Scripting.Compiler.Builders.DSharpBytecodeBuilder;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace DialogMaker.Core.Tests
 {
@@ -54,6 +55,7 @@ namespace DialogMaker.Core.Tests
         [TestCase("System.Object", "ReferenceEquals")]
         [TestCase("System.Byte", "init")]
         [TestCase("System.Int64", "GetHashCode")]
+        [TestCase("System.String", "Replace")]
         [TestCase("System.String", "Equals")]
         [TestCase("System.String", "Split")]
         [TestCase("System.String", "IsNullOrEmpty")]
@@ -188,7 +190,7 @@ namespace DialogMaker.Core.Tests
                 return;
             }
 
-            ReadCode(function);
+            //ReadCode(function);
         }
         private static IEnumerable<DSharpMethodBuilder> GetMethods(DSharpAssemblyBuilder assembly, string fullName)
         {
@@ -237,14 +239,39 @@ namespace DialogMaker.Core.Tests
         private static void ReadMethod(DSharpTypeBuilder type, string methodName)
         {
             bool isAnyMethodFound = false;
+            Dictionary<DSharpMethodBuilder, string> methodsRawCode = [];
+            Dictionary<DSharpMethodBuilder, string> methodsOptimizedCode = [];
+            var methods = type.Methods.Union(type.Constructors).Where(f => f.Name == methodName);
 
-            foreach (var method in type.Methods.Union(type.Constructors).Where(f => f.Name == methodName))
+            foreach (var method in methods)
+            {
+                methodsRawCode.Add(method, method.GetBytecodeBuilder().ToString());
+            }
+
+            try
+            {
+                DSharpBytecodeOptimizer.Optimize(type.Assembly);
+
+                foreach (var method in methods)
+                {
+                    methodsOptimizedCode.Add(method, method.GetBytecodeBuilder().ToString());
+                }
+            }
+            catch (Exception error)
+            {
+                Console.WriteLine($"Failed to optimize bytecode: {error}");
+                Console.WriteLine();
+            }
+
+            foreach (var method in methods)
             {
                 isAnyMethodFound = true;
 
                 Console.WriteLine();
                 Console.WriteLine($"{method} ({(DSharpMetadataToken)method.MetadataToken})");
-                ReadCode(method);
+                methodsOptimizedCode.TryGetValue(method, out var optimizedCode);
+
+                ReadCode(method, methodsRawCode[method], optimizedCode);
             }
 
             if (!isAnyMethodFound)
@@ -252,7 +279,7 @@ namespace DialogMaker.Core.Tests
                 Debug.Fail($"Unable to find method \"{methodName}\" at \"{type}\"");
             }
         }
-        private static void ReadCode(DSharpMethodBuilder method)
+        private static void ReadCode(DSharpMethodBuilder method, string rawCode, string? optimizedCode)
         {
             var code = method.GetBytecodeBuilder();
             Console.WriteLine("Variables:");
@@ -263,19 +290,18 @@ namespace DialogMaker.Core.Tests
             }
 
             Console.WriteLine("Raw bytecode:");
-            Console.WriteLine(code.ToString());
+            Console.WriteLine(rawCode);
             Console.WriteLine();
 
-            try
-            {
-                DSharpBytecodeOptimizer.Optimize(method.Assembly);
+            Console.WriteLine("Optimized:");
 
-                Console.WriteLine("Optimized:");
-                Console.WriteLine(code.ToString());
-            }
-            catch (Exception error)
+            if (optimizedCode != null)
             {
-                Console.WriteLine($"Failed to optimize bytecode: {error}");
+                Console.WriteLine(optimizedCode);
+            }
+            else
+            {
+                Console.WriteLine("Failed to optimize bytecode");
             }
         }
 

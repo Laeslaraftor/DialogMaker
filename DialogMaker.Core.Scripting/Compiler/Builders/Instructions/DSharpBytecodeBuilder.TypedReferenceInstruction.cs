@@ -44,9 +44,7 @@ namespace DialogMaker.Core.Scripting.Compiler.Builders
                     return $"{Operation} [{Type}]";
                 }
 
-                int index = BytecodeBuilder.Instructions.IndexOf(ReferencedInstruction);
-
-                return $"{Operation} [{index}: {ReferencedInstruction}, {Type}]";
+                return $"{Operation} [{ToStringReference(this)}, {Type}]";
             }
 
             #endregion

@@ -115,7 +115,15 @@ namespace DialogMaker.Core.Scripting.Runtime.Executor
                         throw new InvalidOperationException($"Unable to find information about method: {methodInfo->MetadataToken}");
                     }
 
-                    var externalMethod = _externalMethodsProvider.GetMethod(assemblyMethodInfo);
+                    DSharpExternalMethod? externalMethod = null;
+
+                    if (instance != null && instance->DotnetId != 0 &&
+                        objectContainer.TryGetDotnetWrapper(instance->DotnetId, out var wrapper))
+                    {
+                        externalMethod = wrapper.GetMethod(assemblyMethodInfo);
+                    }
+
+                    externalMethod ??= _externalMethodsProvider.GetMethod(assemblyMethodInfo);
 
                     if (externalMethod != null)
                     {
